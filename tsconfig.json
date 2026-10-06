@@ -1,0 +1,15 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./mission-core" },
+    { "path": "./mission-core/tsconfig.test.json" },
+    { "path": "./assets-catalog" },
+    { "path": "./assets-catalog/tsconfig.test.json" },
+    { "path": "./mission-renderer" },
+    { "path": "./mission-renderer/tsconfig.test.json" },
+    { "path": "./app" },
+    { "path": "./app/tsconfig.test.json" },
+    { "path": "./deployment" },
+    { "path": "./deployment/tsconfig.test.json" }
+  ]
+}
