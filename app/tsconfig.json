@@ -3,6 +3,7 @@
   "compilerOptions": {
     "lib": ["es2024", "dom", "dom.iterable"],
     "types": ["node"],
+    "customConditions": ["source"],
     "outDir": "dist",
     "rootDir": ".",
     "tsBuildInfoFile": "dist/.tsbuildinfo"

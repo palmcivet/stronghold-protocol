@@ -8,13 +8,6 @@ dist-web/
 *.tsbuildinfo
 .vite/
 coverage/
-
-# third-party builds copied into the client image
-deployment/client/vendor/
-
-# game media fetched or extracted locally
-public/assets/
-public/fonts/
 .cache/
 
 # python, for local client extraction

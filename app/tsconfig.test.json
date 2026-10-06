@@ -3,10 +3,11 @@
   "compilerOptions": {
     "lib": ["es2024"],
     "types": ["node"],
+    "customConditions": ["source"],
     "outDir": "dist-test",
-    "rootDir": "test",
+    "rootDir": ".",
     "tsBuildInfoFile": "dist-test/.tsbuildinfo"
   },
-  "include": ["test/**/*.ts"],
-  "references": [{ "path": "./tsconfig.json" }]
+  "include": ["test/**/*.ts", "data/runtime/**/*.ts", "data/schema/**/*.ts"],
+  "exclude": ["dist", "dist-test", "dist-web", "node_modules"]
 }
