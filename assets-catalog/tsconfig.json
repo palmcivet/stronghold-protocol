@@ -2,6 +2,7 @@
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "types": ["node"],
+    "customConditions": ["source"],
     "outDir": "dist",
     "rootDir": ".",
     "tsBuildInfoFile": "dist/.tsbuildinfo"

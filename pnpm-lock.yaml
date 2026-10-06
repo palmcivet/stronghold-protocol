@@ -72,9 +72,9 @@ importers:
 
   assets-catalog:
     dependencies:
-      effect:
-        specifier: 'catalog:'
-        version: 4.0.1
+      '@pixi-spine/runtime-3.8':
+        specifier: ^4.0.6
+        version: 4.0.6(@pixi-spine/base@4.0.6(@pixi/core@7.4.3)(@pixi/display@7.4.3(@pixi/core@7.4.3))(@pixi/graphics@7.4.3(@pixi/core@7.4.3)(@pixi/display@7.4.3(@pixi/core@7.4.3))(@pixi/sprite@7.4.3(@pixi/core@7.4.3)(@pixi/display@7.4.3(@pixi/core@7.4.3))))(@pixi/mesh-extras@7.4.3(@pixi/core@7.4.3)(@pixi/mesh@7.4.3(@pixi/core@7.4.3)(@pixi/display@7.4.3(@pixi/core@7.4.3))))(@pixi/mesh@7.4.3(@pixi/core@7.4.3)(@pixi/display@7.4.3(@pixi/core@7.4.3)))(@pixi/sprite@7.4.3(@pixi/core@7.4.3)(@pixi/display@7.4.3(@pixi/core@7.4.3))))(@pixi/core@7.4.3)
       pngjs:
         specifier: ^7.0.0
         version: 7.0.0
@@ -114,10 +114,6 @@ importers:
         version: 5.0.3(@types/node@26.6.4)(vite@8.3.3(@types/node@26.6.4))
 
   mission-core:
-    dependencies:
-      effect:
-        specifier: 'catalog:'
-        version: 4.0.1
     devDependencies:
       '@types/node':
         specifier: 'catalog:'

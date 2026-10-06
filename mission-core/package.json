@@ -17,9 +17,6 @@
     "build": "tsc -b",
     "test": "vitest run"
   },
-  "dependencies": {
-    "effect": "catalog:"
-  },
   "devDependencies": {
     "@types/node": "catalog:",
     "typescript": "catalog:",
