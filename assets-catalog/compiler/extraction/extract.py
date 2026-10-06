@@ -123,7 +123,7 @@ JOBS = [
 # TextAsset, the atlas TextAsset of its atlas asset and every page texture of the atlas materials (_MainTex, with its
 # _AlphaTex merged in as A). Output: spine/enemy/<id>/ (manifest group spine/enemy/<id>); the client draws the model
 # when the group lists every file of data/assets.json enemies[id].spineLocal. Their metadata is
-# compiler/media/spine/local-enemy-spines.json.
+# input/spine/local-enemy-spines.json.
 ENEMY_SPINES = ['enemy_1305_mhslim', 'enemy_1305_mhslim_2']
 ENEMY_ART = 'refs/arts/enm_art_*.ab'
 ENEMY_SPINE_SUB = 'spine/enemy'
@@ -139,7 +139,7 @@ DERIVED = [
 # The board textures every player downloads when a match shows the 3D board (public/js/render/board3d/load.js
 # PACK_IMAGES; D / common_D / BG also feed the 2D board art, render/boardArt.js): (output subdir, name, mode). A WebP
 # copy is written next to the PNG and the manifest lists the copy instead (≈ 6.7 MB → 2.0 MB per cold start); the PNG
-# stays for tools/crop-board-atlas.mjs and setup's check. 'lossy' = colour maps at quality 95 with the alpha lossless
+# stays for app/data/compiler/scripts/board-atlas.ts and setup's check. 'lossy' = colour maps at quality 95 with the alpha lossless
 # and the RGB under transparent texels kept (`exact`: the board material is opaque and samples it); 'lossless' =
 # normal and data maps, whose channels hold independent values that lossy WebP's chroma subsampling would mix (a
 # normal map ends up tens of degrees off). A Pillow without WebP support keeps the PNG.
