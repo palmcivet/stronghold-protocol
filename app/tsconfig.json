@@ -1,0 +1,25 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["es2024", "dom", "dom.iterable"],
+    "types": ["node"],
+    "outDir": "dist",
+    "rootDir": ".",
+    "tsBuildInfoFile": "dist/.tsbuildinfo"
+  },
+  "include": ["**/*.ts"],
+  "exclude": [
+    "dist",
+    "dist-test",
+    "**/dist-web/**",
+    "node_modules",
+    "test",
+    "vite.config.ts",
+    "vitest.config.ts"
+  ],
+  "references": [
+    { "path": "../mission-core" },
+    { "path": "../assets-catalog" },
+    { "path": "../mission-renderer" }
+  ]
+}
