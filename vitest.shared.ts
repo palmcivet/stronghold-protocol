@@ -6,7 +6,12 @@ const repoRoot = fileURLToPath(new URL(".", import.meta.url))
 export function moduleTest(name: string) {
   return defineConfig({
     resolve: {
-      conditions: ["source"],
+      conditions: ["source", "import", "module", "default"],
+    },
+    ssr: {
+      resolve: {
+        conditions: ["source", "import", "module", "default"],
+      },
     },
     server: {
       fs: {

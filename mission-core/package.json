@@ -13,6 +13,32 @@
       "default": "./dist/index.js"
     }
   },
+  "imports": {
+    "#contract/*.js": {
+      "source": "./contract/*.ts",
+      "default": "./dist/contract/*.js"
+    },
+    "#tick/*.js": {
+      "source": "./tick/*.ts",
+      "default": "./dist/tick/*.js"
+    },
+    "#random/*.js": {
+      "source": "./random/*.ts",
+      "default": "./dist/random/*.js"
+    },
+    "#port/*.js": {
+      "source": "./port/*.ts",
+      "default": "./dist/port/*.js"
+    },
+    "#runner/*.js": {
+      "source": "./runner/*.ts",
+      "default": "./dist/runner/*.js"
+    },
+    "#battle/*.js": {
+      "source": "./battle/*.ts",
+      "default": "./dist/battle/*.js"
+    }
+  },
   "scripts": {
     "build": "tsc -b",
     "test": "vitest run"
