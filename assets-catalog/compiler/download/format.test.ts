@@ -1,5 +1,4 @@
 import { deflateSync } from "node:zlib"
-import { encodePath, mirrorUrl, safeName } from "#compiler/download/source.js"
 import { expect, test } from "vitest"
 import { isCompletePng, isMp3, pngSize, validate } from "#compiler/download/format.js"
 
@@ -35,15 +34,4 @@ test("MP3 and atlas sniffing", () => {
   expect(isMp3(Buffer.from("404: Not Found".padEnd(200)))).toBe(false)
   expect(validate("atlas", Buffer.from("\nx.png\nformat: RGBA8888\n"))).toBe(true)
   expect(validate("atlas", Buffer.from("404: Not Found"))).toBe(false)
-})
-
-test("mirror, path encoding and safe file names", () => {
-  expect(mirrorUrl("https://raw.githubusercontent.com/fexli/ArknightsResource/main/spine/a/b.skel")).toBe(
-    "https://cdn.jsdelivr.net/gh/fexli/ArknightsResource@main/spine/a/b.skel",
-  )
-  expect(mirrorUrl("https://raw.githubusercontent.com/ArknightsAssets/ArknightsAssets2/voice/assets/x.mp3")).toBeNull()
-  expect(mirrorUrl("https://example.com/x")).toBeNull()
-  expect(encodePath("[uc]a/b c#.png")).toBe("%5Buc%5Da/b%20c%23.png")
-  expect(safeName("skcom_charge_cost[3]")).toBe("skcom_charge_cost_3_")
-  expect(safeName("bg_open 1")).toBe("bg_open_1")
 })

@@ -3,7 +3,12 @@ import { defineConfig } from "vitest/config"
 
 const repoRoot = fileURLToPath(new URL(".", import.meta.url))
 
-export function moduleTest(name: string) {
+interface ModuleTestOptions {
+  readonly environment?: "node" | "jsdom" | "happy-dom"
+  readonly include?: readonly string[]
+}
+
+export function moduleTest(name: string, options: ModuleTestOptions = {}) {
   return defineConfig({
     resolve: {
       conditions: ["source", "import", "module", "default"],
@@ -20,8 +25,8 @@ export function moduleTest(name: string) {
     },
     test: {
       name,
-      environment: "node",
-      include: ["test/**/*.test.ts"],
+      environment: options.environment ?? "node",
+      include: options.include ? [...options.include] : ["test/**/*.test.ts"],
       server: {
         deps: {
           inline: [/^arknights-/, /^stronghold-/],

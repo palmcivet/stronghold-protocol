@@ -1,6 +1,5 @@
 import { existsSync, readFileSync } from "node:fs"
 import { join } from "node:path"
-import { fileURLToPath } from "node:url"
 import { catalogPackageRoot } from "arknights-assets-catalog/compile"
 import { expect, test } from "vitest"
 import { decodePng } from "#compiler/media/board/atlas.js"

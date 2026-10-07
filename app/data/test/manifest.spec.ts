@@ -5,12 +5,13 @@ import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { catalogPackageRoot, Downloader, type DownloadJob } from "arknights-assets-catalog/compile"
 import { expect, test } from "vitest"
+import { appRootFrom } from "#compiler/repo-root.js"
 import { indexAudio } from "#compiler/media/fetch/audio-bank.js"
 import { emoteCatalog } from "#compiler/media/fetch/emote-catalog.js"
 import { collectLeaves, downloadLeaves, resolveTemplate, type TemplateLeaf } from "#compiler/media/fetch/manifest.js"
 import { buildPlan, guidePages } from "#compiler/media/fetch/plan.js"
 
-const appRoot = join(fileURLToPath(new URL(".", import.meta.url)), "..")
+const appRoot = appRootFrom(fileURLToPath(import.meta.url))
 const catalogRoot = catalogPackageRoot()
 const mediaRoot = join(catalogRoot, "product", "media")
 const fontRoot = join(catalogRoot, "product", "font")

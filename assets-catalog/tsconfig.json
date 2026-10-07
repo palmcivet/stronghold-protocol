@@ -8,5 +8,5 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo"
   },
   "include": ["**/*.ts"],
-  "exclude": ["dist", "dist-test", "node_modules", "test", "vitest.config.ts"]
+  "exclude": ["dist", "dist-test", "node_modules", "test", "**/*.test.ts", "**/*.spec.ts", "vitest.config.ts"]
 }

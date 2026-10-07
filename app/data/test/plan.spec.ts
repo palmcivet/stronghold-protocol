@@ -3,11 +3,12 @@ import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { mirrorUrl, type DownloadJob } from "arknights-assets-catalog/compile"
 import { expect, test } from "vitest"
+import { appRootFrom } from "#compiler/repo-root.js"
 import { indexAudio } from "#compiler/media/fetch/audio-bank.js"
 import { emoteCatalog } from "#compiler/media/fetch/emote-catalog.js"
 import { buildPlan, collectEnemyIds, guidePages, skillIndicesByChar, uiExtras } from "#compiler/media/fetch/plan.js"
 
-const appRoot = join(fileURLToPath(new URL(".", import.meta.url)), "..")
+const appRoot = appRootFrom(fileURLToPath(import.meta.url))
 const researchDir = join(appRoot, "data/compiler/input/research")
 const readJson = (name: string): unknown => JSON.parse(readFileSync(join(researchDir, name), "utf8")) as unknown
 
