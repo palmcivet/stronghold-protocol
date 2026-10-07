@@ -40,7 +40,7 @@
 //                 silent (deadline 0)
 // Checks never throw into the match: an exception inside a check is itself recorded as a violation.
 
-import { PHASE } from '#contract/match.js';
+import { PHASE } from '@alliance/contract/match.js';
 import { collectViolations } from '#server/match/audit/index.js';
 import { mergeTile, pieceDir, canPlace, placeClass } from '#server/match/board/index.js';
 import { pairPlayers, bossPoolHp, hiddenEligible } from '#server/match/fight/assault/index.js';

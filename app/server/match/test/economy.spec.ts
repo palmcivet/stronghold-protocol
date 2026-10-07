@@ -2,7 +2,7 @@
 // Income, upgrade price math, shop slots, buy/sell, refresh, freeze, ready gating (research 00-INDEX §3, 01 A1).
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { ERR, PHASE } from '#contract/match.js';
+import { ERR, PHASE } from '@alliance/contract/match.js';
 import { GameData } from '#server/match/mode/index.js';
 import { DATA, makeMatch, give, giveItem, checkInvariants, chessOfTier } from './harness.js';
 

@@ -12,7 +12,7 @@
 
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { PHASE } from '#contract/match.js';
+import { PHASE } from '@alliance/contract/match.js';
 import { BOSS_HIT_STEPS } from '#server/match/fight/assault/index.js';
 import { makeMatch, checkInvariants } from './harness.js';
 

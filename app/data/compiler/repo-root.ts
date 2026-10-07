@@ -12,14 +12,14 @@ function walk(start: string, found: (dir: string) => boolean): string {
   throw new Error(`package root not found from ${start}`)
 }
 
-/** 本包根：package.json 的 name 是 stronghold-app。源码和 dist 都从当前文件往上找。 */
+/** 本包根：package.json 的 name 是 @alliance/data。源码和 dist 都从当前文件往上找。 */
 export function appRootFrom(filePath: string): string {
   return walk(filePath, (dir) => {
     const manifest = join(dir, "package.json")
     if (!existsSync(manifest)) return false
     try {
       const parsed = JSON.parse(readFileSync(manifest, "utf8")) as { readonly name?: unknown }
-      return parsed.name === "stronghold-app"
+      return parsed.name === "@alliance/data"
     } catch {
       return false
     }

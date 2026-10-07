@@ -9,8 +9,8 @@ import assert from 'node:assert/strict';
 import { startServer } from "#server/entry/index.js";
 import { StubMatch } from "#server/test/stub.js";
 import { TestClient } from "#server/test/client.js";
-import { ERR } from "#contract/match.js";
-import { validateC2S } from "#contract/message.js";
+import { ERR } from "@alliance/contract/match.js";
+import { validateC2S } from "@alliance/contract/message.js";
 
 function clientPool(getUrl) {
   const open = new Set();

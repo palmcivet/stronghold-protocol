@@ -4,7 +4,7 @@ import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { buildDeployMap, canPlace, legalTiles, tileKey, positionClass, basePositionClass } from '#server/match/board/index.js';
 import { applyCard } from '#server/match/choice/index.js';
-import { ERR } from '#contract/match.js';
+import { ERR } from '@alliance/contract/match.js';
 import { DATA, makeMatch, give, giveItem, checkInvariants, chessOfTier } from './harness.js';
 
 const MELEE = (c) => c.position === 'MELEE';

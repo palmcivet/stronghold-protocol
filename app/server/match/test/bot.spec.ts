@@ -2,7 +2,7 @@
 // AI player (server/match/bot.js): field model, layout planner, rehearsal, buying / leveling / bench management.
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { PHASE } from '#contract/match.js';
+import { PHASE } from '@alliance/contract/match.js';
 import { fieldModel, planLayout, rehearse, rangeTiles, REHEARSAL_VARIANTS, LAYOUT_PARAMS, botPickCard, botPickBand } from '#server/match/agent/index.js';
 import { FIELD, canPlace, placeClass, parseKey } from '#server/match/board/index.js';
 import { makeMatch, checkInvariants, give, DATA } from './harness.js';

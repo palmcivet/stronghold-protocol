@@ -9,7 +9,7 @@ import { CODE_ALPHABET, BOT_NAMES } from "#server/room/index.js"
 import { StubMatch as Match } from "#server/test/stub.js"
 import { Match as RealMatch } from "#server/match/flow/index.js"
 import { TestClient } from "#server/test/client.js"
-import { ERR, MAX_SEATS, MAX_SPECTATORS, PHASE, EMOTES } from "#contract/match.js"
+import { ERR, MAX_SEATS, MAX_SPECTATORS, PHASE, EMOTES } from "@alliance/contract/match.js"
 
 const CODE_RE = new RegExp(`^[${CODE_ALPHABET}]{4}$`)
 const ROOT = DEFAULT_PACKET_DIR

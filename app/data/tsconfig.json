@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["es2024"],
+    "types": ["node"],
+    "customConditions": ["source"],
+    "outDir": "dist",
+    "rootDir": ".",
+    "tsBuildInfoFile": "dist/.tsbuildinfo"
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["dist", "dist-test", "node_modules", "**/*.test.ts", "**/*.spec.ts", "vitest.config.ts"],
+  "references": [
+    { "path": "../../assets-catalog" },
+    { "path": "../../mission-core" }
+  ]
+}

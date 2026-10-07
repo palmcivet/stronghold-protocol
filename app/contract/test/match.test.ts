@@ -37,7 +37,7 @@ import {
 } from "#contract/match.js"
 
 const require = createRequire(import.meta.url)
-const packageVersion = (require("../../package.json") as { version: string }).version
+const packageVersion = (require("../../../package.json") as { version: string }).version
 
 const EMOTE_IDS = [
   "autochess_battle_happy", "autochess_battle_scared", "autochess_battle_sorry", "autochess_battle_thanks",

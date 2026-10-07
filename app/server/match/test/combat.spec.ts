@@ -2,8 +2,8 @@
 // COMBAT orchestration, watchers, SETTLE (LP, coins, layers, elimination), 联防, error isolation — with FakeBattle.
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { PHASE } from '#contract/match.js';
-import { GEO } from '#contract/match.js';
+import { PHASE } from '@alliance/contract/match.js';
+import { GEO } from '@alliance/contract/match.js';
 import { FakeBattle } from './fake-battle.js';
 import { DATA, makeMatch, give, checkInvariants, chessOfTier, legalTileFor } from './harness.js';
 

@@ -77,7 +77,7 @@ function entriesOf(value: any): [string, any][] {
 // of kill rate and rehearsal adds ≈ 5 more; see docs/META.md §1.5. Old vs new decisions on the same seeds:
 // tools/botbench.mjs.
 
-import { GEO } from '#contract/match.js';
+import { GEO } from '@alliance/contract/match.js';
 import { deriveSeed } from 'arknights-mission-core';
 
 import { freeSlot, countFree, legalTiles, canPlace, positionClass, placeClass, basePositionClass, parseKey, tileKey, FIELD, pieceDir, boardTileOf, BOSS_MIRROR_COL } from '#server/match/board/index.js';

@@ -7,7 +7,7 @@
 // test/ui/prep-bench.test.js。
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { GEO, PHASE } from '#contract/match.js';
+import { GEO, PHASE } from '@alliance/contract/match.js';
 import { makeMatch, give, giveItem, legalTileFor, chessOfTier } from './harness.js';
 
 const MELEE = (c) => c.position === 'MELEE' && c.profession === 'TANK';

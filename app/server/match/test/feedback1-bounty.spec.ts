@@ -17,7 +17,7 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
-import { PHASE } from '#contract/match.js';
+import { PHASE } from '@alliance/contract/match.js';
 import { DATA, makeMatch } from './harness.js';
 import { FakeBattle } from './fake-battle.js';
 import { GameData } from '#server/match/mode/index.js';

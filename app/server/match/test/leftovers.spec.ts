@@ -5,8 +5,8 @@
 // (g.pause, g.equip replaceUid).
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { PHASE, ERR } from '#contract/match.js';
-import { validateC2S } from '#contract/message.js';
+import { PHASE, ERR } from '@alliance/contract/match.js';
+import { validateC2S } from '@alliance/contract/message.js';
 import { createBattleFromSpec, compactResult } from '#server/match/fight/field/index.js';
 import { RESULT_GRACE_MS, BOSS_SILENCE_MS } from '#server/match/fight/field/index.js';
 import { FakeBattle } from './fake-battle.js';

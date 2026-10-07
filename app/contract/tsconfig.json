@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["es2024"],
+    "types": ["node"],
+    "isolatedDeclarations": false,
+    "resolveJsonModule": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "tsBuildInfoFile": "dist/.tsbuildinfo"
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["dist", "dist-test", "node_modules"]
+}

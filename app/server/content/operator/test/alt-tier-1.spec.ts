@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { makeBattle, enemyRec, chessRec, checkInvariants } from '#server/content/support/harness.js';
 import { getDefaultSource } from '#server/content/support/sim-data.js';
 import { absoluteRangeKeys } from '#server/content/support/targeting.js';
-import { loadoutOptions } from '#contract/message.js';
+import { loadoutOptions } from '@alliance/contract/message.js';
 import { kitCoverage } from '../../tools/kit-coverage.mjs';
 
 const ds = getDefaultSource();

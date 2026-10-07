@@ -6,7 +6,7 @@
 // merged at settlement both stop there (shared/constants.js layerGainRoom, the one implementation).
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { PHASE, BOND_LAYER_CAP } from '#contract/match.js';
+import { PHASE, BOND_LAYER_CAP } from '@alliance/contract/match.js';
 import { MetaRegistry } from '#server/match/effect/index.js';
 import { registerBuiltins } from '#server/match/effect/builtin.js';
 import { DATA, makeMatch, checkInvariants } from './harness.js';

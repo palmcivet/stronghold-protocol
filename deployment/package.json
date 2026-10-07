@@ -4,23 +4,9 @@
   "private": true,
   "license": "GPL-3.0-or-later",
   "type": "module",
-  "sideEffects": false,
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "source": "./index.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
-    }
-  },
   "scripts": {
-    "build": "tsc -b",
-    "test": "vitest run"
   },
   "devDependencies": {
-    "@types/node": "catalog:",
-    "typescript": "catalog:",
-    "vite": "catalog:",
-    "vitest": "catalog:"
+    "zx": "^8.8.5"
   }
 }

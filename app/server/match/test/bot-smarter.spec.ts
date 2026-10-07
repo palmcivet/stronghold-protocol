@@ -7,7 +7,7 @@
 // tools/botbench.mjs (docs/META.md §1.5).
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { PHASE } from '#contract/match.js';
+import { PHASE } from '@alliance/contract/match.js';
 import { botPickCard, bountyKillChance, itemTarget, arrange, botPrepBegin, botPrepEnd, bondPlan, rangeTiles, effDps, rangeRec } from '#server/match/agent/index.js';
 import { parseKey, tileKey } from '#server/match/board/index.js';
 import { makeMatch, checkInvariants, give, giveItem, legalTileFor, DATA } from './harness.js';

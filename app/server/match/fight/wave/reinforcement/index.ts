@@ -30,7 +30,7 @@ function entriesOf(value: any): [string, any][] {
 // re-enter) — the same 10 cap as a normal round.
 
 import { buildUniteWave } from '#server/match/fight/wave/index.js';
-import { layerGainRoom } from '#contract/match.js';
+import { layerGainRoom } from '@alliance/contract/match.js';
 
 /**
  * @param {import('./Match.js').Match} m

@@ -15,7 +15,7 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { makeMatch, DATA } from '#server/content/support/match-blocked.js';
-import { checkLoadout } from '#contract/message.js';
+import { checkLoadout } from '@alliance/contract/message.js';
 import { buildBattleSpec, createBattleFromSpec } from '#server/match/fight/field/spec.js';
 import { COLS } from '#server/content/support/constants.js';
 import { makeBattle, enemyRec, chessRec, checkInvariants } from '#server/content/support/harness.js';

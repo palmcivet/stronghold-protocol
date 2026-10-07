@@ -5,7 +5,7 @@ import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { MetaRegistry, createRegistry, HOOKS, GARRISON_HOOK, MAX_DEPTH } from '#server/match/effect/index.js';
 import { registerBuiltins, BUILTIN_EFFECT_KEYS } from '#server/match/effect/builtin.js';
-import { PHASE } from '#contract/match.js';
+import { PHASE } from '@alliance/contract/match.js';
 import { DATA, makeMatch, give, giveItem, checkInvariants, chessOfTier } from './harness.js';
 
 test('registry: key validation, function sugar, last registration wins, helpers', () => {

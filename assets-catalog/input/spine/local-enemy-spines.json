@@ -1,5 +1,5 @@
 {
-  "about": "Spine metadata of the enemy models only the local client has (compiler/extraction/extract.py ENEMY_SPINES). A season assets.json enemies[id].spineLocal names these files. stronghold-app compile:assets --local-spines writes this file.",
+  "about": "Spine metadata of the enemy models only the local client has (compiler/extraction/extract.py ENEMY_SPINES).",
   "models": {
     "enemy_1305_mhslim": {
       "skel": "enemy_1305_mhslim.skel",

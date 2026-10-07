@@ -8,7 +8,7 @@
 // the real Match: test/match/lobby-integration.test.js.
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { ERR, PHASE, EMOTES } from '#contract/match.js';
+import { ERR, PHASE, EMOTES } from '@alliance/contract/match.js';
 import { makeMatch } from './harness.js';
 
 const S = 's_spec';

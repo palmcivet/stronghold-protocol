@@ -18,7 +18,7 @@
 
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { PHASE } from '#contract/match.js';
+import { PHASE } from '@alliance/contract/match.js';
 import { makeMatch } from './harness.js';
 
 /** A real client-combat match (real sim) of 2 humans to the Final Assault on the user's stage and difficulty. */

@@ -23,7 +23,7 @@ import { VirtualScheduler } from '#server/match/flow/schedule/index.js';
 import { getData } from '#server/entry/packet.js';
 import { FIELD, canPlace, placeClass, positionClass, tileKey } from '#server/match/board/index.js';
 import { FakeBattle } from './fake-battle.js';
-import { GEO } from '#contract/match.js';
+import { GEO } from '@alliance/contract/match.js';
 import { collectViolations } from '#server/match/audit/index.js';
 import { attachSimClients } from './sim-client.js';
 

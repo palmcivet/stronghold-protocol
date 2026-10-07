@@ -37,7 +37,7 @@ const catalogRoot = catalogPackageRoot()
 const assetsDir = join(catalogRoot, "product", "media")
 const fontsDir = join(catalogRoot, "product", "font")
 const cacheDir = join(catalogRoot, ".cache")
-const researchDir = join(appRoot, "data", "compiler", "input", "research")
+const researchDir = join(appRoot, "compiler", "input", "research")
 const reportPath = join(cacheDir, "assets-report.json")
 
 const HELP_TEXT = `Usage: [options]
@@ -48,7 +48,7 @@ const HELP_TEXT = `Usage: [options]
   --refresh-index   re-download the audio_data.json / charword_table.json / models_data.json indexes
   --voice-lang=cn   operator battle voice language: cn (default) | jp | en | kr
   --voice-all       plan every official voice slot, including prep-only lines
-  --season=ID       write product/season/<id>/assets.json under stronghold-app (required)
+  --season=ID       write product/season/<id>/assets.json under @alliance/data (required)
   --prune           delete files under product/media that the manifest no longer references
                     (product/media/local/** is never deleted); implies --allow-shrink
   --allow-shrink    write the manifest even when it loses entries the current one has

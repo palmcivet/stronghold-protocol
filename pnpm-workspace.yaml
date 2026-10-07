@@ -1,5 +1,5 @@
 packages:
-  - "app"
+  - "app/*"
   - "assets-catalog"
   - "deployment"
   - "mission-core"
@@ -7,6 +7,7 @@ packages:
 
 catalog:
   "@types/node": ^26.6.4
+  cross-env: ^10.1.0
   effect: ^4.0.1
   typescript: ^7.0.2
   vite: ^8.3.2

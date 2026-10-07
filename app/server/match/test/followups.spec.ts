@@ -3,7 +3,7 @@
 // 坚若磐石 = least LP lost, combat time limits in real seconds (× the forced 2× speed), boss-round layout model.
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { PHASE } from '#contract/match.js';
+import { PHASE } from '@alliance/contract/match.js';
 import { GameData, COMBAT_TIME_SCALE } from '#server/match/mode/index.js';
 import { generateDraft, reinforcementBond, cardTargetBonds, bountyBattles } from '#server/match/choice/index.js';
 import { assignTitles } from '#server/match/result/index.js';

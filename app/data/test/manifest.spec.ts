@@ -206,7 +206,7 @@ test.skipIf(!haveManifest || !haveMedia)("every manifest path exists on disk", (
 test.skipIf(!haveManifest || !haveMedia)("every visible research operator has avatar, portrait and a front spine", () => {
   const manifest = loadManifest()
   if (!manifest) return
-  const ops = readJson(join(appRoot, "data/compiler/input/research/03-operators.json")) as { chess: { isHidden?: boolean; chessType?: string; charId?: string }[] }
+  const ops = readJson(join(appRoot, "compiler/input/research/03-operators.json")) as { chess: { isHidden?: boolean; chessType?: string; charId?: string }[] }
   const ids = new Set(ops.chess.filter((row) => !row.isHidden && row.chessType !== "DIY" && row.charId).map((row) => row.charId ?? ""))
   expect(ids.size).toBeGreaterThanOrEqual(100)
   for (const id of ids) {
@@ -222,7 +222,7 @@ test.skipIf(!haveManifest || !haveMedia)("every visible research operator has av
 test.skipIf(!haveManifest || !haveMedia)("pool chars, bonds, items, bands and enemies are covered", () => {
   const manifest = loadManifest()
   if (!manifest) return
-  const assets = readJson(join(appRoot, "data/compiler/input/research/07-assets.json")) as {
+  const assets = readJson(join(appRoot, "compiler/input/research/07-assets.json")) as {
     operators: Record<string, unknown>
     bonds: Record<string, unknown>
     items: Record<string, unknown>

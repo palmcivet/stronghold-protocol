@@ -13,7 +13,7 @@
     "strict": true,
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
-    "isolatedDeclarations": true,
+    "isolatedDeclarations": false,
     "erasableSyntaxOnly": true,
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,

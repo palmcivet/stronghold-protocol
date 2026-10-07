@@ -26,7 +26,7 @@ function entriesOf(value: any): [string, any][] {
 // `tier` = number of thresholds reached (downward: 1 when active); `active = tier ≥ 1`.
 // Layers (`ps.layers[bondId]`) persist the whole match; they are reported for every bond but only matter while active.
 
-import { layerGainRoom } from '#contract/match.js';
+import { layerGainRoom } from '@alliance/contract/match.js';
 
 export const HARMONY_BOND: any = 'maniShip';
 export const DEPUTY_BOND: any = 'deputShip';
