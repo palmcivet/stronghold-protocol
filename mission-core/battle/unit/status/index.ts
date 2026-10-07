@@ -55,6 +55,7 @@ export function applyStatus(
   for (const timerId of definition.cancels) cancelTimer(state, registry, unitId, timerId)
   startTimer(state, registry, unitId, "status")
   definition.onApply?.(unitId, applied.stacks, ctx)
+  ctx.emit("status", { unitId, statusId, stacks: applied.stacks })
 }
 
 function tickStatuses(state: BattleState, registry: BattleRegistry, ctx: ContentContext, unitId: string): void {

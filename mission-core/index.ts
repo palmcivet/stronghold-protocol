@@ -38,6 +38,16 @@ export { TICK } from "#tick/index.js"
 export { AUTO_OP_COOLDOWN } from "#battle/skill/constants.js"
 
 export { createRandom, deriveSeed, type Random } from "#random/index.js"
+export {
+  attackRangeGrid,
+  composeStats,
+  composeTalents,
+  extendedGrid,
+  loadoutRecord,
+  resolveRecordLoadout,
+  traitRangeExtend,
+} from "#port/loadout.js"
+export type { LoadoutRequest, ResolvedRecordLoadout } from "#port/loadout.js"
 
 export { UnknownRegistrationError } from "#port/unknown-registration.js"
 export { MODIFIER_OPS, type ModifierOp } from "#port/content.js"
@@ -50,6 +60,7 @@ export type {
   DamageStepDefinition,
   DeployStrategyDefinition,
   ElementDefinition,
+  EventRevision,
   HitShape,
   MissionModule,
   PhaseSystem,
@@ -70,9 +81,10 @@ export type {
   TimerDefinition,
   TimerState,
   TimerView,
+  UnitView,
 } from "#port/content.js"
 
-export { rotateOffset } from "#battle/space/direction/index.js"
+export { frontTile, offsetTile, oppositeDirection, rotateOffset } from "#battle/space/direction/index.js"
 export { bodyDist, bodyInKeys, bodyInRadius, bodyKeys, bodyOnTile, bodyRect } from "#battle/space/body/index.js"
 export { createGrid } from "#battle/space/grid/index.js"
 export type { FieldGrid, GridPoint } from "#battle/space/grid/index.js"

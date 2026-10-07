@@ -17,6 +17,14 @@
     "#schema/*.js": {
       "source": "./data/schema/*.ts",
       "default": "./dist/data/schema/*.js"
+    },
+    "#contract/*.js": {
+      "source": "./contract/*.ts",
+      "default": "./dist/contract/*.js"
+    },
+    "#server/*.js": {
+      "source": "./server/*.ts",
+      "default": "./dist/server/*.js"
     }
   },
   "scripts": {
@@ -24,6 +32,7 @@
     "build:client": "vite build",
     "dev": "vite",
     "test": "vitest run",
+    "lint": "tsc --noEmit",
     "compile:packet": "node dist/data/compiler/scripts/packet.js",
     "compile:assets": "node dist/data/compiler/scripts/assets.js",
     "compile:emotes": "node dist/data/compiler/scripts/emotes.js",
@@ -38,6 +47,7 @@
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "@types/ws": "^8.18.2",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"

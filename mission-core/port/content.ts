@@ -1,6 +1,6 @@
 import type { PhaseSlot } from "#contract/phase.js"
 import type { BattleEvent } from "#contract/event.js"
-import type { AttackShape, TileCoord, TileSpec, UnitSide, UnitSpec } from "#contract/spec.js"
+import type { AttackShape, Direction, Motion, TileCoord, TileSpec, UnitSide, UnitSpec } from "#contract/spec.js"
 import type { Random } from "#random/index.js"
 
 export const MODIFIER_OPS = ["add", "percent", "mul"] as const
@@ -104,6 +104,8 @@ export interface DamageInfo {
   ignoreSelect?: boolean
   /** 为 true 后，后面的步骤不再写生命。 */
   cancel?: boolean
+  /** 这一击来自攻击计时，而不是技能或流失。 */
+  attack?: boolean
 }
 
 export interface HealOptions {
@@ -282,6 +284,33 @@ export type HitShape =
   | { readonly kind: "tile"; readonly x: number; readonly y: number; readonly w: 1; readonly h: 1 }
   | { readonly kind: "rect"; readonly x: number; readonly y: number; readonly w: number; readonly h: number }
 
+/** 单位在内容脚本里能读到的样子。 */
+export interface UnitView {
+  readonly id: string
+  readonly side: UnitSide
+  readonly x: number
+  readonly y: number
+  readonly hp: number
+  readonly maxHp: number
+  /** 在场、未倒下、生命大于 0、路线未隐藏。 */
+  readonly alive: boolean
+  readonly fielded: boolean
+  readonly downed: boolean
+  readonly tags: readonly string[]
+  readonly facing: Direction
+  readonly motion: Motion
+  readonly flags: readonly string[]
+}
+
+/** 订阅者改一笔正在结算的事件。伤害管线在发出之后读这些字段。 */
+export interface EventRevision {
+  readonly prevented?: boolean
+  readonly cancel?: boolean
+  readonly amount?: number
+  readonly mul?: number
+  readonly kind?: string
+}
+
 /** install 只能注册和订阅。 */
 export interface Registration {
   registerStatus(definition: StatusDefinition): void
@@ -294,7 +323,7 @@ export interface Registration {
   registerDeployStrategy(definition: DeployStrategyDefinition): void
   registerShift(definition: ShiftDefinition): void
   registerSystem(system: PhaseSystem): void
-  subscribe(type: string, handler: (event: BattleEvent) => void): () => void
+  subscribe(type: string, handler: (event: BattleEvent, ctx: ContentContext) => void): () => void
 }
 
 export interface MissionModule {
@@ -337,9 +366,37 @@ export interface ContentContext extends Registration {
   finish(winner: UnitSide): void
   tick(): number
   shouldCast(unitId: string, skillId: string): boolean
-  castSkill(unitId: string, skillId: string): void
+  /** 释放技能。成功返回 true。充能不够或正在持续时返回 false。 */
+  castSkill(unitId: string, skillId: string): boolean
+  /** 把这一技能的充能补满，使下一次 castSkill 能够释放。 */
+  readySkill(unitId: string, skillId: string): void
+  /** 按内容脚本改技能体、弹药和持续时间。技能不存在时不做。 */
+  configureSkill(unitId: string, skillId: string, spec: { body?: string; ammo?: number; duration?: number }): void
+  /** 攻击选目标时的优先规则。空字符串恢复默认。 */
+  setAim(unitId: string, priority: string): void
   /** 外界给予技力。阻回和持续技能期间不加。返回实际加上的数量。 */
   gainSp(unitId: string, skillId: string, amount: number): number
   tile(x: number, y: number): TileSpec | null
   projectiles(): readonly ProjectileView[]
+  /** 没有这个单位时返回 null。 */
+  unit(unitId: string): UnitView | null
+  /** 缺省时两边的单位都在名单里，顺序是入场顺序。 */
+  units(side?: UnitSide): readonly string[]
+  /** 算上状态和具名修饰。没有这个单位时返回 0。maxHp 用最大生命，hp 用当前生命。 */
+  attribute(unitId: string, key: string): number
+  /**
+   * 按 key 写上一组属性修饰，同 key 再写会换掉上一组。
+   * duration 是秒。缺省一直留着。0 或负数等于清掉这个 key。
+   */
+  setModifier(unitId: string, key: string, modifiers: readonly AttributeModifier[], duration?: number): void
+  clearModifier(unitId: string, key: string): void
+  hasModifier(unitId: string, key: string): boolean
+  /** 单位黑板。没有这个单位、或黑板上没有值时返回空记录。 */
+  script(unitId: string): Readonly<Record<string, string | number | boolean>>
+  /** 这场战斗的 notes。规格没写时是空记录。 */
+  field(): Readonly<Record<string, unknown>>
+  /** 本场战斗里这个模块的可变记录。第一次取时建出来。 */
+  shared(moduleId: string): Record<string, unknown>
+  /** 把 revision 里有的字段写进这次事件。伤害和致命结算会读到。 */
+  revise(event: BattleEvent, revision: EventRevision): void
 }

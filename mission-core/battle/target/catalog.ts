@@ -140,6 +140,7 @@ function priorityValue(state: BattleState, registry: BattleRegistry, unit: UnitS
   if (priority === "hp-ratio") return ratioOf(state, registry, unit.id)
   if (priority === "distance") return distanceOf(state, unit.id)
   if (priority === "farthest") return -distanceOf(state, unit.id)
+  if (priority === "ranged") return Number(unit.script.attackReach ?? 0) > 1 ? 0 : 1
   return 0
 }
 

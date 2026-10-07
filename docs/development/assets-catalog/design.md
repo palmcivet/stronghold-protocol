@@ -31,6 +31,6 @@ description: 基础字节和模式记录为什么分成两层，以及一个模�
 
 模式在使用前把单位定义归一化，再把骨架地址交给画面。画面按这个地址向资源目录要字节。
 
-## 提取
+## 来源
 
-`compiler/extraction` 从本地客户端提取公开源没有的模型，字节写进 `product/media`。任务表还可以列入某个模式要的图片，和模型写在同一份程序里，字节同样进 `product/media`。
+`CatalogEntry.source` 是 `upstream` 或 `local`。`upstream` 的字节由编译器按社区项目的地址写入 `product/`。`local` 的字节随已发布的客户端附带。

@@ -18,7 +18,7 @@ import { registerBuiltinSkillBodies } from "#battle/skill/body.js"
 import { armField, bindSkillSignals } from "#battle/skill/point.js"
 import { registerBuiltinSkillTriggers } from "#battle/skill/trigger.js"
 import { initialCost } from "#battle/cost.js"
-import { addUnit, type BattleState } from "#battle/state.js"
+import { addUnit, emit, type BattleState } from "#battle/state.js"
 import { registerDamageSteps } from "#battle/damage/index.js"
 import { registerBuiltinElements } from "#battle/unit/element.js"
 import { registerStatusCatalog } from "#battle/unit/status/catalog.js"
@@ -55,6 +55,11 @@ export function createBattle(spec: BattleSpec, modules: readonly MissionModule[]
   for (const unit of state.units.values()) armListedTimers(state, registry, unit)
   bindIndependentTimers(state, registry, ctx)
   openBattle(state, registry, ctx)
+  if (spec.deployStrategy === null) {
+    for (const unit of state.units.values()) {
+      if (unit.fielded) emit(state, "deploy", { unitId: unit.id })
+    }
+  }
   armField(state, registry, ctx, true)
   return {
     step() {
@@ -103,6 +108,8 @@ function createState(spec: BattleSpec, grid: ReturnType<typeof createGrid>): Bat
     random: createRandom(spec.seed),
     damagePreview: false,
     selectorOrigin: null,
+    shared: new Map(),
+    live: null,
   }
   const fielded = spec.deployStrategy === null
   for (const unit of spec.units) addUnit(state, unit, fielded)

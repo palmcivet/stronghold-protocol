@@ -101,6 +101,31 @@ export function advanceSkillPoint(
   sync(unit)
 }
 
+export function configureSkill(
+  state: BattleState,
+  unitId: string,
+  skillId: string,
+  spec: { body?: string; ammo?: number; duration?: number },
+): void {
+  const unit = state.units.get(unitId)
+  if (!unit) return
+  const skill = unit.skills.find((entry) => entry.id === skillId)
+  if (!skill) return
+  const mutable = skill as { body: string; ammoSpec: number; duration: number }
+  if (typeof spec.body === "string" && spec.body.length > 0) mutable.body = spec.body
+  if (typeof spec.ammo === "number" && Number.isFinite(spec.ammo)) mutable.ammoSpec = Math.max(0, spec.ammo)
+  if (typeof spec.duration === "number" && Number.isFinite(spec.duration)) mutable.duration = Math.max(0, spec.duration)
+}
+
+export function readySkill(state: BattleState, unitId: string, skillId: string): void {
+  const unit = state.units.get(unitId)
+  if (!unit) return
+  const skill = unit.skills.find((entry) => entry.id === skillId)
+  if (!skill || skill.body === "passive") return
+  skill.charges = Math.max(1, skill.maxCharges)
+  if (skill.spCost > 0) skill.sp = skill.spCost
+}
+
 export function activateSkill(
   state: BattleState,
   registry: BattleRegistry,
@@ -124,6 +149,7 @@ export function activateSkill(
   const moment = { unitId, skillId, reason, dt: 0 }
   skill.onStart?.(moment)
   body.onCast?.(unitId, skillId, ctx)
+  ctx.emit("skill-start", { unitId, skillId, reason })
   if (isInstantBody(skill.body) && !skill.pending) finishSkill(registry, ctx, unit, skill, "instant")
   sync(unit)
   return true
@@ -180,6 +206,7 @@ function openSkill(
     applyEffects(registry, unit, skill)
     skill.onStart?.({ unitId: unit.id, skillId: skill.id, reason: "passive", dt: 0 })
     body.onCast?.(unit.id, skill.id, ctx)
+    ctx.emit("skill-start", { unitId: unit.id, skillId: skill.id, reason: "passive" })
     return
   }
   gain(unit, skill, skill.initSp, "init")
@@ -228,6 +255,7 @@ function noteAttack(state: BattleState, registry: BattleRegistry, ctx: ContentCo
     const pendingHit = skill.active && skill.pending && isInstantBody(skill.body)
     if (timed && skill.body === "ammo") {
       skill.ammo -= 1
+      ctx.emit("ammo-used", { unitId, skillId: skill.id, left: skill.ammo })
       if (skill.ammo <= 0) {
         skill.active = false
         finishSkill(registry, ctx, unit, skill, "ammo")
@@ -274,6 +302,7 @@ function finishSkill(
   skill.pending = false
   skill.onEnd?.({ unitId: unit.id, skillId: skill.id, reason, dt: 0 })
   registry.requireSkillBody(skill.body).onEnd?.(unit.id, skill.id, ctx)
+  ctx.emit("skill-end", { unitId: unit.id, skillId: skill.id, reason })
   if (!skill.active && skill.activations === mark) {
     skill.effectsApplied = false
     skill.toggled = false

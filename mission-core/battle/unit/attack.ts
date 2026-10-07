@@ -201,6 +201,16 @@ function strike(
     timer.rest = ATTACK_PAUSE
     return
   }
+  const notice: Record<string, unknown> = { unitId: unit.id, targetIds: targets, cancel: false }
+  ctx.emit("attack", notice)
+  if (notice.cancel === true) {
+    timer.phase = "recovery"
+    timer.elapsed = 0
+    timer.lead = 0
+    timer.cooldown = timing.interval
+    timer.rest = timing.rest
+    return
+  }
   const scale = Number.isFinite(swing.damageScale) ? swing.damageScale : 1
   const amount = Math.max(0, attributeOf(unit, registry, "atk") * scale)
   const hitCount = Number.isFinite(swing.hitCount) ? Math.max(0, Math.floor(swing.hitCount)) : 1

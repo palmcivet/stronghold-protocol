@@ -51,31 +51,38 @@ export function maxHpOf(unit: UnitState, registry: BattleRegistry): number {
   return Math.max(1, value)
 }
 
-function sumMods(unit: UnitState, registry: BattleRegistry, key: string): ModSum {
-  let add = 0
-  let percent = 0
-  let mul = 1
-  let touched = false
+function applyLayer(sum: ModSum, modifier: AttributeModifier, stacks: number): void {
+  sum.touched = true
+  if (modifier.op === "add") sum.add += modifier.value * stacks
+  else if (modifier.op === "percent") sum.percent += modifier.value * stacks
+  else sum.mul *= stacks === 1 ? modifier.value : Math.pow(modifier.value, stacks)
+}
+
+function eachModifier(unit: UnitState, registry: BattleRegistry, visit: (modifier: AttributeModifier, stacks: number) => void): void {
   for (const status of unit.statuses) {
     const definition = registry.requireStatus(status.id)
     const lists: readonly (readonly AttributeModifier[])[] = [definition.modifiers, status.runtimeModifiers]
     for (const list of lists) {
-      for (const modifier of list) {
-        if (modifier.attribute !== key) continue
-        touched = true
-        const stacks = status.stacks
-        if (modifier.op === "add") add += modifier.value * stacks
-        else if (modifier.op === "percent") percent += modifier.value * stacks
-        else mul *= stacks === 1 ? modifier.value : Math.pow(modifier.value, stacks)
-      }
+      for (const modifier of list) visit(modifier, status.stacks)
     }
   }
+  for (const timed of unit.modifiers.values()) {
+    if (!(timed.remaining > 0)) continue
+    for (const modifier of timed.modifiers) visit(modifier, 1)
+  }
+}
+
+function sumMods(unit: UnitState, registry: BattleRegistry, key: string): ModSum {
+  const sum: ModSum = { add: 0, percent: 0, mul: 1, touched: false }
+  eachModifier(unit, registry, (modifier, stacks) => {
+    if (modifier.attribute === key) applyLayer(sum, modifier, stacks)
+  })
   const skill = skillModSum(unit, key)
   return {
-    add: add + skill.add,
-    percent: percent + skill.percent,
-    mul: mul * skill.mul,
-    touched: touched || skill.touched,
+    add: sum.add + skill.add,
+    percent: sum.percent + skill.percent,
+    mul: sum.mul * skill.mul,
+    touched: sum.touched || skill.touched,
   }
 }
 
@@ -84,16 +91,10 @@ function dodgeOf(unit: UnitState, registry: BattleRegistry, key: "dodgePhys" | "
   const rolls: { p: number; stacks: number }[] = []
   const base = unit.base[key] ?? 0
   if (base > 0) rolls.push({ p: Math.min(1, base), stacks: 1 })
-  for (const status of unit.statuses) {
-    const definition = registry.requireStatus(status.id)
-    const lists: readonly (readonly AttributeModifier[])[] = [definition.modifiers, status.runtimeModifiers]
-    for (const list of lists) {
-      for (const modifier of list) {
-        if (modifier.attribute !== key || modifier.op !== "add" || !(modifier.value > 0)) continue
-        rolls.push({ p: Math.min(1, modifier.value), stacks: status.stacks })
-      }
-    }
-  }
+  eachModifier(unit, registry, (modifier, stacks) => {
+    if (modifier.attribute !== key || modifier.op !== "add" || !(modifier.value > 0)) return
+    rolls.push({ p: Math.min(1, modifier.value), stacks })
+  })
   if (rolls.length === 0) return 0
   const first = rolls[0]
   if (rolls.length === 1 && first && first.stacks === 1) return first.p

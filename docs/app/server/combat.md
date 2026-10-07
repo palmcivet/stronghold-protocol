@@ -38,7 +38,7 @@ description: 一场战斗的开始、进度、结果和共享血池。默认在�
 | `killed` `total` | 整数，0–100000 |
 | `leaks` | 可选。已计入的漏怪 |
 | `bossDmg` | 可选。本战场对共享血池的累计伤害 |
-| `by` | 可选。最多 4 名玩家，每人一个有限数字，表示各自对血池的累计伤害 |
+| `by` | 可选。最多 4 名玩家，每人一个 `0` 到 `1e13` 的有限数字，表示各自对血池的累计伤害 |
 | `done` | 可选布尔 |
 | `left` | 可选。联防中每个漏怪方仍站着的敌人数，每人为 0–100000 的整数 |
 
@@ -54,17 +54,17 @@ description: 一场战斗的开始、进度、结果和共享血池。默认在�
 |---|---|
 | `reason` | `cleared`、`timeout`、`forced` |
 | `time` | 有限数字，0–100000 |
-| `killed` `total` | 可选整数 |
+| `killed` `total` | 可选整数，`0`–`100000` |
 | `perPlayer` | 1–4 名玩家，键为玩家 id，值见下表。不能为空 |
-| `unspawned` | 可选，最多 400 条。`{ enemyKey, sourcePlayerId, tag, time? }` |
-| `errors` | 可选整数 |
-| `bossHpLeft` | 可选有限数字 |
+| `unspawned` | 可选，最多 400 条。必有 `enemyKey`。`sourcePlayerId` 与 `tag` 可以没有，也可以是 `null`。`time` 可选 |
+| `errors` | 可选整数，`0`–`1000000000` |
+| `bossHpLeft` | 可选，`0` 到 `1e13` 的有限数字 |
 
-`perPlayer` 的一条：`killed`、`total`（`killed` 不超过 `total`）、`leaked`（最多 400）、`perfect`、`layerGains`（最多 40 个盟约）、`coins`、`damageDealt`、`bossDamage`、`healingDone`、`deaths`、`unitsEnd`（最多 64）、`unitStats`（可选，最多 160）。
+`perPlayer` 的一条必有 `killed`、`total`（均为 `0`–`100000` 的整数，且 `killed` 不超过 `total`）、`leaked`（最多 400）、`perfect`、`layerGains`（最多 40 个盟约）和 `unitsEnd`（最多 64）。`unitStats` 可选，最多 160。`coins`、`damageDealt`、`bossDamage`、`healingDone`、`deaths` 可以不出现；出现时是 `0` 到 `1e13` 的有限数字。
 
-`leaked[]`：`enemyKey`，可选 `mods`（最多 16 项）、`lpr`、`sourcePlayerId`、`tag`、`counted`、`boss`、`spawned`。
+`leaked[]` 必有 `enemyKey`。`mods`、`lpr`、`sourcePlayerId`、`tag`、`counted`、`boss`、`spawned` 都可以不出现。`mods` 最多 16 项，值是 `null`、`-1e13`–`1e13` 的有限数字、不超过 64 字的字符串或布尔。`lpr` 为 `0`–`1000`。`sourcePlayerId` 与 `tag` 也可以是 `null`。
 
-`unitsEnd[]`：`uid`、`hpPct`（0–1）、`sp`、`alive`，可选 `skillActive`、`defId`。
+`unitsEnd[]` 必有 `hpPct`（`0`–`1`）、`sp`（`0`–`100000`）和 `alive`。`uid` 与 `defId` 可以没有，也可以是 `null`。`skillActive` 可选。
 
 整帧仍受 64 KiB 入站上限约束。
 

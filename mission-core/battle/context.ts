@@ -1,12 +1,16 @@
+import type { BattleEvent } from "#contract/event.js"
 import type { PhaseSlot } from "#contract/phase.js"
 import type { TileCoord, TileSpec, UnitSide, UnitSpec } from "#contract/spec.js"
 import type {
+  AttributeModifier,
   ContentContext,
   DamageInfo,
   DamagePreview,
+  EventRevision,
   HitShape,
   ProjectileLaunch,
   TimerView,
+  UnitView,
 } from "#port/content.js"
 import type { BattleRegistry } from "#battle/registry.js"
 import { applyShift } from "#battle/behavior/action.js"
@@ -15,9 +19,11 @@ import { addCost, costOf, spendCost } from "#battle/cost.js"
 import { launchProjectile as storeProjectile, projectileViews } from "#battle/projectile/index.js"
 import { bindSession } from "#battle/session.js"
 import { addUnit, emit as publish, requireUnit, type BattleState } from "#battle/state.js"
-import { activateSkill, gainSkillSp } from "#battle/skill/point.js"
+import { activateSkill, configureSkill as writeSkill, gainSkillSp, readySkill as fillSkill } from "#battle/skill/point.js"
 import { shouldCast as askTrigger } from "#battle/skill/trigger.js"
 import { bodyRect, normHitArea } from "#battle/space/body/index.js"
+import { TICK } from "#tick/index.js"
+import { attributeOf, maxHpOf } from "#battle/unit/attribute.js"
 import type { FieldGrid } from "#battle/space/grid/index.js"
 import { selectUnits, unitsInRange as rangeUnits } from "#battle/target/selector.js"
 import { addElement as chargeElement } from "#battle/unit/element.js"
@@ -180,7 +186,19 @@ export function createContext(state: BattleState, registry: BattleRegistry, tile
       return askTrigger(state, registry, ctx, unitId, skillId)
     },
     castSkill(unitId, skillId) {
-      activateSkill(state, registry, ctx, unitId, skillId, "manual")
+      return activateSkill(state, registry, ctx, unitId, skillId, "manual")
+    },
+    readySkill(unitId, skillId) {
+      fillSkill(state, unitId, skillId)
+    },
+    configureSkill(unitId, skillId, spec) {
+      writeSkill(state, unitId, skillId, spec)
+    },
+    setAim(unitId, priority) {
+      const unit = state.units.get(unitId)
+      if (!unit) return
+      const aim = unit as { targetPriority: string }
+      aim.targetPriority = priority
     },
     gainSp(unitId, skillId, amount) {
       return gainSkillSp(state, unitId, skillId, amount, "grant")
@@ -191,10 +209,92 @@ export function createContext(state: BattleState, registry: BattleRegistry, tile
     projectiles() {
       return projectileViews(state)
     },
+    unit(unitId): UnitView | null {
+      const unit = state.units.get(unitId)
+      if (!unit) return null
+      const hp = unit.attributes.hp ?? 0
+      return {
+        id: unit.id,
+        side: unit.side,
+        x: unit.x,
+        y: unit.y,
+        hp,
+        maxHp: maxHpOf(unit, registry),
+        alive: unit.fielded && !unit.downed && hp > 0 && !unit.routeHidden,
+        fielded: unit.fielded,
+        downed: unit.downed,
+        tags: unit.tags,
+        facing: unit.facing,
+        motion: unit.motion,
+        flags: [...unit.flags],
+      }
+    },
+    units(side) {
+      const ids: string[] = []
+      for (const unit of state.units.values()) {
+        if (side !== undefined && unit.side !== side) continue
+        ids.push(unit.id)
+      }
+      return ids
+    },
+    attribute(unitId, key) {
+      const unit = state.units.get(unitId)
+      if (!unit) return 0
+      if (key === "hp") return unit.attributes.hp ?? 0
+      if (key === "maxHp") return maxHpOf(unit, registry)
+      return attributeOf(unit, registry, key)
+    },
+    setModifier(unitId, key, modifiers, duration) {
+      const unit = state.units.get(unitId)
+      if (!unit) return
+      if (duration !== undefined && !(duration > 0)) {
+        unit.modifiers.delete(key)
+        return
+      }
+      const remaining = duration === undefined ? Number.POSITIVE_INFINITY : Math.max(1, Math.round(duration / TICK))
+      const copy: AttributeModifier[] = modifiers.map((modifier) => ({
+        attribute: modifier.attribute,
+        op: modifier.op,
+        value: modifier.value,
+      }))
+      unit.modifiers.set(key, { modifiers: copy, remaining })
+    },
+    clearModifier(unitId, key) {
+      state.units.get(unitId)?.modifiers.delete(key)
+    },
+    hasModifier(unitId, key) {
+      const timed = state.units.get(unitId)?.modifiers.get(key)
+      return timed !== undefined && timed.remaining > 0
+    },
+    script(unitId) {
+      return state.units.get(unitId)?.script ?? EMPTY_SCRIPT
+    },
+    field() {
+      return state.spec.notes ?? EMPTY_FIELD
+    },
+    shared(moduleId) {
+      const existing = state.shared.get(moduleId)
+      if (existing) return existing
+      const created: Record<string, unknown> = {}
+      state.shared.set(moduleId, created)
+      return created
+    },
+    revise(event: BattleEvent, revision: EventRevision) {
+      const data = event.data as Record<string, unknown>
+      if (revision.prevented !== undefined) data.prevented = revision.prevented
+      if (revision.cancel !== undefined) data.cancel = revision.cancel
+      if (revision.amount !== undefined) data.amount = revision.amount
+      if (revision.mul !== undefined) data.mul = revision.mul
+      if (revision.kind !== undefined) data.kind = revision.kind
+    },
   }
+  state.live = ctx
   bindSession(ctx, state, registry)
   return ctx
 }
+
+const EMPTY_SCRIPT: Readonly<Record<string, string | number | boolean>> = Object.freeze({})
+const EMPTY_FIELD: Readonly<Record<string, unknown>> = Object.freeze({})
 
 function stands(
   state: BattleState,
