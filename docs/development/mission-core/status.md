@@ -58,7 +58,7 @@ interface StatusDefinition {
 
 ## 内置状态
 
-`stun`、`freeze`、`cold`、`sleep`、`slow`、`sluggish`、`bind`、`fragile`、`artsFragile`、`physFragile`、`elemFragile`、`silence`、`fear`、`tremble`、`disarm`、`stealth`、`camou`、`reveal`、`invulnerable`、`levitate`、`palsy`、`taunt`、`weaken`、`aspdDown`、`defDown`、`resDown`、`unblockable`、`attract`、`resist`、`liftoff`、`isolated`。
+`stun`、`freeze`、`cold`、`sleep`、`slow`、`sluggish`、`bind`、`fragile`、`artsFragile`、`physFragile`、`elemFragile`、`silence`、`fear`、`tremble`、`disarm`、`stealth`、`stealthOff`、`camou`、`reveal`、`invulnerable`、`levitate`、`palsy`、`taunt`、`weaken`、`aspdDown`、`defDown`、`resDown`、`unblockable`、`attract`、`resist`、`liftoff`、`isolated`、`overheal`。
 
 `freeze` 施加在敌人身上时法抗减 15。`cold` 让攻速减 30。寒冷叠到身上已有的寒冷、并且没有免疫冻结时，再施加 `freeze`。两段都没有正数时长时，冻结用 3 秒；否则取较长的那段，永久则冻结也永久。`levitate` 在 `massLevel` 大于 3 且不是永久时，持续时间减半。
 
@@ -79,4 +79,4 @@ interface StatusDefinition {
 | `defDown` | 0.3 | `def` 乘 (1 − 强度) |
 | `resDown` | 20 | `res` 减强度 |
 
-`stun` 带 `noBlock`，并取消攻击计时器。会取消攻击的内置状态见 [攻击](./attack.md)。
+`stun` 带 `noBlock`，并取消攻击计时器。会取消攻击的内置状态见 [攻击](./attack.md)。`tremble` 只带同名旗标：被挡住时这一拍不出手，冷却仍减少。`stealthOff` 只带同名旗标，挡住隐匿的选择。`overheal` 不带旗标，治疗溢出时写下它的时长，结束时去掉对应护盾。见 [伤害](./damage.md)。

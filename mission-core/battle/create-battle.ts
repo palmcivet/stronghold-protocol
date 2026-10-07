@@ -6,6 +6,7 @@ import type { BattleSpec, UnitSpec } from "#contract/spec.js"
 import type { MissionModule } from "#port/content.js"
 import { UnknownRegistrationError } from "#port/unknown-registration.js"
 import { createRandom } from "#random/index.js"
+import { registerBuiltinShifts } from "#battle/behavior/action.js"
 import { createContext } from "#battle/context.js"
 import { registerEngineSystems } from "#battle/engine.js"
 import { createRegistry, type BattleRegistry } from "#battle/registry.js"
@@ -16,13 +17,14 @@ import { normalizeTrigger } from "#battle/skill/constants.js"
 import { registerBuiltinSkillBodies } from "#battle/skill/body.js"
 import { armField, bindSkillSignals } from "#battle/skill/point.js"
 import { registerBuiltinSkillTriggers } from "#battle/skill/trigger.js"
+import { initialCost } from "#battle/cost.js"
 import { addUnit, type BattleState } from "#battle/state.js"
 import { registerDamageSteps } from "#battle/damage/index.js"
 import { registerBuiltinElements } from "#battle/unit/element.js"
 import { registerStatusCatalog } from "#battle/unit/status/catalog.js"
 import { registerStatusTimer } from "#battle/unit/status/index.js"
 import { registerBuiltinSelectors } from "#battle/target/catalog.js"
-import { registerBuiltinTimers } from "#battle/unit/timer.js"
+import { armListedTimers, bindIndependentTimers, registerBuiltinTimers } from "#battle/unit/timer.js"
 
 export interface Battle {
   step(): void
@@ -44,11 +46,14 @@ export function createBattle(spec: BattleSpec, modules: readonly MissionModule[]
   registerBuiltinElements(state, registry)
   registerDamageSteps(state, registry)
   const ctx = createContext(state, registry, grid)
+  registerBuiltinShifts(registry)
   registerEngineSystems(registry, state)
   installModules(spec, modules, ctx)
   validateSkills(spec, registry)
   if (spec.deployStrategy !== null) registry.requireDeployStrategy(spec.deployStrategy)
   bindSkillSignals(state, registry, ctx)
+  for (const unit of state.units.values()) armListedTimers(state, registry, unit)
+  bindIndependentTimers(state, registry, ctx)
   openBattle(state, registry, ctx)
   armField(state, registry, ctx, true)
   return {
@@ -87,6 +92,10 @@ function createState(spec: BattleSpec, grid: ReturnType<typeof createGrid>): Bat
     units: new Map(),
     spawned: new Set(),
     projectiles: [],
+    cost: {
+      ally: initialCost(spec.cost.ally),
+      enemy: initialCost(spec.cost.enemy),
+    },
     events: [],
     subscribers: new Map(),
     scheduled: [],

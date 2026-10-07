@@ -1,7 +1,8 @@
 import type { BattleEvent } from "#contract/event.js"
 import type { BattleResult } from "#contract/result.js"
-import type { BattleSpec, UnitSpec } from "#contract/spec.js"
-import type { ContentContext, ProjectileLaunch, TimerState } from "#port/content.js"
+import type { BattleSpec, UnitSide, UnitSpec } from "#contract/spec.js"
+import type { ContentContext, TimerState } from "#port/content.js"
+import type { ProjectileFlight } from "#battle/projectile/index.js"
 import type { Random } from "#random/index.js"
 import type { FieldGrid } from "#battle/space/grid/index.js"
 import { compileRoute } from "#battle/space/grid/route.js"
@@ -18,7 +19,8 @@ export interface BattleState {
   tick: number
   readonly units: Map<string, UnitState>
   readonly spawned: Set<number>
-  readonly projectiles: ProjectileLaunch[]
+  readonly projectiles: ProjectileFlight[]
+  readonly cost: Record<UnitSide, number>
   readonly events: BattleEvent[]
   readonly subscribers: Map<string, ((event: BattleEvent) => void)[]>
   readonly scheduled: ScheduledCallback[]

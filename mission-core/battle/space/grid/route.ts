@@ -88,10 +88,10 @@ function planLeg(grid: FieldGrid, unit: UnitState, leg: RouteLeg): void {
   route.version = grid.version
 }
 
-/** 敌人沿路线推进 dt 秒。飞行直飞检查点，地面走平滑流场。 */
-export function advanceRoute(grid: FieldGrid, unit: UnitState, dt: number): void {
+/** 敌人沿路线推进 dt 秒。飞行直飞检查点，地面走平滑流场。已经有阻挡者时这一拍停住。 */
+export function advanceRoute(grid: FieldGrid, unit: UnitState, dt: number, tilesPerSecond?: number): void {
   const route = unit.route
-  if (!route || unit.side !== "enemy" || !unit.fielded || unit.downed) return
+  if (!route || unit.side !== "enemy" || !unit.fielded || unit.downed || unit.blockedBy) return
   let budget = dt
   let guard = 16
   while (budget > 1e-9 && guard > 0) {
@@ -125,7 +125,7 @@ export function advanceRoute(grid: FieldGrid, unit: UnitState, dt: number): void
       continue
     }
     if (!route.pts || route.version !== grid.version) planLeg(grid, unit, leg)
-    const speed = (unit.attributes.moveSpeed ?? 0) * MOVE_SCALE
+    const speed = tilesPerSecond ?? (unit.attributes.moveSpeed ?? 0) * MOVE_SCALE
     if (!(speed > 0)) return
     let distance = speed * budget
     let steps = 64

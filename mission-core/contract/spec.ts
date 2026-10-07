@@ -108,6 +108,53 @@ export interface AttackClip {
   readonly hit: number
 }
 
+export const attackDamageKinds = ["physical", "arts", "heal"] as const
+
+export type AttackDamageKind = (typeof attackDamageKinds)[number]
+
+export const projectileKinds = ["arrow", "bolt", "orb", "bomb", "boomerang"] as const
+
+export type ProjectileKind = (typeof projectileKinds)[number]
+
+/** 命中点周围的一圈。半径用格，按站位中心量。 */
+export interface SplashShape {
+  readonly radius: number
+  /** 圈内其他人受到的倍率。缺省 1。 */
+  readonly scale?: number
+  /**
+   * 为真时主目标吃未乘倍率的一击，圈内其他人吃 scale。
+   * 为假时圈内每个人，包括主目标，只吃 scale 这一下。
+   */
+  readonly othersOnly?: boolean
+  readonly groundOnly?: boolean
+}
+
+/** 从主目标再跳到附近的敌方。count 含主目标。pause 是秒。 */
+export interface BounceShape {
+  readonly count: number
+  readonly falloff: number
+  readonly radius: number
+  readonly pause: number
+}
+
+/** 从主目标再治疗附近的友方。count 含主目标。radius 缺省用 CHAIN_HEAL_RADIUS。 */
+export interface ChainHealShape {
+  readonly count: number
+  readonly falloff: number
+  readonly radius?: number
+}
+
+/** 一次攻击可以同时带上其中几项。没有这一项时，命中一个目标并立刻结算物理伤害。 */
+export interface AttackShape {
+  readonly damage?: AttackDamageKind
+  readonly splash?: SplashShape
+  readonly bounce?: BounceShape
+  readonly chain?: ChainHealShape
+  readonly healCount?: number
+  readonly lockRange?: boolean
+  readonly projectile?: ProjectileKind
+}
+
 export interface UnitSpec {
   readonly id: string
   readonly side: UnitSide
@@ -124,6 +171,8 @@ export interface UnitSpec {
   readonly route?: RouteSpec | null
   /** 缺省时前摇是 0，命中后停 0.35 秒。 */
   readonly attackClip?: AttackClip
+  /** 溅射、弹射、治疗链、治疗人数、锁定范围、投射物。缺省是单体即时物理攻击。 */
+  readonly attackShape?: AttackShape
   /** 特殊优先级的排序键。空着则这一项不改顺序。 */
   readonly targetPriority?: string
   /** 这个单位正在阻挡的单位。 */
@@ -139,11 +188,20 @@ export interface UnitSpec {
    * 冻结是 frozen，恐惧和战栗是 feared，其余与状态 id 相同。
    */
   readonly immunity?: readonly string[]
+  /** 要启动的独立计时器 id。引擎对每一项调用 startTimer。 */
+  readonly timers?: readonly string[]
 }
 
 export interface SpawnSpec {
   readonly atTick: number
   readonly unit: UnitSpec
+}
+
+/** 一个阵营的费用池。回复是每游戏秒，上限在加费和自然回复时夹住。 */
+export interface CostPoolSpec {
+  readonly initial: number
+  readonly regen: number
+  readonly cap: number
 }
 
 export interface BattleSpec {
@@ -153,4 +211,8 @@ export interface BattleSpec {
   readonly units: readonly UnitSpec[]
   readonly spawns: readonly SpawnSpec[]
   readonly deployStrategy: string | null
+  readonly cost: {
+    readonly ally: CostPoolSpec
+    readonly enemy: CostPoolSpec
+  }
 }

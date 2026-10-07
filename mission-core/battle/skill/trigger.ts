@@ -167,7 +167,7 @@ function alive(unit: UnitState): boolean {
 
 function selectable(unit: UnitState): boolean {
   if (unit.flags.has("untargetable")) return false
-  if (unit.flags.has("stealth") && !unit.flags.has("reveal")) return false
+  if (unit.flags.has("stealth") && !unit.flags.has("reveal") && !unit.flags.has("stealthOff")) return false
   return true
 }
 

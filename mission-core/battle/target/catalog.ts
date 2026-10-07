@@ -13,13 +13,13 @@ export function registerBuiltinSelectors(state: BattleState, registry: BattleReg
     filter: () => true,
     compare: () => 0,
   })
-  for (const definition of filters(state)) registry.registerSelector(definition)
+  for (const definition of filters(state, registry)) registry.registerSelector(definition)
   for (const definition of sorts(state, registry)) registry.registerSelector(definition)
 }
 
 // MARK: filter
 
-function filters(state: BattleState): readonly SelectorDefinition[] {
+function filters(state: BattleState, registry: BattleRegistry): readonly SelectorDefinition[] {
   return [
     narrow("enemy", (unitId) => sideOf(state, unitId, "enemy")),
     narrow("ally", (unitId) => sideOf(state, unitId, "ally")),
@@ -31,7 +31,7 @@ function filters(state: BattleState): readonly SelectorDefinition[] {
     narrow("sleep", (unitId) => !flag(state, unitId, "sleep")),
     narrow("untargetable", (unitId) => !flag(state, unitId, "untargetable")),
     narrow("isolated", (unitId) => notIsolatedFromAlly(state, unitId)),
-    narrow("range", (unitId) => insideRange(state, unitId)),
+    narrow("range", (unitId) => insideRange(state, registry, unitId)),
   ]
 }
 
@@ -53,7 +53,7 @@ function allowsFly(state: BattleState, unitId: string): boolean {
 /** 隐匿在被阻挡或显形之后可以打到。 */
 function visible(state: BattleState, unitId: string): boolean {
   const unit = state.units.get(unitId)
-  if (!unit || !unit.flags.has("stealth") || unit.flags.has("reveal")) return true
+  if (!unit || !unit.flags.has("stealth") || unit.flags.has("reveal") || unit.flags.has("stealthOff")) return true
   const source = attacker(state)
   if (unit.side === "enemy") return unit.blockedBy !== null
   return source !== null && source.blockedBy === unit.id
@@ -72,7 +72,8 @@ function plainAttackSees(state: BattleState, unitId: string): boolean {
 function areaSees(state: BattleState, unitId: string): boolean {
   const unit = state.units.get(unitId)
   if (!unit || !living(unit)) return false
-  if (unit.flags.has("untargetable") || unit.flags.has("sleep") || unit.flags.has("stealth")) return false
+  if (unit.flags.has("untargetable") || unit.flags.has("sleep")) return false
+  if (unit.flags.has("stealth") && !unit.flags.has("reveal") && !unit.flags.has("stealthOff")) return false
   return groundCanReach(state, unitId)
 }
 
@@ -92,12 +93,12 @@ function notIsolatedFromAlly(state: BattleState, unitId: string): boolean {
   return source.side !== unit.side
 }
 
-function insideRange(state: BattleState, unitId: string): boolean {
+function insideRange(state: BattleState, registry: BattleRegistry, unitId: string): boolean {
   const source = attacker(state)
   const unit = state.units.get(unitId)
   if (!source || !unit) return false
   if (source.blocking.includes(unitId) || unit.blockedBy === source.id) return true
-  return bodyInKeys(unit, absoluteRangeTiles(state.grid, source.id, state), state.grid.rect)
+  return bodyInKeys(unit, absoluteRangeTiles(state.grid, source.id, state, registry), state.grid.rect)
 }
 
 // MARK: sort

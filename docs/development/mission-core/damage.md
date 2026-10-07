@@ -75,7 +75,7 @@ interface DamageInfo {
 
 护盾先看状态上的次数，再看属性 `shieldHits`。命中次数的护盾直接吃掉这一下。然后按状态上的数值护盾和属性 `shield` 扣。
 
-生命步骤把当前 `hp` 减去数额。会扣到 0 时先送出 `fatal`。`prevented` 为真时，生命留在 1 和最大生命里较小的那个。否则写下剩余生命，再送出 `damaged`。生命不大于 0 时倒地：标成已倒地、离场，送出 `downed`。有部署策略时，落点用 `downedTile`，事件里带上坐标和 `canStand`。
+生命步骤把当前 `hp` 减去数额。会扣到 0 时先送出 `fatal`。`prevented` 为真时，生命留在 1 和最大生命里较小的那个。否则写下剩余生命，再送出 `damaged`。生命不大于 0 时倒地：标成已倒地、离场，送出 `downed`。有部署策略时，落点用 `downedTile`，坐标写成这个格子，事件里带上坐标和 `canStand`。内置策略 `deploy` 的落点见 [模块](./module.md)。
 
 ## 预览
 
@@ -99,7 +99,7 @@ interface DamagePreview {
 
 ## 治疗
 
-`heal(unitId, amount, options?)` 要求数额是正数。目标带 `noHeal` 时，只有 `self` 或来源就是目标才治。带 `healFree` 时，`regen` 或 `ignoreHealFree` 才治。治疗量是数额 × 来源的 `healingDealt` × 目标的 `healingTaken`。没有来源时 `healingDealt` 按 1。写回的生命不超过最大生命。`overheal` 把超出的部分转成护盾，这份护盾不超过最大生命。送出 `heal`。
+`heal(unitId, amount, options?)` 要求数额是正数。目标带 `noHeal` 时，只有 `self` 或来源就是目标才治。带 `healFree` 时，`regen` 或 `ignoreHealFree` 才治。治疗量是数额 × 来源的 `healingDealt` × 目标的 `healingTaken`。没有来源时 `healingDealt` 按 1。写回的生命不超过最大生命。`overheal` 把超出的部分转成护盾，这份护盾不超过最大生命，并施加 `overheal` 状态。`overhealDuration` 是秒，缺省一直留着。状态结束时，还没被打掉的这份护盾从单位上减去。送出 `heal`。
 
 ## 元素
 

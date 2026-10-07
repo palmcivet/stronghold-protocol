@@ -7,6 +7,7 @@ import { emit, requireUnit, type BattleState } from "#battle/state.js"
 import { attributeOf, carriesAttribute, maxHpOf } from "#battle/unit/attribute.js"
 import { burstElement, chargeElement, hasHp } from "#battle/unit/element.js"
 import { isFlying, type UnitState } from "#battle/unit/index.js"
+import { applyStatus } from "#battle/unit/status/index.js"
 
 export function registerDamageSteps(state: BattleState, registry: BattleRegistry): void {
   registry.registerDamageStep({
@@ -167,6 +168,7 @@ export function runDamage(
 export function healUnit(
   state: BattleState,
   registry: BattleRegistry,
+  ctx: ContentContext,
   unitId: string,
   amount: number,
   options?: HealOptions,
@@ -189,8 +191,21 @@ export function healUnit(
     const pool = unit.attributes.shield ?? 0
     unit.attributes.shield = pool - unit.overhealShield + next
     unit.overhealShield = next
+    const duration = options.overhealDuration ?? Number.POSITIVE_INFINITY
+    applyOverheal(state, registry, ctx, unitId, next, duration)
   }
   emit(state, "heal", { unitId, amount: actual, hp: unit.attributes.hp ?? 0 })
+}
+
+function applyOverheal(
+  state: BattleState,
+  registry: BattleRegistry,
+  ctx: ContentContext,
+  unitId: string,
+  shield: number,
+  duration: number,
+): void {
+  applyStatus(state, registry, ctx, unitId, "overheal", { duration, value: shield })
 }
 
 /** 流失。不减防御和法抗，不进伤害步骤。达到首领限伤时整段取消，不扣生命。 */

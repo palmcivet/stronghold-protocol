@@ -7,7 +7,7 @@ import { immuneTo, writeFlags } from "#battle/unit/status/flags.js"
 import { refreshOverlap } from "#battle/unit/status/overlap.js"
 import { cancelTimer, startTimer } from "#battle/unit/timer.js"
 import { TICK } from "#tick/index.js"
-import type { StatusInstance } from "#battle/unit/index.js"
+import type { StatusInstance, UnitState } from "#battle/unit/index.js"
 
 export function registerStatusTimer(registry: BattleRegistry, state: BattleState): void {
   registry.registerTimer({
@@ -75,8 +75,12 @@ function tickStatuses(state: BattleState, registry: BattleRegistry, ctx: Content
     if (resumeTail(status, definition, state.tick)) kept.push(status)
   }
   const arrived = unit.statuses.filter((status) => !current.includes(status) && !status.dropped)
+  const next = [...kept.filter((status) => !status.dropped), ...arrived]
+  const overhealLeft = next.some((status) => status.id === "overheal")
+  const overhealWas = current.some((status) => status.id === "overheal" && !status.dropped)
   unit.statuses.length = 0
-  unit.statuses.push(...kept.filter((status) => !status.dropped), ...arrived)
+  unit.statuses.push(...next)
+  if (overhealWas && !overhealLeft) clearOverhealShield(unit)
   writeFlags(registry, unit)
   if (locked && !unit.flags.has("burstLock")) clearElements(unit)
 }
@@ -103,6 +107,14 @@ function spanOf(
   if (seconds === Number.POSITIVE_INFINITY) return { ticks: 0, permanent: true }
   if (!(seconds > 0) || !Number.isFinite(seconds)) return null
   return { ticks: Math.max(1, Math.round(seconds / TICK)), permanent: false }
+}
+
+function clearOverhealShield(unit: UnitState): void {
+  const over = unit.overhealShield
+  unit.overhealShield = 0
+  if (!(over > 0)) return
+  const pool = unit.attributes.shield ?? 0
+  unit.attributes.shield = Math.max(0, pool - over)
 }
 
 function number(value: string | number | boolean | undefined): number {

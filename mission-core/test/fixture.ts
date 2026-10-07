@@ -8,6 +8,10 @@ export function spec(patch: Partial<BattleSpec> = {}): BattleSpec {
     units: patch.units ?? [],
     spawns: patch.spawns ?? [],
     deployStrategy: patch.deployStrategy ?? null,
+    cost: patch.cost ?? {
+      ally: { initial: 0, regen: 0, cap: 0 },
+      enemy: { initial: 0, regen: 0, cap: 0 },
+    },
   }
 }
 
@@ -27,11 +31,13 @@ export function ally(id: string, patch: Partial<UnitSpec> = {}): UnitSpec {
     motion: patch.motion ?? "WALK",
     route: patch.route ?? null,
     ...(patch.attackClip ? { attackClip: patch.attackClip } : {}),
+    ...(patch.attackShape ? { attackShape: patch.attackShape } : {}),
     ...(patch.targetPriority ? { targetPriority: patch.targetPriority } : {}),
     ...(patch.blocking ? { blocking: patch.blocking } : {}),
     ...(patch.blockedBy ? { blockedBy: patch.blockedBy } : {}),
     ...(patch.aggroSeq !== undefined ? { aggroSeq: patch.aggroSeq } : {}),
     ...(patch.hitLimit === true ? { hitLimit: true } : {}),
     ...(patch.immunity ? { immunity: patch.immunity } : {}),
+    ...(patch.timers ? { timers: patch.timers } : {}),
   }
 }

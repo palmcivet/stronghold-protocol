@@ -7,6 +7,7 @@ import type {
   SelectorDefinition,
   SkillBodyDefinition,
   SkillTriggerDefinition,
+  ShiftDefinition,
   StatusDefinition,
   TimerDefinition,
 } from "#port/content.js"
@@ -37,6 +38,8 @@ export interface BattleRegistry {
   timersInSlot(slot: PhaseSlot): readonly TimerDefinition[]
   registerDeployStrategy(definition: DeployStrategyDefinition): void
   requireDeployStrategy(id: string): DeployStrategyDefinition
+  registerShift(definition: ShiftDefinition): void
+  requireShift(id: string): ShiftDefinition
   registerSystem(system: PhaseSystem): void
   systemsIn(slot: PhaseSlot): readonly PhaseSystem[]
 }
@@ -50,6 +53,7 @@ export function createRegistry(): BattleRegistry {
   const bodies = new Map<string, SkillBodyDefinition>()
   const timers = new Map<string, Ordered<TimerDefinition>>()
   const strategies = new Map<string, DeployStrategyDefinition>()
+  const shifts = new Map<string, ShiftDefinition>()
   const steps: Ordered<DamageStepDefinition>[] = []
   const systems: Ordered<PhaseSystem>[] = []
 
@@ -126,6 +130,12 @@ export function createRegistry(): BattleRegistry {
     },
     requireDeployStrategy(id) {
       return requireItem(strategies, "deploy", id)
+    },
+    registerShift(definition) {
+      shifts.set(definition.id, definition)
+    },
+    requireShift(id) {
+      return requireItem(shifts, "shift", id)
     },
     registerSystem(system) {
       if (!isPhaseSlot(system.slot)) throw new UnknownRegistrationError("phase", system.slot)
