@@ -120,7 +120,7 @@ export function registerDamageSteps(state: BattleState, registry: BattleRegistry
     apply(info, ctx) {
       if (skipHp(info) || state.damagePreview) return
       const target = requireUnit(state, info.targetId)
-      applyLife(state, registry, ctx, target, info.amount, info.sourceId, info.sourceless === true, true, info.kind)
+      applyLife(state, registry, ctx, target, info.amount, info.sourceId, info.sourceless === true, true, info.kind, info.attack === true)
     },
   })
 }
@@ -194,7 +194,12 @@ export function healUnit(
     const duration = options.overhealDuration ?? Number.POSITIVE_INFINITY
     applyOverheal(state, registry, ctx, unitId, next, duration)
   }
-  emit(state, "heal", { unitId, amount: actual, hp: unit.attributes.hp ?? 0 })
+  emit(state, "heal", {
+    unitId,
+    sourceId: options?.sourceId ?? "",
+    amount: actual,
+    hp: unit.attributes.hp ?? 0,
+  })
 }
 
 function applyOverheal(
@@ -219,7 +224,7 @@ export function loseLife(
   const unit = requireUnit(state, unitId)
   if (unit.downed || !(amount > 0) || !Number.isFinite(amount)) return
   if (unit.hitLimit && Math.ceil(amount) >= BOSS_HIT_LIMIT) return
-  applyLife(state, registry, ctx, unit, amount, "", false, false, "true")
+  applyLife(state, registry, ctx, unit, amount, "", false, false, "true", false)
 }
 
 // MARK: life
@@ -234,6 +239,7 @@ function applyLife(
   sourceless: boolean,
   damaged: boolean,
   kind: string,
+  attack: boolean,
 ): void {
   const before = unit.attributes.hp ?? 0
   if (before - amount <= 0) {
@@ -262,6 +268,7 @@ function applyLife(
       kind,
       hp,
       sourceless,
+      ...(attack ? { attack: true } : {}),
     })
   } else {
     emit(state, "loss", { unitId: unit.id, amount, hp })
@@ -325,6 +332,7 @@ function cloneInfo(request: DamageInfo): DamageInfo {
   if (request.ignoreSleep !== undefined) info.ignoreSleep = request.ignoreSleep
   if (request.ignoreSelect !== undefined) info.ignoreSelect = request.ignoreSelect
   if (request.cancel !== undefined) info.cancel = request.cancel
+  if (request.attack !== undefined) info.attack = request.attack
   return info
 }
 

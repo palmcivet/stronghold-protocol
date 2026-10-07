@@ -37,7 +37,7 @@ const catalogRoot = catalogPackageRoot()
 const assetsDir = join(catalogRoot, "product", "media")
 const fontsDir = join(catalogRoot, "product", "font")
 const cacheDir = join(catalogRoot, ".cache")
-const researchDir = join(appRoot, "compiler", "input", "research")
+const researchDir = join(appRoot, "data", "compiler", "input", "research")
 const reportPath = join(cacheDir, "assets-report.json")
 
 const HELP_TEXT = `Usage: [options]

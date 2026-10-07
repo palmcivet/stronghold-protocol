@@ -94,4 +94,18 @@ export function registerEngineSystems(registry: BattleRegistry, state: BattleSta
       }
     },
   })
+  registry.registerSystem({
+    id: "engine:modifiers",
+    slot: "finale",
+    priority: 1000,
+    run() {
+      for (const unit of state.units.values()) {
+        for (const [key, timed] of unit.modifiers) {
+          if (timed.remaining === Infinity) continue
+          timed.remaining -= 1
+          if (timed.remaining <= 0) unit.modifiers.delete(key)
+        }
+      }
+    },
+  })
 }

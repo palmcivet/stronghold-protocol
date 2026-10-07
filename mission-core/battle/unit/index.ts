@@ -123,6 +123,9 @@ export interface UnitState {
   /** 规格列出的独立计时器 id。 */
   readonly listedTimers: readonly string[]
   readonly moduleData: Map<string, Record<string, unknown>>
+  /** 按 key 挂上的属性修饰。remaining 是还没走到的终局拍数，Infinity 一直留着。 */
+  readonly modifiers: Map<string, { modifiers: readonly AttributeModifier[]; remaining: number }>
+  readonly script: Readonly<Record<string, string | number | boolean>>
   readonly base: Record<string, number>
   hitLimit: boolean
   /** 溢出治疗转成的护盾，上限是最大生命。 */
@@ -231,6 +234,8 @@ export function createUnit(spec: UnitSpec, fielded: boolean, order: number): Uni
     timers: new Map(),
     listedTimers: spec.timers ? [...spec.timers] : [],
     moduleData: new Map(),
+    modifiers: new Map(),
+    script: spec.script ? { ...spec.script } : {},
     base,
     hitLimit: spec.hitLimit === true,
     overhealShield: 0,

@@ -13,8 +13,6 @@ description: arknights-assets-catalog 按官方 id 准备基础资源，并做�
 
 一条资源是字节：字体、音频、头像、贴图、Spine、模型。标识用官方 id，例如干员的 `charId`、敌人的 `enemyId`。
 
-本地客户端提取出来的调试资源仍是这些字节，用来源字段 `local` 和官方上游 `upstream` 区分。
-
 ## 一条目录项
 
 一条 `CatalogEntry` 描述标识、种类、地址、体积、哈希、依赖、回退和预加载分组。运行时按这条记录去取字节。

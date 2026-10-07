@@ -98,8 +98,8 @@ function parseArgs(argv: readonly string[], appRoot: string): ParsedArgs {
     outDir: outDir ?? join(appRoot, seasonDir),
     cacheDir: cacheDir ?? join(appRoot, ".cache", "gamedata"),
     reportPath: reportPath ?? join(appRoot, ".cache", "build-data-report.json"),
-    researchDir: join(appRoot, "compiler", "input", "research"),
-    tuningPath: join(appRoot, "compiler", "input", "season", seasonId, "tuning.json"),
+    researchDir: join(appRoot, "data", "compiler", "input", "research"),
+    tuningPath: join(appRoot, "data", "compiler", "input", "season", seasonId, "tuning.json"),
   }
 }
 

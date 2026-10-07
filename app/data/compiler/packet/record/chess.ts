@@ -16,6 +16,9 @@ import {
 import type { SeasonContext } from "#compiler/packet/compile/context.js"
 import { bestCandidate, naturalCmp, phaseIdx, unlocked } from "#compiler/packet/text/parse.js"
 
+/** Elite modules that let a melee chess stand on a ranged tile. The branch trait 「可以放置于远程位」 is not this. */
+const MELEE_ON_HIGH_GROUND: ReadonlySet<string> = new Set(["uniequip_003_glady"])
+
 function hasE2Art(ctx: SeasonContext, charId: string, kind: string): boolean {
   const art = ctx.research.assets?.operators?.[charId]?.[kind]
   if (art) return !!art.e2
@@ -181,6 +184,7 @@ export function buildChess(ctx: SeasonContext): { chess: Record<string, any>, to
         }
         rec.modules.push({
           uniEquipId: id,
+          ...(MELEE_ON_HIGH_GROUND.has(id) ? { meleeOnHighGround: true } : {}),
           name: meta.uniEquipName || null,
           typeName: `${meta.typeName1 || ""}${meta.typeName2 ? "-" + meta.typeName2 : ""}`,
           typeIcon: meta.typeIcon || null,

@@ -204,7 +204,7 @@ function pay(ctx: ContentContext, sourceId: string, targetId: string, amount: nu
     ctx.heal(targetId, amount, { sourceId })
     return
   }
-  ctx.dealDamage({ sourceId, targetId, amount, kind: damage })
+  ctx.dealDamage({ sourceId, targetId, amount, kind: damage, attack: true })
 }
 
 function damageOf(shape: AttackShape): AttackDamageKind {

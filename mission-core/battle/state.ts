@@ -22,7 +22,7 @@ export interface BattleState {
   readonly projectiles: ProjectileFlight[]
   readonly cost: Record<UnitSide, number>
   readonly events: BattleEvent[]
-  readonly subscribers: Map<string, ((event: BattleEvent) => void)[]>
+  readonly subscribers: Map<string, ((event: BattleEvent, ctx: ContentContext) => void)[]>
   readonly scheduled: ScheduledCallback[]
   result: BattleResult
   readonly random: Random
@@ -30,6 +30,10 @@ export interface BattleState {
   damagePreview: boolean
   /** 这一次选择器查询以谁为攻击者。快照不写它。 */
   selectorOrigin: string | null
+  /** 内容模块的本场记录，键是模块 id。 */
+  readonly shared: Map<string, Record<string, unknown>>
+  /** createContext 返回前写上。事件订阅者的第二个参数。 */
+  live: ContentContext | null
 }
 
 export function addUnit(state: BattleState, spec: UnitSpec, fielded: boolean): void {
@@ -49,8 +53,9 @@ export function emit(state: BattleState, type: string, data: Readonly<Record<str
   const event: BattleEvent = { tick: state.tick, type, data }
   state.events.push(event)
   const handlers = state.subscribers.get(type)
-  if (!handlers) return
-  for (const handler of [...handlers]) handler(event)
+  const ctx = state.live
+  if (!handlers || !ctx) return
+  for (const handler of [...handlers]) handler(event, ctx)
 }
 
 export function readTimer(unit: UnitState, timerId: string): TimerState | undefined {

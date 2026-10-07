@@ -8,6 +8,6 @@
     "rootDir": ".",
     "tsBuildInfoFile": "dist-test/.tsbuildinfo"
   },
-  "include": ["data/**/*.ts", "server/**/*.test.ts", "client/**/*.test.ts"],
+  "include": ["data/**/*.ts", "server/**/*.test.ts", "server/content/**/*.ts", "server/content/**/*.mts", "server/entry/**/*.ts", "client/**/*.test.ts"],
   "exclude": ["dist", "dist-test", "dist-web", "node_modules", "**/vitest.config.ts"]
 }

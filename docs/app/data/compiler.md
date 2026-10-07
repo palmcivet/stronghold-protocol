@@ -14,10 +14,14 @@ description: 卫戍协议的构建器写出这一季的 JSON，并按清单向�
 | `pnpm compile:emotes --season <id>` | 写出这一季的 `emotes.json` |
 | `pnpm crop:board` | 从卫戍协议棋盘图集裁出材质矩形，字节写入资源目录的 `product/media` |
 
-`compile:packet` 读 `compiler/input/season/<id>/tuning.json` 和 `compiler/input/research/`。缺了某份研究表时，数据包用默认值并留下警告。地面路线在编译地图时算好，写进地图。官方活动表缓存在 `app/.cache/`。`--offline` 使用已经缓存的文件。`--refresh` 重新下载。这两个开关不能同时使用。
+`compile:packet` 读 `data/compiler/input/season/<id>/tuning.json` 和 `data/compiler/input/research/`。缺了某份研究表时，数据包用默认值并留下警告。地面路线在编译地图时算好，写进地图。官方活动表缓存在 `app/.cache/`。`--offline` 使用已经缓存的文件。`--refresh` 重新下载。这两个开关不能同时使用。
 
 构建器读官方活动表，写出赛季 JSON，并列出这一季要哪些官方 id。资源目录按那份清单把字节准备好。
 
 作战核心收 `BattleSpec` 和已经归一化的单位定义。读取棋子表的代码在 `app`。作战画面收快照、事件，以及这里填好的骨架地址，再向资源目录要这个地址上的字节。休整棋盘在 `app`。
 
-资源目录的 `extract.py` 任务表包含这一季的棋盘、界面和表情，以及公开源没有的敌人模型。字节写进资源目录的 `product/media`。`enemy_scales.py` 读取 `app/product/season/act2autochess/enemies.json`。
+发布时赛季 JSON 由 `compile:packet` 从 [Kengxxiao/ArknightsGameData](https://github.com/Kengxxiao/ArknightsGameData) 的 `zh_CN/gamedata/` 整理，并叠上 `tuning.json` 和研究表。
+
+精英模组可以带 `meleeOnHighGround`。为真时，这名近战棋可以站在远程位。淡金坠饰 `uniequip_003_glady` 写上这个字段。分支特性「可以放置于远程位」不决定站位。
+
+媒体字节由 `compile:assets` 按社区项目下载。

@@ -190,6 +190,8 @@ export interface UnitSpec {
   readonly immunity?: readonly string[]
   /** 要启动的独立计时器 id。引擎对每一项调用 startTimer。 */
   readonly timers?: readonly string[]
+  /** Content blackboard. Absent means the unit has no script values. */
+  readonly script?: Readonly<Record<string, string | number | boolean>>
 }
 
 export interface SpawnSpec {
@@ -215,4 +217,6 @@ export interface BattleSpec {
     readonly ally: CostPoolSpec
     readonly enemy: CostPoolSpec
   }
+  /** Facts content modules read for this battle. Absent means there are none. */
+  readonly notes?: Readonly<Record<string, unknown>>
 }
