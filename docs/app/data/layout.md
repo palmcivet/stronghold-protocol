@@ -27,8 +27,11 @@ app/data/
       fetch/              assets、plan、manifest、audio-bank、emote-catalog
     input/                tuning 与研究表
     scripts/
-  runtime/                读取赛季 JSON，按清单解释地址
+  runtime/
+    media/                按清单解释地址
+    packet/               读取赛季 JSON
   schema/                 赛季文件名
+  test/                   同时用到多个源文件的用例，文件名用 .spec.ts
 app/product/season/<id>/  这一季的 JSON
 ```
 

@@ -47,3 +47,11 @@ test("without an origin, a relative audio path is still rewritten", () => {
 test("an explicit extension is tried first and the rest follow the table", () => {
   expect(audioFileCandidates("bgm/act1.ogg")?.extensions).toEqual([".ogg", ".mp3", ".m4a", ".aac", ".oga", ".opus", ".wav"])
 })
+
+test("extensionless audio path", () => {
+  expect(mediaUrl("/assets/audio/bgm/act1.mp3", "http://localhost")).toBe("/media/bgm/act1")
+  expect(mediaUrl("https://cdn.example/assets/audio/bgm/act1.mp3", "http://localhost")).toBe("https://cdn.example/assets/audio/bgm/act1.mp3")
+  expect(audioFileCandidates("bgm/act1")?.extensions[0]).toBe(".mp3")
+  expect(audioFileCandidates("bgm/act1.ogg")?.extensions[0]).toBe(".ogg")
+  expect(audioFileCandidates("../secret")).toBeNull()
+})

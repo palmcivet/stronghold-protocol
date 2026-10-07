@@ -14,9 +14,10 @@
     "dist-test",
     "**/dist-web/**",
     "node_modules",
-    "test",
+    "**/*.test.ts",
+    "**/*.spec.ts",
     "vite.config.ts",
-    "vitest.config.ts"
+    "**/vitest.config.ts"
   ],
   "references": [
     { "path": "../mission-core" },

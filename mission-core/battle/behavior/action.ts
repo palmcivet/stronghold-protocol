@@ -79,7 +79,7 @@ export function applyShift(
 }
 
 /** 恐惧和诱导还没走完时，先沿这段动作走，本拍不再沿路线。 */
-export function advanceShift(state: BattleState, registry: BattleRegistry, unit: UnitState, dt: number): boolean {
+export function advanceShift(_state: BattleState, registry: BattleRegistry, unit: UnitState, dt: number): boolean {
   const run = unit.shiftRun
   if (!run) return false
   const speed = Math.max(0, attributeOf(unit, registry, "moveSpeed")) * MOVE_SCALE

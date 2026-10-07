@@ -2,10 +2,11 @@ import { existsSync, readFileSync, statSync } from "node:fs"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { expect, test } from "vitest"
+import { appRootFrom } from "#compiler/repo-root.js"
 import { parseArgs, shrinkGuard } from "#compiler/media/fetch/assets.js"
 import { droppedEntries } from "#compiler/media/fetch/manifest.js"
 
-const seasonAssets = join(fileURLToPath(new URL(".", import.meta.url)), "..", "product", "season", "act2autochess", "assets.json")
+const seasonAssets = join(appRootFrom(fileURLToPath(import.meta.url)), "product", "season", "act2autochess", "assets.json")
 
 test("droppedEntries lists leaves the new manifest lacks", () => {
   const prev = {

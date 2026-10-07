@@ -1,6 +1,7 @@
 import { validSpine, type SpineFile } from "arknights-assets-catalog"
 import { expect, test } from "vitest"
 import {
+  artUrls,
   avatarUrl,
   bandIconUrl,
   baseCharId,
@@ -150,4 +151,14 @@ test("bgm and unit sfx addresses", () => {
   expect(unitSfxUrl(manifest, "char_010_chen", "skill", 0)).toBe("/sfx/c_s.mp3")
   expect(unitSfxUrl(manifest, "char_010_chen_2", "attack")).toBe("/sfx/c_atk.mp3")
   expect(unitSfxUrl(manifest, "nobody", "attack")).toBeNull()
+})
+
+test("enemy icon and local art prefer the season manifest", () => {
+  const season = {
+    enemies: { enemy_a_2: {}, enemy_a: { icon: "/assets/enemy/icon/enemy_a.png" } },
+    ui: { "guide/page": "/assets/ui/guide/page.png" },
+  }
+  expect(enemyIconUrl(season, "enemy_a_2")).toBe("/assets/enemy/icon/enemy_a.png")
+  const urls = artUrls({ groups: { guide: { page: { path: "/assets/local/guide/page.png" } } } }, season, "guide", "page")
+  expect(urls).toEqual(["/assets/local/guide/page.png", "/assets/ui/guide/page.png"])
 })

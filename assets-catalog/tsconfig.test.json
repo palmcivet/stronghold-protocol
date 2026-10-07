@@ -4,9 +4,10 @@
     "lib": ["es2024"],
     "types": ["node"],
     "outDir": "dist-test",
-    "rootDir": "test",
+    "rootDir": ".",
     "tsBuildInfoFile": "dist-test/.tsbuildinfo"
   },
-  "include": ["test/**/*.ts"],
+  "include": ["**/*.test.ts", "**/*.spec.ts", "test/**/*.ts"],
+  "exclude": ["dist", "dist-test", "node_modules"],
   "references": [{ "path": "./tsconfig.json" }]
 }

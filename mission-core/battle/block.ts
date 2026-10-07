@@ -21,7 +21,7 @@ export const BLOCK_RADIUS_FLY_SQ = 0.79995137
 /** 装置的阻挡接触半径。带 `device` 标签的阻挡者用它。 */
 export const BLOCK_RADIUS_DEVICE = 0.4472
 
-export const BLOCK_RADIUS_DEVICE_SQ = BLOCK_RADIUS_DEVICE * BLOCK_RADIUS_DEVICE
+export const BLOCK_RADIUS_DEVICE_SQ: number = BLOCK_RADIUS_DEVICE * BLOCK_RADIUS_DEVICE
 
 /** 装置。接触用装置半径，不看飞行半径。 */
 export const DEVICE_TAG = "device"

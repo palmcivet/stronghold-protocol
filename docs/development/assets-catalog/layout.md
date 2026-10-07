@@ -24,10 +24,8 @@ assets-catalog/
   product/
     media/                图片、音频、Spine
     font/                 字体
-  test/
+  test/                   同时用到多个源文件的用例，文件名用 .spec.ts
 ```
-
-同一目录里的文件职责相同。文件名写这一块的职责，目录里只有一个文件时，把文件放在上一级。
 
 ## 运行时与编译器
 

@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { expect, test } from "vitest"
+import { appRootFrom } from "#compiler/repo-root.js"
 import {
   avatarUrl,
   bandIconUrl,
@@ -22,7 +23,7 @@ import {
   uiUrl,
 } from "#runtime/media/address.js"
 
-const seasonDir = join(fileURLToPath(new URL(".", import.meta.url)), "..", "product", "season", "act2autochess")
+const seasonDir = join(appRootFrom(fileURLToPath(import.meta.url)), "product", "season", "act2autochess")
 const names = ["assets.json", "chess.json", "bonds.json", "bands.json", "items.json", "enemies.json", "factions.json", "config.json"] as const
 const ready = names.every((name) => existsSync(join(seasonDir, name)))
 const load = (name: string): unknown => JSON.parse(readFileSync(join(seasonDir, name), "utf8")) as unknown
