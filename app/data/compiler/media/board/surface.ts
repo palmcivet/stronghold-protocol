@@ -16,7 +16,7 @@ const surface = (
   extra?: Omit<BoardSurface, "src" | "rect">,
 ): BoardSurface => (extra ? { src, rect, ...extra } : { src, rect })
 
-export const boardSurfaces: { readonly [name: string]: BoardSurface } = Object.freeze({
+export const BOARD_SURFACES: { readonly [name: string]: BoardSurface } = Object.freeze({
   concrete: surface("D", [256, 512, 256, 256]),
   concreteRailTL: surface("D", [0, 256, 256, 256]),
   concreteRailT: surface("D", [256, 256, 256, 256]),

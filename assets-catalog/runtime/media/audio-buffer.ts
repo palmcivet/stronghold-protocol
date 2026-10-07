@@ -1,9 +1,9 @@
 import { mediaUrl } from "./media-route.js"
 
 /** 解码缓冲最多保留多少条。插入顺序就是淘汰顺序。 */
-export const audioBufferCount: number = 180
+export const AUDIO_BUFFER_COUNT: number = 180
 /** 解码后的 PCM 字节预算。一条语音大约 0.4–1.3 MB，只卡条数不够。 */
-export const audioBufferBytes: number = 64 * 1024 * 1024
+export const AUDIO_BUFFER_BYTES: number = 64 * 1024 * 1024
 
 export interface DecodedAudio {
   readonly length: number
@@ -74,8 +74,8 @@ export function createAudioBuffer(options: AudioBufferOptions): AudioBufferCache
   const decode = options.decode
   const warn = options.warn ?? defaultWarn
   const retain = options.retain ?? (() => false)
-  const limit = options.limit ?? audioBufferCount
-  const budget = options.bytes ?? audioBufferBytes
+  const limit = options.limit ?? AUDIO_BUFFER_COUNT
+  const budget = options.bytes ?? AUDIO_BUFFER_BYTES
   const buffers = new Map<string, Promise<DecodedAudio | null>>()
   const weights = new Map<string, number>()
   const warned = new Set<string>()

@@ -18,7 +18,7 @@ const entry = (
   dir: string,
 ): EmoteCatalogEntry => ({ id, sortId, picId, label, themeId, dir })
 
-export const emoteCatalog: readonly EmoteCatalogEntry[] = Object.freeze([
+export const EMOTE_CATALOG: readonly EmoteCatalogEntry[] = Object.freeze([
   entry("autochess_battle_happy", 1001, "pic_happy_battle", "开心", "emoticon_autochess_basic", "basic"),
   entry("autochess_battle_scared", 1002, "pic_scared_battle", "害怕", "emoticon_autochess_basic", "basic"),
   entry("autochess_battle_sorry", 1003, "pic_sorry_battle", "对不起", "emoticon_autochess_basic", "basic"),

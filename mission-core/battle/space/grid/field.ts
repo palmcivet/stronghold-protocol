@@ -5,7 +5,7 @@ export const OBSTACLE_COST = 1000
 export const OB_BLOCK = 1
 export const OB_CRATE = 2
 
-const fourWays: readonly (readonly [number, number])[] = [
+const FOUR_WAYS: readonly (readonly [number, number])[] = [
   [1, 0],
   [0, 1],
   [-1, 0],
@@ -181,7 +181,7 @@ function spfa(source: FieldSource, dest: number, ignore: boolean, penalty: Uint8
     head += 1
     queued[current] = 0
     const here = source.point(current)
-    for (const [dRow, dCol] of fourWays) {
+    for (const [dRow, dCol] of FOUR_WAYS) {
       const nextX = here.x + dCol
       const nextY = here.y + dRow
       if (!source.walkable(nextX, nextY, ignore)) continue

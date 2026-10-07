@@ -2,7 +2,7 @@
 
 import { mkdir, readFile, rename, stat, writeFile } from "node:fs/promises"
 import { join } from "node:path"
-import { joinUrl, rawBases } from "#compiler/download/source.js"
+import { joinUrl, RAW_BASES } from "#compiler/download/source.js"
 import type { DownloadJob } from "#compiler/download/downloader.js"
 import { decodeWoff2Tables, encodeWoff2, readSfnt } from "./woff2.js"
 
@@ -16,16 +16,16 @@ export interface FontSource {
   readonly bytes: number
 }
 
-export const fonts: readonly FontSource[] = Object.freeze([
+export const FONTS: readonly FontSource[] = Object.freeze([
   { family: "Bender", weight: 400, style: "normal", src: "Bender/BENDER.OTF", name: "bender-regular", ext: "otf", bytes: 52536 },
   { family: "Bender", weight: 300, style: "normal", src: "Bender/BenderLight.woff.ttf", name: "bender-light", ext: "ttf", bytes: 68256 },
   { family: "Novecento Wide", weight: 400, style: "normal", src: "Novecento-Wide-Normal-2.otf", name: "novecento-wide-normal", ext: "otf", bytes: 45356 },
 ])
 
 export function fontJobs(): DownloadJob[] {
-  return fonts.map((font) => ({
+  return FONTS.map((font) => ({
     rel: `${font.name}.${font.ext}`,
-    urls: [joinUrl(rawBases.fonts, font.src)],
+    urls: [joinUrl(RAW_BASES.fonts, font.src)],
     kind: "font" as const,
     bytes: font.bytes,
   }))
@@ -61,7 +61,7 @@ export async function buildFonts(fontsDir: string, log: (message: string) => voi
   const files: Record<string, FontFaceFile> = {}
   const errors: string[] = []
   const faces: string[] = []
-  for (const font of fonts) {
+  for (const font of FONTS) {
     const originalPath = join(fontsDir, `${font.name}.${font.ext}`)
     const woff2Path = join(fontsDir, `${font.name}.woff2`)
     if (!(await fileExists(originalPath))) {

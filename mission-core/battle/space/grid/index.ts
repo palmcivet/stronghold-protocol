@@ -34,7 +34,7 @@ export interface FieldGrid extends FieldSource {
   straightClear(x: number, y: number, point: GridPoint): boolean
 }
 
-const fieldCacheMax = 64
+const FIELD_CACHE_MAX = 64
 
 export function createGrid(tiles: readonly TileSpec[], span: readonly GridPoint[] = []): FieldGrid {
   let minX = Infinity
@@ -164,7 +164,7 @@ export function createGrid(tiles: readonly TileSpec[], span: readonly GridPoint[
       const cached = fields.get(cacheKey)
       if (cached) return cached
       const built = buildField(grid, x, y, allowDiagonal, ignoreObstacles)
-      if (fields.size >= fieldCacheMax) {
+      if (fields.size >= FIELD_CACHE_MAX) {
         const oldest = fields.keys().next().value
         if (oldest !== undefined) fields.delete(oldest)
       }

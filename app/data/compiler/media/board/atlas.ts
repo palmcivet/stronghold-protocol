@@ -7,7 +7,7 @@ import { join } from "node:path"
 import { deflateSync, inflateSync } from "node:zlib"
 import { catalogPackageRoot } from "arknights-assets-catalog/compile"
 import type { CatalogFiles } from "arknights-assets-catalog"
-import { boardSurfaces, type BoardSurface } from "./surface.js"
+import { BOARD_SURFACES, type BoardSurface } from "./surface.js"
 
 const root = catalogPackageRoot()
 const mediaRoot = join(root, "product", "media")
@@ -18,7 +18,7 @@ export interface AtlasSource {
   readonly h: number
 }
 
-export const atlasSources: Readonly<Record<string, AtlasSource>> = Object.freeze({
+export const ATLAS_SOURCES: Readonly<Record<string, AtlasSource>> = Object.freeze({
   D: { file: "TX_autochessi_D.png", w: 2048, h: 2048 },
   common: { file: "TX_autochessi_common_D.png", w: 1024, h: 1024 },
   BG: { file: "TX_autochessi_BG.png", w: 1024, h: 1024 },
@@ -47,7 +47,7 @@ export type MaterialLayer = ProcLayer | CropLayer
 const layer = (src: "D" | "common", rect: Rect, extra?: Omit<CropLayer, "src" | "rect">): CropLayer =>
   extra ? { src, rect, ...extra } : { src, rect }
 
-const rects = {
+const RECTS = {
   concrete: [256, 512, 256, 256],
   concreteFrame: [256, 256, 256, 256],
   concreteStripe: [512, 256, 256, 256],
@@ -72,7 +72,7 @@ const rects = {
   crateFace2: [1222, 1938, 134, 108],
 } as const satisfies Record<string, Rect>
 
-const commonRects = {
+const COMMON_RECTS = {
   hazardX: [2, 2, 250, 248],
   heal: [264, 2, 256, 250],
   shield: [538, 2, 256, 250],
@@ -82,49 +82,49 @@ const commonRects = {
   fast: [2, 520, 250, 250],
 } as const satisfies Record<string, Rect>
 
-const rim: ProcLayer = { proc: "rim" }
+const RIM: ProcLayer = { proc: "rim" }
 
-export const materials: { readonly [name: string]: readonly MaterialLayer[] } = {
-  road: [layer("D", rects.concrete)],
-  road2: [layer("D", rects.concrete, { rot: 90 })],
-  road3: [layer("D", rects.concrete, { rot: 180, bright: 0.97 })],
-  roadN: [layer("D", rects.concrete, { rot: 270, bright: 0.93 })],
-  roadN2: [layer("D", rects.concrete, { flipX: true, bright: 0.93 })],
-  floor: [layer("D", rects.concreteRed)],
-  floor2: [layer("D", rects.concreteRed, { flipX: true })],
-  preview: [layer("D", rects.concreteStripe, { bright: 0.9 })],
-  wall: [layer("D", rects.plateS)],
-  wallL: [layer("D", rects.plateL)],
-  wallM: [layer("D", rects.plateM)],
-  wallR: [layer("D", rects.plateR)],
-  wallB: [layer("D", rects.plateL, { rot: 270 })],
-  wallVM: [layer("D", rects.plateM, { rot: 90 })],
-  wallT: [layer("D", rects.plateL, { rot: 90 })],
-  wallSide: [layer("D", rects.goldSide, { bright: 0.92 })],
-  forbid: [layer("D", rects.concrete, { tint: "#6a7075" }), rim],
-  forbid2: [layer("D", rects.concrete, { rot: 90, tint: "#646a6f" }), rim],
-  forbidSide: [layer("D", rects.graySide, { tint: "#6d767b" })],
-  sep: [layer("D", rects.slats, { tint: "#5a6266" }), rim],
-  sepSide: [layer("D", rects.sepSide, { bright: 0.8 })],
-  fence: [layer("D", rects.hatch)],
-  start: [layer("D", rects.concreteArrow), layer("common", commonRects.enemyMark, { scale: 0.5, alpha: 0.85 })],
-  end: [layer("D", rects.ringHatch), layer("common", commonRects.shield, { scale: 0.46, alpha: 0.9, tint: "#6fc3ff" })],
-  telin: [layer("D", rects.lift)],
-  telout: [layer("D", rects.lift, { rot: 180 })],
-  hand: [layer("D", rects.padReinf)],
-  temp: [layer("D", rects.padEquip)],
-  benchSide: [layer("D", rects.benchRail)],
-  benchSideTemp: [layer("D", rects.benchRail, { flipX: true })],
-  smog: [layer("D", rects.slats, { tint: "#7c8589" })],
-  crateSide: [layer("D", rects.crateFace)],
-  crateTop: [layer("D", rects.crateFace2, { rot: 90, bright: 1.08 })],
-  blowerTop: [layer("D", rects.mech, { tint: "#6b7478" }), layer("common", commonRects.fast, { scale: 0.92 })],
-  sealed: [layer("common", commonRects.hazardX)],
-  turretTop: [layer("D", rects.mech, { rot: 180, tint: "#737c80" }), layer("common", commonRects.target, { scale: 0.9 })],
-  platformTop: [layer("D", rects.plateS, { bright: 1.06 })],
+export const MATERIALS: { readonly [name: string]: readonly MaterialLayer[] } = {
+  road: [layer("D", RECTS.concrete)],
+  road2: [layer("D", RECTS.concrete, { rot: 90 })],
+  road3: [layer("D", RECTS.concrete, { rot: 180, bright: 0.97 })],
+  roadN: [layer("D", RECTS.concrete, { rot: 270, bright: 0.93 })],
+  roadN2: [layer("D", RECTS.concrete, { flipX: true, bright: 0.93 })],
+  floor: [layer("D", RECTS.concreteRed)],
+  floor2: [layer("D", RECTS.concreteRed, { flipX: true })],
+  preview: [layer("D", RECTS.concreteStripe, { bright: 0.9 })],
+  wall: [layer("D", RECTS.plateS)],
+  wallL: [layer("D", RECTS.plateL)],
+  wallM: [layer("D", RECTS.plateM)],
+  wallR: [layer("D", RECTS.plateR)],
+  wallB: [layer("D", RECTS.plateL, { rot: 270 })],
+  wallVM: [layer("D", RECTS.plateM, { rot: 90 })],
+  wallT: [layer("D", RECTS.plateL, { rot: 90 })],
+  wallSide: [layer("D", RECTS.goldSide, { bright: 0.92 })],
+  forbid: [layer("D", RECTS.concrete, { tint: "#6a7075" }), RIM],
+  forbid2: [layer("D", RECTS.concrete, { rot: 90, tint: "#646a6f" }), RIM],
+  forbidSide: [layer("D", RECTS.graySide, { tint: "#6d767b" })],
+  sep: [layer("D", RECTS.slats, { tint: "#5a6266" }), RIM],
+  sepSide: [layer("D", RECTS.sepSide, { bright: 0.8 })],
+  fence: [layer("D", RECTS.hatch)],
+  start: [layer("D", RECTS.concreteArrow), layer("common", COMMON_RECTS.enemyMark, { scale: 0.5, alpha: 0.85 })],
+  end: [layer("D", RECTS.ringHatch), layer("common", COMMON_RECTS.shield, { scale: 0.46, alpha: 0.9, tint: "#6fc3ff" })],
+  telin: [layer("D", RECTS.lift)],
+  telout: [layer("D", RECTS.lift, { rot: 180 })],
+  hand: [layer("D", RECTS.padReinf)],
+  temp: [layer("D", RECTS.padEquip)],
+  benchSide: [layer("D", RECTS.benchRail)],
+  benchSideTemp: [layer("D", RECTS.benchRail, { flipX: true })],
+  smog: [layer("D", RECTS.slats, { tint: "#7c8589" })],
+  crateSide: [layer("D", RECTS.crateFace)],
+  crateTop: [layer("D", RECTS.crateFace2, { rot: 90, bright: 1.08 })],
+  blowerTop: [layer("D", RECTS.mech, { tint: "#6b7478" }), layer("common", COMMON_RECTS.fast, { scale: 0.92 })],
+  sealed: [layer("common", COMMON_RECTS.hazardX)],
+  turretTop: [layer("D", RECTS.mech, { rot: 180, tint: "#737c80" }), layer("common", COMMON_RECTS.target, { scale: 0.9 })],
+  platformTop: [layer("D", RECTS.plateS, { bright: 1.06 })],
 }
 
-export const backdrop: { readonly src: string; readonly tilesPerRepeat: number; readonly crop: Rect } = {
+export const BACKDROP: { readonly src: string; readonly tilesPerRepeat: number; readonly crop: Rect } = {
   src: "BG",
   tilesPerRepeat: 9,
   crop: [0, 0, 1024, 440],
@@ -329,7 +329,7 @@ export async function cropBoardAtlas(files: CatalogFiles, argv: readonly string[
     const problems: string[] = []
     const source: Record<string, { path: string; w: number; h: number }> = {}
     const images: Record<string, PngImage | undefined> = {}
-    for (const [key, spec] of Object.entries(atlasSources)) {
+    for (const [key, spec] of Object.entries(ATLAS_SOURCES)) {
       const file = join(options.dir, spec.file)
       if (!(await files.exists(file))) {
         problems.push(`missing ${relative(root, file)}`)
@@ -350,12 +350,12 @@ export async function cropBoardAtlas(files: CatalogFiles, argv: readonly string[
       return options.check ? 1 : 0
     }
     const report: string[] = []
-    for (const [name, layers] of Object.entries(materials)) {
+    for (const [name, layers] of Object.entries(MATERIALS)) {
       for (const row of layers) {
         if (!isCrop(row)) continue
         const image = images[row.src]
         const [x, y, w, h] = row.rect
-        const spec = atlasSources[row.src]
+        const spec = ATLAS_SOURCES[row.src]
         if (!spec || !(x >= 0 && y >= 0 && w > 8 && h > 8 && x + w <= spec.w && y + h <= spec.h)) {
           problems.push(`${name}: rect ${row.rect.join(",")} outside ${row.src}`)
           continue
@@ -371,8 +371,8 @@ export async function cropBoardAtlas(files: CatalogFiles, argv: readonly string[
         if (stats.std < 2) problems.push(`${name}: rect ${row.rect.join(",")} of ${row.src} is flat (std ${stats.std.toFixed(1)})`)
       }
     }
-    for (const [name, surface] of Object.entries(boardSurfaces)) {
-      const spec = atlasSources[surface.src]
+    for (const [name, surface] of Object.entries(BOARD_SURFACES)) {
+      const spec = ATLAS_SOURCES[surface.src]
       const [x, y, w, h] = surface.rect
       if (!spec || !(x >= 0 && y >= 0 && w > 8 && h > 8 && x + w <= spec.w && y + h <= spec.h)) {
         problems.push(`board3d ${name}: rect ${surface.rect.join(",")} outside ${surface.src}`)
@@ -392,30 +392,30 @@ export async function cropBoardAtlas(files: CatalogFiles, argv: readonly string[
     if (problems.length) console.warn("[crop-board-atlas] problems:\n  " + problems.join("\n  "))
     if (options.check) return problems.length ? 1 : 0
     const board3d = Object.fromEntries(
-      Object.entries(boardSurfaces).map(([key, surface]) => [key, copySurface(surface)]),
+      Object.entries(BOARD_SURFACES).map(([key, surface]) => [key, copySurface(surface)]),
     )
     const out = {
       version: 2,
       generatedBy: "app/data/compiler/media/board/atlas.ts",
       cell: 256,
       source,
-      materials,
-      backdrop: source["BG"] ? backdrop : null,
+      materials: MATERIALS,
+      backdrop: source["BG"] ? BACKDROP : null,
       board3d,
     }
     const file = join(options.dir, "tiles.json")
     await files.writeTextAtomic(file, JSON.stringify(out, null, 1) + "\n")
-    console.log(`wrote ${relative(root, file)} (${Object.keys(materials).length} materials, ${Object.keys(board3d).length} 3D surfaces)`)
+    console.log(`wrote ${relative(root, file)} (${Object.keys(MATERIALS).length} materials, ${Object.keys(board3d).length} 3D surfaces)`)
     const previewPath = options.preview
     if (previewPath) {
-      const names = Object.keys(materials)
+      const names = Object.keys(MATERIALS)
       const cols = 8
       const cell = 128
       const width = cols * cell
       const height = Math.ceil(names.length / cols) * cell
       const sheet = Buffer.alloc(width * height * 4, 0)
       names.forEach((name, index) => {
-        const first = materials[name]?.[0]
+        const first = MATERIALS[name]?.[0]
         if (!first || !isCrop(first)) return
         const image = images[first.src]
         if (!image) return

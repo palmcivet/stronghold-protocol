@@ -11,7 +11,7 @@ import { kindOf, pngSize } from "#compiler/download/format.js"
 import { assetUrl, safeName, urlDir } from "#compiler/download/source.js"
 import { parseSkel, type SkelInfo, type SpineBounds } from "./skel.js"
 
-export const localEnemySpineDir: string = "local/spine/enemy/"
+export const LOCAL_ENEMY_SPINE_DIR: string = "local/spine/enemy/"
 
 export function localEnemySpineGroup(id: string): string {
   return `spine/enemy/${id}`
@@ -77,7 +77,7 @@ export async function findLocalEnemyModels(root: string): Promise<Record<string,
   const out: Record<string, LocalEnemyModel> = {}
   let ids: string[] = []
   try {
-    ids = (await readdir(join(root, localEnemySpineDir), { withFileTypes: true }))
+    ids = (await readdir(join(root, LOCAL_ENEMY_SPINE_DIR), { withFileTypes: true }))
       .filter((entry) => entry.isDirectory())
       .map((entry) => entry.name)
   } catch {
@@ -85,7 +85,7 @@ export async function findLocalEnemyModels(root: string): Promise<Record<string,
   }
   for (const id of ids.sort()) {
     if (!/^enemy_\d+_[a-z0-9_]+$/i.test(id)) continue
-    const dir = `${localEnemySpineDir}${id}/`
+    const dir = `${LOCAL_ENEMY_SPINE_DIR}${id}/`
     let files: string[] = []
     try {
       files = (await readdir(join(root, dir))).sort()
@@ -145,7 +145,7 @@ export async function localEnemySpineMeta(
   return { meta, problems }
 }
 
-export const localEnemySpinesFile: string = "input/spine/local-enemy-spines.json"
+export const LOCAL_ENEMY_SPINES_FILE: string = "input/spine/local-enemy-spines.json"
 
 export async function loadLocalEnemySpines(path: string): Promise<Record<string, LocalSpineMeta>> {
   try {

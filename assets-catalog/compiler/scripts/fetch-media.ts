@@ -10,7 +10,7 @@ import { buildFonts, fontJobs } from "#compiler/font/build.js"
 import { skelParserAvailable } from "#compiler/spine/skel.js"
 import { processModels, type PlannedSpineModel } from "#compiler/spine/model.js"
 
-const helpText = `Usage: --jobs <file> [options]
+const HELP_TEXT = `Usage: --jobs <file> [options]
   --jobs <file>     JSON { jobs: DownloadJob[], models?: PlannedSpineModel[] }
   --concurrency=N   parallel downloads (default 16)
   --force           re-download files even when present
@@ -52,9 +52,9 @@ function parseArgs(argv: readonly string[]): FetchFlags {
       concurrency = Math.max(1, Math.min(64, parseInt(value ?? "", 10) || 16))
     } else if (name === "--jobs") {
       const value = inline ?? argv[++index]
-      if (!value || value.startsWith("--")) throw new Error(`--jobs needs a path\n${helpText}`)
+      if (!value || value.startsWith("--")) throw new Error(`--jobs needs a path\n${HELP_TEXT}`)
       jobsPath = value
-    } else throw new Error(`unknown option ${arg}\n${helpText}`)
+    } else throw new Error(`unknown option ${arg}\n${HELP_TEXT}`)
   }
   return { jobsPath, concurrency, force, offline, dryRun, help }
 }
@@ -118,9 +118,9 @@ const flags = parseArgs(process.argv.slice(2))
 const catalogRoot = catalogPackageRoot()
 
 if (flags.help) {
-  console.log(helpText)
+  console.log(HELP_TEXT)
 } else if (!flags.jobsPath) {
-  console.error(`fetch-media: --jobs is required\n${helpText}`)
+  console.error(`fetch-media: --jobs is required\n${HELP_TEXT}`)
   process.exitCode = 2
 } else {
   const jobsPath = flags.jobsPath

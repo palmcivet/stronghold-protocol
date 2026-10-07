@@ -1,6 +1,6 @@
-import { audioFileCandidates, mediaPrefix, mediaUrl } from "arknights-assets-catalog"
+import { audioFileCandidates, MEDIA_PREFIX, mediaUrl } from "arknights-assets-catalog"
 import { expect, test } from "vitest"
-import { audioExtensions } from "#runtime/media/media-route.js"
+import { AUDIO_EXTENSIONS } from "#runtime/media/media-route.js"
 
 const origin = "http://127.0.0.1:3000"
 
@@ -8,7 +8,7 @@ test("same-origin audio paths lose the extension and keep the query", () => {
   expect(mediaUrl("/assets/audio/sfx/player/p_imp/hit.mp3", origin)).toBe("/media/sfx/player/p_imp/hit")
   expect(mediaUrl(`${origin}/assets/audio/bgm/a.mp3`, origin)).toBe("/media/bgm/a")
   expect(mediaUrl("/assets/audio/bgm/a.mp3?v=2", origin)).toBe("/media/bgm/a?v=2")
-  for (const extension of audioExtensions) {
+  for (const extension of AUDIO_EXTENSIONS) {
     expect(mediaUrl(`/assets/audio/x/a${extension}`, origin)).toBe("/media/x/a")
   }
   expect(mediaUrl("/assets/audio/x/A.MP3", origin)).toBe("/media/x/A")
@@ -16,7 +16,7 @@ test("same-origin audio paths lose the extension and keep the query", () => {
 
 test("a rewritten address has no media extension", () => {
   const out = mediaUrl("/assets/audio/bgm/m_bat_vtlionk_loop.mp3", origin)
-  expect(out.startsWith(mediaPrefix)).toBe(true)
+  expect(out.startsWith(MEDIA_PREFIX)).toBe(true)
   expect(out).not.toMatch(/\.(mp3|m4a|aac|ogg|oga|opus|wav)(\?|$)/i)
 })
 

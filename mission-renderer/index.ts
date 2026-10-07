@@ -1,1 +1,1 @@
-export const moduleId: "arknights-mission-renderer" = "arknights-mission-renderer"
+export const MODULE_ID: "arknights-mission-renderer" = "arknights-mission-renderer"

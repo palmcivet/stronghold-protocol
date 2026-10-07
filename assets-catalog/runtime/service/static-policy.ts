@@ -1,4 +1,4 @@
-export const compressibleExtensions: ReadonlySet<string> = new Set([
+export const COMPRESSIBLE_EXTENSIONS: ReadonlySet<string> = new Set([
   ".html",
   ".htm",
   ".js",
@@ -22,15 +22,15 @@ export const compressibleExtensions: ReadonlySet<string> = new Set([
   ".wav",
 ])
 
-export const gzipMinBytes: number = 512
-export const gzipCacheMaxFile: number = 8 << 20
-export const gzipCacheMaxTotal: number = 96 << 20
+export const GZIP_MIN_BYTES: number = 512
+export const GZIP_CACHE_MAX_FILE: number = 8 << 20
+export const GZIP_CACHE_MAX_TOTAL: number = 96 << 20
 
-const longCache: string = "public, max-age=86400"
-const immutableCache: string = "public, max-age=31536000, immutable"
-const longCacheDirectories: readonly string[] = ["assets", "fonts", "vendor"]
+const LONG_CACHE: string = "public, max-age=86400"
+const IMMUTABLE_CACHE: string = "public, max-age=31536000, immutable"
+const LONG_CACHE_DIRECTORIES: readonly string[] = ["assets", "fonts", "vendor"]
 
-export const mediaTypes: Readonly<Record<string, string>> = {
+export const MEDIA_TYPES: Readonly<Record<string, string>> = {
   ".html": "text/html; charset=utf-8",
   ".htm": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
@@ -71,7 +71,7 @@ export const mediaTypes: Readonly<Record<string, string>> = {
 }
 
 export function mediaType(extension: string): string {
-  return mediaTypes[extension.toLowerCase()] ?? "application/octet-stream"
+  return MEDIA_TYPES[extension.toLowerCase()] ?? "application/octet-stream"
 }
 
 /** Accept-Encoding 里 gzip 的 q 大于 0。 */
@@ -140,12 +140,12 @@ export function isNotModified(ifNoneMatch: string | undefined, ifModifiedSince: 
 /** 页面短缓存。带 `v=` 的地址长期不可变。素材、字体和 vendor 缓存一天。 */
 export function cacheControl(extension: string, segments: readonly string[], query: string): string {
   if (extension === ".html" || extension === ".htm") return "no-cache"
-  if (/(^|&)v=/.test(query)) return immutableCache
+  if (/(^|&)v=/.test(query)) return IMMUTABLE_CACHE
   const first = segments[0]
-  if (segments.length > 1 && first && longCacheDirectories.includes(first)) return longCache
+  if (segments.length > 1 && first && LONG_CACHE_DIRECTORIES.includes(first)) return LONG_CACHE
   return "no-cache"
 }
 
 export function shouldGzip(extension: string, size: number, rangeHeader: string | undefined, acceptEncoding: string | undefined): boolean {
-  return compressibleExtensions.has(extension) && size >= gzipMinBytes && !rangeHeader && acceptsGzip(acceptEncoding)
+  return COMPRESSIBLE_EXTENSIONS.has(extension) && size >= GZIP_MIN_BYTES && !rangeHeader && acceptsGzip(acceptEncoding)
 }

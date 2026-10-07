@@ -1,9 +1,9 @@
-import { packetAddress, packetFiles, type PacketName } from "#schema/packet-file.js"
+import { packetAddress, PACKET_FILES, type PacketName } from "#schema/packet-file.js"
 
-export const packetRetryDelaysMs = [600, 2000] as const
-export const artManifestTimeoutMs = 8000
+export const PACKET_RETRY_DELAYS_MS = [600, 2000] as const
+export const ART_MANIFEST_TIMEOUT_MS = 8000
 
-const artManifests = new Set<PacketName>(["local", "assets"])
+const ART_MANIFESTS = new Set<PacketName>(["local", "assets"])
 
 export type PacketStatus = "idle" | "loading" | "ready" | "missing"
 
@@ -87,9 +87,9 @@ function transientFailure(error: LoadFailure): boolean {
 
 export function createRemotePacketStore(options: StoreOptions): RemotePacketStore {
   const loadJson: PacketFetch = options.fetch ?? ((url, init) => globalThis.fetch(url, init) as Promise<PacketResponse>)
-  const retryDelays = options.retryDelays ?? packetRetryDelaysMs
+  const retryDelays = options.retryDelays ?? PACKET_RETRY_DELAYS_MS
   const wait = options.wait ?? ((ms: number) => new Promise((resolve) => setTimeout(resolve, ms)))
-  const timeoutMs = options.timeoutMs === undefined ? artManifestTimeoutMs : options.timeoutMs
+  const timeoutMs = options.timeoutMs === undefined ? ART_MANIFEST_TIMEOUT_MS : options.timeoutMs
   const armTimer = options.setTimeout ?? ((fn: () => void, ms: number) => setTimeout(fn, ms))
   const disarmTimer = options.clearTimeout ?? ((timer: unknown) => clearTimeout(timer as ReturnType<typeof setTimeout>))
   const entries = new Map<PacketName, PacketSlot>()
@@ -124,7 +124,7 @@ export function createRemotePacketStore(options: StoreOptions): RemotePacketStor
         throw error
       }
     }
-    if (!artManifests.has(name) || !(timeoutMs > 0)) return run()
+    if (!ART_MANIFESTS.has(name) || !(timeoutMs > 0)) return run()
     let timer: unknown = null
     let done = false
     const finish = (): boolean => {
@@ -158,7 +158,7 @@ export function createRemotePacketStore(options: StoreOptions): RemotePacketStor
     const current = entries.get(name)
     if (current) return current.promise
     const slot: PacketSlot = { status: "loading", promise: Promise.resolve(null), value: null, index: null }
-    const art = artManifests.has(name)
+    const art = ART_MANIFESTS.has(name)
     slot.promise = (async () => {
       let toldMissing = false
       for (let attempt = 0; ; attempt += 1) {
@@ -232,5 +232,5 @@ export function createRemotePacketStore(options: StoreOptions): RemotePacketStor
 }
 
 export function packetFileName(name: PacketName): string {
-  return packetFiles[name]
+  return PACKET_FILES[name]
 }

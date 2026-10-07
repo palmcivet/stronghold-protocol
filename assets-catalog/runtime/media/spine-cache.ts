@@ -1,20 +1,20 @@
 import { validSpine, type SpineFile } from "./spine-file.js"
 
 /** 场景还在时，空闲骨架允许占用的估算字节。 */
-export const spineIdleBytes: number = 48 * 1024 * 1024
+export const SPINE_IDLE_BYTES: number = 48 * 1024 * 1024
 /** 释放之后这段时间不受字节预算淘汰，够一次整备和战斗来回。 */
-export const spineIdleGraceMs: number = 15000
+export const SPINE_IDLE_GRACE_MS: number = 15000
 /** 释放后延迟这么久再集中淘汰，避免一场切换里拆掉马上又要的模型。 */
-export const spineEvictDelayMs: number = 1000
+export const SPINE_EVICT_DELAY_MS: number = 1000
 /** 没有任何引用、也没有场景守着缓存，持续这么久才算安静。 */
-export const spineQuietDelayMs: number = 3000
+export const SPINE_QUIET_DELAY_MS: number = 3000
 /** 认不出的骨架至少按这个重量计。 */
-export const spineWeightMin: number = 64 * 1024
+export const SPINE_WEIGHT_MIN: number = 64 * 1024
 
-const objectBytes = 96
-const numberBytes = 8
-const structureNames = ["bones", "slots", "events", "ikConstraints", "transformConstraints", "pathConstraints"] as const
-const attachmentFields = ["vertices", "regionUVs", "uvs", "triangles", "bones", "edges", "lengths", "offset"] as const
+const OBJECT_BYTES = 96
+const NUMBER_BYTES = 8
+const STRUCTURE_NAMES = ["bones", "slots", "events", "ikConstraints", "transformConstraints", "pathConstraints"] as const
+const ATTACHMENT_FIELDS = ["vertices", "regionUVs", "uvs", "triangles", "bones", "edges", "lengths", "offset"] as const
 
 function read(value: object, key: string): unknown {
   if (!Object.hasOwn(value, key)) return undefined
@@ -27,37 +27,37 @@ function asList(value: unknown): readonly unknown[] {
 
 function arrayBytes(value: unknown): number {
   if (!value || typeof value !== "object") return 0
-  if (ArrayBuffer.isView(value)) return value.byteLength + objectBytes
-  if (Array.isArray(value)) return value.length * numberBytes + objectBytes
+  if (ArrayBuffer.isView(value)) return value.byteLength + OBJECT_BYTES
+  if (Array.isArray(value)) return value.length * NUMBER_BYTES + OBJECT_BYTES
   return 0
 }
 
 /**
  * 估算一份已解析骨架占的堆内存。网格、时间轴和变形帧按数组计，每个对象再加一块固定开销。
- * 数到一半形状不对就停，结果不会低于 `spineWeightMin`。
+ * 数到一半形状不对就停，结果不会低于 `SPINE_WEIGHT_MIN`。
  */
 export function spineDataWeight(data: unknown): number {
-  if (!data || typeof data !== "object") return spineWeightMin
+  if (!data || typeof data !== "object") return SPINE_WEIGHT_MIN
   let weight = 0
   try {
-    for (const name of structureNames) weight += asList(read(data, name)).length * objectBytes * 2
+    for (const name of STRUCTURE_NAMES) weight += asList(read(data, name)).length * OBJECT_BYTES * 2
     for (const skin of asList(read(data, "skins"))) {
       if (!skin || typeof skin !== "object") continue
       for (const slot of asList(read(skin, "attachments"))) {
         if (!slot || typeof slot !== "object") continue
         for (const attachment of Object.values(slot)) {
-          weight += objectBytes * 2
+          weight += OBJECT_BYTES * 2
           if (!attachment || typeof attachment !== "object") continue
-          for (const name of attachmentFields) weight += arrayBytes(read(attachment, name))
+          for (const name of ATTACHMENT_FIELDS) weight += arrayBytes(read(attachment, name))
         }
       }
     }
     for (const animation of asList(read(data, "animations"))) {
-      weight += objectBytes
+      weight += OBJECT_BYTES
       if (!animation || typeof animation !== "object") continue
       for (const timeline of asList(read(animation, "timelines"))) {
         if (!timeline || typeof timeline !== "object") continue
-        weight += objectBytes
+        weight += OBJECT_BYTES
         weight += arrayBytes(read(timeline, "frames"))
         weight += arrayBytes(read(timeline, "curves"))
         weight += arrayBytes(read(timeline, "attachmentNames"))
@@ -69,7 +69,7 @@ export function spineDataWeight(data: unknown): number {
   } catch {
     // 形状超出 SkeletonData 时保留已经数过的部分
   }
-  return Math.max(spineWeightMin, weight)
+  return Math.max(SPINE_WEIGHT_MIN, weight)
 }
 
 /** 图集页地址。有 textures 用它，否则是骨架旁边的同名 png。 */
@@ -689,11 +689,11 @@ export function createSpineCache(options: SpineCacheOptions): SpineCache {
     timeout: options.timeout ?? 20000,
     concurrency: options.concurrency ?? 6,
     failTtl: options.failTtl ?? 60000,
-    maxIdleWeight: options.idleBytes ?? spineIdleBytes,
+    maxIdleWeight: options.idleBytes ?? SPINE_IDLE_BYTES,
     quietWeight: options.quietBytes ?? 0,
-    idleGrace: options.idleGrace ?? spineIdleGraceMs,
-    quietDelay: options.quietDelay ?? spineQuietDelayMs,
-    evictDelay: options.evictDelay ?? spineEvictDelayMs,
+    idleGrace: options.idleGrace ?? SPINE_IDLE_GRACE_MS,
+    quietDelay: options.quietDelay ?? SPINE_QUIET_DELAY_MS,
+    evictDelay: options.evictDelay ?? SPINE_EVICT_DELAY_MS,
   }
   cache = new RefLru(clocked(settings, options.now, options.timers))
   return {

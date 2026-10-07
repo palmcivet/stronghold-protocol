@@ -8,10 +8,10 @@ import { appRootFrom } from "#compiler/repo-root.js"
 import { seasonPacketDirectory } from "#schema/packet-file.js"
 
 const root = appRootFrom(fileURLToPath(import.meta.url))
-const gamedataUrl = "https://raw.githubusercontent.com/Kengxxiao/ArknightsGameData/master/zh_CN/gamedata/"
-const scene = "AUTOCHESS_BATTLE"
+const GAMEDATA_URL = "https://raw.githubusercontent.com/Kengxxiao/ArknightsGameData/master/zh_CN/gamedata/"
+const SCENE = "AUTOCHESS_BATTLE"
 
-export const themeDirs: Readonly<Record<string, string>> = Object.freeze({
+export const THEME_DIRS: Readonly<Record<string, string>> = Object.freeze({
   emoticon_autochess_basic: "basic",
   emoticon_originium_slug: "slug",
   emoticon_autochess_basic_2: "basic_2",
@@ -20,7 +20,7 @@ export const themeDirs: Readonly<Record<string, string>> = Object.freeze({
   emoticon_foolsday_wisdel: "foolwisdel",
 })
 
-export const emoteLabels: Readonly<Record<string, string>> = Object.freeze({
+export const EMOTE_LABELS: Readonly<Record<string, string>> = Object.freeze({
   autochess_battle_happy: "开心",
   autochess_battle_scared: "害怕",
   autochess_battle_sorry: "对不起",
@@ -85,7 +85,7 @@ function field(value: unknown, key: string): unknown {
 }
 
 function themeDir(themeId: string): string {
-  return themeDirs[themeId] ?? themeId.replace(/^emo?ticon_(autochess_)?/, "")
+  return THEME_DIRS[themeId] ?? themeId.replace(/^emo?ticon_(autochess_)?/, "")
 }
 
 function shortName(name: string, themeId: string): string {
@@ -129,7 +129,7 @@ export function buildEmotes(source: { readonly display: unknown; readonly activi
       .map((id): EmojiRow | null => {
         if (typeof id !== "string" || !emojiData || !Object.hasOwn(emojiData, id)) return null
         const row = record(emojiData[id])
-        if (!row || row["type"] !== scene || typeof row["id"] !== "string" || typeof row["picId"] !== "string" || !row["picId"]) return null
+        if (!row || row["type"] !== SCENE || typeof row["id"] !== "string" || typeof row["picId"] !== "string" || !row["picId"]) return null
         const sortId = typeof row["sortId"] === "number" ? row["sortId"] : 0
         return { id: row["id"], sortId, picId: row["picId"], desc: row["desc"] }
       })
@@ -144,7 +144,7 @@ export function buildEmotes(source: { readonly display: unknown; readonly activi
       })
       .sort((a, b) => a.sortId - b.sortId || (a.id < b.id ? -1 : 1))
     if (!rows.length) {
-      warnings.push(`theme ${themeId}: no ${scene} emoji`)
+      warnings.push(`theme ${themeId}: no ${SCENE} emoji`)
       continue
     }
     const dir = themeDir(themeId)
@@ -162,7 +162,7 @@ export function buildEmotes(source: { readonly display: unknown; readonly activi
         sortId: row.sortId,
         picId: row.picId,
         art: `/assets/local/emoticon/${dir}/${row.picId}.png`,
-        label: emoteLabels[row.id] ?? `${shortName(name, themeId)} ${index + 1}`,
+        label: EMOTE_LABELS[row.id] ?? `${shortName(name, themeId)} ${index + 1}`,
       })
     })
   }
@@ -209,7 +209,7 @@ async function ensureGamedata(files: CatalogFiles, http: CatalogHttp, request: G
   for (let attempt = 1; attempt <= 3; attempt++) {
     let text: string
     try {
-      text = await http.getText(gamedataUrl + request.rel, 180000)
+      text = await http.getText(GAMEDATA_URL + request.rel, 180000)
     } catch (cause) {
       lastError = cause instanceof Error ? cause.message : String(cause)
       await delay(500 * attempt)

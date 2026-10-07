@@ -5,8 +5,8 @@ import { mirrorUrl, type DownloadJob } from "arknights-assets-catalog/compile"
 import { expect, test } from "vitest"
 import { appRootFrom } from "#compiler/repo-root.js"
 import { indexAudio } from "#compiler/media/fetch/audio-bank.js"
-import { emoteCatalog } from "#compiler/media/fetch/emote-catalog.js"
-import { buildPlan, collectEnemyIds, guidePages, skillIndicesByChar, uiExtras } from "#compiler/media/fetch/plan.js"
+import { EMOTE_CATALOG } from "#compiler/media/fetch/emote-catalog.js"
+import { buildPlan, collectEnemyIds, GUIDE_PAGES, skillIndicesByChar, UI_EXTRAS } from "#compiler/media/fetch/plan.js"
 
 const appRoot = appRootFrom(fileURLToPath(import.meta.url))
 const researchDir = join(appRoot, "data/compiler/input/research")
@@ -69,8 +69,8 @@ test("skill indices per char put the primary first", () => {
 
 test("the plan fetches battle emotes and guide pages from ArknightsAssets2", () => {
   const ui = planUi()
-  expect(emoteCatalog).toHaveLength(36)
-  for (const emote of emoteCatalog) {
+  expect(EMOTE_CATALOG).toHaveLength(36)
+  for (const emote of EMOTE_CATALOG) {
     const key = `emoticon/${emote.dir}/${emote.picId}`
     expect(altsOf(ui[key]), key).toEqual([
       {
@@ -82,9 +82,9 @@ test("the plan fetches battle emotes and guide pages from ArknightsAssets2", () 
   }
   expect(ui["emoticon/fooldoctor/pic_fooldoctor_08_battle"]).toBeTruthy()
   expect(altsOf(ui["emoticon/slug/pic_thanks_battle"])?.[0]?.rel).not.toBe(altsOf(ui["emoticon/basic/pic_thanks_battle"])?.[0]?.rel)
-  expect(guidePages.slice(0, 2)).toEqual(["autochess_home_1", "autochess_home_2"])
-  expect(guidePages).toHaveLength(19)
-  for (const key of guidePages) {
+  expect(GUIDE_PAGES.slice(0, 2)).toEqual(["autochess_home_1", "autochess_home_2"])
+  expect(GUIDE_PAGES).toHaveLength(19)
+  for (const key of GUIDE_PAGES) {
     expect(altsOf(ui[`guide/${key}`]), key).toEqual([
       {
         rel: `ui/guide/${key}.png`,
@@ -100,6 +100,6 @@ test("the plan fetches battle emotes and guide pages from ArknightsAssets2", () 
   expect(mirrorUrl(foold ?? "")).toBe(
     "https://cdn.jsdelivr.net/gh/ArknightsAssets/ArknightsAssets2@cn/assets/dyn/ui/emoticon/theme/%5Buc%5Demoticon_foolsday_doctor/icon/pic_fooldoctor_08_battle.png",
   )
-  expect(Object.isFrozen(uiExtras)).toBe(true)
-  expect(uiExtras.every((row) => Object.isFrozen(row))).toBe(true)
+  expect(Object.isFrozen(UI_EXTRAS)).toBe(true)
+  expect(UI_EXTRAS.every((row) => Object.isFrozen(row))).toBe(true)
 })

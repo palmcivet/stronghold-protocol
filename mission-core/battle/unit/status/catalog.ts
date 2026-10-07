@@ -18,7 +18,7 @@ import {
 import { dropStatus, immuneTo } from "#battle/unit/status/flags.js"
 import { palsyOverlap, strongestOverlap } from "#battle/unit/status/overlap.js"
 
-const decayTicks = ticks(RESIST_PALSY_DECAY)
+const DECAY_TICKS = ticks(RESIST_PALSY_DECAY)
 
 export function registerStatusCatalog(state: BattleState, registry: BattleRegistry): void {
   for (const definition of definitions(state, registry)) registry.registerStatus(definition)
@@ -190,7 +190,7 @@ function definitions(state: BattleState, registry: BattleRegistry): readonly Sta
         const status = unit.statuses.find((item) => item.id === "resist")
         if (!status) return
         status.pulse += 1
-        if (decayTicks <= 0 || status.pulse % decayTicks !== 0) return
+        if (DECAY_TICKS <= 0 || status.pulse % DECAY_TICKS !== 0) return
         const palsy = unit.statuses.find((item) => item.id === "palsy" && !item.dropped)
         if (!palsy) return
         palsy.stacks -= 1

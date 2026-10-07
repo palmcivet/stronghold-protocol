@@ -1,5 +1,5 @@
 import { CatalogReadError, type CatalogFiles } from "arknights-assets-catalog"
-import { packetFiles, type PacketName } from "#schema/packet-file.js"
+import { PACKET_FILES, type PacketName } from "#schema/packet-file.js"
 import type { PacketDocuments } from "./record-index.js"
 
 export interface LoadedPackets {
@@ -25,7 +25,7 @@ function freezeValue(root: unknown): unknown {
 }
 
 function documentKey(name: PacketName): string {
-  return packetFiles[name].slice(0, -".json".length)
+  return PACKET_FILES[name].slice(0, -".json".length)
 }
 
 /** 读一个赛季目录里的 JSON，并冻结结果。缺的预期文件列在 missing。 */

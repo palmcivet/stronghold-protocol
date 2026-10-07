@@ -49,7 +49,7 @@ const module: MissionModule = {
 | `registerTimer` | `timer` |
 | `registerDeployStrategy` | `deploy` |
 | `registerShift` | `shift` |
-| `registerSystem` | 槽名不在 `phaseSlots` 里时是 `phase` |
+| `registerSystem` | 槽名不在 `PHASE_SLOTS` 里时是 `phase` |
 
 规格点了没有传入的模块，或依赖不在规格名单里，`registry` 是 `module`。
 

@@ -1,14 +1,14 @@
-export const unitSides = ["ally", "enemy"] as const
+export const UNIT_SIDES = ["ally", "enemy"] as const
 
-export type UnitSide = (typeof unitSides)[number]
+export type UnitSide = (typeof UNIT_SIDES)[number]
 
-export const directions = ["UP", "RIGHT", "DOWN", "LEFT"] as const
+export const DIRECTIONS = ["UP", "RIGHT", "DOWN", "LEFT"] as const
 
-export type Direction = (typeof directions)[number]
+export type Direction = (typeof DIRECTIONS)[number]
 
-export const motions = ["WALK", "FLY"] as const
+export const MOTIONS = ["WALK", "FLY"] as const
 
-export type Motion = (typeof motions)[number]
+export type Motion = (typeof MOTIONS)[number]
 
 export interface TileCoord {
   readonly x: number
@@ -47,13 +47,13 @@ export interface TileSpec {
 /** 调用方已经归一化的属性。生命写入使用 hp。 */
 export type UnitAttributes = Readonly<Record<string, number>>
 
-export const spTypes = ["time", "attack", "hurt", "none"] as const
+export const SP_TYPES = ["time", "attack", "hurt", "none"] as const
 
-export type SpType = (typeof spTypes)[number]
+export type SpType = (typeof SP_TYPES)[number]
 
-export const skillOperations = ["MANUAL", "AUTO"] as const
+export const SKILL_OPERATIONS = ["MANUAL", "AUTO"] as const
 
-export type SkillOperation = (typeof skillOperations)[number]
+export type SkillOperation = (typeof SKILL_OPERATIONS)[number]
 
 export interface SkillModifier {
   readonly attribute: string
@@ -108,13 +108,13 @@ export interface AttackClip {
   readonly hit: number
 }
 
-export const attackDamageKinds = ["physical", "arts", "heal"] as const
+export const ATTACK_DAMAGE_KINDS = ["physical", "arts", "heal"] as const
 
-export type AttackDamageKind = (typeof attackDamageKinds)[number]
+export type AttackDamageKind = (typeof ATTACK_DAMAGE_KINDS)[number]
 
-export const projectileKinds = ["arrow", "bolt", "orb", "bomb", "boomerang"] as const
+export const PROJECTILE_KINDS = ["arrow", "bolt", "orb", "bomb", "boomerang"] as const
 
-export type ProjectileKind = (typeof projectileKinds)[number]
+export type ProjectileKind = (typeof PROJECTILE_KINDS)[number]
 
 /** 命中点周围的一圈。半径用格，按站位中心量。 */
 export interface SplashShape {

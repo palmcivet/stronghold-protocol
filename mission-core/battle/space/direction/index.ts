@@ -1,22 +1,22 @@
 import type { Direction } from "#contract/spec.js"
 
-export const defaultDirection: Direction = "RIGHT"
+export const DEFAULT_DIRECTION: Direction = "RIGHT"
 
-const forward: Readonly<Record<Direction, readonly [number, number]>> = {
+const FORWARD: Readonly<Record<Direction, readonly [number, number]>> = {
   UP: [1, 0],
   RIGHT: [0, 1],
   DOWN: [-1, 0],
   LEFT: [0, -1],
 }
 
-const opposite: Readonly<Record<Direction, Direction>> = {
+const OPPOSITE: Readonly<Record<Direction, Direction>> = {
   UP: "DOWN",
   DOWN: "UP",
   RIGHT: "LEFT",
   LEFT: "RIGHT",
 }
 
-const mirror: Readonly<Record<Direction, Direction>> = {
+const MIRROR: Readonly<Record<Direction, Direction>> = {
   UP: "UP",
   DOWN: "DOWN",
   RIGHT: "LEFT",
@@ -28,7 +28,7 @@ export function isDirection(value: string): value is Direction {
 }
 
 /** 朝向名、大小写或旧的左右符号。无法识别时用 fallback。 */
-export function normDirection(value: unknown, fallback: Direction = defaultDirection): Direction {
+export function normDirection(value: unknown, fallback: Direction = DEFAULT_DIRECTION): Direction {
   if (typeof value === "string") {
     const text = value.trim().toUpperCase()
     if (isDirection(text)) return text
@@ -39,7 +39,7 @@ export function normDirection(value: unknown, fallback: Direction = defaultDirec
 
 /** 朝向的前向 [dRow, dCol]。row 增大是向上，row 0 在底部。 */
 export function directionVector(facing: Direction): readonly [number, number] {
-  return forward[normDirection(facing)]
+  return FORWARD[normDirection(facing)]
 }
 
 /**
@@ -80,11 +80,11 @@ export function horizontalSign(facing: Direction): number {
 
 /** RIGHT 与 LEFT 对调，UP 与 DOWN 不变。 */
 export function mirrorDirection(facing: Direction): Direction {
-  return mirror[normDirection(facing)]
+  return MIRROR[normDirection(facing)]
 }
 
 export function oppositeDirection(facing: Direction): Direction {
-  return opposite[normDirection(facing)]
+  return OPPOSITE[normDirection(facing)]
 }
 
 export function perpendicular(left: Direction, right: Direction): boolean {
@@ -94,7 +94,7 @@ export function perpendicular(left: Direction, right: Direction): boolean {
 }
 
 /** 位移的主轴朝向。列差和行差一样大时取水平方向；零位移用 fallback。 */
-export function directionFromDelta(dRow: number, dCol: number, fallback: Direction = defaultDirection): Direction {
+export function directionFromDelta(dRow: number, dCol: number, fallback: Direction = DEFAULT_DIRECTION): Direction {
   const row = Number(dRow) || 0
   const col = Number(dCol) || 0
   if (row === 0 && col === 0) return normDirection(fallback)

@@ -1,11 +1,11 @@
 // 从 excel/audio_data.json 取出单位音效、BGM 和界面音效。
 // 一条路径列表就是银行本身：mixOf 用这份数组的引用找回播放概率和音量。
 
-const prefixPattern: RegExp = /^audio\/sound_beta_2\//i
+const PREFIX_PATTERN: RegExp = /^audio\/sound_beta_2\//i
 
 export function assetToPath(asset: unknown): string | null {
   if (typeof asset !== "string" || !asset) return null
-  const path = asset.replace(prefixPattern, "").replace(/\\/g, "/").toLowerCase()
+  const path = asset.replace(PREFIX_PATTERN, "").replace(/\\/g, "/").toLowerCase()
   if (!path || path.includes("..")) return null
   return path.endsWith(".mp3") ? path : path + ".mp3"
 }
@@ -175,10 +175,10 @@ function firstMatching(
   return null
 }
 
-const skillModeFile: RegExp = /_(d|h|s)\d*\.mp3$/i
+const SKILL_MODE_FILE: RegExp = /_(d|h|s)\d*\.mp3$/i
 
 export function normalModeBank(paths: readonly string[] | null | undefined): boolean {
-  return Array.isArray(paths) && paths.length > 0 && !paths.some((path) => skillModeFile.test(path))
+  return Array.isArray(paths) && paths.length > 0 && !paths.some((path) => SKILL_MODE_FILE.test(path))
 }
 
 export interface UnitSfx {
@@ -235,7 +235,7 @@ export function pickUnitSfx(banks: ReadonlyMap<string, readonly string[]> | unde
 
 export type SoundSpec = { readonly path: string } | { readonly bank: string }
 
-export const uiSfx: Readonly<Record<string, SoundSpec>> = Object.freeze({
+export const UI_SFX: Readonly<Record<string, SoundSpec>> = Object.freeze({
   click: { path: "general/g_ui/g_ui_btn_h.mp3" },
   back: { path: "general/g_ui/g_ui_btn_u.mp3" },
   confirm: { path: "general/g_ui/g_ui_confirm_h.mp3" },
@@ -293,7 +293,7 @@ export const uiSfx: Readonly<Record<string, SoundSpec>> = Object.freeze({
   joinRoom: { bank: "ui.ON_ACT1AUTOCHESS_PLAYER_JOINROOM" },
 })
 
-export const battleSfx: Readonly<Record<string, SoundSpec>> = Object.freeze({
+export const BATTLE_SFX: Readonly<Record<string, SoundSpec>> = Object.freeze({
   deploy: { path: "battle/b_char/b_char_set.mp3" },
   tokenDeploy: { path: "battle/b_char/b_char_tokenset.mp3" },
   charDie: { path: "battle/b_char/b_char_dead.mp3" },
@@ -311,7 +311,7 @@ export function resolveSpec(spec: SoundSpec, bank: (name: string) => readonly st
   return bank(spec.bank)
 }
 
-export const voiceDirs: Readonly<Record<string, string>> = Object.freeze({
+export const VOICE_DIRS: Readonly<Record<string, string>> = Object.freeze({
   cn: "voice_cn",
   jp: "voice",
   en: "voice_en",
@@ -320,7 +320,7 @@ export const voiceDirs: Readonly<Record<string, string>> = Object.freeze({
 
 export type VoiceLang = "cn" | "jp" | "en" | "kr"
 
-export const voiceSlotNames: Readonly<Record<string, string>> = Object.freeze({
+export const VOICE_SLOT_NAMES: Readonly<Record<string, string>> = Object.freeze({
   BATTLE_START: "start",
   BATTLE_FACE_ENEMY: "faceEnemy",
   BATTLE_SELECT: "select",
@@ -338,7 +338,7 @@ export const voiceSlotNames: Readonly<Record<string, string>> = Object.freeze({
   GACHA: "gacha",
 })
 
-export const voiceBattleSlots: readonly string[] = Object.freeze([
+export const VOICE_BATTLE_SLOTS: readonly string[] = Object.freeze([
   "start",
   "faceEnemy",
   "select",
@@ -353,7 +353,7 @@ export const voiceBattleSlots: readonly string[] = Object.freeze([
   "resultLose",
 ])
 
-export const voicePrepSlots: readonly string[] = Object.freeze(["gacha", "squad", "squadFirst"])
+export const VOICE_PREP_SLOTS: readonly string[] = Object.freeze(["gacha", "squad", "squadFirst"])
 
 export function indexVoice(
   charword: unknown,
@@ -370,7 +370,7 @@ export function indexVoice(
     if (!row) continue
     const charId = typeof row["charId"] === "string" ? row["charId"] : ""
     const placeType = typeof row["placeType"] === "string" ? row["placeType"] : ""
-    const slot = voiceSlotNames[placeType]
+    const slot = VOICE_SLOT_NAMES[placeType]
     const voiceId = typeof row["voiceId"] === "string" ? row["voiceId"] : ""
     if (!charId || !slot || (keep && !keep.has(slot)) || !voiceId.startsWith(`${lang}_`)) continue
     if (row["wordKey"] !== charId) continue

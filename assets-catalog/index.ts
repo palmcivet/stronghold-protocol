@@ -7,18 +7,18 @@ export { fetchCatalogHttp } from "#port/fetch-http.js"
 export { nodeCatalogFiles } from "#port/node-files.js"
 
 export { nextArtUrl } from "#runtime/media/address.js"
-export { audioFileCandidates, mediaPrefix, mediaUrl } from "#runtime/media/media-route.js"
+export { audioFileCandidates, MEDIA_PREFIX, mediaUrl } from "#runtime/media/media-route.js"
 export { validSpine, type SpineFile } from "#runtime/media/spine-file.js"
 export {
   createSpineCache,
   spineDataWeight,
-  spineIdleBytes,
+  SPINE_IDLE_BYTES,
   spinePages,
   type SpineCache,
 } from "#runtime/media/spine-cache.js"
 export {
-  audioBufferBytes,
-  audioBufferCount,
+  AUDIO_BUFFER_BYTES,
+  AUDIO_BUFFER_COUNT,
   createAudioBuffer,
   isAudioResponse,
   pcmBytes,
