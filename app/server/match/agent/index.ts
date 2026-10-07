@@ -158,7 +158,7 @@ const DEFAULT_MELEE_RANGE = [[0, 0], [0, 1]];
  * (DESIGN §21.26); with every band excluded, the default band. One rng draw per call (deterministic per seed); modes
  * without inactive bonds keep exactly the earlier picks.
  */
-export function botPickBand(m: any, ps: any) : any {
+export function botPickBand(m: any, _ps: any) : any {
   const gd = m.gd;
   const ids = gd.bandIds();
   if (!ids.length) return gd.defaultBandId;
@@ -474,7 +474,7 @@ function bondValue(m?: any, c?: any, owned?: any, focus?: any, second : any= nul
  */
 function power(c?: any) : any {
   if (!c) return 0;
-  const p = TIER_POWER[Math.max(1, Math.min(6, c.tier || 1))];
+  const p = TIER_POWER[Math.max(1, Math.min(6, c.tier || 1))] ?? 0;
   return c.isGolden ? p * 1.9 : p;
 }
 
@@ -587,7 +587,7 @@ function chooseLineup(m?: any, ps?: any, ctx?: any) : any {
 }
 
 /** Shop / reward score of acquiring one copy of chess `id` (0 = not worth it). */
-function buyScore(m?: any, ps?: any, id?: any, ctx?: any) : any {
+function buyScore(m?: any, _ps?: any, id?: any, ctx?: any) : any {
   const gd = m.gd;
   const c = chessRec(m, id);
   if (!c) return 0;
@@ -734,7 +734,7 @@ export function fieldModel(m: any, ps: any = null) : any {
   if (!routesOut.some((r?: any) : any => !r.fly)) {
     for (const [k, arr] of entriesOf(gpaths)) {
       if (!Array.isArray(arr) || !arr.length) continue;
-      const [sr, sc] = String(k).split('->')[0].split(',').map(Number);
+      const [sr = NaN, sc = NaN] = String(k).split('->')[0].split(',').map(Number);
       if (!(sr >= FIELD.r0 && sr <= FIELD.r1 && sc <= FIELD.c1)) continue;
       // stage ground paths are in normal-field coordinates: no boss mapping
       const own = arr.filter(([r, c]: any) : any => inRect(r, c)).map(([r, c]: any) : any => tileKey(r, c));
@@ -1175,7 +1175,7 @@ function tryDo(fn?: any) : any {
   try { const r = fn(); return !!(r && r.ok); } catch { return false; }
 }
 
-function canUseItem(m?: any, ps?: any, item?: any) : any {
+function canUseItem(m?: any, _ps?: any, item?: any) : any {
   const rec = m.gd.item(item.id);
   if (!rec) return false;
   if (rec.itemType === 'MAGIC') return m.registry.has('item:' + itemKey(item.id));
@@ -1402,7 +1402,7 @@ export function botPrep(m: any, ps: any) : any {
  * Freeze the shop (free) when it shows a copy that would complete a held pair and the bot cannot afford it: the unsold
  * slots are kept at the next round start (PlayerState.startRound rollShop keepFrozen), the rest rerolled.
  */
-function maybeFreeze(m?: any, ps?: any) : any {
+function maybeFreeze(_m?: any, ps?: any) : any {
   if (ps.shop.frozen) return;
   if (ps.shop.slots.some((s?: any) : any => s && !s.sold && s.kind === 'chess' && ps.priceOf(s) > ps.funds && ps.completesChessMerge(s.id))) tryDo(() : any => ps.freeze());
 }

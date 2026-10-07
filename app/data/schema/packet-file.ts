@@ -17,7 +17,6 @@ export const PACKET_FILES = {
   tuning: "tuning.json",
   emotes: "emotes.json",
   assets: "assets.json",
-  local: "local-assets.json",
 } as const
 
 export type PacketName = keyof typeof PACKET_FILES

@@ -425,7 +425,7 @@ export function emoteArtGroup(id: unknown): string | null {
 
 export function emoteArtPath(id: unknown): string | null {
   const entry = emoteInfo(id)
-  return entry ? `/assets/local/emoticon/${entry.dir}/${entry.picId}.png` : null
+  return entry ? `/assets/ui/emoticon/${entry.dir}/${entry.picId}.png` : null
 }
 
 export const EMOTE_COOLDOWN_MS: number = 1000

@@ -1,9 +1,17 @@
 import fs from "node:fs"
+import { createRequire } from "node:module"
 import path from "node:path"
-import { DATA_PRODUCT_ROOT } from "@alliance/data/product-root.js"
+
+const require = createRequire(import.meta.url)
+
+function dataPackageRoot(): string {
+  return path.dirname(require.resolve("@alliance/data/package.json"))
+}
 
 /** Compiled season packet the process reads when no directory is given. */
-export const DEFAULT_PACKET_DIR: string = path.join(DATA_PRODUCT_ROOT, "season/act2autochess")
+export const DEFAULT_PACKET_DIR: string = path.resolve(
+  process.env.SP_DATA_DIR || path.join(dataPackageRoot(), "product/season/act2autochess"),
+)
 
 export const DATA_FILES: readonly string[] = Object.freeze([
   "config", "tuning", "chess", "bonds", "garrisons", "items", "bands", "effects", "choices",

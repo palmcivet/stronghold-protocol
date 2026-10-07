@@ -3,7 +3,7 @@ import { packetAddress, PACKET_FILES, type PacketName } from "#schema/packet-fil
 export const PACKET_RETRY_DELAYS_MS = [600, 2000] as const
 export const ART_MANIFEST_TIMEOUT_MS = 8000
 
-const ART_MANIFESTS = new Set<PacketName>(["local", "assets"])
+const ART_MANIFESTS = new Set<PacketName>(["assets"])
 
 export type PacketStatus = "idle" | "loading" | "ready" | "missing"
 

@@ -29,5 +29,8 @@
     "build": "pnpm -r --if-present build",
     "lint": "pnpm -r --if-present lint",
     "test": "pnpm -r --if-present test"
+  },
+  "devDependencies": {
+    "vitest": "catalog:"
   }
 }

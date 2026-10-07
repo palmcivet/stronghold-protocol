@@ -390,7 +390,7 @@ export function buildBossWave(gd: any, rng: any, factions: any, round: any, { bo
   let templateId = typeof map[bossId] === 'string' ? map[bossId] : null;
   if (!templateId) {
     const first = Object.values(map).find((v?: any) : any => typeof v === 'string');
-    templateId = first || null;
+    templateId = typeof first === 'string' ? first : null;
   }
   if (templateId && solo && !/_s$/.test(templateId) && gd.wave(`${templateId}_s`)) templateId = `${templateId}_s`;
   if (templateId && !solo && /_s$/.test(templateId) && gd.wave(templateId.replace(/_s$/, ''))) templateId = templateId.replace(/_s$/, '');
@@ -463,7 +463,7 @@ function hostAction(gd: any, wave: any, { fly, token = false }: any = {}): any {
  * Hidden Core included (`side`: the player's half of the boss field, see routeByMotion).
  * @param {Array<{ id: string, card: object }>} bounties
  */
-export function bountySpawns(gd: any, round: any, wave: any, bounties: any, playerId: any, { solo = false, side = null }: any = {}) : any { // eslint-disable-line no-unused-vars
+export function bountySpawns(gd: any, round: any, wave: any, bounties: any, playerId: any, { solo: _solo = false, side = null }: any = {}) : any {
   return bountyPlan(gd, round, wave, bounties, playerId, side).specs;
 }
 
@@ -610,7 +610,7 @@ export function previewOf(spawns: any) : any {
  * @param {number} helperCount 1 | 2
  * @returns {{ templateId: string|null, spawns: object[], routes: object[] }}
  */
-export function buildUniteWave(gd: any, leaked: any, helperCount: any, timeLimit: any) : any { // eslint-disable-line no-unused-vars
+export function buildUniteWave(gd: any, leaked: any, helperCount: any, _timeLimit: any) : any {
   const templates = gd.unite.templates;
   const templateId = templates[String(helperCount)] || templates[helperCount] || null;
   const tpl = templateId ? gd.wave(templateId) : null;

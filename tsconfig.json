@@ -14,8 +14,6 @@
     { "path": "./app/server" },
     { "path": "./app/server/tsconfig.test.json" },
     { "path": "./app/client" },
-    { "path": "./app/client/tsconfig.test.json" },
-    { "path": "./deployment" },
-    { "path": "./deployment/tsconfig.test.json" }
+    { "path": "./app/client/tsconfig.test.json" }
   ]
 }

@@ -1,15 +1,13 @@
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
-import { fileURLToPath } from "node:url"
 import { mirrorUrl, type DownloadJob } from "arknights-assets-catalog/compile"
 import { expect, test } from "vitest"
-import { appRootFrom } from "#compiler/repo-root.js"
+import { dataWorkspace } from "#compiler/workspace.js"
 import { indexAudio } from "#compiler/media/fetch/audio-bank.js"
 import { EMOTE_CATALOG } from "#compiler/media/fetch/emote-catalog.js"
 import { buildPlan, collectEnemyIds, GUIDE_PAGES, skillIndicesByChar, UI_EXTRAS } from "#compiler/media/fetch/plan.js"
 
-const appRoot = appRootFrom(fileURLToPath(import.meta.url))
-const researchDir = join(appRoot, "compiler/input/research")
+const researchDir = dataWorkspace().researchDir
 const readJson = (name: string): unknown => JSON.parse(readFileSync(join(researchDir, name), "utf8")) as unknown
 
 const aa2 = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsAssets2/cn/assets/dyn/"
@@ -95,7 +93,6 @@ test("the plan fetches battle emotes and guide pages from ArknightsAssets2", () 
   }
   const rels = Object.values(ui).map((leaf) => altsOf(leaf)?.[0]?.rel ?? "")
   expect(new Set(rels).size).toBe(rels.length)
-  expect(rels.every((rel) => !rel.startsWith("local/"))).toBe(true)
   const foold = altsOf(ui["emoticon/fooldoctor/pic_fooldoctor_08_battle"])?.[0]?.urls[0]
   expect(mirrorUrl(foold ?? "")).toBe(
     "https://cdn.jsdelivr.net/gh/ArknightsAssets/ArknightsAssets2@cn/assets/dyn/ui/emoticon/theme/%5Buc%5Demoticon_foolsday_doctor/icon/pic_fooldoctor_08_battle.png",

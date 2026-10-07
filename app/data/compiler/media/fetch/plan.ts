@@ -22,11 +22,9 @@ import {
   urlDir,
   type AssetKind,
   type DownloadJob,
-  type LocalSpineMeta,
   type PlannedSpineModel,
 } from "arknights-assets-catalog/compile"
 import { EMOTE_CATALOG } from "./emote-catalog.js"
-import { literal } from "./manifest.js"
 
 const VOICE_ID_LANG = "CN"
 
@@ -307,7 +305,6 @@ export interface BuildPlanInput {
   readonly extraEnemyIds?: readonly string[]
   readonly extraTokenIds?: readonly string[]
   readonly extraHandbook?: Readonly<Record<string, string>>
-  readonly localEnemySpines?: Readonly<Record<string, LocalSpineMeta>>
 }
 
 export interface AssetTemplate {
@@ -349,7 +346,6 @@ export function buildPlan(input: BuildPlanInput): AssetPlan {
   const extraEnemyIds = input.extraEnemyIds ?? []
   const extraTokenIds = input.extraTokenIds ?? []
   const extraHandbook = input.extraHandbook ?? {}
-  const localEnemySpines = input.localEnemySpines ?? {}
   const assets07 = input.assets07
   const ops03 = input.ops03
   const enemies05 = input.enemies05
@@ -585,11 +581,6 @@ export function buildPlan(input: BuildPlanInput): AssetPlan {
       else notes.push(`${id}: Spine aliased to ${String(enemy["spineAliasOf"])}`)
     }
     enemy["spine"] = spine
-    const local = Object.hasOwn(localEnemySpines, id) ? localEnemySpines[id] : null
-    if (local && typeof local === "object") {
-      enemy["spineLocal"] = literal({ group: `spine/enemy/${id}`, ...local })
-      notes.push(`${id}: official Spine from the local client when extracted (spineLocal)`)
-    }
     enemies[id] = enemy
     let banks = audio.unitBanks.get(id)
     for (const other of [handbookOf.get(id), text(enemy["spineAliasOf"]), baseIdOf(id)]) {

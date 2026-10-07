@@ -5,32 +5,38 @@ description: 基础字节和模式记录为什么分成两层，以及一个模�
 
 # 设计
 
-这一页说明两层为什么分开。目标目录见 [目录](./layout.md)。
+这一页说明基础媒体、应用资源清单和发布包为什么分开。目录结构见 [目录](./layout.md)。
 
 ## 两层
 
-干员和敌人都有两层。
+## 三层边界
 
-基础资源是官方身份和它的字节：立绘、骨架、语音、技能图标、字体。标识是 `charId`、`enemyId` 这种官方 id。任何模式都能用。
+### 基础 catalog
 
-模式记录是某一个模式怎么使用这个身份。每个模式写成自己的一套记录，仍然指向同一批字节。
+catalog 是物理文件的集合：立绘、骨架、语音、技能图标等。它记录内容 id、地址、hash、依赖和来源，但不记录某个模式是否会用到某个干员。
 
-资源目录发布第一层。模式在自己的包里写记录和构建器。
+`buildCatalogRelease()` 根据实际存在的文件生成 `catalog.json`。同一文件只要内容相同，就能在不同模式或不同赛季中复用同一个 id。
 
-## 模式复用目录
+### 应用资源清单
 
-依赖从模式指向资源目录。
+`app/data` 的构建器根据研究表和赛季数据选择资源，把领域记录中的地址转换成 `AssetRef`，写出这一季的 `resources.json`。这一步才知道 `charId`、`enemyKey`、技能、BGM 和 UI 分组。
 
-模式复用文件和 HTTP 端口、上游缓存、按清单下载、骨架和字体的准备，以及运行时按地址取字节。
+`assets.json` 是应用侧的兼容和诊断清单，`resources.json` 是客户端资源 store 的入口。业务代码不应把 `/assets/...` 字符串写进跨包协议；应传递资源引用或由应用 resolver 按领域记录取引用。
 
-模式列出要哪些官方 id。目录按那份清单把字节准备好。
+### 发布包
 
-资源目录单独发布下载和缓存。另一个模式复用拉取时，依赖的是这份目录。
+`deployment/` 中的脚本会提取应用资源，打包成资源包，原子化发布，可自由组合。
 
-## 模式怎么接到字节
+- 基础包
+- 赛季包
 
-模式在使用前把单位定义归一化，再把骨架地址交给画面。画面按这个地址向资源目录要字节。
+## 运行时怎么接到字节
 
-## 来源
+`app/client/resource/store.ts` 读取 base manifest、season manifest、`resources.json` 和 catalog release，构造 `ResourceResolver`。调用方拿到 `AssetRef` 后交给资源端口；resolver 负责 fallback、依赖和 `assetOrigin` 到 URL 的组合。
 
-`CatalogEntry.source` 是 `upstream` 或 `local`。`upstream` 的字节由编译器按社区项目的地址写入 `product/`。`local` 的字节随已发布的客户端附带。
+`assets-catalog` 不读取赛季 JSON，也不决定单位如何显示。画面、音频和 UI 只接收资源句柄；服务端演算读取 packet 中已经编译好的规则字段，不在运行时读取媒体 catalog。
+
+## 来源与回退
+
+
+`fallbackId` 是 catalog 层的物理资源回退；领域层的回退（例如敌人 alias、技能空图、token 使用 owner 头像）仍由 `app/data` resolver 决定。两者不能混为同一套规则。

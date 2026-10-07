@@ -152,7 +152,7 @@ test("emote ids are the 36 official battle ids, and a wire id cannot reach Objec
     "pic_fooldoctor_01_battle", "pic_fooldoctor_02_battle", "pic_fooldoctor_04_battle",
     "pic_fooldoctor_05_battle", "pic_fooldoctor_06_battle", "pic_fooldoctor_08_battle",
   ])
-  expect(emoteArtPath("autochess_battle_fooldoctor_06")).toBe("/assets/local/emoticon/fooldoctor/pic_fooldoctor_08_battle.png")
+  expect(emoteArtPath("autochess_battle_fooldoctor_06")).toBe("/assets/ui/emoticon/fooldoctor/pic_fooldoctor_08_battle.png")
   expect(emoteArtGroup("autochess_battle_dying")).toBe("emoticon/basic_2")
   expect(emoteInfo("autochess_battle_call")?.themeId).toBe("emoticon_autochess_basic_2")
   for (const id of ["happy", "__proto__", "constructor", "toString", "", null, 42]) {

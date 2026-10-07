@@ -658,7 +658,7 @@ export class Lobby implements NetHandler {
   private loadout(session: Session, msg: Record<string, unknown>): HandlerResult {
     const data = this.safeData()
     const checked = checkLoadout(msg.entries, (id: string) => chessRecord(lookup("chess", id, data)))
-    if (!checked.ok) return fail(isErrCode(checked.error) ? checked.error : ERR.BAD_MSG, checked.detail)
+    if ("error" in checked) return fail(isErrCode(checked.error) ? checked.error : ERR.BAD_MSG, checked.detail)
     const loadout = freezeLoadout(checked.loadout)
     session.loadout = loadout
     const room = this.roomOf(session)

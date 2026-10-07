@@ -2,24 +2,17 @@
 
 import { readdir, unlink } from "node:fs/promises"
 import { join, relative, sep } from "node:path"
-import { fileURLToPath } from "node:url"
-import { CatalogReadError, type CatalogFiles, type CatalogHttp } from "arknights-assets-catalog"
+import { assetRef, CatalogReadError, type CatalogEntry, type CatalogFiles, type CatalogHttp } from "arknights-assets-catalog"
 import {
   Downloader,
   buildFonts,
-  catalogPackageRoot,
-  findLocalEnemyModels,
+  buildCatalogRelease,
   fontJobs,
   loadIndexes,
-  loadLocalEnemySpines,
-  localEnemySpineMeta,
-  LOCAL_ENEMY_SPINES_FILE,
   processModels,
   skelParserAvailable,
-  type LocalSpineMeta,
 } from "arknights-assets-catalog/compile"
-import { appRootFrom } from "#compiler/repo-root.js"
-import { seasonPacketDirectory } from "#schema/packet-file.js"
+import { dataWorkspace } from "#compiler/workspace.js"
 import { indexAudio, type VoiceLang } from "./audio-bank.js"
 import {
   collectLeaves,
@@ -32,12 +25,12 @@ import {
 } from "./manifest.js"
 import { buildPlan } from "./plan.js"
 
-const appRoot = appRootFrom(fileURLToPath(import.meta.url))
-const catalogRoot = catalogPackageRoot()
-const assetsDir = join(catalogRoot, "product", "media")
-const fontsDir = join(catalogRoot, "product", "font")
-const cacheDir = join(catalogRoot, ".cache")
-const researchDir = join(appRoot, "compiler", "input", "research")
+const workspace = dataWorkspace()
+const catalogRoot = workspace.catalog.root
+const assetsDir = workspace.catalog.mediaDir
+const fontsDir = workspace.catalog.fontDir
+const cacheDir = workspace.catalog.cacheDir
+const researchDir = workspace.researchDir
 const reportPath = join(cacheDir, "assets-report.json")
 
 const HELP_TEXT = `Usage: [options]
@@ -49,10 +42,8 @@ const HELP_TEXT = `Usage: [options]
   --voice-lang=cn   operator battle voice language: cn (default) | jp | en | kr
   --voice-all       plan every official voice slot, including prep-only lines
   --season=ID       write product/season/<id>/assets.json under @alliance/data (required)
-  --prune           delete files under product/media that the manifest no longer references
-                    (product/media/local/** is never deleted); implies --allow-shrink
+  --prune           delete files under product/media that the manifest no longer references; implies --allow-shrink
   --allow-shrink    write the manifest even when it loses entries the current one has
-  --local-spines    rewrite ${LOCAL_ENEMY_SPINES_FILE} from extracted enemy models
   --help            this text`
 
 export interface FetchOptions {
@@ -63,7 +54,6 @@ export interface FetchOptions {
   readonly refreshIndex: boolean
   readonly prune: boolean
   readonly allowShrink: boolean
-  readonly localSpines: boolean
   readonly voiceLang: VoiceLang
   readonly voiceAll: boolean
   readonly season: string | null
@@ -79,7 +69,6 @@ export function parseArgs(argv: readonly string[]): FetchOptions {
     refreshIndex: boolean
     prune: boolean
     allowShrink: boolean
-    localSpines: boolean
     voiceLang: VoiceLang
     voiceAll: boolean
     season: string | null
@@ -92,7 +81,6 @@ export function parseArgs(argv: readonly string[]): FetchOptions {
     refreshIndex: false,
     prune: false,
     allowShrink: false,
-    localSpines: false,
     voiceLang: "cn",
     voiceAll: false,
     season: null,
@@ -107,7 +95,6 @@ export function parseArgs(argv: readonly string[]): FetchOptions {
     else if (key === "--refresh-index") options.refreshIndex = true
     else if (key === "--prune") options.prune = true
     else if (key === "--allow-shrink") options.allowShrink = true
-    else if (key === "--local-spines") options.localSpines = true
     else if (key === "--voice-lang") {
       if (value !== "cn" && value !== "jp" && value !== "en" && value !== "kr") {
         throw new Error(`unknown --voice-lang ${value} (cn | jp | en | kr)`)
@@ -150,7 +137,7 @@ function errorMessage(cause: unknown): string {
 }
 
 function manifestPath(season: string): string {
-  return join(appRoot, seasonPacketDirectory(season), "assets.json")
+  return join(workspace.seasonDir(season), "assets.json")
 }
 
 async function readJson(files: CatalogFiles, path: string): Promise<unknown> {
@@ -177,6 +164,18 @@ async function readOptionalJson(files: CatalogFiles, rel: string): Promise<unkno
 
 function jsonText(value: unknown, indent?: number): string {
   return JSON.stringify(value, null, indent) + "\n"
+}
+
+function resourceManifest(value: unknown, entries: Readonly<Record<string, CatalogEntry>>): unknown {
+  if (typeof value === "string" && (value.startsWith("/assets/") || value.startsWith("/fonts/"))) {
+    const entry = Object.values(entries).find((item) => item.address === value)
+    return entry ? assetRef(entry) : value
+  }
+  if (Array.isArray(value)) return value.map((item) => resourceManifest(item, entries))
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, resourceManifest(item, entries)]))
+  }
+  return value
 }
 
 async function listFiles(dir: string, base = dir, out: string[] = []): Promise<string[]> {
@@ -269,54 +268,30 @@ function requiredMisses(manifest: Record<string, unknown>, charIds: readonly str
   return out
 }
 
-const LOCAL_SPINES_ABOUT =
-  "Spine metadata of the enemy models only the local client has (ENEMY_SPINES). " +
-  "enemies[id].spineLocal names these files."
-
-async function syncLocalEnemySpines(files: CatalogFiles, options: FetchOptions): Promise<Record<string, LocalSpineMeta>> {
-    const path = join(catalogRoot, LOCAL_ENEMY_SPINES_FILE)
-    const committed = await loadLocalEnemySpines(path)
-    const found = await findLocalEnemyModels(assetsDir)
-    if (!Object.keys(found).length) {
-      if (options.localSpines) log(`[local-spines] no extracted enemy model under product/media/local/spine/enemy/ — ${LOCAL_ENEMY_SPINES_FILE} kept`)
-      return committed
-    }
-    const { meta, problems } = await localEnemySpineMeta(assetsDir, found)
-    for (const problem of problems) log(`[local-spines] ${problem}`)
-    if (options.localSpines && !options.dryRun) {
-      const models = { ...committed, ...meta }
-      const sorted = Object.fromEntries(Object.keys(models).sort().map((key) => [key, models[key]]))
-      await files.writeTextAtomic(path, jsonText({ about: LOCAL_SPINES_ABOUT, models: sorted }, 2))
-      log(`[local-spines] ${Object.keys(meta).length} model(s) → ${LOCAL_ENEMY_SPINES_FILE}`)
-      return sorted as Record<string, LocalSpineMeta>
-    }
-    for (const [id, model] of Object.entries(meta)) {
-      if (JSON.stringify(model) !== JSON.stringify(committed[id])) {
-        log(`[local-spines] ${id}: the extracted model differs from ${LOCAL_ENEMY_SPINES_FILE} (re-run with --local-spines to update it)`)
-      }
-    }
-    return committed
-}
-
 export async function fetchAssets(files: CatalogFiles, http: CatalogHttp, argv: readonly string[]): Promise<number> {
     const options = parseArgs(argv)
     if (options.help) {
       log(HELP_TEXT)
       return 0
     }
-    if (!options.season) throw new CatalogReadError(appRoot, "--season is required")
+    if (!options.season) throw new CatalogReadError(workspace.productDir, "--season is required")
     const started = Date.now()
     const output = manifestPath(options.season)
-    log(`[assets] app ${appRoot}`)
+    log(`[assets] data product ${workspace.productDir}`)
     log(`[assets] catalog ${catalogRoot}`)
     if (!skelParserAvailable()) throw new CatalogReadError(catalogRoot, "@pixi-spine/runtime-3.8 not found — run `npm install` first")
     const assets07 = await readJson(files, join(researchDir, "07-assets.json"))
     const ops03 = await readJson(files, join(researchDir, "03-operators.json"))
     const enemies05 = await readJson(files, join(researchDir, "05-enemies.json"))
     const maps05 = await readJson(files, join(researchDir, "05-maps.json"))
-    const indexes = await loadIndexes(files, http, catalogRoot, { refresh: options.refreshIndex && !options.offline, offline: options.offline, log })
+    const indexes = await loadIndexes(files, http, catalogRoot, {
+      refresh: options.refreshIndex && !options.offline,
+      offline: options.offline,
+      cacheDir,
+      log,
+    })
     const audio = indexAudio(indexes.audioData)
-    const seasonDir = join(appRoot, seasonPacketDirectory(options.season))
+    const seasonDir = workspace.seasonDir(options.season)
     const dataEnemies = await readOptionalJson(files, join(seasonDir, "enemies.json"))
     const dataTokens = await readOptionalJson(files, join(seasonDir, "tokens.json"))
     const dataBosses = await readOptionalJson(files, join(seasonDir, "bosses.json"))
@@ -327,7 +302,6 @@ export async function fetchAssets(files: CatalogFiles, http: CatalogHttp, argv: 
       const handbookId = typeof row?.["handbookId"] === "string" ? row["handbookId"] : ""
       if (enemyKey && handbookId) extraHandbook[enemyKey] = handbookId
     }
-    const localEnemySpines = await syncLocalEnemySpines(files, options)
     const plan = buildPlan({
       assets07,
       ops03,
@@ -341,7 +315,6 @@ export async function fetchAssets(files: CatalogFiles, http: CatalogHttp, argv: 
       extraEnemyIds: Object.keys(record(dataEnemies) ?? {}),
       extraTokenIds: Object.keys(record(dataTokens) ?? {}),
       extraHandbook,
-      localEnemySpines,
     })
     const leaves = collectLeaves(plan.template)
     log(
@@ -391,6 +364,20 @@ export async function fetchAssets(files: CatalogFiles, http: CatalogHttp, argv: 
     const cssReady = await files.exists(join(fontsDir, "fonts.css"))
     body["fonts"] = cssReady ? { css: "/fonts/fonts.css", faces: fontFaces } : { faces: fontFaces }
     const bytes = totalBytes(assetsDir, resolved.files)
+    const fontPaths = (await listFiles(fontsDir))
+      .filter((path) => /\.(woff2?|otf|ttf)$/i.test(path))
+      .map((path) => `font/${path}`)
+    const catalogRelease = await buildCatalogRelease({
+      files: {
+        ...files,
+        readBytes: async (path: string) =>
+          files.readBytes(join(path.startsWith("font/") ? fontsDir : assetsDir, path.replace(/^font\//, ""))),
+      },
+      paths: [...resolved.files, ...fontPaths],
+      generator: "app/data/compiler/media/fetch/assets.ts",
+    })
+    await files.writeTextAtomic(workspace.catalog.releasePath, jsonText(catalogRelease))
+    await files.writeTextAtomic(join(output.replace(/assets\.json$/, "resources.json")), jsonText(resourceManifest(body, catalogRelease.entries)))
     const manifest = {
       version: MANIFEST_VERSION,
       hash: contentHash(body),
@@ -405,15 +392,15 @@ export async function fetchAssets(files: CatalogFiles, http: CatalogHttp, argv: 
         try {
           current = JSON.parse(loaded) as unknown
         } catch (cause) {
-          log(`[manifest] the current ${relative(appRoot, output)} is unreadable (${errorMessage(cause)}): replaced`)
+          log(`[manifest] the current ${output} is unreadable (${errorMessage(cause)}): replaced`)
         }
       } catch (cause) {
-        log(`[manifest] the current ${relative(appRoot, output)} is unreadable (${errorMessage(cause)}): replaced`)
+          log(`[manifest] the current ${output} is unreadable (${errorMessage(cause)}): replaced`)
       }
     }
     const guard = shrinkGuard(current, manifest, options)
     if (guard.write) await files.writeTextAtomic(output, jsonText(manifest))
-    const orphans = (await listFiles(assetsDir)).filter((rel) => !resolved.files.has(rel) && !rel.startsWith("local/"))
+    const orphans = (await listFiles(assetsDir)).filter((rel) => !resolved.files.has(rel))
     if (options.prune) {
       for (const rel of orphans) {
         try {
@@ -475,8 +462,8 @@ export async function fetchAssets(files: CatalogFiles, http: CatalogHttp, argv: 
     if (guard.dropped.length) {
       log(
         guard.write
-          ? `${relative(appRoot, output)} lost ${guard.dropped.length} entries (${options.prune ? "--prune" : "--allow-shrink"}):`
-          : `ERROR: ${relative(appRoot, output)} NOT written — it would lose ${guard.dropped.length} entries the current one has (their files are missing here):`,
+          ? `${output} lost ${guard.dropped.length} entries (${options.prune ? "--prune" : "--allow-shrink"}):`
+          : `ERROR: ${output} NOT written — it would lose ${guard.dropped.length} entries the current one has (their files are missing here):`,
       )
       for (const key of guard.dropped) log(`  ${key}`)
       if (!guard.write) log("  re-run to retry the downloads (--refresh-index for the audio/model indexes), or pass --allow-shrink (or --prune) to write the smaller manifest")

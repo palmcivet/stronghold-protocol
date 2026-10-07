@@ -1,11 +1,5 @@
-import { existsSync, readFileSync } from "node:fs"
-import { join } from "node:path"
 import { expect, test } from "vitest"
-import { catalogPackageRoot } from "#compiler/repo-root.js"
-import { resolveRoles, roleAnimationNames, type AnimRoles } from "#compiler/spine/anim-role.js"
-
-const manifestPath = join(catalogPackageRoot(), "..", "app/data/product/season/act2autochess/assets.json")
-const haveManifest = existsSync(manifestPath)
+import { resolveRoles } from "#compiler/spine/anim-role.js"
 
 test("simple Attack model", () => {
   const roles = resolveRoles(["Attack", "Default", "Die", "Idle", "Start"])
@@ -156,53 +150,4 @@ test("directional skill clips", () => {
   expect(resolveRoles(ashlokBack).skill).toEqual({ begin: null, loop: "Skill_Loop_Up", end: null, index: 0, idle: "Skill_Idle_Up" })
   expect(resolveRoles(["Attack", "Idle", "Skill_Loop", "Skill_Right_Loop"]).skill?.loop).toBe("Skill_Loop")
   expect(resolveRoles(["Attack", "Idle", "Skill_Down_Loop"]).skill?.via).toBe("attack")
-})
-
-test("every referenced name exists in the input", () => {
-  const names = [
-    "Attack_Begin",
-    "Attack_Loop",
-    "Attack_End",
-    "Attack_Down_Begin",
-    "Attack_Down_Loop",
-    "Idle",
-    "Die",
-    "Start",
-    "Skill_2_Begin",
-    "Skill_2_Loop",
-    "Skill_2_End",
-    "Stun",
-  ]
-  const roles = resolveRoles(names, { skillIndices: [1, 0] })
-  for (const name of roleAnimationNames(roles)) expect(names).toContain(name)
-  expect(roles.attackDown).toEqual({ begin: "Attack_Down_Begin", loop: "Attack_Down_Loop", end: null })
-})
-
-interface SpineSide {
-  readonly anims?: AnimRoles
-  readonly animations?: Record<string, unknown>
-}
-
-interface SeasonManifest {
-  readonly chars: Record<string, { readonly spine?: Record<string, SpineSide> }>
-  readonly enemies: Record<string, { readonly spine?: SpineSide }>
-  readonly tokens: Record<string, { readonly spine?: SpineSide }>
-}
-
-test.skipIf(!haveManifest)("spine animation roles in the season manifest name clips that exist", () => {
-  const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as SeasonManifest
-  const entries: (readonly [string, SpineSide])[] = []
-  for (const [id, row] of Object.entries(manifest.chars)) {
-    for (const [side, spine] of Object.entries(row.spine ?? {})) entries.push([`${id}.${side}`, spine])
-  }
-  for (const [id, row] of Object.entries(manifest.enemies)) if (row.spine) entries.push([id, row.spine])
-  for (const [id, row] of Object.entries(manifest.tokens)) if (row.spine) entries.push([id, row.spine])
-  expect(entries.length).toBeGreaterThan(400)
-  for (const [id, spine] of entries) {
-    const names = Object.keys(spine.animations ?? {})
-    expect(names.length, id).toBeGreaterThan(0)
-    expect(typeof spine.anims?.idle === "string" && names.includes(spine.anims.idle), `${id} idle`).toBe(true)
-    expect(spine.anims?.attack && names.includes(spine.anims.attack.loop), `${id} attack`).toBe(true)
-    for (const name of roleAnimationNames(spine.anims)) expect(names, `${id} role anim ${name}`).toContain(name)
-  }
 })

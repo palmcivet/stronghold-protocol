@@ -110,7 +110,7 @@ export class GameData {
    * (finalAssault.bossPoolHp); use `bossPoolHp` / `bossPoolShare` for the official pool.
    * @deprecated
    */
-  bossHpMul(bossId: any) : any { // eslint-disable-line no-unused-vars
+  bossHpMul(_bossId: any) : any {
     return 1;
   }
 
@@ -283,7 +283,7 @@ export class GameData {
   // ---- mode -----------------------------------------------------------------------------------------
 
   get isSolo() : any { return this.mode.type === 'SINGLE' || /^mode_single_/.test(this.modeId || ''); }
-  get difficulty() : any { return this.mode.difficulty || (this.modeId ? String(this.modeId).split('_').pop().toUpperCase() : 'NORMAL'); }
+  get difficulty() : any { return this.mode.difficulty || (this.modeId ? String(this.modeId).split('_').pop()?.toUpperCase() ?? 'NORMAL' : 'NORMAL'); }
   get lastRound() : any {
     if (Number.isInteger(this.mode.lastRound) && this.mode.lastRound > 0) return this.mode.lastRound;
     return this.modeId === 'mode_single_funny' ? 9 : 14;
