@@ -2,7 +2,7 @@ import type { SkillBodyDefinition, SkillRuntime } from "#port/content.js"
 import type { BattleRegistry } from "#battle/registry.js"
 import { TICK } from "#tick/index.js"
 
-export const builtinSkillBodies = ["duration", "ammo", "instant", "charges", "passive", "toggle"] as const
+export const BUILTIN_SKILL_BODIES = ["duration", "ammo", "instant", "charges", "passive", "toggle"] as const
 
 export function registerBuiltinSkillBodies(registry: BattleRegistry): void {
   registry.registerSkillBody(durationBody())

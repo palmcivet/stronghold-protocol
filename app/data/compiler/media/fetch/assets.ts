@@ -13,7 +13,7 @@ import {
   loadIndexes,
   loadLocalEnemySpines,
   localEnemySpineMeta,
-  localEnemySpinesFile,
+  LOCAL_ENEMY_SPINES_FILE,
   processModels,
   skelParserAvailable,
   type LocalSpineMeta,
@@ -26,7 +26,7 @@ import {
   contentHash,
   downloadLeaves,
   droppedEntries,
-  manifestVersion,
+  MANIFEST_VERSION,
   resolveTemplate,
   totalBytes,
 } from "./manifest.js"
@@ -40,7 +40,7 @@ const cacheDir = join(catalogRoot, ".cache")
 const researchDir = join(appRoot, "compiler", "input", "research")
 const reportPath = join(cacheDir, "assets-report.json")
 
-const helpText = `Usage: [options]
+const HELP_TEXT = `Usage: [options]
   --concurrency=N   parallel downloads (default 16)
   --force           re-download files even when present
   --offline         no network: post-process what is on disk and rebuild the manifest
@@ -52,7 +52,7 @@ const helpText = `Usage: [options]
   --prune           delete files under product/media that the manifest no longer references
                     (product/media/local/** is never deleted); implies --allow-shrink
   --allow-shrink    write the manifest even when it loses entries the current one has
-  --local-spines    rewrite ${localEnemySpinesFile} from extracted enemy models
+  --local-spines    rewrite ${LOCAL_ENEMY_SPINES_FILE} from extracted enemy models
   --help            this text`
 
 export interface FetchOptions {
@@ -115,10 +115,10 @@ export function parseArgs(argv: readonly string[]): FetchOptions {
       options.voiceLang = value
     } else if (key === "--voice-all") options.voiceAll = true
     else if (key === "--season") {
-      if (!value) throw new Error(`--season needs an id\n${helpText}`)
+      if (!value) throw new Error(`--season needs an id\n${HELP_TEXT}`)
       options.season = value
     } else if (key === "--help" || key === "-h") options.help = true
-    else throw new Error(`unknown option ${arg}\n${helpText}`)
+    else throw new Error(`unknown option ${arg}\n${HELP_TEXT}`)
   }
   return options
 }
@@ -269,16 +269,16 @@ function requiredMisses(manifest: Record<string, unknown>, charIds: readonly str
   return out
 }
 
-const localSpinesAbout =
+const LOCAL_SPINES_ABOUT =
   "Spine metadata of the enemy models only the local client has (ENEMY_SPINES). " +
   "enemies[id].spineLocal names these files."
 
 async function syncLocalEnemySpines(files: CatalogFiles, options: FetchOptions): Promise<Record<string, LocalSpineMeta>> {
-    const path = join(catalogRoot, localEnemySpinesFile)
+    const path = join(catalogRoot, LOCAL_ENEMY_SPINES_FILE)
     const committed = await loadLocalEnemySpines(path)
     const found = await findLocalEnemyModels(assetsDir)
     if (!Object.keys(found).length) {
-      if (options.localSpines) log(`[local-spines] no extracted enemy model under product/media/local/spine/enemy/ — ${localEnemySpinesFile} kept`)
+      if (options.localSpines) log(`[local-spines] no extracted enemy model under product/media/local/spine/enemy/ — ${LOCAL_ENEMY_SPINES_FILE} kept`)
       return committed
     }
     const { meta, problems } = await localEnemySpineMeta(assetsDir, found)
@@ -286,13 +286,13 @@ async function syncLocalEnemySpines(files: CatalogFiles, options: FetchOptions):
     if (options.localSpines && !options.dryRun) {
       const models = { ...committed, ...meta }
       const sorted = Object.fromEntries(Object.keys(models).sort().map((key) => [key, models[key]]))
-      await files.writeTextAtomic(path, jsonText({ about: localSpinesAbout, models: sorted }, 2))
-      log(`[local-spines] ${Object.keys(meta).length} model(s) → ${localEnemySpinesFile}`)
+      await files.writeTextAtomic(path, jsonText({ about: LOCAL_SPINES_ABOUT, models: sorted }, 2))
+      log(`[local-spines] ${Object.keys(meta).length} model(s) → ${LOCAL_ENEMY_SPINES_FILE}`)
       return sorted as Record<string, LocalSpineMeta>
     }
     for (const [id, model] of Object.entries(meta)) {
       if (JSON.stringify(model) !== JSON.stringify(committed[id])) {
-        log(`[local-spines] ${id}: the extracted model differs from ${localEnemySpinesFile} (re-run with --local-spines to update it)`)
+        log(`[local-spines] ${id}: the extracted model differs from ${LOCAL_ENEMY_SPINES_FILE} (re-run with --local-spines to update it)`)
       }
     }
     return committed
@@ -301,7 +301,7 @@ async function syncLocalEnemySpines(files: CatalogFiles, options: FetchOptions):
 export async function fetchAssets(files: CatalogFiles, http: CatalogHttp, argv: readonly string[]): Promise<number> {
     const options = parseArgs(argv)
     if (options.help) {
-      log(helpText)
+      log(HELP_TEXT)
       return 0
     }
     if (!options.season) throw new CatalogReadError(appRoot, "--season is required")
@@ -392,7 +392,7 @@ export async function fetchAssets(files: CatalogFiles, http: CatalogHttp, argv: 
     body["fonts"] = cssReady ? { css: "/fonts/fonts.css", faces: fontFaces } : { faces: fontFaces }
     const bytes = totalBytes(assetsDir, resolved.files)
     const manifest = {
-      version: manifestVersion,
+      version: MANIFEST_VERSION,
       hash: contentHash(body),
       generator: "app/data/compiler/media/fetch/assets.ts",
       stats: countStats(body, bytes, resolved.files.size),

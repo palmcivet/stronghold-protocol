@@ -2,13 +2,13 @@
 // 叶子是 { alts }，模型是 { model }，literal 原样进清单。
 
 import {
-  battleSfx,
+  BATTLE_SFX,
   indexVoice,
   pickUnitSfx,
   resolveSpec,
-  uiSfx,
-  voiceBattleSlots,
-  voiceDirs,
+  UI_SFX,
+  VOICE_BATTLE_SLOTS,
+  VOICE_DIRS,
   type AudioIndex,
   type BankMix,
   type UnitSfx,
@@ -16,7 +16,7 @@ import {
 import {
   joinUrl,
   kindOf,
-  rawBases,
+  RAW_BASES,
   safeName,
   urlBase,
   urlDir,
@@ -25,21 +25,21 @@ import {
   type LocalSpineMeta,
   type PlannedSpineModel,
 } from "arknights-assets-catalog/compile"
-import { emoteCatalog } from "./emote-catalog.js"
+import { EMOTE_CATALOG } from "./emote-catalog.js"
 import { literal } from "./manifest.js"
 
-const voiceIdLang = "CN"
+const VOICE_ID_LANG = "CN"
 
-export const enemySpineAlias: Readonly<Record<string, string>> = Object.freeze({
+export const ENEMY_SPINE_ALIAS: Readonly<Record<string, string>> = Object.freeze({
   enemy_1305_mhslim: "enemy_1007_slime",
   enemy_1305_mhslim_2: "enemy_1007_slime",
 })
 
-const loadingUsed: ReadonlySet<string> = new Set(["loading_ac_core", "loading_ac_prototype", "loading_ac_hard", "loading_ac_abyss"])
+const LOADING_USED: ReadonlySet<string> = new Set(["loading_ac_core", "loading_ac_prototype", "loading_ac_hard", "loading_ac_abyss"])
 
-const professions: readonly string[] = ["caster", "medic", "pioneer", "sniper", "special", "support", "tank", "warrior"]
+const PROFESSIONS: readonly string[] = ["caster", "medic", "pioneer", "sniper", "special", "support", "tank", "warrior"]
 
-export const guidePages: readonly string[] = Object.freeze([
+export const GUIDE_PAGES: readonly string[] = Object.freeze([
   ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((index) => `autochess_home_${index}`),
   ...[1, 2, 3, 4, 5, 6].map((index) => `autochess_shop_${index}`),
   ...[1, 2, 3, 4].map((index) => `autochess_handbook_${index}`),
@@ -89,14 +89,14 @@ function buildUiExtras(): readonly UiExtra[] {
   for (const key of ["img_title_mode_abyss", "img_title_mode_funny", "img_title_mode_hard", "img_title_mode_normal", "btn_confirm", "btn_confirmed"]) {
     rows.push(["stageInfo", key, `${stageInfo}${key}.png`])
   }
-  for (const emote of emoteCatalog) rows.push([`emoticon/${emote.dir}`, emote.picId, `ui/emoticon/theme/[uc]${emote.themeId}/icon/${emote.picId}.png`])
-  for (const key of guidePages) rows.push(["guide", key, `arts/guidebookpages/[pack]autochess/${key}.png`])
+  for (const emote of EMOTE_CATALOG) rows.push([`emoticon/${emote.dir}`, emote.picId, `ui/emoticon/theme/[uc]${emote.themeId}/icon/${emote.picId}.png`])
+  for (const key of GUIDE_PAGES) rows.push(["guide", key, `arts/guidebookpages/[pack]autochess/${key}.png`])
   return Object.freeze(rows.map((row) => Object.freeze(row) as UiExtra))
 }
 
-export const uiExtras: readonly UiExtra[] = buildUiExtras()
+export const UI_EXTRAS: readonly UiExtra[] = buildUiExtras()
 
-const artsGroups: Readonly<Record<string, string>> = Object.freeze({
+const ARTS_GROUPS: Readonly<Record<string, string>> = Object.freeze({
   rarityStars: "rarity",
   rarityStarsYellow: "rarityYellow",
   eliteIcon: "elite",
@@ -160,15 +160,15 @@ function voiceAlt(asset: string, lang: string): DownloadJob | null {
   const charId = parts[0]
   const voiceId = parts[1]
   if (!charId || !voiceId || !/^[a-z0-9_]+$/i.test(charId) || !/^[a-z]{2}_\d+$/i.test(voiceId)) return null
-  const folder = voiceDirs[lang]
+  const folder = VOICE_DIRS[lang]
   if (!folder) return null
   const file = `${charId}/${voiceId.toLowerCase()}.mp3`
-  return alt(`audio/voice/${lang}/${file}`, joinUrl(rawBases.aa2voice, `${folder}/${file}`))
+  return alt(`audio/voice/${lang}/${file}`, joinUrl(RAW_BASES.aa2voice, `${folder}/${file}`))
 }
 
 function soundAlt(path: string, sub = "sfx"): DownloadJob {
   const rel = `audio/${sub}/` + path.split("/").map(safeName).join("/")
-  return alt(rel, joinUrl(rawBases.aa2voice, path))
+  return alt(rel, joinUrl(RAW_BASES.aa2voice, path))
 }
 
 function soundLeaf(paths: readonly string[] | null | undefined, sub = "sfx", max = 4): ManifestLeafNode | null {
@@ -345,7 +345,7 @@ export function buildPlan(input: BuildPlanInput): AssetPlan {
   const skillIdx = skillIndicesByChar(input.ops03)
   const audio = input.audio
   const voiceLang = input.voiceLang ?? "cn"
-  const voiceSlots = input.voiceSlots === undefined ? voiceBattleSlots : input.voiceSlots
+  const voiceSlots = input.voiceSlots === undefined ? VOICE_BATTLE_SLOTS : input.voiceSlots
   const extraEnemyIds = input.extraEnemyIds ?? []
   const extraTokenIds = input.extraTokenIds ?? []
   const extraHandbook = input.extraHandbook ?? {}
@@ -476,7 +476,7 @@ export function buildPlan(input: BuildPlanInput): AssetPlan {
     const token =
       knownToken ??
       ({
-        avatar: { url: `${rawBases.yuanyan}avatar/${id}.png` },
+        avatar: { url: `${RAW_BASES.yuanyan}avatar/${id}.png` },
         battleSpineDefault: null,
         battleSpineSkinVariantsOnly: [id],
       } as Record<string, unknown>)
@@ -493,7 +493,7 @@ export function buildPlan(input: BuildPlanInput): AssetPlan {
       const variant = token["battleSpineSkinVariantsOnly"][0]
       if (typeof variant === "string") {
         const bases = ["Spine", "Front"].map(
-          (folder) => `${rawBases.fexli}spine/${encodeURIComponent(id)}/${encodeURIComponent(variant)}/${folder}/${encodeURIComponent(variant)}`,
+          (folder) => `${RAW_BASES.fexli}spine/${encodeURIComponent(id)}/${encodeURIComponent(variant)}/${folder}/${encodeURIComponent(variant)}`,
         )
         model = fexliModel(
           `token:${id}`,
@@ -537,7 +537,7 @@ export function buildPlan(input: BuildPlanInput): AssetPlan {
     const atlas = pick(assetList?.[".atlas"])
     const png = pick(assetList?.[".png"])
     if (typeof skel !== "string" || typeof atlas !== "string" || typeof png !== "string" || !skel || !atlas || !png) return null
-    const base = `${rawBases.arkModels}${enemyStorage}/${encodeURIComponent(key)}/`
+    const base = `${RAW_BASES.arkModels}${enemyStorage}/${encodeURIComponent(key)}/`
     const research = field(rec(rec(field(assets07, "enemies"))?.[enemyId]), "battleSpine")
     const dir = `spine/enemy/${enemyId}/`
     const stem = skelStem(skel)
@@ -566,20 +566,20 @@ export function buildPlan(input: BuildPlanInput): AssetPlan {
   for (const id of [...enemyIdSet].sort()) {
     const enemy: Record<string, unknown> = {}
     const icon07 = field(rec(rec(field(assets07, "enemies"))?.[id]), "icon")
-    const iconAlts = [alt(`enemy/icon/${id}.png`, `${rawBases.yuanyan}enemy/${id}.png`, bytesOf(icon07, `${rawBases.yuanyan}enemy/${id}.png`))]
-    for (const other of [handbookOf.get(id), baseIdOf(id)]) if (other) iconAlts.push(alt(`enemy/icon/${id}.png`, `${rawBases.yuanyan}enemy/${other}.png`))
+    const iconAlts = [alt(`enemy/icon/${id}.png`, `${RAW_BASES.yuanyan}enemy/${id}.png`, bytesOf(icon07, `${RAW_BASES.yuanyan}enemy/${id}.png`))]
+    for (const other of [handbookOf.get(id), baseIdOf(id)]) if (other) iconAlts.push(alt(`enemy/icon/${id}.png`, `${RAW_BASES.yuanyan}enemy/${other}.png`))
     enemy["icon"] = leaf(iconAlts)
     let spine = arkModel(id)
     if (!spine) {
       const seen = new Set([id])
-      const queue = [enemySpineAlias[id], baseIdOf(id), handbookOf.get(id)].filter((item): item is string => !!item)
+      const queue = [ENEMY_SPINE_ALIAS[id], baseIdOf(id), handbookOf.get(id)].filter((item): item is string => !!item)
       while (!spine && queue.length) {
         const candidate = queue.shift()
         if (!candidate || seen.has(candidate)) continue
         seen.add(candidate)
         spine = arkModel(candidate)
         if (spine) enemy["spineAliasOf"] = candidate
-        else queue.push(...[enemySpineAlias[candidate], baseIdOf(candidate), handbookOf.get(candidate)].filter((item): item is string => !!item))
+        else queue.push(...[ENEMY_SPINE_ALIAS[candidate], baseIdOf(candidate), handbookOf.get(candidate)].filter((item): item is string => !!item))
       }
       if (!spine) notes.push(`${id}: no enemy Spine upstream (client draws the icon, if any, or a glyph)`)
       else notes.push(`${id}: Spine aliased to ${String(enemy["spineAliasOf"])}`)
@@ -626,15 +626,15 @@ export function buildPlan(input: BuildPlanInput): AssetPlan {
   const profLarge = rec(prof["large"]) ?? {}
   const profCard = rec(prof["battlecard"]) ?? {}
   const profSub = rec(prof["sub"]) ?? {}
-  for (const profession of professions) {
+  for (const profession of PROFESSIONS) {
     const icon = field(field(field(assets07, "arts"), "professionIcon"), profession)
     if (typeof icon === "string" && icon) profIcon[profession] = leaf(alt(`prof/icon_${profession}.png`, icon))
     const large = field(field(field(assets07, "arts"), "professionIconLargeWhite"), profession)
     if (typeof large === "string" && large) profLarge[profession] = leaf(alt(`prof/large_${profession}.png`, large))
   }
-  for (const profession of [...professions, "token"]) {
+  for (const profession of [...PROFESSIONS, "token"]) {
     profCard[profession] = leaf(
-      alt(`prof/battlecard_${profession}.png`, joinUrl(rawBases.aa2, `arts/ui/[uc]battlecommon/ui_battle_new/battlecard/icon_profession_${profession}.png`)),
+      alt(`prof/battlecard_${profession}.png`, joinUrl(RAW_BASES.aa2, `arts/ui/[uc]battlecommon/ui_battle_new/battlecard/icon_profession_${profession}.png`)),
     )
   }
   for (const operator of Object.values(rec(field(assets07, "operators")) ?? {})) {
@@ -662,14 +662,14 @@ export function buildPlan(input: BuildPlanInput): AssetPlan {
     const logo = text(field(bond, "fallbackCampLogo"))
     if (logo) logos.add(urlBase(logo).replace(/\.png$/i, ""))
   }
-  for (const [src, group] of Object.entries(artsGroups)) {
+  for (const [src, group] of Object.entries(ARTS_GROUPS)) {
     for (const [key, url] of entriesOf(field(field(assets07, "arts"), src))) {
       if (src === "campLogo" && !logos.has(key)) continue
-      if (src === "loadingIllust" && !loadingUsed.has(key)) continue
+      if (src === "loadingIllust" && !LOADING_USED.has(key)) continue
       addUi(group, key, url)
     }
   }
-  for (const [group, key, path] of uiExtras) addUi(group, key, joinUrl(rawBases.aa2, path))
+  for (const [group, key, path] of UI_EXTRAS) addUi(group, key, joinUrl(RAW_BASES.aa2, path))
 
   // MARK: audio
   const bgmLeaf = (bankName: string): Record<string, unknown> | null => {
@@ -720,13 +720,13 @@ export function buildPlan(input: BuildPlanInput): AssetPlan {
     }
   }
   const sfxUi: Record<string, unknown> = {}
-  for (const [name, spec] of Object.entries(uiSfx)) {
+  for (const [name, spec] of Object.entries(UI_SFX)) {
     const row = soundLeaf(resolveSpec(spec, audio.bank))
     if (row) sfxUi[name] = row
     else notes.push(`UI SFX ${name}: no sound`)
   }
   const sfxBattle: Record<string, unknown> = {}
-  for (const [name, spec] of Object.entries(battleSfx)) {
+  for (const [name, spec] of Object.entries(BATTLE_SFX)) {
     const row = soundLeaf(resolveSpec(spec, audio.bank))
     if (row) sfxBattle[name] = row
     else notes.push(`battle SFX ${name}: no sound`)
@@ -734,7 +734,7 @@ export function buildPlan(input: BuildPlanInput): AssetPlan {
 
   // MARK: voice
   const voice: Record<string, unknown> = {}
-  for (const [charId, slots] of indexVoice(input.charword ?? null, voiceIdLang, voiceSlots)) {
+  for (const [charId, slots] of indexVoice(input.charword ?? null, VOICE_ID_LANG, voiceSlots)) {
     if (!chars[charId]) continue
     const linesBySlot: Record<string, unknown> = {}
     for (const [slot, assets] of Object.entries(slots)) {

@@ -5,7 +5,7 @@ import { join } from "node:path"
 import type { CatalogFiles } from "#port/catalog-files.js"
 import { CatalogReadError } from "#port/catalog-error.js"
 import type { CatalogHttp } from "#port/catalog-http.js"
-import { mirrorUrl, rawBases } from "./source.js"
+import { mirrorUrl, RAW_BASES } from "./source.js"
 
 export interface CachedJsonRequest {
   readonly cacheFile: string
@@ -119,8 +119,8 @@ export async function loadIndexes(
   root: string,
   options: IndexLoadOptions = {},
 ): Promise<LoadedIndexes> {
-  const audioData = await cachedJson(files, http, indexRequest(join(root, ".cache", "gamedata", "excel", "audio_data.json"), rawBases.gamedata + "excel/audio_data.json", options))
-  const charword = await cachedJson(files, http, indexRequest(join(root, ".cache", "gamedata", "excel", "charword_table.json"), rawBases.gamedata + "excel/charword_table.json", options))
-  const modelsData = await cachedJson(files, http, indexRequest(join(root, ".cache", "ark-models", "models_data.json"), rawBases.arkModels + "models_data.json", options))
+  const audioData = await cachedJson(files, http, indexRequest(join(root, ".cache", "gamedata", "excel", "audio_data.json"), RAW_BASES.gamedata + "excel/audio_data.json", options))
+  const charword = await cachedJson(files, http, indexRequest(join(root, ".cache", "gamedata", "excel", "charword_table.json"), RAW_BASES.gamedata + "excel/charword_table.json", options))
+  const modelsData = await cachedJson(files, http, indexRequest(join(root, ".cache", "ark-models", "models_data.json"), RAW_BASES.arkModels + "models_data.json", options))
   return { audioData, modelsData, charword }
 }

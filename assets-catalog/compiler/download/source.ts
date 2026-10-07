@@ -11,7 +11,7 @@ export interface RawBases {
   readonly gamedata: string
 }
 
-export const rawBases: RawBases = Object.freeze({
+export const RAW_BASES: RawBases = Object.freeze({
   yuanyan: "https://raw.githubusercontent.com/yuanyan3060/ArknightsGameResource/main/",
   fexli: "https://raw.githubusercontent.com/fexli/ArknightsResource/main/",
   arkModels: "https://raw.githubusercontent.com/isHarryh/Ark-Models/main/",
@@ -21,10 +21,10 @@ export const rawBases: RawBases = Object.freeze({
   gamedata: "https://raw.githubusercontent.com/Kengxxiao/ArknightsGameData/master/zh_CN/gamedata/",
 })
 
-const rawPattern: RegExp = /^https:\/\/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/([^/]+)\/(.+)$/
+const RAW_PATTERN: RegExp = /^https:\/\/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/([^/]+)\/(.+)$/
 
 export function mirrorUrl(url: string): string | null {
-  const match = rawPattern.exec(String(url))
+  const match = RAW_PATTERN.exec(String(url))
   if (!match) return null
   const owner = match[1]
   const repo = match[2]

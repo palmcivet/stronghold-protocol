@@ -1,5 +1,5 @@
 // 定时回调、刷怪、费用、状态、敌人行动、敌人索引、友方行动、投射物、再部署、终局。
-export const phaseSlots = [
+export const PHASE_SLOTS = [
   "schedule",
   "spawn",
   "cost",
@@ -12,8 +12,8 @@ export const phaseSlots = [
   "finale",
 ] as const
 
-export type PhaseSlot = (typeof phaseSlots)[number]
+export type PhaseSlot = (typeof PHASE_SLOTS)[number]
 
 export function isPhaseSlot(slot: string): slot is PhaseSlot {
-  return (phaseSlots as readonly string[]).includes(slot)
+  return (PHASE_SLOTS as readonly string[]).includes(slot)
 }

@@ -7,7 +7,7 @@ export interface Penetration {
   resIgnoreFlat: number
 }
 
-export const noPenetration: Penetration = {
+export const NO_PENETRATION: Penetration = {
   defIgnorePct: 0,
   defIgnoreFlat: 0,
   resIgnorePct: 0,

@@ -196,7 +196,7 @@ export function artUrls(local: unknown, manifest: unknown, group: string, name: 
   return urls
 }
 
-const greek: Readonly<Record<string, string>> = { α: "a", β: "b", γ: "g", δ: "d", Δ: "d" }
+const GREEK: Readonly<Record<string, string>> = { α: "a", β: "b", γ: "g", δ: "d", Δ: "d" }
 const moduleIconIndex = new WeakMap<object, ReadonlyMap<string, string>>()
 
 export function moduleTypeIconUrl(local: unknown, typeName: string): string | null {
@@ -216,7 +216,7 @@ export function moduleTypeIconUrl(local: unknown, typeName: string): string | nu
     index = built
     moduleIconIndex.set(group, index)
   }
-  const key = name.replace(/[αβγδΔ]/g, (letter) => greek[letter] ?? letter).toLowerCase()
+  const key = name.replace(/[αβγδΔ]/g, (letter) => GREEK[letter] ?? letter).toLowerCase()
   return index.get(key) ?? null
 }
 

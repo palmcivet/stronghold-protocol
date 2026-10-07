@@ -43,4 +43,4 @@ app/product/season/<id>/  这一季的 JSON
 | `app/data/compiler/input/research/` | 模式要读的研究表 |
 | `app/product/season/<id>/` | 这一季的 JSON 数据包 |
 
-赛季目录里的文件名在 `schema/packet-file.ts` 的 `packetFiles`，例如 `chess.json`、`enemies.json`、`waves.json`、`config.json`、`tuning.json`。它们描述卫戍协议这一季的用法。`packetAddress` 把赛季 id 和文件名收成 `/data/seasons/<id>/<file>`，`runtime/packet` 按这个地址读取。磁盘目录是 `app/product/season/<id>/`。立绘和骨架按官方 id 向资源目录取字节，站点上的地址是 `/assets/` 与 `/fonts/`。
+赛季目录里的文件名在 `schema/packet-file.ts` 的 `PACKET_FILES`，例如 `chess.json`、`enemies.json`、`waves.json`、`config.json`、`tuning.json`。它们描述卫戍协议这一季的用法。`packetAddress` 把赛季 id 和文件名收成 `/data/seasons/<id>/<file>`，`runtime/packet` 按这个地址读取。磁盘目录是 `app/product/season/<id>/`。立绘和骨架按官方 id 向资源目录取字节，站点上的地址是 `/assets/` 与 `/fonts/`。

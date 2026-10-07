@@ -3,9 +3,9 @@ import type { BattleEvent } from "#contract/event.js"
 import type { AttackShape, TileCoord, TileSpec, UnitSide, UnitSpec } from "#contract/spec.js"
 import type { Random } from "#random/index.js"
 
-export const modifierOps = ["add", "percent", "mul"] as const
+export const MODIFIER_OPS = ["add", "percent", "mul"] as const
 
-export type ModifierOp = (typeof modifierOps)[number]
+export type ModifierOp = (typeof MODIFIER_OPS)[number]
 
 export interface AttributeModifier {
   readonly attribute: string

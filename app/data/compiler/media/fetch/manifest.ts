@@ -6,12 +6,12 @@ import { existsSync, statSync } from "node:fs"
 import { join } from "node:path"
 import { assetUrl, mirrorUrl, type DownloadJob, type Downloader } from "arknights-assets-catalog/compile"
 
-export const manifestVersion: number = 1
+export const MANIFEST_VERSION: number = 1
 
-export const literalKey: unique symbol = Symbol("assets-catalog.media.literal")
+export const LITERAL_KEY: unique symbol = Symbol("assets-catalog.media.literal")
 
 export interface LiteralNode {
-  readonly [literalKey]: unknown
+  readonly [LITERAL_KEY]: unknown
 }
 
 export interface ManifestLeaf {
@@ -45,11 +45,11 @@ const isModelRef = (node: unknown): node is ModelRef => {
 }
 
 export function isLiteral(node: unknown): node is LiteralNode {
-  return !!node && typeof node === "object" && Object.hasOwn(node, literalKey)
+  return !!node && typeof node === "object" && Object.hasOwn(node, LITERAL_KEY)
 }
 
 export function literal(value: unknown): LiteralNode {
-  return { [literalKey]: JSON.parse(JSON.stringify(value)) as unknown }
+  return { [LITERAL_KEY]: JSON.parse(JSON.stringify(value)) as unknown }
 }
 
 export function collectLeaves(node: unknown, path = "", out: TemplateLeaf[] = []): TemplateLeaf[] {
@@ -113,7 +113,7 @@ export function resolveTemplate(
   const isContainer = (value: unknown): boolean => !!value && typeof value === "object" && !isLeaf(value) && !isModelRef(value) && !isLiteral(value)
   const walk = (node: unknown, path: string): unknown => {
     if (node === null || node === undefined) return undefined
-    if (isLiteral(node)) return JSON.parse(JSON.stringify(node[literalKey])) as unknown
+    if (isLiteral(node)) return JSON.parse(JSON.stringify(node[LITERAL_KEY])) as unknown
     if (isLeaf(node)) {
       for (let i = 0; i < node.alts.length; i++) {
         const alt = node.alts[i]
@@ -177,7 +177,7 @@ export function contentHash(value: unknown): string {
   return createHash("sha1").update(JSON.stringify(value)).digest("hex").slice(0, 12)
 }
 
-const buildFields: ReadonlySet<string> = new Set(["version", "hash", "generator", "stats"])
+const BUILD_FIELDS: ReadonlySet<string> = new Set(["version", "hash", "generator", "stats"])
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value)
@@ -205,7 +205,7 @@ export function droppedEntries(prev: unknown, next: unknown): string[] {
   if (!isObject(prev)) return out
   const incoming = isObject(next) ? next : {}
   for (const [key, value] of Object.entries(prev)) {
-    if (!buildFields.has(key)) walk(value, Object.hasOwn(incoming, key) ? incoming[key] : undefined, key)
+    if (!BUILD_FIELDS.has(key)) walk(value, Object.hasOwn(incoming, key) ? incoming[key] : undefined, key)
   }
   return out.sort()
 }

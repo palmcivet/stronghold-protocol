@@ -61,7 +61,7 @@ reg.registerSkillTrigger({
 
 ## 技能体
 
-内置 id 是 `duration`、`ammo`、`instant`、`charges`、`passive`、`toggle`。包根的 `builtinSkillBodies` 就是这份名单。
+内置 id 是 `duration`、`ammo`、`instant`、`charges`、`passive`、`toggle`。包根的 `BUILTIN_SKILL_BODIES` 就是这份名单。
 
 | id | 行为 |
 | --- | --- |

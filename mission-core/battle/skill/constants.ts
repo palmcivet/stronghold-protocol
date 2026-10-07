@@ -1,11 +1,11 @@
-import { skillOperations, spTypes, type SkillOperation, type SpType } from "#contract/spec.js"
+import { SKILL_OPERATIONS, SP_TYPES, type SkillOperation, type SpType } from "#contract/spec.js"
 
 /** 自动操作冷却，秒。开战部署和每次手动技能释放之后开始计算。 */
 export const AUTO_OP_COOLDOWN = 3
 
 export type { SkillOperation, SpType }
 
-export const builtinSkillTriggers = [
+export const BUILTIN_SKILL_TRIGGERS = [
   "DEFAULT",
   "SKILL_RANGE",
   "TAKE_DAMAGE",
@@ -16,14 +16,14 @@ export const builtinSkillTriggers = [
   "NEVER",
 ] as const
 
-const tickRules = new Set<string>(["SP_FULL", "SEARCH", "CUSTOM_RANGE", "SKILL_RANGE", "GDGLOW_SKILL_2"])
+const TICK_RULES = new Set<string>(["SP_FULL", "SEARCH", "CUSTOM_RANGE", "SKILL_RANGE", "GDGLOW_SKILL_2"])
 
 export function isSpType(value: string): value is SpType {
-  return (spTypes as readonly string[]).includes(value)
+  return (SP_TYPES as readonly string[]).includes(value)
 }
 
 export function isSkillOperation(value: string): value is SkillOperation {
-  return (skillOperations as readonly string[]).includes(value)
+  return (SKILL_OPERATIONS as readonly string[]).includes(value)
 }
 
 /** ALWAYS 记成 SP_FULL，MANUAL 记成 NEVER，带后缀的 CUSTOM_RANGE 记成 CUSTOM_RANGE。 */
@@ -44,5 +44,5 @@ export function isInstantBody(body: string): boolean {
 }
 
 export function isTickRule(rule: string): boolean {
-  return tickRules.has(rule)
+  return TICK_RULES.has(rule)
 }

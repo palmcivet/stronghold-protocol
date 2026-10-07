@@ -1,6 +1,6 @@
 // 用文件头判断下载结果是不是完整资源，丢掉错误页和截断内容。
 
-const pngSignature: Uint8Array = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+const PNG_SIGNATURE: Uint8Array = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 
 export type AssetKind = "png" | "mp3" | "font" | "atlas" | "skel" | "json" | "bin"
 
@@ -16,7 +16,7 @@ export function asBuffer(buf: Buffer | Uint8Array): Buffer {
 export function pngSize(buf: Buffer | Uint8Array | null | undefined): PngSize | null {
   if (!buf || buf.length < 24) return null
   const bytes = asBuffer(buf)
-  if (!bytes.subarray(0, 8).equals(pngSignature)) return null
+  if (!bytes.subarray(0, 8).equals(PNG_SIGNATURE)) return null
   if (bytes.toString("latin1", 12, 16) !== "IHDR") return null
   const width = bytes.readUInt32BE(16)
   const height = bytes.readUInt32BE(20)

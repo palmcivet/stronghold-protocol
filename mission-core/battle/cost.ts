@@ -1,4 +1,4 @@
-import { unitSides, type CostPoolSpec, type UnitSide } from "#contract/spec.js"
+import { UNIT_SIDES, type CostPoolSpec, type UnitSide } from "#contract/spec.js"
 import type { MissionModule } from "#port/content.js"
 import { emit, type BattleState } from "#battle/state.js"
 import { sessionOf } from "#battle/session.js"
@@ -44,7 +44,7 @@ export function addCost(state: BattleState, side: UnitSide, amount: number): voi
 
 /** 按规格里的每秒回复走一拍，结果不超过上限。 */
 export function regenerateCost(state: BattleState): void {
-  for (const side of unitSides) {
+  for (const side of UNIT_SIDES) {
     const regen = nonNegative(state.spec.cost[side].regen)
     if (regen <= 0) continue
     addCost(state, side, regen * TICK)

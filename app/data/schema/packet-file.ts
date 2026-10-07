@@ -1,5 +1,5 @@
 /** 一个赛季数据包里的文件。键是索引名，值是磁盘上的文件名。 */
-export const packetFiles = {
+export const PACKET_FILES = {
   config: "config.json",
   chess: "chess.json",
   bonds: "bonds.json",
@@ -20,10 +20,10 @@ export const packetFiles = {
   local: "local-assets.json",
 } as const
 
-export type PacketName = keyof typeof packetFiles
+export type PacketName = keyof typeof PACKET_FILES
 
 /** 这些文件的顶层是 `{ [id]: 记录 }`。 */
-export const indexedPacketNames: readonly [
+export const INDEXED_PACKET_NAMES: readonly [
   "chess",
   "bonds",
   "garrisons",
@@ -49,16 +49,16 @@ export const indexedPacketNames: readonly [
   "tokens",
 ]
 
-export type IndexedPacketName = (typeof indexedPacketNames)[number]
+export type IndexedPacketName = (typeof INDEXED_PACKET_NAMES)[number]
 
-const seasonIdPattern: RegExp = /^[a-z][a-z0-9]*$/
+const SEASON_ID_PATTERN: RegExp = /^[a-z][a-z0-9]*$/
 
 export function seasonPacketDirectory(seasonId: string): string {
-  if (!seasonIdPattern.test(seasonId)) throw new Error(`invalid season id ${seasonId}`)
+  if (!SEASON_ID_PATTERN.test(seasonId)) throw new Error(`invalid season id ${seasonId}`)
   return `product/season/${seasonId}`
 }
 
 export function packetAddress(seasonId: string, name: PacketName): string {
-  if (!seasonIdPattern.test(seasonId)) throw new Error(`invalid season id ${seasonId}`)
-  return `/data/seasons/${seasonId}/${packetFiles[name]}`
+  if (!SEASON_ID_PATTERN.test(seasonId)) throw new Error(`invalid season id ${seasonId}`)
+  return `/data/seasons/${seasonId}/${PACKET_FILES[name]}`
 }

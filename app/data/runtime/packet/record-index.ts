@@ -1,4 +1,4 @@
-import { indexedPacketNames, type IndexedPacketName, type PacketName } from "#schema/packet-file.js"
+import { INDEXED_PACKET_NAMES, type IndexedPacketName, type PacketName } from "#schema/packet-file.js"
 
 export interface PacketDocuments {
   readonly [file: string]: unknown
@@ -30,5 +30,5 @@ export function lookupMode(documents: PacketDocuments, modeId: string): Record<s
 }
 
 export function indexedNames(): readonly IndexedPacketName[] {
-  return indexedPacketNames
+  return INDEXED_PACKET_NAMES
 }

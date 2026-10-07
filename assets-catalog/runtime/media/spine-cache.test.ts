@@ -1,11 +1,11 @@
-import { createSpineCache, spineDataWeight, spineIdleBytes, spinePages, type SpineFile } from "arknights-assets-catalog"
+import { createSpineCache, spineDataWeight, SPINE_IDLE_BYTES, spinePages, type SpineFile } from "arknights-assets-catalog"
 import { expect, test } from "vitest"
 import {
   RefLru,
-  spineEvictDelayMs,
-  spineIdleGraceMs,
-  spineQuietDelayMs,
-  spineWeightMin,
+  SPINE_EVICT_DELAY_MS,
+  SPINE_IDLE_GRACE_MS,
+  SPINE_QUIET_DELAY_MS,
+  SPINE_WEIGHT_MIN,
   type RefTimers,
 } from "#runtime/media/spine-cache.js"
 
@@ -417,17 +417,17 @@ test("spineDataWeight counts timelines and mesh arrays and never throws", () => 
   const bigger = { ...data, animations: [...data.animations, { timelines: [{ frames: floats(100000) }] }] }
   expect(spineDataWeight(bigger) - measured).toBeGreaterThanOrEqual(400000)
   for (const junk of [null, undefined, 3, "x", {}, { animations: 5, skins: [{ attachments: "x" }] }, { animations: [null, { timelines: [7] }] }]) {
-    expect(spineDataWeight(junk)).toBe(spineWeightMin)
+    expect(spineDataWeight(junk)).toBe(SPINE_WEIGHT_MIN)
   }
 })
 
 test("the spine cache budgets idle skeletons by weight", async () => {
   const defaults = createSpineCache({ load: async () => ({ animations: [] }), unload: () => {} })
-  expect(defaults.cache.maxIdleWeight).toBe(spineIdleBytes)
+  expect(defaults.cache.maxIdleWeight).toBe(SPINE_IDLE_BYTES)
   expect(defaults.cache.quietWeight).toBe(0)
-  expect(defaults.cache.idleGrace).toBe(spineIdleGraceMs)
-  expect(spineIdleBytes).toBeLessThanOrEqual(64 * 1024 * 1024)
-  expect(spineIdleGraceMs).toBeGreaterThanOrEqual(5000)
+  expect(defaults.cache.idleGrace).toBe(SPINE_IDLE_GRACE_MS)
+  expect(SPINE_IDLE_BYTES).toBeLessThanOrEqual(64 * 1024 * 1024)
+  expect(SPINE_IDLE_GRACE_MS).toBeGreaterThanOrEqual(5000)
   const c = clock()
   const unloads: string[] = []
   const big = { animations: [{ timelines: [{ frames: new Float32Array(5 * 1024 * 1024) }] }] }
@@ -445,11 +445,11 @@ test("the spine cache budgets idle skeletons by weight", async () => {
   const keep = spineFile("token")
   for (const file of [first, second, third, keep]) await cache.acquire(file)
   for (const file of [first, second, third]) cache.release(file)
-  c.advance(spineIdleGraceMs + 10)
+  c.advance(SPINE_IDLE_GRACE_MS + 10)
   expect(unloads).toEqual([first.skel])
-  expect(cache.stats().idleWeight).toBeLessThanOrEqual(spineIdleBytes)
+  expect(cache.stats().idleWeight).toBeLessThanOrEqual(SPINE_IDLE_BYTES)
   cache.release(keep)
-  c.advance(spineIdleGraceMs + 10)
+  c.advance(SPINE_IDLE_GRACE_MS + 10)
   expect(cache.stats().size).toBe(0)
 })
 
@@ -489,13 +489,13 @@ test("battle to prep keeps models alive, and an eager cache reloads a dropped on
     cache.release(op)
     await cache.acquire(op)
     await cache.acquire(foe)
-    c.advance(spineIdleGraceMs + 20000)
+    c.advance(SPINE_IDLE_GRACE_MS + 20000)
     cache.release(op)
     cache.release(foe)
     const [returnedBench, returnedOp] = (await Promise.all([cache.acquire(bench), cache.acquire(op)])) as { destroyed: boolean }[]
     await tick()
     await tick()
-    c.advance(spineEvictDelayMs + spineQuietDelayMs + 10)
+    c.advance(SPINE_EVICT_DELAY_MS + SPINE_QUIET_DELAY_MS + 10)
     await tick()
     await tick()
     expect(returnedBench?.destroyed, eager ? "eager bench" : "default bench").toBe(false)
@@ -524,7 +524,7 @@ test("eviction passes keep for pages another cached skeleton still uses", async 
   await cache.acquire(second)
   cache.release(first)
   expect(unloads).toEqual([])
-  c.advance(spineEvictDelayMs + 10)
+  c.advance(SPINE_EVICT_DELAY_MS + 10)
   expect(unloads).toEqual([
     { skel: first.skel, keep: ["/assets/spine/b.png", "/assets/spine/common.png"] },
   ])

@@ -5,7 +5,7 @@ import { selectUnits, unitsInRange } from "#battle/target/selector.js"
 import { maxHpOf } from "#battle/unit/attribute.js"
 import type { UnitState } from "#battle/unit/index.js"
 
-const allyQuery = [
+const ALLY_QUERY = [
   "enemy",
   "fly",
   "stealth",
@@ -21,7 +21,7 @@ const allyQuery = [
   "spawn",
 ] as const
 
-const enemyQuery = [
+const ENEMY_QUERY = [
   "ally",
   "sleep",
   "stealth",
@@ -46,7 +46,7 @@ export function attackTargetIds(
 ): readonly string[] {
   const shape = unit.attackShape
   if (shape?.damage === "heal") return pickHeals(state, registry, ctx, unit)
-  const query = unit.side === "enemy" ? enemyQuery : allyQuery
+  const query = unit.side === "enemy" ? ENEMY_QUERY : ALLY_QUERY
   const found = unitsInRange(state, registry, ctx, unit.id, query)
   if (shape?.lockRange === true) return found
   return found.slice(0, 1)

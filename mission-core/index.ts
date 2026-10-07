@@ -1,6 +1,6 @@
-export const moduleId: "arknights-mission-core" = "arknights-mission-core"
+export const MODULE_ID: "arknights-mission-core" = "arknights-mission-core"
 
-export { phaseSlots, type PhaseSlot } from "#contract/phase.js"
+export { PHASE_SLOTS, type PhaseSlot } from "#contract/phase.js"
 export type {
   BattleSpec,
   Direction,
@@ -29,7 +29,7 @@ export type {
   UnitSide,
   UnitSpec,
 } from "#contract/spec.js"
-export { attackDamageKinds, directions, motions, projectileKinds, skillOperations, spTypes, unitSides } from "#contract/spec.js"
+export { ATTACK_DAMAGE_KINDS, DIRECTIONS, MOTIONS, PROJECTILE_KINDS, SKILL_OPERATIONS, SP_TYPES, UNIT_SIDES } from "#contract/spec.js"
 export type { BattleEvent } from "#contract/event.js"
 export type { BattleResult } from "#contract/result.js"
 export type { BattleSnapshot, UnitSnapshot } from "#contract/snapshot.js"
@@ -40,7 +40,7 @@ export { AUTO_OP_COOLDOWN } from "#battle/skill/constants.js"
 export { createRandom, deriveSeed, type Random } from "#random/index.js"
 
 export { UnknownRegistrationError } from "#port/unknown-registration.js"
-export { modifierOps, type ModifierOp } from "#port/content.js"
+export { MODIFIER_OPS, type ModifierOp } from "#port/content.js"
 export type {
   AttributeModifier,
   ContentContext,
@@ -90,7 +90,7 @@ export {
   SHIFT_PULL,
   SHIFT_PUSH,
 } from "#battle/behavior/action.js"
-export { builtinSkillBodies } from "#battle/skill/body.js"
+export { BUILTIN_SKILL_BODIES } from "#battle/skill/body.js"
 export {
   BLOCK_FLY_TAG,
   BLOCK_RADIUS,

@@ -1,4 +1,4 @@
-import { phaseSlots } from "#contract/phase.js"
+import { PHASE_SLOTS } from "#contract/phase.js"
 import type { BattleEvent } from "#contract/event.js"
 import type { BattleResult } from "#contract/result.js"
 import type { BattleSnapshot } from "#contract/snapshot.js"
@@ -58,7 +58,7 @@ export function createBattle(spec: BattleSpec, modules: readonly MissionModule[]
   armField(state, registry, ctx, true)
   return {
     step() {
-      for (const slot of phaseSlots) {
+      for (const slot of PHASE_SLOTS) {
         for (const system of registry.systemsIn(slot)) system.run(ctx)
       }
       state.tick += 1

@@ -3,7 +3,7 @@
 
 import { brotliCompressSync, brotliDecompressSync, constants } from "node:zlib"
 
-const knownTags: readonly string[] = [
+const KNOWN_TAGS: readonly string[] = [
   "cmap",
   "head",
   "hhea",
@@ -157,7 +157,7 @@ export function encodeWoff2(sfnt: Buffer): Buffer {
   if (hasGlyf !== hasLoca) throw new Error("glyf and loca must both be present")
   const directory: number[] = []
   for (const table of ordered) {
-    const index = knownTags.indexOf(table.tag)
+    const index = KNOWN_TAGS.indexOf(table.tag)
     const transform = table.tag === "glyf" || table.tag === "loca" ? 3 : 0
     directory.push((transform << 6) | (index >= 0 ? index : 63))
     if (index < 0) {
@@ -209,7 +209,7 @@ export function decodeWoff2Tables(woff2: Buffer): SfntFont {
       tag = woff2.toString("latin1", pos.i, pos.i + 4)
       pos.i += 4
     } else {
-      const known = knownTags[index]
+      const known = KNOWN_TAGS[index]
       if (!known) throw new Error(`unknown WOFF2 table index ${index}`)
       tag = known
     }

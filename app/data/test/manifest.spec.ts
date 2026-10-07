@@ -7,9 +7,9 @@ import { catalogPackageRoot, Downloader, type DownloadJob } from "arknights-asse
 import { expect, test } from "vitest"
 import { appRootFrom } from "#compiler/repo-root.js"
 import { indexAudio } from "#compiler/media/fetch/audio-bank.js"
-import { emoteCatalog } from "#compiler/media/fetch/emote-catalog.js"
+import { EMOTE_CATALOG } from "#compiler/media/fetch/emote-catalog.js"
 import { collectLeaves, downloadLeaves, resolveTemplate, type TemplateLeaf } from "#compiler/media/fetch/manifest.js"
-import { buildPlan, guidePages } from "#compiler/media/fetch/plan.js"
+import { buildPlan, GUIDE_PAGES } from "#compiler/media/fetch/plan.js"
 
 const appRoot = appRootFrom(fileURLToPath(import.meta.url))
 const catalogRoot = catalogPackageRoot()
@@ -132,10 +132,10 @@ test("a rebuilt manifest lists emote and guide copies that are on disk", async (
 
 test.skipIf(!haveManifest)("the season manifest lists every battle emote and guide page", () => {
   const manifest = readJson(manifestPath) as { ui: Record<string, string>; stats: { ui: number } }
-  for (const emote of emoteCatalog) {
+  for (const emote of EMOTE_CATALOG) {
     expect(manifest.ui[`emoticon/${emote.dir}/${emote.picId}`], emote.id).toBe(`/assets/ui/emoticon/${emote.dir}/${emote.picId}.png`)
   }
-  for (const key of guidePages) expect(manifest.ui[`guide/${key}`], key).toBe(`/assets/ui/guide/${key}.png`)
+  for (const key of GUIDE_PAGES) expect(manifest.ui[`guide/${key}`], key).toBe(`/assets/ui/guide/${key}.png`)
   expect(manifest.stats.ui).toBe(Object.keys(manifest.ui).length)
   expect(JSON.stringify(manifest).includes("/assets/local/")).toBe(false)
 })
