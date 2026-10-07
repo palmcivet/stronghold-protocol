@@ -4,7 +4,7 @@ import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { assignTitles } from '#server/match/result/index.js';
 import { GameData } from '#server/match/mode/index.js';
-import { PHASE } from '#contract/match.js';
+import { PHASE } from '@alliance/contract/match.js';
 import { DATA, makeMatch } from './harness.js';
 
 const gd = new GameData(DATA, 'mode_multi_hard');

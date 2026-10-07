@@ -1,7 +1,4 @@
-import { createRequire } from "node:module"
-
-const require = createRequire(import.meta.url)
-const packageJson = require("../../package.json") as { version: string }
+import packageJson from "../../../package.json" with { type: "json" }
 
 /** Wire format number. Separate from the release string in `/healthz`. */
 export const PROTOCOL_VERSION: number = 1
@@ -36,7 +33,23 @@ export function modeIdFor(roomMode: string, difficulty: string): string {
   return `mode_${roomMode === "solo" ? "single" : "multi"}_${difficulty.toLowerCase()}`
 }
 
-export const PHASE = Object.freeze({
+interface PhaseMap {
+  readonly LOBBY: "LOBBY"
+  readonly INFO_CHECK: "INFO_CHECK"
+  readonly BAND_DRAFT: "BAND_DRAFT"
+  readonly BATTLE_CHECK: "BATTLE_CHECK"
+  readonly ROUND_START: "ROUND_START"
+  readonly SP_DRAFT: "SP_DRAFT"
+  readonly PREP: "PREP"
+  readonly COMBAT: "COMBAT"
+  readonly UNITE: "UNITE"
+  readonly SETTLE: "SETTLE"
+  readonly FINAL_ASSAULT: "FINAL_ASSAULT"
+  readonly HIDDEN_CORE: "HIDDEN_CORE"
+  readonly RESULT: "RESULT"
+}
+
+export const PHASE: PhaseMap = Object.freeze({
   LOBBY: "LOBBY",
   INFO_CHECK: "INFO_CHECK",
   BAND_DRAFT: "BAND_DRAFT",
@@ -71,7 +84,29 @@ export const PHASE_NAMES: Readonly<Record<Phase, string>> = {
 }
 
 /** Board geometry on the 19×21 stage. Row 0 is the bottom. */
-export const GEO = Object.freeze({
+interface GeometryRect {
+  readonly r0: number
+  readonly r1: number
+  readonly c0: number
+  readonly c1: number
+}
+
+interface Geometry {
+  readonly ROWS: number
+  readonly COLS: number
+  readonly FIELD: GeometryRect
+  readonly NORMAL_RECT: GeometryRect
+  readonly UNITE_RECT: GeometryRect
+  readonly BOSS_RECT: GeometryRect
+  readonly HAND_ROW: number
+  readonly HAND_SIZE: number
+  readonly TEMP_ROW: number
+  readonly TEMP_C0: number
+  readonly TEMP_SIZE: number
+  readonly PARTNER_COL_OFFSET: number
+}
+
+export const GEO: Geometry = Object.freeze({
   ROWS: 19,
   COLS: 21,
   FIELD: Object.freeze({ r0: 9, r1: 12, c0: 2, c1: 10 }),
@@ -110,14 +145,27 @@ export function placementClass(position: string | null | undefined, meleeOnHighG
   return "all"
 }
 
-export const AREA = Object.freeze({
+interface AreaMap {
+  readonly BOARD: "board"
+  readonly HAND: "hand"
+  readonly TEMP: "temp"
+  readonly OUTSIDE: "outside"
+}
+
+export const AREA: AreaMap = Object.freeze({
   BOARD: "board",
   HAND: "hand",
   TEMP: "temp",
   OUTSIDE: "outside",
 })
 
-export const PIECE_KIND = Object.freeze({
+interface PieceKindMap {
+  readonly CHESS: "chess"
+  readonly ITEM: "item"
+  readonly TOKEN: "token"
+}
+
+export const PIECE_KIND: PieceKindMap = Object.freeze({
   CHESS: "chess",
   ITEM: "item",
   TOKEN: "token",
@@ -144,7 +192,20 @@ export function layerGainRoom(before: number, gain: number): number {
 export const BOSS_HIT_LIMIT: number = 300000
 
 /** Snapshot unit flag bits. */
-export const UF = Object.freeze({
+interface UnitFlagMap {
+  readonly BLOCKED: number
+  readonly STUNNED: number
+  readonly FROZEN: number
+  readonly STEALTH: number
+  readonly SKILL: number
+  readonly SHIELD: number
+  readonly INVULN: number
+  readonly COLD: number
+  readonly SLEEP: number
+  readonly FLYING: number
+}
+
+export const UF: UnitFlagMap = Object.freeze({
   BLOCKED: 1,
   STUNNED: 2,
   FROZEN: 4,
@@ -157,7 +218,16 @@ export const UF = Object.freeze({
   FLYING: 512,
 })
 
-export const ANIM = Object.freeze({
+interface AnimationMap {
+  readonly IDLE: number
+  readonly MOVE: number
+  readonly ATTACK: number
+  readonly SKILL: number
+  readonly DIE: number
+  readonly DEPLOY: number
+}
+
+export const ANIM: AnimationMap = Object.freeze({
   IDLE: 0,
   MOVE: 1,
   ATTACK: 2,
@@ -168,10 +238,35 @@ export const ANIM = Object.freeze({
 })
 
 /** Deploy directions. The same list the battle uses. */
-export const DIRS = Object.freeze(["UP", "RIGHT", "DOWN", "LEFT"] as const)
+export const DIRS: readonly ["UP", "RIGHT", "DOWN", "LEFT"] = Object.freeze(["UP", "RIGHT", "DOWN", "LEFT"] as const)
 export type Dir = (typeof DIRS)[number]
 
-export const ERR = Object.freeze({
+interface ErrorMap {
+  readonly BAD_MSG: "BAD_MSG"
+  readonly RATE: "RATE"
+  readonly NOT_IN_ROOM: "NOT_IN_ROOM"
+  readonly ROOM_NOT_FOUND: "ROOM_NOT_FOUND"
+  readonly ROOM_FULL: "ROOM_FULL"
+  readonly ROOM_STARTED: "ROOM_STARTED"
+  readonly NOT_HOST: "NOT_HOST"
+  readonly NOT_READY: "NOT_READY"
+  readonly WRONG_PHASE: "WRONG_PHASE"
+  readonly NO_FUNDS: "NO_FUNDS"
+  readonly HAND_FULL: "HAND_FULL"
+  readonly BOARD_FULL: "BOARD_FULL"
+  readonly BAD_TILE: "BAD_TILE"
+  readonly BAD_TARGET: "BAD_TARGET"
+  readonly SOLD_OUT: "SOLD_OUT"
+  readonly MAX_LEVEL: "MAX_LEVEL"
+  readonly NOT_YOUR_TURN: "NOT_YOUR_TURN"
+  readonly ALREADY: "ALREADY"
+  readonly TEMP_NOT_EMPTY: "TEMP_NOT_EMPTY"
+  readonly ELIMINATED: "ELIMINATED"
+  readonly SPECTATOR: "SPECTATOR"
+  readonly INTERNAL: "INTERNAL"
+}
+
+export const ERR: ErrorMap = Object.freeze({
   BAD_MSG: "BAD_MSG",
   RATE: "RATE",
   NOT_IN_ROOM: "NOT_IN_ROOM",

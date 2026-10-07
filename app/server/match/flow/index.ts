@@ -132,8 +132,8 @@ function entriesOf(value: any): [string, any][] {
 //     pairing and the boss pool; its own running normal battle is force-ended. The seat shows status 'left'. When no
 //     human is left at all the match ends ('abandoned'); when nobody alive is left it ends as 'eliminated'.
 
-import { C2S, unitStatsEntry } from '#contract/message.js';
-import { PHASE, ERR, EMOTES, EMOTE_COOLDOWN_MS, GEO, modeIdFor, layerGainRoom } from '#contract/match.js';
+import { C2S, unitStatsEntry } from '@alliance/contract/message.js';
+import { PHASE, ERR, EMOTES, EMOTE_COOLDOWN_MS, GEO, modeIdFor, layerGainRoom } from '@alliance/contract/match.js';
 
 
 import { createRandom as createRng, deriveSeed } from 'arknights-mission-core';

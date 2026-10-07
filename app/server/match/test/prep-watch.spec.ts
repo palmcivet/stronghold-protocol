@@ -2,7 +2,7 @@
 // GitHub #87: watching another board during prep follows its moves. A spectator uses the same prep scout.
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { GEO, PHASE } from '#contract/match.js';
+import { GEO, PHASE } from '@alliance/contract/match.js';
 import { makeMatch, give, legalTileFor, chessOfTier } from './harness.js';
 
 const MELEE = (c) => c.position === 'MELEE' && c.profession === 'TANK';

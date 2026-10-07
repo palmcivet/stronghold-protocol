@@ -6,7 +6,7 @@
 // FakeBattle; the rule auditor (server/match/audit.js) watches every match.
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { ERR, PHASE } from '#contract/match.js';
+import { ERR, PHASE } from '@alliance/contract/match.js';
 import { MetaRegistry } from '#server/match/effect/index.js';
 import { registerBuiltins } from '#server/match/effect/builtin.js';
 import { attachAudit } from '#server/match/audit/log.js';

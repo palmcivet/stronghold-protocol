@@ -10,7 +10,7 @@ import { startServer } from "#server/entry/index.js";
 import { StubMatch } from "#server/test/stub.js";
 import { getData } from "#server/entry/packet.js";
 import { TestClient } from "#server/test/client.js";
-import { ERR, PHASE } from "#contract/match.js";
+import { ERR, PHASE } from "@alliance/contract/match.js";
 
 const DATA = getData({ log: { warn() {}, error() {}, info() {} } });
 const C = (id) => DATA.chess[id];

@@ -3,7 +3,7 @@
 // timers / auto-assign / effects); a single human (solo or co-op with AI teammates) is never timed outside battles.
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { ERR, PHASE } from '#contract/match.js';
+import { ERR, PHASE } from '@alliance/contract/match.js';
 import { DATA, makeMatch, checkInvariants } from './harness.js';
 import { BAND_TURN_SECONDS } from '#server/match/flow/index.js';
 

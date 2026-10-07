@@ -1,6 +1,6 @@
 import { randomBytes, randomInt } from "node:crypto"
-import { ERR, MAX_SEATS, MAX_SPECTATORS, ROOM_CODE_LEN, modeIdFor, type Difficulty } from "#contract/match.js"
-import { checkLoadout, type ChessRecord } from "#contract/message.js"
+import { ERR, MAX_SEATS, MAX_SPECTATORS, ROOM_CODE_LEN, modeIdFor, type Difficulty } from "@alliance/contract/match.js"
+import { checkLoadout, type ChessRecord } from "@alliance/contract/message.js"
 import { encode, isDroppable, isErrCode, sendRaw, sendSession, type HandlerResult, type NetHandler, type NetLog, type Session, type SessionRegistry, type StoredLoadout } from "#server/connection/session.js"
 import { getData as defaultGetData, lookup, type PacketData } from "#server/entry/packet.js"
 import { Match as DefaultMatch } from "#server/match/flow/index.js"

@@ -2,7 +2,7 @@
 // 最终攻势 / 隐秘核心: pairing, merged LP, shared boss pool, overtime, leaks, hidden-core condition (FakeBattle).
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { PHASE, GEO } from '#contract/match.js';
+import { PHASE, GEO } from '@alliance/contract/match.js';
 import { pairPlayers, bossPoolHp, SharedBossPool, hiddenEligible } from '#server/match/fight/assault/index.js';
 import { GameData } from '#server/match/mode/index.js';
 import { FakeBattle } from './fake-battle.js';

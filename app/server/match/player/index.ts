@@ -73,8 +73,8 @@ function entriesOf(value: any): [string, any][] {
 //     it during INFO_CHECK only. battleInput() resolves every chess unit to `skillIndex` + `moduleId` (resolveLoadout:
 //     normal chess → moduleId null, elite → uniEquipId | 'none'); m.private exposes `loadout`.
 
-import { ERR, GEO, PHASE, layerGainRoom } from '#contract/match.js';
-import { checkLoadout, resolveLoadout } from '#contract/message.js';
+import { ERR, GEO, PHASE, layerGainRoom } from '@alliance/contract/match.js';
+import { checkLoadout, resolveLoadout } from '@alliance/contract/message.js';
 import { FIELD, tileKey, parseKey, inField, canPlace, placeClass, boardOrder, freeSlot, pieceDir, parseDir, mergeTile, ownerRangeKeys } from '#server/match/board/index.js';
 import { attackRangeGrid, loadoutRecord, resolveRecordLoadout } from 'arknights-mission-core';
 import { offsetTile } from '#server/match/board/index.js';

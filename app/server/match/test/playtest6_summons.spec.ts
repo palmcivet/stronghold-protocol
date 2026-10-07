@@ -8,8 +8,8 @@
 // 临时整备区 at the prep deadline "会于下一回合返还" (§手牌区). The battle side is test/content/playtest6_summons.test.js.
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { ERR, PHASE } from '#contract/match.js';
-import { checkLoadout } from '#contract/message.js';
+import { ERR, PHASE } from '@alliance/contract/match.js';
+import { checkLoadout } from '@alliance/contract/message.js';
 import { DATA, makeMatch, give, giveItem, checkInvariants, legalTileFor } from './harness.js';
 import { botPrep } from '#server/match/agent/index.js';
 

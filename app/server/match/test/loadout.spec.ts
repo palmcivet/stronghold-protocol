@@ -5,8 +5,8 @@
 // 独立模拟 has no countdown outside combat).
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { ERR, PHASE } from '#contract/match.js';
-import { validateC2S, checkLoadout, loadoutOptions, resolveLoadout, isLoadoutEntries, MODULE_NONE, LOADOUT_LIMITS } from '#contract/message.js';
+import { ERR, PHASE } from '@alliance/contract/match.js';
+import { validateC2S, checkLoadout, loadoutOptions, resolveLoadout, isLoadoutEntries, MODULE_NONE, LOADOUT_LIMITS } from '@alliance/contract/message.js';
 import { buildBattleSpec } from '#server/match/fight/field/index.js';
 import { DATA, makeMatch } from './harness.js';
 

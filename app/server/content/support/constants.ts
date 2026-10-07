@@ -1,5 +1,5 @@
 import { TICK as STEP } from "arknights-mission-core"
-import { GEO, SKILL_SUMMON_START_DEPLOY as SUMMON_ON_DEPLOY } from "#contract/match.js"
+import { GEO, SKILL_SUMMON_START_DEPLOY as SUMMON_ON_DEPLOY } from "@alliance/contract/match.js"
 
 export { GEO }
 

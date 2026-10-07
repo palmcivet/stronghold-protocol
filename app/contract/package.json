@@ -1,0 +1,33 @@
+{
+  "name": "@alliance/contract",
+  "version": "0.0.0",
+  "private": true,
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "sideEffects": false,
+  "imports": {
+    "#contract/*.js": {
+      "source": "./src/*.ts",
+      "default": "./dist/*.js"
+    }
+  },
+  "exports": {
+    "./*.js": {
+      "types": "./src/*.ts",
+      "source": "./src/*.ts",
+      "import": "./dist/*.js",
+      "default": "./dist/*.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "lint": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}

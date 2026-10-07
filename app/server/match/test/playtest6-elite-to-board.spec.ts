@@ -10,8 +10,8 @@
 // rewards, effect grants, SETTLE merges and the boss-field prep alike. audit.js checks the rule in every audited match.
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { ERR, PHASE } from '#contract/match.js';
-import { checkLoadout } from '#contract/message.js';
+import { ERR, PHASE } from '@alliance/contract/match.js';
+import { checkLoadout } from '@alliance/contract/message.js';
 import { DATA, makeMatch, give, giveItem, checkInvariants, chessOfTier, legalTileFor } from './harness.js';
 import { canPlace, placeClass, tileKey, mergeTile } from '#server/match/board/index.js';
 import { makeCtx } from '#server/match/effect/index.js';

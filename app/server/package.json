@@ -1,0 +1,45 @@
+{
+  "name": "@alliance/server",
+  "version": "0.0.0",
+  "private": true,
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./*.js": {
+      "types": "./*.ts",
+      "source": "./*.ts",
+      "import": "./dist/*.js",
+      "default": "./dist/*.js"
+    }
+  },
+  "imports": {
+    "#server/*.js": {
+      "source": "./*.ts",
+      "default": "./dist/*.js"
+    }
+  },
+  "scripts": {
+    "build": "vite build",
+    "package": "cross-env PACKAGE=true vite build",
+    "start": "node dist/entry/main.js",
+    "dev": "node --watch dist/entry/main.js",
+    "lint": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@alliance/contract": "workspace:*",
+    "@alliance/data": "workspace:*",
+    "arknights-mission-core": "workspace:*",
+    "effect": "catalog:",
+    "ws": "^8.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/ws": "^8.18.2",
+    "cross-env": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}

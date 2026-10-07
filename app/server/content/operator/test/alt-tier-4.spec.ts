@@ -6,7 +6,7 @@ import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { makeBattle, enemyRec, checkInvariants } from '#server/content/support/harness.js';
 import { getDefaultSource } from '#server/content/support/sim-data.js';
-import { loadoutOptions } from '#contract/message.js';
+import { loadoutOptions } from '@alliance/contract/message.js';
 import { skillSpecSource } from '#server/content/loader.js';
 import { kitCoverage } from '../../tools/kit-coverage.mjs';
 import { canTargetAlly } from '#server/content/support/targeting.js';

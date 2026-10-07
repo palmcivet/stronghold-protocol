@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["es2024", "dom", "dom.iterable"],
+    "types": ["node"],
+    "customConditions": ["source"],
+    "outDir": "dist-test",
+    "rootDir": ".",
+    "tsBuildInfoFile": "dist-test/.tsbuildinfo"
+  },
+  "include": ["**/*.test.ts", "**/*.spec.ts"],
+  "exclude": ["dist", "dist-test", "dist-web", "node_modules", "**/vitest.config.ts"],
+  "references": [
+    { "path": "./tsconfig.json" },
+    { "path": "../contract" },
+    { "path": "../data" },
+    { "path": "../../assets-catalog" },
+    { "path": "../../mission-core" },
+    { "path": "../../mission-renderer" }
+  ]
+}

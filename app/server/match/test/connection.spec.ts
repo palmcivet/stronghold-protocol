@@ -2,7 +2,7 @@
 // Platform interface: start/handle/onDisconnect/onReconnect/onLeave/dispose, autoplay, bot takeover, views.
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { PHASE, ERR } from '#contract/match.js';
+import { PHASE, ERR } from '@alliance/contract/match.js';
 import { Match } from '#server/match/flow/index.js';
 import { DATA, makeMatch, checkInvariants, give, chessOfTier } from './harness.js';
 import { bossPoolHp } from '#server/match/fight/assault/index.js';

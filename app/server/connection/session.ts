@@ -1,8 +1,8 @@
 import { randomBytes } from "node:crypto"
 import type { IncomingMessage } from "node:http"
 import type { RawData, WebSocket } from "#server/connection/socket.js"
-import { C2S, validateC2S } from "#contract/message.js"
-import { ERR, ERR_TEXT, NAME_MAX_LEN, PROTOCOL_VERSION, type ErrCode } from "#contract/match.js"
+import { C2S, validateC2S } from "@alliance/contract/message.js"
+import { ERR, ERR_TEXT, NAME_MAX_LEN, PROTOCOL_VERSION, type ErrCode } from "@alliance/contract/match.js"
 import { clientAddress, type TrustProxy } from "#server/connection/address.js"
 
 export interface NetOptions {

@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "node:http"
-import { APP_VERSION, PROTOCOL_VERSION } from "#contract/match.js"
+import { APP_VERSION, PROTOCOL_VERSION } from "@alliance/contract/match.js"
 
 export const MAX_URL_LENGTH: number = 4096
 

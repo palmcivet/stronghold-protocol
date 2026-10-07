@@ -1,6 +1,6 @@
 import http from "node:http"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
-import { APP_VERSION, PROTOCOL_VERSION } from "#contract/match.js"
+import { APP_VERSION, PROTOCOL_VERSION } from "@alliance/contract/match.js"
 import { startServer } from "#server/entry/index.js"
 import { TestClient } from "#server/test/client.js"
 import { StubMatch } from "#server/test/stub.js"

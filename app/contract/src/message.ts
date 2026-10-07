@@ -418,7 +418,7 @@ export function validateC2S(msg: unknown): string | null {
   return null
 }
 
-export const EV = Object.freeze({
+export const EV: Readonly<Record<string, string>> = Object.freeze({
   SPAWN: "spawn",
   ATK: "atk",
   DMG: "dmg",

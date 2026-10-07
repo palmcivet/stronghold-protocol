@@ -12,7 +12,7 @@ import { Match } from '#server/match/flow/index.js';
 import { TestClient } from '#server/test/client.js';
 import { FakeBattle } from '#server/match/test/fake-battle.js';
 import { attachWsSimClient } from '#server/match/test/sim-client.js';
-import { EMOTES } from '#contract/match.js';
+import { EMOTES } from '@alliance/contract/match.js';
 
 let serverCombat = false;
 class FastMatch extends Match {

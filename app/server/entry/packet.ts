@@ -1,11 +1,9 @@
 import fs from "node:fs"
 import path from "node:path"
-import { fileURLToPath } from "node:url"
-
-const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
+import { DATA_PRODUCT_ROOT } from "@alliance/data/product-root.js"
 
 /** Compiled season packet the process reads when no directory is given. */
-export const DEFAULT_PACKET_DIR: string = path.join(appRoot, "product/season/act2autochess")
+export const DEFAULT_PACKET_DIR: string = path.join(DATA_PRODUCT_ROOT, "season/act2autochess")
 
 export const DATA_FILES: readonly string[] = Object.freeze([
   "config", "tuning", "chess", "bonds", "garrisons", "items", "bands", "effects", "choices",

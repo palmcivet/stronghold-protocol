@@ -1,12 +1,9 @@
-import fs from "node:fs"
 import http from "node:http"
 import type { IncomingMessage, ServerResponse } from "node:http"
 import os from "node:os"
-import { fileURLToPath } from "node:url"
 import { CLOSE, NET_DEFAULTS, Network, SessionRegistry, type NetLog, type NetOptions } from "#server/connection/session.js"
 import { bindWebSocket, createWebSocketServer, WS_MAX_PAYLOAD } from "#server/connection/ws.js"
 import { applySecurityHeaders, healthzBody, MAX_URL_LENGTH, rejectTarget, requestTarget, sendError, sendJson, type HealthCounters } from "#server/connection/http.js"
-import { APP_VERSION } from "#contract/match.js"
 import { getData, loadData, type DataLog, type PacketData } from "#server/entry/packet.js"
 import { Lobby, type MatchConstructor } from "#server/room/index.js"
 
@@ -254,48 +251,3 @@ export async function startServer(opts: ServerOptions = {}): Promise<RunningServ
 
   return { port: actualPort, host, url, server, lobby, network, registry, close }
 }
-
-function isMain(): boolean {
-  if (!process.argv[1]) return false
-  try {
-    return fs.realpathSync(process.argv[1]) === fs.realpathSync(fileURLToPath(import.meta.url))
-  } catch {
-    return false
-  }
-}
-
-async function main(): Promise<void> {
-  process.on("unhandledRejection", (cause) => console.error("[process] unhandled rejection", cause))
-  process.on("uncaughtException", (cause) => console.error("[process] uncaught exception", cause))
-  let running: RunningServer
-  try {
-    running = await startServer()
-  } catch (cause) {
-    const error = cause as NodeJS.ErrnoException & { port?: number }
-    if (error?.code === "EADDRINUSE") console.error(`端口已被占用 / port in use: ${error.port ?? process.env.PORT ?? 3000}. Try PORT=3001`)
-    else console.error("[boot] failed to start", cause)
-    process.exit(1)
-  }
-  console.log(`\n  卫戍协议：盟约 · Stronghold Protocol: Alliance v${APP_VERSION}`)
-  console.log(`  Local:   ${running.url}`)
-  if (running.host === "0.0.0.0" || running.host === "::") {
-    for (const url of lanUrls(running.port)) console.log(`  LAN:     ${url}`)
-  }
-  console.log("  Internet: cloudflared tunnel --url " + `http://localhost:${running.port}` + "\n")
-
-  let stopping = false
-  const stop = (signal: string): void => {
-    if (stopping) {
-      console.log("forced exit")
-      process.exit(1)
-    }
-    stopping = true
-    console.log(`\n[${signal}] shutting down…`)
-    setTimeout(() => process.exit(0), 5000).unref()
-    running.close().then(() => process.exit(0), () => process.exit(1))
-  }
-  process.on("SIGINT", () => stop("SIGINT"))
-  process.on("SIGTERM", () => stop("SIGTERM"))
-}
-
-if (isMain()) void main()

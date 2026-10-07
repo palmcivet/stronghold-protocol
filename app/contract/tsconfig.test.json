@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["es2024"],
+    "types": ["node"],
+    "customConditions": ["source"],
+    "outDir": "dist-test",
+    "rootDir": ".",
+    "tsBuildInfoFile": "dist-test/.tsbuildinfo"
+  },
+  "include": ["test/**/*.test.ts", "test/**/*.spec.ts"],
+  "exclude": ["dist", "dist-test", "node_modules", "**/vitest.config.ts"],
+  "references": [{ "path": "./tsconfig.json" }]
+}

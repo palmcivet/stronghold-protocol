@@ -1,5 +1,5 @@
-import { C2S } from "#contract/message.js"
-import { ERR, EMOTE_COOLDOWN_MS, GEO, PHASE, modeIdFor } from "#contract/match.js"
+import { C2S } from "@alliance/contract/message.js"
+import { ERR, EMOTE_COOLDOWN_MS, GEO, PHASE, modeIdFor } from "@alliance/contract/match.js"
 import { getConfig, getMode, type PacketData } from "#server/entry/packet.js"
 import type { NetLog } from "#server/connection/session.js"
 

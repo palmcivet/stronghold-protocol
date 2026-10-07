@@ -2,7 +2,7 @@
 // Merges (精锐), reward offers, item equip/replace/merge, consume-on-equip items (research 01 §7 + A1, 04 §2).
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { ERR, PHASE } from '#contract/match.js';
+import { ERR, PHASE } from '@alliance/contract/match.js';
 import { DATA, makeMatch, give, giveItem, checkInvariants, chessOfTier, legalTileFor } from './harness.js';
 import { canPlace, placeClass } from '#server/match/board/index.js';
 

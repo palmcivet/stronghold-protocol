@@ -1,0 +1,49 @@
+{
+  "name": "@alliance/data",
+  "version": "0.0.0",
+  "private": true,
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./*.js": {
+      "types": "./*.ts",
+      "source": "./*.ts",
+      "import": "./dist/*.js",
+      "default": "./dist/*.js"
+    }
+  },
+  "imports": {
+    "#compiler/*.js": {
+      "source": "./compiler/*.ts",
+      "default": "./dist/compiler/*.js"
+    },
+    "#runtime/*.js": {
+      "source": "./runtime/*.ts",
+      "default": "./dist/runtime/*.js"
+    },
+    "#schema/*.js": {
+      "source": "./schema/*.ts",
+      "default": "./dist/schema/*.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "lint": "tsc --noEmit",
+    "test": "vitest run",
+    "compile:packet": "node dist/compiler/scripts/packet.js",
+    "compile:assets": "node dist/compiler/scripts/assets.js",
+    "compile:emotes": "node dist/compiler/scripts/emotes.js",
+    "crop:board": "node dist/compiler/scripts/board-atlas.js"
+  },
+  "dependencies": {
+    "arknights-assets-catalog": "workspace:*",
+    "arknights-mission-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}

@@ -4,7 +4,7 @@ import { expect, test } from "vitest"
 import { catalogPackageRoot } from "#compiler/repo-root.js"
 import { resolveRoles, roleAnimationNames, type AnimRoles } from "#compiler/spine/anim-role.js"
 
-const manifestPath = join(catalogPackageRoot(), "..", "app/product/season/act2autochess/assets.json")
+const manifestPath = join(catalogPackageRoot(), "..", "app/data/product/season/act2autochess/assets.json")
 const haveManifest = existsSync(manifestPath)
 
 test("simple Attack model", () => {

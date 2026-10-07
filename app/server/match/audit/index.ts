@@ -19,7 +19,7 @@ function entriesOf(value: any): [string, any][] {
 //   elim.    an eliminated player owns nothing (board, hand, temp, shop, offers, bounties, funds)
 //   match    phase known; teamLp / boss pool within range; combat fields match the alive players
 
-import { PHASE, BOND_LAYER_CAP } from '#contract/match.js';
+import { PHASE, BOND_LAYER_CAP } from '@alliance/contract/match.js';
 import { FIELD, canPlace, placeClass, positionClass, parseKey } from '#server/match/board/index.js';
 import { computeBonds } from '#server/match/bond/index.js';
 

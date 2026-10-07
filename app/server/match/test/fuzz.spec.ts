@@ -4,8 +4,8 @@
 // report an internal error and never corrupt the invariants (pool accounting, funds, slots, legality, merges).
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { validateC2S, C2S } from '#contract/message.js';
-import { ERR, EMOTES } from '#contract/match.js';
+import { validateC2S, C2S } from '@alliance/contract/message.js';
+import { ERR, EMOTES } from '@alliance/contract/match.js';
 import {  createRandom as createRng  } from 'arknights-mission-core';
 import { DATA, makeMatch, checkInvariants } from './harness.js';
 

@@ -29,7 +29,7 @@ export function moduleTest(name: string, options: ModuleTestOptions = {}) {
       include: options.include ? [...options.include] : ["test/**/*.test.ts"],
       server: {
         deps: {
-          inline: [/^arknights-/, /^stronghold-/],
+          inline: [/^@alliance\//, /^arknights-/],
         },
       },
     },

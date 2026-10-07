@@ -38,7 +38,7 @@ function entriesOf(value: any): [string, any][] {
 // Facing: board pieces carry `dir` ∈ UP|RIGHT|DOWN|LEFT (server/sim/dir.js); `pieceDir` reads it (absent ⇒ RIGHT),
 // `parseDir` validates an intent's optional direction.
 
-import { GEO, moduleMeleeOnHighGround, placementClass } from '#contract/match.js';
+import { GEO, moduleMeleeOnHighGround, placementClass } from '@alliance/contract/match.js';
 import { rotateOffset } from 'arknights-mission-core';
 const DEFAULT_DIR = 'RIGHT';
 function isDir(d?: any) : any { return d === 'UP' || d === 'RIGHT' || d === 'DOWN' || d === 'LEFT'; }

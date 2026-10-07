@@ -33,7 +33,7 @@ function entriesOf(value: any): [string, any][] {
 //                                          offspring bound) — the live counter's clamp
 //   syntheticResult(players, progress)     stand-in when a boss field's client never reported
 
-import { layerGainRoom } from '#contract/match.js';
+import { layerGainRoom } from '@alliance/contract/match.js';
 import { contentModules } from '#server/content/loader.js';
 import { TICK, createBattle, leakModule, runSteps, type BattleSpec, type MissionModule, type SpawnSpec, type UnitSpec } from 'arknights-mission-core';
 const SNAPSHOT_EVERY = 3;

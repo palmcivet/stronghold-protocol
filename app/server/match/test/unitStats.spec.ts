@@ -7,8 +7,8 @@
 // of the match.
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { ERR, PHASE } from '#contract/match.js';
-import { validateC2S, unitStatsEntry, S2C } from '#contract/message.js';
+import { ERR, PHASE } from '@alliance/contract/match.js';
+import { validateC2S, unitStatsEntry, S2C } from '@alliance/contract/message.js';
 import { makeMatch, give, giveItem, chessOfTier, legalTileFor } from './harness.js';
 
 /** 阿戈尔重刃: ATK +40 % (its own multiplier), attack speed −10 (data/items.json). */

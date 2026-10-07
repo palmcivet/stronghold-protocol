@@ -3,7 +3,7 @@
 // addition content needs (DESIGN §6.4/§7, docs/META.md). FakeBattle unless noted.
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { PHASE, GEO } from '#contract/match.js';
+import { PHASE, GEO } from '@alliance/contract/match.js';
 import { MetaRegistry, makeCtx } from '#server/match/effect/index.js';
 import { registerBuiltins } from '#server/match/effect/builtin.js';
 import { collectViolations } from '#server/match/audit/index.js';

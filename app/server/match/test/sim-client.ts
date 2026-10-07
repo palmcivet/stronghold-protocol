@@ -16,7 +16,7 @@
 
 import assert from 'node:assert/strict';
 import { createBattleFromSpec, compactResult, battleProgress, attachLpMeter } from '#server/match/fight/field/index.js';
-import { validateC2S } from '#contract/message.js';
+import { validateC2S } from '@alliance/contract/message.js';
 const TICK = 1 / 30;
 
 const SLICE_MS = 250;

@@ -35,7 +35,7 @@
 
 
 import { mirrorDir, normDir } from '#server/match/board/index.js';
-import { GEO } from '#contract/match.js';
+import { GEO } from '@alliance/contract/match.js';
 const BOSS_ROW_OFFSET = -7;
 const COLS = GEO.COLS;
 const BOSS_POOL_MIN_HP = 1;

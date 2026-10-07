@@ -9,7 +9,7 @@ import { EMOTE_CATALOG } from "#compiler/media/fetch/emote-catalog.js"
 import { buildPlan, collectEnemyIds, GUIDE_PAGES, skillIndicesByChar, UI_EXTRAS } from "#compiler/media/fetch/plan.js"
 
 const appRoot = appRootFrom(fileURLToPath(import.meta.url))
-const researchDir = join(appRoot, "data/compiler/input/research")
+const researchDir = join(appRoot, "compiler/input/research")
 const readJson = (name: string): unknown => JSON.parse(readFileSync(join(researchDir, name), "utf8")) as unknown
 
 const aa2 = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsAssets2/cn/assets/dyn/"
