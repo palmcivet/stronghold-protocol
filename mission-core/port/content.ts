@@ -1,6 +1,6 @@
 import type { PhaseSlot } from "#contract/phase.js"
 import type { BattleEvent } from "#contract/event.js"
-import type { TileCoord, TileSpec, UnitSide, UnitSpec } from "#contract/spec.js"
+import type { AttackShape, TileCoord, TileSpec, UnitSide, UnitSpec } from "#contract/spec.js"
 import type { Random } from "#random/index.js"
 
 export const modifierOps = ["add", "percent", "mul"] as const
@@ -112,6 +112,8 @@ export interface HealOptions {
   readonly self?: boolean
   /** 超出最大生命的部分变成护盾，这份护盾不超过最大生命。 */
   readonly overheal?: boolean
+  /** 溢出护盾的秒数。缺省一直留着，到点后这份护盾去掉。 */
+  readonly overhealDuration?: number
   /** 生命回复，不受禁疗影响。 */
   readonly regen?: boolean
   /** 这次治疗无视禁疗。 */
@@ -178,10 +180,46 @@ export type TimerView = Readonly<Record<string, string | number | boolean>>
 export interface TimerDefinition {
   readonly id: string
   readonly slot: PhaseSlot
+  /**
+   * 这些阵营才会启动。没写时两边都可以。
+   * 写了却对不上的阵营，startTimer 直接跳过，计时器保持未开始。
+   */
+  readonly sides?: readonly UnitSide[]
   create(): TimerState
   advance(state: TimerState, unitId: string, ctx: ContentContext): void
   cancel(state: TimerState): void
   view(state: TimerState): TimerView
+}
+
+/** 推、拉、恐惧、诱导的输入。用到的字段由这个动作自己读。 */
+export interface ShiftInput {
+  readonly force?: number
+  readonly fromX?: number
+  readonly fromY?: number
+  readonly dirX?: number
+  readonly dirY?: number
+  readonly toX?: number
+  readonly toY?: number
+  readonly centerX?: number
+  readonly centerY?: number
+  readonly sourceX?: number
+  readonly sourceY?: number
+  readonly effect?: boolean
+  readonly fixed?: boolean
+  readonly inward?: boolean
+}
+
+export interface ShiftPlan {
+  readonly x: number
+  readonly y: number
+  readonly points?: readonly TileCoord[]
+}
+
+export interface ShiftDefinition {
+  readonly id: string
+  /** 为真时这一拍就写到落点。为假时沿 points 走，倒地先落到 x、y。 */
+  readonly instant: boolean
+  plan(unitId: string, input: ShiftInput, ctx: ContentContext): ShiftPlan | null
 }
 
 export interface DeployStrategyDefinition {
@@ -199,11 +237,40 @@ export interface PhaseSystem {
   run(ctx: ContentContext): void
 }
 
+/** 到达后按攻击形状结算。没有这份数据时，到达只造成 amount 的 physical 伤害。 */
+export interface ProjectileImpact {
+  readonly shape: AttackShape
+  readonly hitCount: number
+  /** 飞出的一发。回到投掷者时是 back。 */
+  readonly leg?: "out" | "back"
+  /** 飞回的速度。有这个数时，飞出到达后朝来源再飞一发，回程不结算伤害。 */
+  readonly returnSpeed?: number
+}
+
 export interface ProjectileLaunch {
   readonly id: string
   readonly sourceId: string
   readonly targetId: string
   readonly amount: number
+  /** 格/秒。缺省用 PROJECTILE_SPEED。 */
+  readonly speed?: number
+  /** 出发坐标。缺省用来源单位的当前位置。 */
+  readonly x?: number
+  readonly y?: number
+  /** 目标离场后仍飞向最后看到的坐标并结算。 */
+  readonly retain?: boolean
+  readonly attack?: ProjectileImpact
+}
+
+/** 仍在飞的一发。到达或目标中途离场后不再出现。 */
+export interface ProjectileView {
+  readonly id: string
+  readonly sourceId: string
+  readonly targetId: string
+  readonly amount: number
+  readonly speed: number
+  readonly x: number
+  readonly y: number
 }
 
 /**
@@ -225,6 +292,7 @@ export interface Registration {
   registerSkillBody(definition: SkillBodyDefinition): void
   registerTimer(definition: TimerDefinition): void
   registerDeployStrategy(definition: DeployStrategyDefinition): void
+  registerShift(definition: ShiftDefinition): void
   registerSystem(system: PhaseSystem): void
   subscribe(type: string, handler: (event: BattleEvent) => void): () => void
 }
@@ -243,7 +311,16 @@ export interface ContentContext extends Registration {
   applyStatus(unitId: string, statusId: string, application?: StatusApplication): void
   spawnUnit(spec: UnitSpec): void
   displace(unitId: string, x: number, y: number): void
+  /** 推、拉、恐惧或诱导。未知标识拒绝。移不动时返回 false。 */
+  shift(actionId: string, unitId: string, input?: ShiftInput): boolean
+  /** 在格子上摆上或拿掉障碍。kind 缺省是挡住地面寻路的 block，crate 是箱子。 */
+  setObstacle(x: number, y: number, on: boolean, kind?: "block" | "crate"): void
   launchProjectile(projectile: ProjectileLaunch): void
+  /** 当前费用。不够时不扣，返回 false。 */
+  spendCost(side: UnitSide, amount: number): boolean
+  /** 加上费用，结果不超过该阵营的上限。 */
+  addCost(side: UnitSide, amount: number): void
+  costOf(side: UnitSide): number
   emit(type: string, data: Readonly<Record<string, unknown>>): void
   readonly random: Random
   hitRect(unitId: string): HitShape
@@ -264,5 +341,5 @@ export interface ContentContext extends Registration {
   /** 外界给予技力。阻回和持续技能期间不加。返回实际加上的数量。 */
   gainSp(unitId: string, skillId: string, amount: number): number
   tile(x: number, y: number): TileSpec | null
-  projectiles(): readonly ProjectileLaunch[]
+  projectiles(): readonly ProjectileView[]
 }

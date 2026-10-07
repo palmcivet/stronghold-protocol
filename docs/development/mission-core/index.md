@@ -32,6 +32,10 @@ const spec: BattleSpec = {
   ],
   spawns: [],
   deployStrategy: null,
+  cost: {
+    ally: { initial: 10, regen: 1, cap: 99 },
+    enemy: { initial: 0, regen: 0, cap: 0 },
+  },
 }
 
 const trace: MissionModule = {
@@ -66,9 +70,11 @@ const result = battle.result()
 | --- | --- |
 | [规格](./spec.md) | `BattleSpec`、单位、地块、技能、刷出 |
 | [战斗](./battle.md) | `createBattle`、`step`、阶段槽、快照、事件、结果 |
-| [模块](./module.md) | `MissionModule`、八类注册、`ContentContext` |
+| [模块](./module.md) | `MissionModule`、八类注册、部署策略、`ContentContext` |
 | [伤害](./damage.md) | 伤害步骤、治疗、流失、元素槽 |
 | [技能](./skill.md) | 技力、充能、触发、技能体 |
 | [攻击](./attack.md) | 攻击计时、片段、出手 |
+| [计时](./timer.md) | 充能、弹药、回旋持有、速度 |
 | [状态](./status.md) | 施加、叠层、内置状态 |
 | [选择器](./selector.md) | 筛选、排序、范围 |
+| [费用、阻挡与投射物](./field.md) | 费用池、再部署、阻挡、泄漏、投射物飞行 |

@@ -1,5 +1,5 @@
 import type { PhaseSlot } from "#contract/phase.js"
-import type { TileSpec, UnitSide, UnitSpec } from "#contract/spec.js"
+import type { TileCoord, TileSpec, UnitSide, UnitSpec } from "#contract/spec.js"
 import type {
   ContentContext,
   DamageInfo,
@@ -9,8 +9,11 @@ import type {
   TimerView,
 } from "#port/content.js"
 import type { BattleRegistry } from "#battle/registry.js"
+import { applyShift } from "#battle/behavior/action.js"
 import { healUnit, loseLife, runDamage } from "#battle/damage/index.js"
-import { launchProjectile as storeProjectile } from "#battle/projectile/index.js"
+import { addCost, costOf, spendCost } from "#battle/cost.js"
+import { launchProjectile as storeProjectile, projectileViews } from "#battle/projectile/index.js"
+import { bindSession } from "#battle/session.js"
 import { addUnit, emit as publish, requireUnit, type BattleState } from "#battle/state.js"
 import { activateSkill, gainSkillSp } from "#battle/skill/point.js"
 import { shouldCast as askTrigger } from "#battle/skill/trigger.js"
@@ -22,6 +25,7 @@ import { applyStatus as giveStatus } from "#battle/unit/status/index.js"
 import {
   advanceStartedTimers as advanceSlotTimers,
   advanceTimer as stepTimer,
+  armListedTimers,
   startTimer as beginTimer,
   timerView as readTimerView,
 } from "#battle/unit/timer.js"
@@ -52,6 +56,9 @@ export function createContext(state: BattleState, registry: BattleRegistry, tile
     registerDeployStrategy(definition) {
       registry.registerDeployStrategy(definition)
     },
+    registerShift(definition) {
+      registry.registerShift(definition)
+    },
     registerSystem(system) {
       registry.registerSystem(system)
     },
@@ -70,7 +77,7 @@ export function createContext(state: BattleState, registry: BattleRegistry, tile
       runDamage(state, registry, ctx, info, false)
     },
     heal(unitId, amount, options) {
-      healUnit(state, registry, unitId, amount, options)
+      healUnit(state, registry, ctx, unitId, amount, options)
     },
     loseHp(unitId, amount) {
       loseLife(state, registry, ctx, unitId, amount)
@@ -79,15 +86,24 @@ export function createContext(state: BattleState, registry: BattleRegistry, tile
       giveStatus(state, registry, ctx, unitId, statusId, application)
     },
     spawnUnit(spec: UnitSpec) {
+      if (!stands(state, registry, ctx, spec.id, spec.x, spec.y)) return
       addUnit(state, spec, true)
+      armListedTimers(state, registry, requireUnit(state, spec.id))
       publish(state, "spawn", { unitId: spec.id })
     },
     displace(unitId, x, y) {
+      if (!stands(state, registry, ctx, unitId, x, y)) return
       const unit = requireUnit(state, unitId)
       unit.x = x
       unit.y = y
       if (unit.route) unit.route.pts = null
       publish(state, "displace", { unitId, x, y })
+    },
+    shift(actionId, unitId, input) {
+      return applyShift(state, registry, ctx, actionId, unitId, input)
+    },
+    setObstacle(x, y, on, kind) {
+      state.grid.setObstacle(x, y, on, kind)
     },
     launchProjectile(projectile: ProjectileLaunch) {
       storeProjectile(state, projectile)
@@ -96,6 +112,15 @@ export function createContext(state: BattleState, registry: BattleRegistry, tile
         sourceId: projectile.sourceId,
         targetId: projectile.targetId,
       })
+    },
+    spendCost(side, amount) {
+      return spendCost(state, side, amount)
+    },
+    addCost(side, amount) {
+      addCost(state, side, amount)
+    },
+    costOf(side) {
+      return costOf(state, side)
     },
     emit(type, data) {
       publish(state, type, data)
@@ -164,8 +189,23 @@ export function createContext(state: BattleState, registry: BattleRegistry, tile
       return tiles.at(x, y)
     },
     projectiles() {
-      return state.projectiles.map((projectile) => ({ ...projectile }))
+      return projectileViews(state)
     },
   }
-    return ctx
+  bindSession(ctx, state, registry)
+  return ctx
+}
+
+function stands(
+  state: BattleState,
+  registry: BattleRegistry,
+  ctx: ContentContext,
+  unitId: string,
+  x: number,
+  y: number,
+): boolean {
+  const strategyId = state.spec.deployStrategy
+  if (strategyId === null) return true
+  const tile: TileCoord = { x: Math.round(x), y: Math.round(y) }
+  return registry.requireDeployStrategy(strategyId).canStand(unitId, tile, ctx)
 }

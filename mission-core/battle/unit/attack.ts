@@ -1,9 +1,11 @@
+import { projectileKindSpeed, resolveAttackImpact, retainOnMiss, returnSpeedOf } from "#battle/attack/shape.js"
 import type { ContentContext, TimerState } from "#port/content.js"
 import type { BattleRegistry } from "#battle/registry.js"
 import { requireUnit, type BattleState } from "#battle/state.js"
-import { unitsInRange } from "#battle/target/selector.js"
+import { attackTargetIds } from "#battle/unit/aim.js"
 import { attributeOf } from "#battle/unit/attribute.js"
 import { interruptEnemyAttack } from "#battle/unit/status/palsy.js"
+import { consumeAttackTiming, peekAttackTargetThisTick, readAttackTiming } from "#battle/unit/timer.js"
 import type { UnitState } from "#battle/unit/index.js"
 import { TICK } from "#tick/index.js"
 
@@ -13,38 +15,6 @@ export const ASPD_MIN = 20
 export const ASPD_MAX = 600
 /** 没有攻击片段时，命中之后停住的秒数。 */
 export const ATTACK_PAUSE = 0.35
-
-const allyQuery = [
-  "enemy",
-  "fly",
-  "stealth",
-  "sleep",
-  "untargetable",
-  "isolated",
-  "range",
-  "block",
-  "priority",
-  "taunt",
-  "remaining",
-  "distance",
-  "spawn",
-] as const
-
-const enemyQuery = [
-  "ally",
-  "sleep",
-  "stealth",
-  "camouflage",
-  "liftoff",
-  "untargetable",
-  "isolated",
-  "range",
-  "block",
-  "priority",
-  "taunt",
-  "aggro",
-  "distance",
-] as const
 
 export function advanceAttack(
   state: BattleState,
@@ -77,6 +47,7 @@ export function attackWillHit(
 ): boolean {
   const timer = unit.timers.get("attack")
   if (!timer || clockStopped(unit) || attackHeld(state, registry, unit)) return false
+  if (!readAttackTiming(unit, registry).canAttack) return false
   const timing = attackTiming(unit, registry)
   if (!hasTarget(state, registry, ctx, unit)) return false
   if (text(timer, "phase") === "windup") {
@@ -101,6 +72,12 @@ function advanceWindup(
   held: boolean,
 ): void {
   if (stunned || held) return
+  if (targetDenied(unit)) {
+    timer.phase = "idle"
+    timer.elapsed = 0
+    timer.lead = 0
+    return
+  }
   if (number(timer, "lead") === 1) {
     timer.elapsed = number(timer, "elapsed") + TICK
     if (number(timer, "elapsed") + 1e-9 < timing.wind) return
@@ -159,6 +136,7 @@ function readyToSwing(
   timer: TimerState,
   timing: AttackTiming,
 ): boolean {
+  if (targetDenied(unit) || !readAttackTiming(unit, registry).canAttack) return false
   if (number(timer, "cooldown") > timing.wind + 1e-9) return false
   return hasTarget(state, registry, ctx, unit)
 }
@@ -199,7 +177,15 @@ function strike(
   timer: TimerState,
   timing: AttackTiming,
 ): void {
-  const targets = pickTargets(state, registry, ctx, unit)
+  const swing = readAttackTiming(unit, registry)
+  if (!swing.canAttack) {
+    timer.phase = "idle"
+    timer.elapsed = 0
+    timer.lead = 0
+    timer.cooldown = 0
+    return
+  }
+  const targets = attackTargetIds(state, registry, ctx, unit)
   if (targets.length === 0) {
     timer.phase = "idle"
     timer.elapsed = 0
@@ -215,8 +201,11 @@ function strike(
     timer.rest = ATTACK_PAUSE
     return
   }
-  const amount = Math.max(0, attributeOf(unit, registry, "atk"))
-  for (const targetId of targets) deliverHit(state, ctx, unit, targetId, amount)
+  const scale = Number.isFinite(swing.damageScale) ? swing.damageScale : 1
+  const amount = Math.max(0, attributeOf(unit, registry, "atk") * scale)
+  const hitCount = Number.isFinite(swing.hitCount) ? Math.max(0, Math.floor(swing.hitCount)) : 1
+  for (const targetId of targets) deliver(state, registry, ctx, unit, targetId, amount, hitCount)
+  consumeAttackTiming(unit)
   ctx.emit("attack-hit", { unitId: unit.id })
   timer.phase = "recovery"
   timer.elapsed = 0
@@ -266,20 +255,15 @@ function clamp(value: number, min: number, max: number): number {
 // MARK: target
 
 function hasTarget(state: BattleState, registry: BattleRegistry, ctx: ContentContext, unit: UnitState): boolean {
-  return pickTargets(state, registry, ctx, unit).length > 0
+  return attackTargetIds(state, registry, ctx, unit).length > 0
 }
 
-function pickTargets(
-  state: BattleState,
-  registry: BattleRegistry,
-  ctx: ContentContext,
-  unit: UnitState,
-): readonly string[] {
-  const query = unit.side === "enemy" ? enemyQuery : allyQuery
-  return unitsInRange(state, registry, ctx, unit.id, query).slice(0, 1)
+function targetDenied(unit: UnitState): boolean {
+  return peekAttackTargetThisTick(unit) === false
 }
 
-function attackHeld(state: BattleState, registry: BattleRegistry, unit: UnitState): boolean {
+function attackHeld(_state: BattleState, registry: BattleRegistry, unit: UnitState): boolean {
+  if (unit.flags.has("tremble") && unit.blockedBy) return true
   for (const status of unit.statuses) {
     if (status.dropped) continue
     if (registry.requireStatus(status.id).cancels.includes("attack")) return true
@@ -292,31 +276,38 @@ function clockStopped(unit: UnitState): boolean {
   return unit.flags.has("stun") || unit.flags.has("sleep")
 }
 
-/** 有弹道时改为生成投射物。这一阶段远程仍在命中时直接结算。 */
-function deliverHit(state: BattleState, ctx: ContentContext, attacker: UnitState, targetId: string, amount: number): void {
-  if (launchInstead(attacker)) {
-    spawnAttackProjectile(ctx, attacker, targetId, amount, state.tick)
-    return
-  }
-  ctx.dealDamage({ sourceId: attacker.id, targetId, amount, kind: "physical" })
-}
-
-function launchInstead(_attacker: UnitState): boolean {
-  return false
-}
-
-function spawnAttackProjectile(
+function deliver(
+  state: BattleState,
+  registry: BattleRegistry,
   ctx: ContentContext,
   attacker: UnitState,
   targetId: string,
   amount: number,
-  tick: number,
+  hitCount: number,
 ): void {
-  ctx.launchProjectile({
-    id: `${attacker.id}:${targetId}:${tick}`,
+  const shape = attacker.attackShape
+  if (shape?.projectile && shape.lockRange !== true) {
+    const back = returnSpeedOf(shape.projectile)
+    ctx.launchProjectile({
+      id: `${attacker.id}:${targetId}:${state.tick}`,
+      sourceId: attacker.id,
+      targetId,
+      amount,
+      speed: projectileKindSpeed(shape.projectile),
+      retain: retainOnMiss(shape),
+      ...(back !== undefined ? { attack: { shape, hitCount, leg: "out", returnSpeed: back } } : { attack: { shape, hitCount } }),
+    })
+    return
+  }
+  const target = state.units.get(targetId)
+  resolveAttackImpact(state, registry, ctx, {
     sourceId: attacker.id,
     targetId,
+    x: target?.x ?? attacker.x,
+    y: target?.y ?? attacker.y,
     amount,
+    hitCount,
+    shape: shape ?? {},
   })
 }
 

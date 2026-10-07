@@ -107,6 +107,14 @@ test("系统按阶段槽和优先级运行", () => {
         },
       })
       ctx.registerSystem({
+        id: "redeploy-probe",
+        slot: "redeploy",
+        priority: 1,
+        run(runCtx) {
+          runCtx.emit("trace", { name: "redeploy" })
+        },
+      })
+      ctx.registerSystem({
         id: "finale",
         slot: "finale",
         priority: 0,
@@ -150,7 +158,6 @@ test("系统按阶段槽和优先级运行", () => {
     "spawn",
     "spawn:1",
     "cost:-2",
-    "cost",
     "cost:5",
     "status",
     "enemy",

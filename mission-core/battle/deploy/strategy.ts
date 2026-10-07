@@ -1,6 +1,8 @@
 import type { ContentContext } from "#port/content.js"
+import { landShift } from "#battle/behavior/action.js"
 import type { BattleRegistry } from "#battle/registry.js"
-import { emit, requireUnit, type BattleState } from "#battle/state.js"
+import { emit, readTimer, requireUnit, type BattleState } from "#battle/state.js"
+import { startTimer } from "#battle/unit/timer.js"
 
 export function openBattle(state: BattleState, registry: BattleRegistry, ctx: ContentContext): void {
   const strategyId = state.spec.deployStrategy
@@ -19,8 +21,12 @@ export function openBattle(state: BattleState, registry: BattleRegistry, ctx: Co
 export function knockDown(state: BattleState, registry: BattleRegistry, ctx: ContentContext, unitId: string): void {
   const unit = requireUnit(state, unitId)
   if (unit.downed) return
+  landShift(unit)
   unit.downed = true
   unit.fielded = false
+  startTimer(state, registry, unitId, "redeploy")
+  const timer = readTimer(unit, "redeploy")
+  if (timer) timer.elapsed = 0
   const strategyId = state.spec.deployStrategy
   if (strategyId === null) {
     emit(state, "downed", { unitId })

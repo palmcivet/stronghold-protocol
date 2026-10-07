@@ -26,6 +26,22 @@ export function armField(state: BattleState, registry: BattleRegistry, ctx: Cont
   for (const unit of state.units.values()) armUnit(state, registry, ctx, unit, initial)
 }
 
+/** 再部署回到场上时，结束还开着的技能，再按入场重新加上初始技力。 */
+export function resetSkills(
+  state: BattleState,
+  registry: BattleRegistry,
+  ctx: ContentContext,
+  unit: UnitState,
+): void {
+  for (const skill of unit.skills) {
+    if (skill.active || skill.pending || skill.effectsApplied) finishSkill(registry, ctx, unit, skill, "redeploy")
+  }
+  for (const skill of unit.skills) openSkill(state, registry, ctx, unit, skill, false)
+  const timer = readTimer(unit, "skill-point")
+  if (timer) timer.phase = phaseOf(shown(unit))
+  sync(unit)
+}
+
 export function armUnit(
   state: BattleState,
   registry: BattleRegistry,

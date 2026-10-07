@@ -174,6 +174,66 @@ test("眩晕和缴械取消攻击", () => {
   expect(flagsOf(battle, "disarm")).toEqual(["disarm"])
 })
 
+test("战栗的敌人被挡住时不出手，没被挡时照常打", () => {
+  const hits: string[] = []
+  const tile = { height: 0, deployable: true, walkableBy: ["ground"] }
+  const battle = createBattle(
+    spec({
+      modules: ["case"],
+      tiles: [
+        { ...tile, x: 0, y: 0 },
+        { ...tile, x: 1, y: 0 },
+        { ...tile, x: 0, y: 1 },
+        { ...tile, x: 1, y: 1 },
+      ],
+      units: [
+        ally("held", {
+          side: "enemy",
+          x: 0,
+          y: 0,
+          facing: "RIGHT",
+          blockedBy: "a",
+          attributes: { hp: 100, atk: 10, def: 0 },
+        }),
+        ally("free", {
+          side: "enemy",
+          x: 0,
+          y: 1,
+          facing: "RIGHT",
+          attributes: { hp: 100, atk: 10, def: 0 },
+        }),
+        ally("a", { x: 1, y: 0, facing: "LEFT", attributes: { hp: 500, atk: 0, def: 0 } }),
+        ally("b", { x: 1, y: 1, facing: "LEFT", attributes: { hp: 500, atk: 0, def: 0 } }),
+      ],
+    }),
+    [
+      {
+        id: "case",
+        install(ctx) {
+          ctx.subscribe("attack-hit", (event) => {
+            hits.push(String(event.data.unitId))
+          })
+          ctx.registerSystem({
+            id: "arm",
+            slot: "schedule",
+            priority: 1,
+            run(runCtx) {
+              if (runCtx.tick() !== 0) return
+              runCtx.applyStatus("held", "tremble")
+              runCtx.applyStatus("free", "tremble")
+              runCtx.startTimer("held", "attack")
+              runCtx.startTimer("free", "attack")
+            },
+          })
+        },
+      },
+    ],
+  )
+  battle.step()
+  expect(hits).toEqual(["free"])
+  expect(flagsOf(battle, "held")).toEqual(["tremble"])
+})
+
 test("麻痹按层取消敌人普攻，第五层加不上去，友方不受影响", () => {
   const hits: string[] = []
   const battle = open(

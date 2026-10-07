@@ -15,7 +15,7 @@ hitRect(unitId: string): HitShape
 
 按给出的顺序走。`kind` 不是 `sort` 的做筛选，不是 `filter` 的留到后面排序。只有筛选时保持原来的先后。有排序时按给出的顺序比较，第一个不是 0 的结果决定谁在前。写在前面的排序键优先。
 
-`select` 只处理调用方给出的名单。`unitsInRange` 先收集攻击范围内的单位，再加上 `blocking` 里的单位，以及 `blockedBy` 指向查询者的单位。查询期间用来源记住这个单位。攻击范围按朝向 `RIGHT` 填写，查询时转到单位朝向，越出棋盘的格子不算。
+`select` 只处理调用方给出的名单。`unitsInRange` 先收集攻击范围内的单位，再加上 `blocking` 里的单位，以及 `blockedBy` 指向查询者的单位。查询期间用来源记住这个单位。攻击范围按朝向 `RIGHT` 填写，查询时转到单位朝向，越出棋盘的格子不算。属性 `rangeExtend` 大于 0 时，先在面向 `RIGHT` 的每一行、最远那一列后再加这么多格，然后再旋转。
 
 `hitRect` 在没有大体型时返回所站的一格，`kind` 为 `tile`，宽高都是 1。有 `HitArea` 时 `kind` 为 `rect`。距离用站位或矩形边计算。
 

@@ -29,5 +29,8 @@ function readUnit(unit: UnitState): UnitSnapshot {
     tags: [...unit.tags],
     deployPositions: [...unit.deployPositions],
     elements,
+    blocking: [...unit.blocking],
+    blockedBy: unit.blockedBy,
+    boomerangsOut: unit.boomerangsOut,
   }
 }

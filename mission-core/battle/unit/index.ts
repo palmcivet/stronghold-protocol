@@ -1,4 +1,4 @@
-import type { AttackClip, Direction, HitArea, Motion, SkillHook, SkillModifier, UnitSpec } from "#contract/spec.js"
+import type { AttackClip, AttackShape, Direction, HitArea, Motion, SkillHook, SkillModifier, UnitSpec } from "#contract/spec.js"
 import type { AttributeModifier, SkillRuntime, TimerState } from "#port/content.js"
 import { copyModifiers } from "#battle/skill/modifier.js"
 import {
@@ -9,6 +9,15 @@ import {
   type SpType,
 } from "#battle/skill/constants.js"
 import type { RouteRun } from "#battle/space/grid/route.js"
+
+/** 一段还在走的位移。落点在 landing，路径在 points。 */
+export interface ShiftRun {
+  readonly id: string
+  landingX: number
+  landingY: number
+  readonly points: { x: number; y: number }[]
+  index: number
+}
 
 export interface StatusInstance {
   id: string
@@ -84,11 +93,21 @@ export interface UnitState {
   /** master 的 def.immune。冻结写成 frozen，恐惧和战栗写成 feared。 */
   readonly immunity: ReadonlySet<string>
   readonly attackClip: AttackClip | null
+  readonly attackShape: AttackShape | null
+  /** 已经飞出、还没回到手上的回旋物。计时器读这个数，攻击形状不因此停手。 */
+  boomerangsOut: number
+  /** 再部署清零回旋时加一。旧的飞行回程对不上这个数就不改计数。 */
+  boomerangEpoch: number
+  /** 还没走完的推、拉、恐惧或诱导。倒地时先写到落点。 */
+  shiftRun: ShiftRun | null
   readonly targetPriority: string
   readonly blocking: string[]
   blockedBy: string | null
   readonly aggroSeq: number
   readonly spawnSeq: number
+  /** 放入时的格子。之后的坐标可以离开这里。 */
+  readonly homeX: number
+  readonly homeY: number
   x: number
   y: number
   facing: Direction
@@ -101,6 +120,8 @@ export interface UnitState {
   readonly statuses: StatusInstance[]
   readonly elements: Map<string, ElementSlot>
   readonly timers: Map<string, TimerState>
+  /** 规格列出的独立计时器 id。 */
+  readonly listedTimers: readonly string[]
   readonly moduleData: Map<string, Record<string, unknown>>
   readonly base: Record<string, number>
   hitLimit: boolean
@@ -112,6 +133,18 @@ export interface UnitState {
   elementCredit: string
   fielded: boolean
   downed: boolean
+}
+
+function copyAttackShape(shape: AttackShape): AttackShape {
+  return {
+    ...(shape.damage ? { damage: shape.damage } : {}),
+    ...(shape.splash ? { splash: { ...shape.splash } } : {}),
+    ...(shape.bounce ? { bounce: { ...shape.bounce } } : {}),
+    ...(shape.chain ? { chain: { ...shape.chain } } : {}),
+    ...(shape.healCount !== undefined ? { healCount: shape.healCount } : {}),
+    ...(shape.lockRange === true ? { lockRange: true } : {}),
+    ...(shape.projectile ? { projectile: shape.projectile } : {}),
+  }
 }
 
 function createSkill(spec: UnitSpec["skills"][number]): SkillInstance {
@@ -174,11 +207,17 @@ export function createUnit(spec: UnitSpec, fielded: boolean, order: number): Uni
     deployPositions: [...spec.deployPositions],
     immunity: new Set(spec.immunity ?? []),
     attackClip: spec.attackClip ? { duration: spec.attackClip.duration, hit: spec.attackClip.hit } : null,
+    attackShape: spec.attackShape ? copyAttackShape(spec.attackShape) : null,
+    boomerangsOut: 0,
+    boomerangEpoch: 0,
+    shiftRun: null,
     targetPriority: spec.targetPriority ?? "",
     blocking: [...(spec.blocking ?? [])],
     blockedBy: spec.blockedBy ?? null,
     aggroSeq: spec.aggroSeq ?? order,
     spawnSeq: order,
+    homeX: Math.round(spec.x),
+    homeY: Math.round(spec.y),
     x: spec.x,
     y: spec.y,
     facing: spec.facing ?? "RIGHT",
@@ -190,6 +229,7 @@ export function createUnit(spec: UnitSpec, fielded: boolean, order: number): Uni
     statuses: [],
     elements: new Map(),
     timers: new Map(),
+    listedTimers: spec.timers ? [...spec.timers] : [],
     moduleData: new Map(),
     base,
     hitLimit: spec.hitLimit === true,

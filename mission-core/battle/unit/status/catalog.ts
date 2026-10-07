@@ -101,6 +101,37 @@ function definitions(state: BattleState, registry: BattleRegistry): readonly Sta
     define({ id: "tremble", flags: ["tremble"], immune: "feared" }),
     define({ id: "disarm", flags: ["disarm"], cancels: attack }),
     define({ id: "stealth", flags: ["stealth"] }),
+    define({ id: "stealthOff", flags: ["stealthOff"] }),
+    define({
+      id: "overheal",
+      overlap(statuses, existing, incoming) {
+        const shield = Math.max(0, incoming.value)
+        if (!existing) {
+          const created = {
+            id: "overheal",
+            stacks: 1,
+            remaining: incoming.permanent ? 0 : incoming.ticks,
+            permanent: incoming.permanent,
+            shield: 0,
+            shieldHits: 0,
+            runtimeModifiers: [],
+            pulse: 0,
+            carried: false,
+            priorRemaining: 0,
+            strength: shield,
+            dropped: false,
+            tail: null,
+          }
+          statuses.push(created)
+          return created
+        }
+        existing.stacks = 1
+        existing.strength = shield
+        existing.permanent = incoming.permanent
+        existing.remaining = incoming.permanent ? 0 : incoming.ticks
+        return existing
+      },
+    }),
     define({ id: "camou", flags: ["camou"] }),
     define({ id: "reveal", flags: ["reveal"] }),
     define({ id: "invulnerable", flags: ["invulnerable"] }),

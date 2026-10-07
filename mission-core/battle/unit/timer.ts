@@ -4,21 +4,54 @@ import type { BattleRegistry } from "#battle/registry.js"
 import { readTimer, requireUnit, type BattleState } from "#battle/state.js"
 import type { UnitState } from "#battle/unit/index.js"
 import { advanceAttack } from "#battle/unit/attack.js"
+import { openIndependentTimer, registerIndependentTimers } from "#battle/unit/clock.js"
 import { advanceSkillBody, advanceSkillPoint } from "#battle/skill/point.js"
+import { TICK } from "#tick/index.js"
+
+export {
+  AMMO_CAP,
+  AMMO_CAP_ATTRIBUTE,
+  AMMO_SCALE,
+  AMMO_SCALE_ATTRIBUTE,
+  AMMO_TIMER,
+  BOOMERANG_TIMER,
+  BOOMERANGS_OUT_ATTRIBUTE,
+  CHARGE_CAP,
+  CHARGE_CAP_ATTRIBUTE,
+  CHARGE_TIMER,
+  TIMER_RATE,
+  TIMER_RATE_ATTRIBUTE,
+  bindIndependentTimers,
+  clearAttackTargetThisTick,
+  consumeAttackTiming,
+  independentDt,
+  peekAttackTargetThisTick,
+  readAttackTiming,
+  setAttackTargetThisTick,
+  type AttackTiming,
+} from "#battle/unit/clock.js"
 
 export function registerBuiltinTimers(registry: BattleRegistry, state: BattleState): void {
   registry.registerTimer(skillBodyTimer(state, registry))
   registry.registerTimer(skillPointTimer(state, registry))
   registry.registerTimer(counterTimer("trait", "ally", "count"))
-  registry.registerTimer(counterTimer("redeploy", "redeploy", "elapsed"))
+  registry.registerTimer(redeployTimer())
   registry.registerTimer(attackTimer(state, registry))
+  registerIndependentTimers(registry, state)
+}
+
+export function armListedTimers(state: BattleState, registry: BattleRegistry, unit: UnitState): void {
+  for (const timerId of unit.listedTimers) startTimer(state, registry, unit.id, timerId)
 }
 
 export function startTimer(state: BattleState, registry: BattleRegistry, unitId: string, timerId: string): void {
   const definition = registry.requireTimer(timerId)
   const unit = requireUnit(state, unitId)
+  if (definition.sides && !definition.sides.includes(unit.side)) return
   if (unit.timers.has(timerId)) return
-  unit.timers.set(timerId, definition.create())
+  const timer = definition.create()
+  unit.timers.set(timerId, timer)
+  openIndependentTimer(state, registry, unit, timerId, timer)
 }
 
 export function advanceTimer(
@@ -88,6 +121,23 @@ function attackTimer(state: BattleState, registry: BattleRegistry): TimerDefinit
     },
     view(timer) {
       return { phase: text(timer, "phase", "idle"), elapsed: number(timer, "elapsed") }
+    },
+  }
+}
+
+function redeployTimer(): TimerDefinition {
+  return {
+    id: "redeploy",
+    slot: "redeploy",
+    create: () => ({ elapsed: 0 }),
+    advance(timer) {
+      timer.elapsed = number(timer, "elapsed") + TICK
+    },
+    cancel(timer) {
+      timer.elapsed = 0
+    },
+    view(timer) {
+      return { elapsed: number(timer, "elapsed") }
     },
   }
 }
