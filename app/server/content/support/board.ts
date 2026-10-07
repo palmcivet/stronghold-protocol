@@ -42,6 +42,8 @@ export function toLocalOffset(dRow: number, dCol: number, facing: unknown): read
   return [dRow, dCol]
 }
 
+export const toLocal = toLocalOffset
+
 export function hSign(facing: unknown): number {
   return normDir(facing) === "LEFT" ? -1 : 1
 }

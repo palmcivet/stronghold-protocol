@@ -27,7 +27,11 @@ catalogs:
 
 importers:
 
-  .: {}
+  .:
+    devDependencies:
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.3(@types/node@26.6.4)(vite@8.3.3(@types/node@26.6.4))
 
   app/client:
     dependencies:

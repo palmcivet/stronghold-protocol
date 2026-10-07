@@ -2,12 +2,10 @@
 
 import { setTimeout as delay } from "node:timers/promises"
 import { join, resolve } from "node:path"
-import { fileURLToPath } from "node:url"
 import { CatalogReadError, type CatalogFiles, type CatalogHttp } from "arknights-assets-catalog"
-import { appRootFrom } from "#compiler/repo-root.js"
-import { seasonPacketDirectory } from "#schema/packet-file.js"
+import { dataWorkspace } from "#compiler/workspace.js"
 
-const root = appRootFrom(fileURLToPath(import.meta.url))
+const workspace = dataWorkspace()
 const GAMEDATA_URL = "https://raw.githubusercontent.com/Kengxxiao/ArknightsGameData/master/zh_CN/gamedata/"
 const SCENE = "AUTOCHESS_BATTLE"
 
@@ -161,7 +159,7 @@ export function buildEmotes(source: { readonly display: unknown; readonly activi
         themeId,
         sortId: row.sortId,
         picId: row.picId,
-        art: `/assets/local/emoticon/${dir}/${row.picId}.png`,
+        art: `/assets/ui/emoticon/${dir}/${row.picId}.png`,
         label: EMOTE_LABELS[row.id] ?? `${shortName(name, themeId)} ${index + 1}`,
       })
     })
@@ -267,8 +265,8 @@ function parseEmoteArgs(argv: readonly string[]): EmoteArgs {
     }
   }
   if (!season && !out) throw new Error("--season is required")
-  const seasonOut = season ? join(root, seasonPacketDirectory(season), "emotes.json") : ""
-  return { offline, check, out: out ?? seasonOut, cache: cache ?? join(root, ".cache", "gamedata") }
+  const seasonOut = season ? join(workspace.seasonDir(season), "emotes.json") : ""
+  return { offline, check, out: out ?? seasonOut, cache: cache ?? workspace.gamedataCacheDir }
 }
 
 async function readJson(files: CatalogFiles, path: string | null): Promise<unknown> {

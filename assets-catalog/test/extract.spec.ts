@@ -2,28 +2,19 @@ import { spawnSync } from "node:child_process"
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { fileURLToPath } from "node:url"
 import { expect, test } from "vitest"
+import { catalogWorkspace } from "#compiler/workspace.js"
 
-const catalogRoot = join(fileURLToPath(new URL(".", import.meta.url)), "..")
-const repoRoot = join(catalogRoot, "..")
+const workspace = catalogWorkspace()
+const catalogRoot = workspace.root
+const repoRoot = workspace.workspaceRoot
 const tool = join(catalogRoot, "compiler/extraction")
 const env = { ...process.env, PYTHONDONTWRITEBYTECODE: "1" }
 const python = ["python3", "python"].find((bin) => spawnSync(bin, ["--version"]).status === 0)
 const pillow = !!python && spawnSync(python, ["-c", "import PIL"], { env }).status === 0
 const webp = pillow && spawnSync(python, ["-c", "import sys; from PIL import features; sys.exit(0 if features.check('webp') else 1)"], { env }).status === 0
 
-interface LocalManifest {
-  readonly groups?: Record<string, Record<string, { readonly path?: string; readonly kind?: string; readonly count?: number; readonly verts?: number; readonly webp?: string }>>
-}
-
-const manifest = ((): LocalManifest | null => {
-  try {
-    return JSON.parse(readFileSync(join(catalogRoot, "product/media/local-assets.json"), "utf8")) as LocalManifest
-  } catch {
-    return null
-  }
-})()
+const manifest = null
 
 function runPython(code: string): unknown {
   const src = `import sys, json\nfrom types import SimpleNamespace as NS\nsys.path.insert(0, ${JSON.stringify(tool)})\nimport extract as e\n${code}`
@@ -35,7 +26,7 @@ function runPython(code: string): unknown {
 function onDisk(assetPath: string): string {
   const decoded = decodeURIComponent(assetPath).replace(/^\//, "")
   const rel = decoded.startsWith("assets/") ? decoded.slice("assets/".length) : decoded
-  return join(catalogRoot, "product/media", rel)
+  return join(workspace.mediaDir, rel)
 }
 
 test.skipIf(!python)("job table exports map materials and board meshes with their prefabs", () => {
@@ -203,29 +194,25 @@ n = Image.new('RGB', (64, 64))
 for x in range(64):
     for y in range(64): n.putpixel((x, y), ((x * 37) % 256, (y * 53) % 256, 200 + (x + y) % 56))
 n.save(sub / 'TX_autochessi_N_rgb.png')
-entry = lambda name, kind: {'path': f'/assets/local/map/autochess/{name}.png', 'w': 64, 'h': 64, 'kind': kind}
+entry = lambda name, kind: {'path': f'/assets/map/autochess/{name}.png', 'w': 64, 'h': 64, 'kind': kind}
 groups = {'map/autochess': {'TX_autochessi_D': entry('TX_autochessi_D', 'Texture2D'),
                             'TX_autochessi_N_rgb': entry('TX_autochessi_N_rgb', 'Derived'),
                             'TX_autochessi_E': entry('TX_autochessi_E', 'Texture2D')}}
-mf = root / 'local-assets.json'
-mf.write_text(json.dumps({'version': 1, 'source': 'local-client', 'count': 3, 'groups': groups}))
 logs = []
-code = e.webp_only(root, mf, logs.append)
-doc = json.loads(mf.read_text())
-g = doc['groups']['map/autochess']
+code = e.webp_only(root, logs.append)
+g = groups['map/autochess']
 px = lambda p: list(Image.open(p).convert('RGBA').getdata())
 a, b = px(sub / 'TX_autochessi_D.png'), px(sub / 'TX_autochessi_D.webp')
 hidden = [q for p, q in zip(a, b) if p[3] == 0]
 print(json.dumps({'code': code, 'paths': {k: v['path'] for k, v in g.items()}, 'modes': {k: v.get('webp') for k, v in g.items()},
-                  'count': doc['count'], 'pngKept': (sub / 'TX_autochessi_D.png').exists(),
+                  'pngKept': (sub / 'TX_autochessi_D.png').exists(),
                   'alphaSame': all(p[3] == q[3] for p, q in zip(a, b)),
                   'normalSame': px(sub / 'TX_autochessi_N_rgb.png') == px(sub / 'TX_autochessi_N_rgb.webp'),
                   'hidden': [sum(q[i] for q in hidden) / len(hidden) for i in range(3)],
-                  'again': e.run_webp(root, 'map/autochess', doc['groups'], logs.append)}))`) as {
+                  'again': e.run_webp(root, 'map/autochess', groups, logs.append)}))`) as {
       code: number
       paths: Record<string, string>
       modes: Record<string, string | null>
-      count: number
       pngKept: boolean
       alphaSame: boolean
       normalSame: boolean
@@ -233,14 +220,13 @@ print(json.dumps({'code': code, 'paths': {k: v['path'] for k, v in g.items()}, '
       again: number
     }
     expect(out.code).toBe(0)
-    const at = (name: string, extension: string): string => `/assets/local/map/autochess/${name}.${extension}`
+    const at = (name: string, extension: string): string => `/assets/map/autochess/${name}.${extension}`
     expect(out.paths).toEqual({
       TX_autochessi_D: at("TX_autochessi_D", "webp"),
       TX_autochessi_N_rgb: at("TX_autochessi_N_rgb", "webp"),
       TX_autochessi_E: at("TX_autochessi_E", "png"),
     })
     expect(out.modes).toEqual({ TX_autochessi_D: "lossy", TX_autochessi_N_rgb: "lossless", TX_autochessi_E: null })
-    expect(out.count).toBe(3)
     expect(out.pngKept).toBe(true)
     expect(out.alphaSame).toBe(true)
     expect(out.normalSame).toBe(true)
@@ -263,7 +249,7 @@ print(json.dumps([e.prefab_node(go)['mesh'], e.prefab_node(go, {42: 'Start_back_
   expect(out).toEqual(["Start_back", "Start_back_42", "Start_back"])
 })
 
-const meshFiles = existsSync(join(catalogRoot, "product/media/local/mesh"))
+const meshFiles = existsSync(join(workspace.mediaDir, "mesh"))
 const mapGroup = manifest?.groups?.["map/autochess"]
 
 test.skipIf(!mapGroup?.["materials"])("map/autochess materials.json matches the extracted group", () => {
@@ -331,7 +317,7 @@ test.skipIf(!python)("enemy scale groups drop the standard and the enemy_ prefix
   expect(enemy).toContain('[0.16, ["1005_yokai_3"]]')
 })
 
-const fxFiles = existsSync(join(catalogRoot, "product/media/local/map/fx"))
+const fxFiles = existsSync(join(workspace.mediaDir, "map/fx"))
 
 test.skipIf(!manifest?.groups?.["map/fx"] || !fxFiles)("webp copies listed by the local manifest sit beside their pngs", () => {
   const groups = manifest?.groups ?? {}

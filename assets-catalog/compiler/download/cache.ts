@@ -19,6 +19,7 @@ export interface IndexLoadOptions {
   readonly refresh?: boolean
   readonly offline?: boolean
   readonly log?: (message: string) => void
+  readonly cacheDir?: string
 }
 
 export interface LoadedIndexes {
@@ -119,8 +120,9 @@ export async function loadIndexes(
   root: string,
   options: IndexLoadOptions = {},
 ): Promise<LoadedIndexes> {
-  const audioData = await cachedJson(files, http, indexRequest(join(root, ".cache", "gamedata", "excel", "audio_data.json"), RAW_BASES.gamedata + "excel/audio_data.json", options))
-  const charword = await cachedJson(files, http, indexRequest(join(root, ".cache", "gamedata", "excel", "charword_table.json"), RAW_BASES.gamedata + "excel/charword_table.json", options))
-  const modelsData = await cachedJson(files, http, indexRequest(join(root, ".cache", "ark-models", "models_data.json"), RAW_BASES.arkModels + "models_data.json", options))
+  const cacheDir = options.cacheDir ?? join(root, ".cache")
+  const audioData = await cachedJson(files, http, indexRequest(join(cacheDir, "gamedata", "excel", "audio_data.json"), RAW_BASES.gamedata + "excel/audio_data.json", options))
+  const charword = await cachedJson(files, http, indexRequest(join(cacheDir, "gamedata", "excel", "charword_table.json"), RAW_BASES.gamedata + "excel/charword_table.json", options))
+  const modelsData = await cachedJson(files, http, indexRequest(join(cacheDir, "ark-models", "models_data.json"), RAW_BASES.arkModels + "models_data.json", options))
   return { audioData, modelsData, charword }
 }

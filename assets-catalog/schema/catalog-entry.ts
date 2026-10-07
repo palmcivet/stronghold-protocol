@@ -3,10 +3,6 @@ export const CATALOG_KINDS = ["font", "audio", "image", "spine", "model"] as con
 
 export type CatalogKind = (typeof CATALOG_KINDS)[number]
 
-export const CATALOG_SOURCES = ["upstream", "local"] as const
-
-export type CatalogSource = (typeof CATALOG_SOURCES)[number]
-
 /** 一条可加载、可缓存、可释放的目录项。 */
 export interface CatalogEntry {
   readonly id: string
@@ -17,5 +13,4 @@ export interface CatalogEntry {
   readonly dependsOn: readonly string[]
   readonly fallbackId: string | null
   readonly preloadGroup: string | null
-  readonly source: CatalogSource
 }

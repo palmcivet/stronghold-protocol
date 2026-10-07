@@ -4,7 +4,7 @@
 import { readFile } from "node:fs/promises"
 import { join } from "node:path"
 import { CatalogReadError } from "#port/catalog-error.js"
-import { catalogPackageRoot } from "#compiler/repo-root.js"
+import { catalogWorkspace, type CatalogWorkspace } from "#compiler/workspace.js"
 import { Downloader, type DownloadJob } from "#compiler/download/downloader.js"
 import { buildFonts, fontJobs } from "#compiler/font/build.js"
 import { skelParserAvailable } from "#compiler/spine/skel.js"
@@ -12,6 +12,10 @@ import { processModels, type PlannedSpineModel } from "#compiler/spine/model.js"
 
 const HELP_TEXT = `Usage: --jobs <file> [options]
   --jobs <file>     JSON { jobs: DownloadJob[], models?: PlannedSpineModel[] }
+  --root <dir>      catalog workspace root
+  --media <dir>     media output directory
+  --font <dir>      font output directory
+  --cache <dir>     compiler cache directory
   --concurrency=N   parallel downloads (default 16)
   --force           re-download files even when present
   --offline         no network: post-process what is on disk
@@ -20,6 +24,7 @@ const HELP_TEXT = `Usage: --jobs <file> [options]
 
 interface FetchFlags {
   readonly jobsPath: string | null
+  readonly workspace: CatalogWorkspace
   readonly concurrency: number
   readonly force: boolean
   readonly offline: boolean
@@ -33,6 +38,10 @@ function errorMessage(cause: unknown): string {
 
 function parseArgs(argv: readonly string[]): FetchFlags {
   let jobsPath: string | null = null
+  let root: string | undefined
+  let mediaDir: string | undefined
+  let fontDir: string | undefined
+  let cacheDir: string | undefined
   let concurrency = 16
   let force = false
   let offline = false
@@ -54,9 +63,22 @@ function parseArgs(argv: readonly string[]): FetchFlags {
       const value = inline ?? argv[++index]
       if (!value || value.startsWith("--")) throw new Error(`--jobs needs a path\n${HELP_TEXT}`)
       jobsPath = value
+    } else if (name === "--root" || name === "--media" || name === "--font" || name === "--cache") {
+      const value = inline ?? argv[++index]
+      if (!value || value.startsWith("--")) throw new Error(`${name} needs a path\n${HELP_TEXT}`)
+      if (name === "--root") root = value
+      else if (name === "--media") mediaDir = value
+      else if (name === "--font") fontDir = value
+      else cacheDir = value
     } else throw new Error(`unknown option ${arg}\n${HELP_TEXT}`)
   }
-  return { jobsPath, concurrency, force, offline, dryRun, help }
+  const workspaceOptions = {
+    ...(root === undefined ? {} : { root }),
+    ...(mediaDir === undefined ? {} : { mediaDir }),
+    ...(fontDir === undefined ? {} : { fontDir }),
+    ...(cacheDir === undefined ? {} : { cacheDir }),
+  }
+  return { jobsPath, workspace: catalogWorkspace(workspaceOptions), concurrency, force, offline, dryRun, help }
 }
 
 function isJob(value: unknown): value is DownloadJob {
@@ -115,7 +137,6 @@ async function readList(path: string): Promise<{ readonly jobs: readonly Downloa
 }
 
 const flags = parseArgs(process.argv.slice(2))
-const catalogRoot = catalogPackageRoot()
 
 if (flags.help) {
   console.log(HELP_TEXT)
@@ -125,13 +146,13 @@ if (flags.help) {
 } else {
   const jobsPath = flags.jobsPath
   const run = async (): Promise<number> => {
-    if (!skelParserAvailable()) throw new CatalogReadError(catalogRoot, "@pixi-spine/runtime-3.8 not found — run `npm install` first")
+    if (!skelParserAvailable()) throw new CatalogReadError(flags.workspace.root, "@pixi-spine/runtime-3.8 not found — run `npm install` first")
     const listed = await readList(jobsPath)
-    console.log(`[fetch] ${listed.jobs.length} files, ${listed.models.length} spine models, catalog ${catalogRoot}`)
+    console.log(`[fetch] ${listed.jobs.length} files, ${listed.models.length} spine models, catalog ${flags.workspace.root}`)
     if (flags.dryRun) return 0
-    const assetsDir = join(catalogRoot, "product", "media")
-    const fontsDir = join(catalogRoot, "product", "font")
-    const cacheDir = join(catalogRoot, ".cache")
+    const assetsDir = flags.workspace.mediaDir
+    const fontsDir = flags.workspace.fontDir
+    const cacheDir = flags.workspace.cacheDir
     const downloader = new Downloader({
       root: assetsDir,
       ledgerPath: join(cacheDir, "assets-ledger.json"),

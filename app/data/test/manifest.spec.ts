@@ -2,20 +2,19 @@ import { existsSync, readFileSync, statSync } from "node:fs"
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
-import { fileURLToPath } from "node:url"
-import { catalogPackageRoot, Downloader, type DownloadJob } from "arknights-assets-catalog/compile"
+import { Downloader, type DownloadJob } from "arknights-assets-catalog/compile"
 import { expect, test } from "vitest"
-import { appRootFrom } from "#compiler/repo-root.js"
+import { dataWorkspace } from "#compiler/workspace.js"
 import { indexAudio } from "#compiler/media/fetch/audio-bank.js"
 import { EMOTE_CATALOG } from "#compiler/media/fetch/emote-catalog.js"
 import { collectLeaves, downloadLeaves, resolveTemplate, type TemplateLeaf } from "#compiler/media/fetch/manifest.js"
 import { buildPlan, GUIDE_PAGES } from "#compiler/media/fetch/plan.js"
 
-const appRoot = appRootFrom(fileURLToPath(import.meta.url))
-const catalogRoot = catalogPackageRoot()
-const mediaRoot = join(catalogRoot, "product", "media")
-const fontRoot = join(catalogRoot, "product", "font")
-const seasonDir = join(appRoot, "product", "season", "act2autochess")
+const workspace = dataWorkspace()
+const dataRoot = workspace.root
+const mediaRoot = workspace.catalog.mediaDir
+const fontRoot = workspace.catalog.fontDir
+const seasonDir = join(workspace.productDir, "season", "act2autochess")
 const manifestPath = join(seasonDir, "assets.json")
 const haveManifest = existsSync(manifestPath)
 const haveMedia = existsSync(mediaRoot)
@@ -44,7 +43,7 @@ test("template resolution drops missing files and uses fallbacks", () => {
     m: { model: "k" },
   }
   const resolved = resolveTemplate(template, {
-    root: appRoot,
+    root: dataRoot,
     spine: new Map([["k", { skel: "/assets/s.skel", atlas: "/assets/s.atlas", textures: [] }]]),
   })
   expect(Object.keys(resolved.value).sort()).toEqual(["keep", "m"])
@@ -52,7 +51,7 @@ test("template resolution drops missing files and uses fallbacks", () => {
   expect(collectLeaves(template)).toHaveLength(2)
   const ok = resolveTemplate(
     { p: { alts: [{ rel: "nope.png", urls: ["x"] }, { rel: "package.json", urls: ["y"] }] } },
-    { root: appRoot, spine: new Map() },
+    { root: dataRoot, spine: new Map() },
   )
   expect(ok.value["p"]).toBe("/assets/package.json")
   expect(ok.fallbacks).toHaveLength(1)
@@ -137,7 +136,6 @@ test.skipIf(!haveManifest)("the season manifest lists every battle emote and gui
   }
   for (const key of GUIDE_PAGES) expect(manifest.ui[`guide/${key}`], key).toBe(`/assets/ui/guide/${key}.png`)
   expect(manifest.stats.ui).toBe(Object.keys(manifest.ui).length)
-  expect(JSON.stringify(manifest).includes("/assets/local/")).toBe(false)
 })
 
 interface SpineSide {
@@ -206,7 +204,7 @@ test.skipIf(!haveManifest || !haveMedia)("every manifest path exists on disk", (
 test.skipIf(!haveManifest || !haveMedia)("every visible research operator has avatar, portrait and a front spine", () => {
   const manifest = loadManifest()
   if (!manifest) return
-  const ops = readJson(join(appRoot, "compiler/input/research/03-operators.json")) as { chess: { isHidden?: boolean; chessType?: string; charId?: string }[] }
+  const ops = readJson(join(workspace.researchDir, "03-operators.json")) as { chess: { isHidden?: boolean; chessType?: string; charId?: string }[] }
   const ids = new Set(ops.chess.filter((row) => !row.isHidden && row.chessType !== "DIY" && row.charId).map((row) => row.charId ?? ""))
   expect(ids.size).toBeGreaterThanOrEqual(100)
   for (const id of ids) {
@@ -222,7 +220,7 @@ test.skipIf(!haveManifest || !haveMedia)("every visible research operator has av
 test.skipIf(!haveManifest || !haveMedia)("pool chars, bonds, items, bands and enemies are covered", () => {
   const manifest = loadManifest()
   if (!manifest) return
-  const assets = readJson(join(appRoot, "compiler/input/research/07-assets.json")) as {
+  const assets = readJson(join(workspace.researchDir, "07-assets.json")) as {
     operators: Record<string, unknown>
     bonds: Record<string, unknown>
     items: Record<string, unknown>

@@ -1,7 +1,5 @@
 // 下载 skel / atlas / 页图，补 size 和 pma，再解析动画角色。
-// 本地客户端才有的敌人模型把元数据写在 local-enemy-spines.json，清单用 spineLocal 引用它。
-
-import { mkdir, readFile, readdir, rename, stat, unlink, writeFile } from "node:fs/promises"
+import { mkdir, readFile, rename, stat, unlink, writeFile } from "node:fs/promises"
 import { dirname, join } from "node:path"
 import type { Stats } from "node:fs"
 import { atlasInfo, normalizeAtlas } from "./atlas.js"
@@ -10,31 +8,6 @@ import type { DownloadJob, Downloader } from "#compiler/download/downloader.js"
 import { kindOf, pngSize } from "#compiler/download/format.js"
 import { assetUrl, safeName, urlDir } from "#compiler/download/source.js"
 import { parseSkel, type SkelInfo, type SpineBounds } from "./skel.js"
-
-export const LOCAL_ENEMY_SPINE_DIR: string = "local/spine/enemy/"
-
-export function localEnemySpineGroup(id: string): string {
-  return `spine/enemy/${id}`
-}
-
-export interface LocalEnemyModel {
-  readonly dir: string
-  readonly skel: string
-  readonly atlas: string
-  readonly pngs: readonly string[]
-}
-
-export interface LocalSpineMeta {
-  readonly skel: string
-  readonly atlas: string
-  readonly textures: readonly string[]
-  readonly pma: boolean
-  readonly anims: AnimRoles
-  readonly animations: Readonly<Record<string, number>>
-  readonly events: readonly string[]
-  readonly hits: Readonly<Record<string, readonly number[]>>
-  readonly bounds: SpineBounds | null
-}
 
 export interface SpineEntry {
   readonly skel: string
@@ -71,92 +44,6 @@ async function fileStat(path: string): Promise<Stats | null> {
 
 function errorMessage(cause: unknown): string {
   return cause instanceof Error ? cause.message : String(cause)
-}
-
-export async function findLocalEnemyModels(root: string): Promise<Record<string, LocalEnemyModel>> {
-  const out: Record<string, LocalEnemyModel> = {}
-  let ids: string[] = []
-  try {
-    ids = (await readdir(join(root, LOCAL_ENEMY_SPINE_DIR), { withFileTypes: true }))
-      .filter((entry) => entry.isDirectory())
-      .map((entry) => entry.name)
-  } catch {
-    return out
-  }
-  for (const id of ids.sort()) {
-    if (!/^enemy_\d+_[a-z0-9_]+$/i.test(id)) continue
-    const dir = `${LOCAL_ENEMY_SPINE_DIR}${id}/`
-    let files: string[] = []
-    try {
-      files = (await readdir(join(root, dir))).sort()
-    } catch {
-      continue
-    }
-    const skel = files.find((file) => file.endsWith(".skel"))
-    const stem = skel ? skel.slice(0, -".skel".length) : null
-    const pngs = files.filter((file) => file.endsWith(".png"))
-    if (!stem || !files.includes(`${stem}.atlas`) || !pngs.length) continue
-    out[id] = { dir, skel: dir + skel, atlas: `${dir}${stem}.atlas`, pngs: pngs.map((file) => dir + file) }
-  }
-  return out
-}
-
-export async function localEnemySpineMeta(
-  root: string,
-  found: Readonly<Record<string, LocalEnemyModel>>,
-): Promise<{ readonly meta: Record<string, LocalSpineMeta>; readonly problems: readonly string[] }> {
-  const meta: Record<string, LocalSpineMeta> = {}
-  const problems: string[] = []
-  const base = (rel: string): string => rel.slice(rel.lastIndexOf("/") + 1)
-  for (const id of Object.keys(found).sort()) {
-    const model = found[id]
-    if (!model) continue
-    try {
-      const text = await readFile(join(root, model.atlas), "utf8")
-      const sizes = new Map<string, { width: number; height: number }>()
-      for (const page of atlasInfo(text).pages) {
-        const size = pngSize(await readFile(join(root, model.dir + page)))
-        if (!size) throw new Error(`invalid page ${page}`)
-        sizes.set(page, size)
-      }
-      const normalized = normalizeAtlas(text, { pageSize: (page) => sizes.get(page) ?? null, pma: true })
-      if (normalized.missingSize.length) throw new Error(`cannot size pages ${normalized.missingSize.join(",")}`)
-      const info = atlasInfo(normalized.text)
-      if (!info.pages.length) throw new Error("atlas without pages")
-      const skel = parseSkel(await readFile(join(root, model.skel)), info.regions)
-      if (!skel.animations.length) throw new Error("skeleton has no animations")
-      const missing = skel.missingRegions[0]
-      if (skel.missingRegions.length && missing) problems.push(`${id}: ${skel.missingRegions.length} attachment(s) not in atlas (e.g. ${missing})`)
-      meta[id] = {
-        skel: base(model.skel),
-        atlas: base(model.atlas),
-        textures: [...info.pages],
-        pma: true,
-        anims: resolveRoles(skel.animations, { skillIndices: [0], durations: skel.durations }),
-        animations: skel.durations,
-        events: skel.events,
-        hits: skel.hits,
-        bounds: skel.bounds,
-      }
-    } catch (cause) {
-      problems.push(`${id}: ${errorMessage(cause)}`)
-    }
-  }
-  return { meta, problems }
-}
-
-export const LOCAL_ENEMY_SPINES_FILE: string = "input/spine/local-enemy-spines.json"
-
-export async function loadLocalEnemySpines(path: string): Promise<Record<string, LocalSpineMeta>> {
-  try {
-    const parsed: unknown = JSON.parse(await readFile(path, "utf8"))
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {}
-    const models = (parsed as { models?: unknown }).models
-    if (!models || typeof models !== "object" || Array.isArray(models)) return {}
-    return models as Record<string, LocalSpineMeta>
-  } catch {
-    return {}
-  }
 }
 
 export interface ProcessModelsOptions {

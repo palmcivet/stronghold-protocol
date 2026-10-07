@@ -1,10 +1,10 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs"
 import { join } from "node:path"
 import { expect, test } from "vitest"
-import { catalogPackageRoot } from "#compiler/repo-root.js"
+import { catalogWorkspace } from "#compiler/workspace.js"
 import { decodeWoff2Tables, encodeWoff2, readSfnt, uintBase128 } from "#compiler/font/woff2.js"
 
-const fontDir = join(catalogPackageRoot(), "product", "font")
+const fontDir = catalogWorkspace().fontDir
 
 test("UIntBase128", () => {
   expect(uintBase128(0)).toEqual([0])

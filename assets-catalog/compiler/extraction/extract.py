@@ -8,12 +8,11 @@ aklz4.py registers a decoder for it. This script pulls the art the web sources l
   - the 6 in-match emoticon themes of 盟约 (activity_table autoChessData.enabledEmoticonThemeIdList; only the
     *_battle sprites, keyed by display_meta_table picId: emoticon/<dir>/<picId>.png, see data/emotes.json)
   - the autochess guidebook pages, battle projectile sprites and a few token/skin Spine models missing upstream
-  (the emotes and the guidebook pages are on the public mirror too; the client uses these local copies first)
+  (the emotes and the guidebook pages are on the public mirror too)
   - the enemy battle Spine models no community dump carries (ENEMY_SPINES: 灼热源石虫 / 炽焰源石虫), from the enemy art
     bundles (refs/arts/enm_art_*.ab) → spine/enemy/<enemyId>/<stem>.skel|.atlas + page PNGs with the [alpha] texture
     merged in (premultiplied RGB + A, the Ark-Models format; the atlas gets `size:` / `pma: true` like the fetched
-    enemies); the client draws them instead of the web alias once this manifest lists them (data/assets.json
-    enemies[id].spineLocal, docs/ASSETS.md "Enemy aliases")
+    enemies); the regular media compiler can consume the extracted files when their paths are part of a plan
   - for the official 3D board (DESIGN §15): the map theme's Material parameters (map/<theme>/materials.json; shader
     names resolved through the shaders/*.ab bundles), the background / device meshes as Wavefront OBJ
     (mesh/<bundle>/<mesh>.obj; UnityPy's exporter, X mirrored into a right-handed frame) and their GameObject
@@ -29,14 +28,13 @@ aklz4.py registers a decoder for it. This script pulls the art the web sources l
     the manifest lists the copy
 
 Usage:
-  extract.py [--game <AB root>] [--out product/media/local] [--only <subdir prefix>]
+  extract.py [--game <AB root>] [--out product/media] [--only <subdir prefix>]
   extract.py --print-jobs     (the job table as JSON; needs no dependencies)
   extract.py --webp           (only the WebP copies, from the PNGs already extracted —
                                                           e.g. the local art copied from a release bundle; needs Pillow)
 
-Writes <out>/**.png|.webp|.skel|.atlas and product/media/local-assets.json (manifest of what was extracted). With --only, just
-the jobs whose output subdir starts with one of the prefixes run, and their groups replace those of the existing
-manifest (every other group is kept as is).
+Writes <out>/**.png|.webp|.skel|.atlas using the regular media paths. With --only, only jobs whose output subdir
+starts with one of the prefixes run.
 Everything is (c) Hypergryph; for private, non-commercial fan use only.
 """
 import argparse
@@ -121,9 +119,7 @@ JOBS = [
 # feedback after 0.1.0 report D3: 灼热源石虫 / 炽焰源石虫 — the ELEMENT faction's slugs — were drawn as the plain 源石虫).
 # Read from the enemy art bundles: Assets/Torappu/Arts/Enemies/Spines/<…>/<id>_SkeletonData.asset → its skeleton
 # TextAsset, the atlas TextAsset of its atlas asset and every page texture of the atlas materials (_MainTex, with its
-# _AlphaTex merged in as A). Output: spine/enemy/<id>/ (manifest group spine/enemy/<id>); the client draws the model
-# when the group lists every file of data/assets.json enemies[id].spineLocal. Their metadata is
-# input/spine/local-enemy-spines.json.
+# _AlphaTex merged in as A). Output: spine/enemy/<id>/, using the regular media path.
 ENEMY_SPINES = ['enemy_1305_mhslim', 'enemy_1305_mhslim_2']
 ENEMY_ART = 'refs/arts/enm_art_*.ab'
 ENEMY_SPINE_SUB = 'spine/enemy'
@@ -352,7 +348,7 @@ def run_derived(out_root, sub, manifest, log):
         except Exception as e:  # a broken source only drops the derived map (the renderer falls back)
             log(f'  warn derived {name}: {e}')
             continue
-        manifest.setdefault(sub, {})[name] = {'path': f'/assets/local/{sub}/{name}.png', 'w': img.width, 'h': img.height,
+        manifest.setdefault(sub, {})[name] = {'path': f'/assets/{sub}/{name}.png', 'w': img.width, 'h': img.height,
                                               'kind': 'Derived', 'from': src, 'derive': kind}
         n += 1
     return n
@@ -374,33 +370,25 @@ def run_webp(out_root, sub, manifest, log):
         except Exception as e:  # no WebP support in this Pillow, or a broken PNG: the entry keeps the PNG
             log(f'  warn webp {name}: {e}')
             continue
-        entry.update(path=f'/assets/local/{sub}/{dst.name}', webp=mode)
+        entry.update(path=f'/assets/{sub}/{dst.name}', webp=mode)
         n += 1
     return n
 
 
-def webp_only(out_root, manifest_path, log):
-    """--webp: the WEBP copies of an existing extraction (e.g. the local art copied from a release bundle)."""
-    try:
-        doc = json.loads(Path(manifest_path).read_text(encoding='utf-8'))
-    except (OSError, ValueError) as e:
-        print(f'No readable manifest at {manifest_path} ({e}). Extract the local art first.', file=sys.stderr)
-        return 2
-    groups = doc.get('groups') if isinstance(doc, dict) else None
-    if not isinstance(groups, dict):
-        print(f'{manifest_path} has no groups. Extract the local art first.', file=sys.stderr)
-        return 2
-    n = sum(run_webp(out_root, sub, groups, log) for sub in dict.fromkeys(s for s, _, _ in WEBP))
-    Path(manifest_path).write_text(json.dumps(doc, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
-    log(f'done: {n} WebP copies, manifest {manifest_path}')
+def webp_only(out_root, log):
+    """Write board WebP copies from files already present under the regular media root."""
+    manifest = {}
+    for sub, name, _ in WEBP:
+        png = Path(out_root) / sub / f"{name}.png"
+        if not png.exists():
+            continue
+        manifest.setdefault(sub, {})[name] = {
+            'path': f'/assets/{sub}/{name}.png',
+            'kind': 'Texture2D',
+        }
+    n = sum(run_webp(out_root, sub, manifest, log) for sub, _, _ in WEBP)
+    log(f'done: {n} WebP copies')
     return 0 if n else 1
-
-
-def merge_manifest(old_groups, new_groups, ran_subs):
-    """Groups of the previous manifest minus the subdirs that were re-extracted, plus the new ones (sorted keys)."""
-    out = {g: v for g, v in (old_groups or {}).items() if g not in ran_subs}
-    out.update(new_groups)
-    return {g: dict(sorted(out[g].items())) for g in sorted(out)}
 
 
 def export_bundle(ab_root, job, out_root, manifest, log):
@@ -447,7 +435,7 @@ def export_bundle(ab_root, job, out_root, manifest, log):
                 img.save(out_dir / fname)
                 seen.add(fname)
                 manifest.setdefault(sub, {})[name] = {
-                    'path': f'/assets/local/{sub}/{fname}', 'w': img.width, 'h': img.height, 'kind': t}
+                    'path': f'/assets/{sub}/{fname}', 'w': img.width, 'h': img.height, 'kind': t}
                 n += 1
             elif t == 'TextAsset':
                 raw = data.m_Script
@@ -459,7 +447,7 @@ def export_bundle(ab_root, job, out_root, manifest, log):
                 else:
                     fname = name + '.skel'
                 (out_dir / fname).write_bytes(blob)
-                manifest.setdefault(sub, {})[fname] = {'path': f'/assets/local/{sub}/{fname}', 'kind': t}
+                manifest.setdefault(sub, {})[fname] = {'path': f'/assets/{sub}/{fname}', 'kind': t}
                 n += 1
             elif t == 'Mesh':
                 text = data.export()
@@ -471,7 +459,7 @@ def export_bundle(ab_root, job, out_root, manifest, log):
                 (out_dir / fname).write_text(text, encoding='utf-8')
                 seen.add(fname)
                 verts = sum(1 for line in text.splitlines() if line.startswith('v '))
-                manifest.setdefault(sub, {})[name] = {'path': f'/assets/local/{sub}/{fname}', 'kind': 'Mesh', 'verts': verts}
+                manifest.setdefault(sub, {})[name] = {'path': f'/assets/{sub}/{fname}', 'kind': 'Mesh', 'verts': verts}
                 mesh_keys[obj.path_id] = name
                 n += 1
             elif t == 'Material':
@@ -493,7 +481,7 @@ def export_bundle(ab_root, job, out_root, manifest, log):
         else:
             payload = dict(sorted(payload.items()))
         (out_dir / fname).write_text(json.dumps(payload, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
-        manifest.setdefault(sub, {})[key] = {'path': f'/assets/local/{sub}/{fname}', 'kind': key.capitalize(), 'count': len(payload)}
+        manifest.setdefault(sub, {})[key] = {'path': f'/assets/{sub}/{fname}', 'kind': key.capitalize(), 'count': len(payload)}
         n += 1
     n += run_derived(out_root, sub, manifest, log)
     log(f'{rel}: {n} files -> {sub}')
@@ -592,10 +580,10 @@ def write_enemy_spine(objects, sda, eid, out_root, manifest, log):
     files[f'{stem}.atlas'] = normalize_atlas(files[f'{stem}.atlas'].decode('utf-8'), sizes).encode('utf-8')
     for fname, blob in files.items():
         (out_dir / fname).write_bytes(blob)
-        manifest.setdefault(sub, {})[fname] = {'path': f'/assets/local/{sub}/{fname}', 'kind': 'TextAsset'}
+        manifest.setdefault(sub, {})[fname] = {'path': f'/assets/{sub}/{fname}', 'kind': 'TextAsset'}
     for fname, img in pages.items():
         img.save(out_dir / fname)
-        manifest.setdefault(sub, {})[fname] = {'path': f'/assets/local/{sub}/{fname}', 'w': img.width, 'h': img.height,
+        manifest.setdefault(sub, {})[fname] = {'path': f'/assets/{sub}/{fname}', 'w': img.width, 'h': img.height,
                                                'kind': 'Texture2D'}
     return len(files) + len(pages)
 
@@ -635,14 +623,12 @@ def export_enemy_spines(ab_root, out_root, manifest, log, ids=None):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--game', help='AssetBundle root (…/StreamingAssets/AB/Windows or …/Documents/Bundles)')
-    ap.add_argument('--out', default=str(ROOT / 'product/media/local'))
-    ap.add_argument('--manifest', default=str(ROOT / 'product/media/local-assets.json'))
+    ap.add_argument('--out', default=str(ROOT / 'product/media'))
     ap.add_argument('--only', action='append', default=[], metavar='SUBDIR',
                     help='only run the jobs whose output subdir starts with this prefix (repeatable), e.g. emoticon')
     ap.add_argument('--print-jobs', action='store_true', help='print the job table as JSON and exit')
     ap.add_argument('--webp', action='store_true',
-                    help='only write the WebP copies of the board textures from the PNGs already under --out and list '
-                         'them in the manifest (needs Pillow, not the client)')
+                    help='only write WebP copies of board textures already under --out (needs Pillow)')
     args = ap.parse_args()
 
     if args.print_jobs:
@@ -655,8 +641,7 @@ def main():
                                                                             'ids': ENEMY_SPINES}}, ensure_ascii=False))
         return 0
     if args.webp:
-        return webp_only(Path(args.out), Path(args.manifest), print)
-
+        return webp_only(Path(args.out), print)
     ab_root = Path(args.game) if args.game else next((p for p in CANDIDATES if p.exists()), None)
     if not ab_root or not ab_root.exists():
         print('No Arknights install found. Pass --game <AssetBundle root>.', file=sys.stderr)
@@ -674,17 +659,7 @@ def main():
         total += export_bundle(ab_root, job, out_root, manifest, print)
     if enemy_spines:
         total += export_enemy_spines(ab_root, out_root, manifest, print)
-    old = {}
-    if args.only and Path(args.manifest).exists():
-        try:
-            old = json.loads(Path(args.manifest).read_text(encoding='utf-8')).get('groups') or {}
-        except (OSError, ValueError) as e:
-            print(f'warn: previous manifest unreadable ({e}); writing only the re-extracted groups', file=sys.stderr)
-    groups = merge_manifest(old, manifest, set(manifest))  # a missing bundle keeps its previous group
-    count = sum(len(v) for v in groups.values())
-    doc = {'version': 1, 'source': 'local-client', 'count': count, 'groups': groups}
-    Path(args.manifest).write_text(json.dumps(doc, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
-    print(f'done: {total} files extracted, manifest {args.manifest} ({count} entries)')
+    print(f'done: {total} files extracted into {out_root}')
     return 0 if total else 1
 
 

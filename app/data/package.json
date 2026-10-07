@@ -6,11 +6,12 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
-    "./*.js": {
-      "types": "./*.ts",
-      "source": "./*.ts",
-      "import": "./dist/*.js",
-      "default": "./dist/*.js"
+    "./package.json": "./package.json",
+    "./compiler": {
+      "types": "./dist/compiler/workspace.d.ts",
+      "source": "./compiler/workspace.ts",
+      "import": "./dist/compiler/workspace.js",
+      "default": "./dist/compiler/workspace.js"
     }
   },
   "imports": {

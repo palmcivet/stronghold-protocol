@@ -1,12 +1,11 @@
 import { existsSync, readFileSync, statSync } from "node:fs"
 import { join } from "node:path"
-import { fileURLToPath } from "node:url"
 import { expect, test } from "vitest"
-import { appRootFrom } from "#compiler/repo-root.js"
+import { dataWorkspace } from "#compiler/workspace.js"
 import { parseArgs, shrinkGuard } from "#compiler/media/fetch/assets.js"
 import { droppedEntries } from "#compiler/media/fetch/manifest.js"
 
-const seasonAssets = join(appRootFrom(fileURLToPath(import.meta.url)), "product", "season", "act2autochess", "assets.json")
+const seasonAssets = join(dataWorkspace().seasonDir("act2autochess"), "assets.json")
 
 test("droppedEntries lists leaves the new manifest lacks", () => {
   const prev = {
@@ -40,7 +39,7 @@ test("parseArgs reads shrink, prune, voice and help", () => {
   expect(parseArgs(["--voice-lang=jp"]).voiceLang).toBe("jp")
   expect(parseArgs(["--help"]).help).toBe(true)
   expect(() => parseArgs(["--not-a-flag"])).toThrow(/--allow-shrink/)
-  expect(() => parseArgs(["--not-a-flag"])).toThrow(/--prune .*\n.*implies --allow-shrink/)
+  expect(() => parseArgs(["--not-a-flag"])).toThrow(/--prune .*implies --allow-shrink/)
 })
 
 test.skipIf(!existsSync(seasonAssets))("a smaller season manifest is refused unless shrink or prune is set", () => {

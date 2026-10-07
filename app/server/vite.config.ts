@@ -1,10 +1,13 @@
-import { fileURLToPath } from "node:url"
+import { join } from "node:path"
 import { defineConfig, type UserConfig } from "vite"
+import { dataWorkspace } from "@alliance/data/compiler"
 
-const serverRoot = fileURLToPath(new URL(".", import.meta.url))
-const contractRoot = fileURLToPath(new URL("../contract", import.meta.url))
-const dataRoot = fileURLToPath(new URL("../data", import.meta.url))
-const missionCoreRoot = fileURLToPath(new URL("../../mission-core", import.meta.url))
+const workspace = dataWorkspace()
+const repoRoot = workspace.workspaceRoot
+const serverRoot = join(repoRoot, "app", "server")
+const contractRoot = join(repoRoot, "app", "contract")
+const dataRoot = join(repoRoot, "app", "data")
+const missionCoreRoot = join(repoRoot, "mission-core")
 
 export default defineConfig((): UserConfig => {
   const isPackaged = process.env.PACKAGE === "true"

@@ -12,15 +12,14 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
+import { dataWorkspace } from '@alliance/data/compiler';
 import { GameData } from '#server/match/mode/index.js';
 import { buildNormalWave, buildBossWave, buildUniteWave, gateOf, previewOf, bountySpawns, withBounties } from '#server/match/fight/wave/index.js';
 import {  createRandom as createRng  } from 'arknights-mission-core';
 import { DATA } from './harness.js';
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const CACHE = join(ROOT, '.cache', 'gamedata');
+const CACHE = dataWorkspace().gamedataCacheDir;
 const HAS_CACHE = ['excel/activity_table.json', 'levels/enemydata/enemy_database.json', 'levels/activities/act1autochess/level_act1autochess_01.json']
   .every((rel) => existsSync(join(CACHE, rel)));
 const raw = (rel) => JSON.parse(readFileSync(join(CACHE, rel), 'utf8'));

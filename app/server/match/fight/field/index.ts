@@ -926,7 +926,7 @@ export function jsonClone(v: any) : any {
 // JSON has no Infinity: ±Infinity inputs become ±1e308 (still "larger than anything" for the sim's comparisons and
 // caps) instead of null (which the sim would read as 0); NaN becomes null (the sim treats both as "missing").
 const INF = 1e308;
-const specReplacer = (k?: any, v?: any) : any => (typeof v === 'number' && !Number.isFinite(v) ? (Number.isNaN(v) ? null : v > 0 ? INF : -INF) : v);
+const specReplacer = (_k?: any, v?: any) : any => (typeof v === 'number' && !Number.isFinite(v) ? (Number.isNaN(v) ? null : v > 0 ? INF : -INF) : v);
 
 /**
  * Build the JSON BattleSpec of one field (DESIGN §14). Inputs are the Battle options the match computed (DESIGN §5.1)
@@ -1425,7 +1425,7 @@ function previewOperator(data: any, unit: any): any | null {
   if (!chess || !Number.isInteger(unit.uid)) return null
   const base = baseStats(chess.stats)
   const mods = equipmentMods(data, Array.isArray(unit.items) ? unit.items : [])
-  const current = { ...base, atk: base.atk * (1 + mods.atk), aspd: base.aspd + mods.aspd }
+  const current = { ...base, atk: (base.atk ?? 0) * (1 + mods.atk), aspd: (base.aspd ?? 100) + mods.aspd }
   return {
     id: unit.uid,
     uid: unit.uid,
@@ -1602,6 +1602,7 @@ function allySpec(unit: any, ownerId: string, data: any): UnitSpec | null {
   return {
     id: String(unit.uid ?? unit.chessId),
     side: "ally",
+    kind: "operator",
     attributes: attributesOf(stats),
     skills: [],
     attackRange: rangeOf(chess?.rangeGrid),
@@ -1634,8 +1635,6 @@ function enemySpec(spawn: any, index: number, at: number, data: any, poolHp: num
   const enemy = key ? data?.enemies?.[key] : null
   if (!enemy) return null
   const boss = spawn.tag === "boss"
-  const route = Array.isArray(spawn.routes) ? null : null
-  void route
   const start = Array.isArray(spawn.route?.start) ? spawn.route.start : null
   const col = start ? Number(start[1]) : 10
   const row = start ? Number(start[0]) : 9
@@ -1647,6 +1646,7 @@ function enemySpec(spawn: any, index: number, at: number, data: any, poolHp: num
   return {
     id: `${key}#${index}@${at}`,
     side: "enemy",
+    kind: "enemy",
     attributes: attributesOf(stats, hp === undefined ? scale : 1),
     skills: [],
     attackRange: rangeOf(enemy.rangeGrid),
@@ -1655,7 +1655,7 @@ function enemySpec(spawn: any, index: number, at: number, data: any, poolHp: num
     x: Number.isFinite(col) ? col : 10,
     y: Number.isFinite(row) ? row : 9,
     motion: enemy.stats?.motion === "FLY" ? "FLY" : "WALK",
-    route: routeSpec(spawn.route),
+    route: routeSpec(spawn.route) ?? null,
     script: {
       kind: "enemy",
       chessId: key,

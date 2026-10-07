@@ -82,7 +82,7 @@ export function planUnite(m: any, results: any) : any {
  * pending gains, capped like bondsView / settle — PRTS 以其阵地当前的状态; the official "层数最高" tie-break is marked 存疑),
  * operators still standing at the end of the player's own combat.
  */
-export function helperStats(m: any, ps: any, results: any) : any {
+export function helperStats(_m: any, ps: any, results: any) : any {
   const units = ps.deployCount;
   let active = false;
   let layers = 0;

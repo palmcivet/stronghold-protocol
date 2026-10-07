@@ -2,15 +2,16 @@
 // board3d 表面表在 surface.ts。
 
 import { writeFile } from "node:fs/promises"
-import { relative, resolve, sep } from "node:path"
+import { isAbsolute, relative, resolve, sep } from "node:path"
 import { join } from "node:path"
 import { deflateSync, inflateSync } from "node:zlib"
-import { catalogPackageRoot } from "arknights-assets-catalog/compile"
+import { catalogWorkspace } from "arknights-assets-catalog/compile"
 import type { CatalogFiles } from "arknights-assets-catalog"
 import { BOARD_SURFACES, type BoardSurface } from "./surface.js"
 
-const root = catalogPackageRoot()
-const mediaRoot = join(root, "product", "media")
+const catalog = catalogWorkspace()
+const root = catalog.root
+const mediaRoot = catalog.mediaDir
 
 export interface AtlasSource {
   readonly file: string
@@ -303,7 +304,7 @@ interface CropOptions {
 }
 
 function parseCropArgs(argv: readonly string[]): CropOptions {
-  let dir = "product/media/local/map/autochess"
+  let dir = "map/autochess"
   let preview: string | null = null
   let check = false
   for (let i = 0; i < argv.length; i++) {
@@ -316,7 +317,7 @@ function parseCropArgs(argv: readonly string[]): CropOptions {
     else if (key === "preview" && typeof value === "string") preview = value
     else if (key === "check") check = true
   }
-  return { dir: resolve(root, dir), preview, check }
+  return { dir: isAbsolute(dir) ? resolve(dir) : resolve(mediaRoot, dir), preview, check }
 }
 
 function isCrop(layer: MaterialLayer): layer is CropLayer {

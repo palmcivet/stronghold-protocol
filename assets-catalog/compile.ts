@@ -1,4 +1,9 @@
 export { catalogPackageRoot } from "./compiler/repo-root.js"
+export {
+  catalogWorkspace,
+  type CatalogWorkspace,
+  type CatalogWorkspaceOptions,
+} from "./compiler/workspace.js"
 
 export {
   Downloader,
@@ -33,14 +38,15 @@ export { buildFonts, fontJobs, type FontBuild, type FontFaceFile, type FontSourc
 
 export { skelParserAvailable } from "./compiler/spine/skel.js"
 export {
-  findLocalEnemyModels,
-  loadLocalEnemySpines,
-  localEnemySpineMeta,
-  LOCAL_ENEMY_SPINES_FILE,
   processModels,
-  type LocalSpineMeta,
   type PlannedSpineModel,
   type ProcessModelsOptions,
   type ProcessModelsResult,
   type SpineEntry,
 } from "./compiler/spine/model.js"
+export { resolveRoles, roleAnimationNames, type AnimClip, type AnimRoles, type ResolveRolesOptions, type SkillClip } from "./compiler/spine/anim-role.js"
+export {
+  buildCatalogRelease,
+  type CatalogRelease,
+  type CatalogReleaseOptions,
+} from "./compiler/release-index.js"

@@ -1,6 +1,11 @@
 import { expect, test } from "vitest"
 import { createBattle, type BattleSpec, type MissionModule, type UnitSpec } from "arknights-mission-core"
-import { choiceModule } from "#server/content/choice/battle/index.js"
+import { install as installChoice } from "#server/content/choice/battle/index.js"
+
+const choiceModule: MissionModule = {
+  id: "content:choice",
+  install: installChoice,
+}
 
 function unit(id: string, side: "ally" | "enemy", attributes: Record<string, number>, script: UnitSpec["script"], y = 0): UnitSpec {
   return {
@@ -18,7 +23,7 @@ function unit(id: string, side: "ally" | "enemy", attributes: Record<string, num
 }
 
 function open(units: readonly UnitSpec[], notes: BattleSpec["notes"], extra: readonly MissionModule[] = []): ReturnType<typeof createBattle> {
-  const modules = [choiceModule, ...extra]
+  const modules: MissionModule[] = [choiceModule, ...extra]
   const spec: BattleSpec = {
     seed: 1,
     modules: modules.map((module) => module.id),
@@ -30,7 +35,12 @@ function open(units: readonly UnitSpec[], notes: BattleSpec["notes"], extra: rea
       ally: { initial: 0, regen: 0, cap: 0 },
       enemy: { initial: 0, regen: 0, cap: 0 },
     },
-    ...(notes ? { notes } : {}),
+    notes: {
+      players: [{
+        playerId: "p1",
+        playerEffects: notes?.choices?.map((choice) => choice.ref) ?? [],
+      }],
+    },
   }
   return createBattle(spec, modules)
 }

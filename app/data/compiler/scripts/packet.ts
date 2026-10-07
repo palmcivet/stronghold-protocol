@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 import { join, resolve } from "node:path"
-import { fileURLToPath } from "node:url"
 import { CatalogReadError, fetchCatalogHttp, nodeCatalogFiles } from "arknights-assets-catalog"
 import { compileSeason, type CompileOptions } from "#compiler/packet/compile/season.js"
-import { appRootFrom } from "#compiler/repo-root.js"
+import { dataWorkspace } from "#compiler/workspace.js"
 import { seasonPacketDirectory } from "#schema/packet-file.js"
 
 const USAGE: string = "usage: --season <id> [--refresh | --offline] [--out <dir>] [--cache <dir>] [--report <file>] [--quiet] [--no-research] [--force]"
@@ -27,7 +26,7 @@ function fail(message: string): never {
   process.exit(2)
 }
 
-function parseArgs(argv: readonly string[], appRoot: string): ParsedArgs {
+function parseArgs(argv: readonly string[], workspace: ReturnType<typeof dataWorkspace>): ParsedArgs {
   let refresh = false
   let offline = false
   let quiet = false
@@ -82,9 +81,8 @@ function parseArgs(argv: readonly string[], appRoot: string): ParsedArgs {
   }
   if (refresh && offline) fail(`--refresh and --offline are mutually exclusive\n${USAGE}`)
   if (!seasonId) fail(`--season is required\n${USAGE}`)
-  let seasonDir: string
   try {
-    seasonDir = seasonPacketDirectory(seasonId)
+    seasonPacketDirectory(seasonId)
   } catch (cause) {
     fail(cause instanceof Error ? cause.message : String(cause))
   }
@@ -95,16 +93,15 @@ function parseArgs(argv: readonly string[], appRoot: string): ParsedArgs {
     noResearch,
     force,
     seasonId,
-    outDir: outDir ?? join(appRoot, seasonDir),
-    cacheDir: cacheDir ?? join(appRoot, ".cache", "gamedata"),
-    reportPath: reportPath ?? join(appRoot, ".cache", "build-data-report.json"),
-    researchDir: join(appRoot, "compiler", "input", "research"),
-    tuningPath: join(appRoot, "compiler", "input", "season", seasonId, "tuning.json"),
+    outDir: outDir ?? workspace.seasonDir(seasonId),
+    cacheDir: cacheDir ?? workspace.gamedataCacheDir,
+    reportPath: reportPath ?? workspace.reportPath,
+    researchDir: workspace.researchDir,
+    tuningPath: join(workspace.seasonInputDir(seasonId), "tuning.json"),
   }
 }
 
-const here: string = fileURLToPath(import.meta.url)
-const options: CompileOptions = parseArgs(process.argv.slice(2), appRootFrom(here))
+const options: CompileOptions = parseArgs(process.argv.slice(2), dataWorkspace())
 
 compileSeason(nodeCatalogFiles, fetchCatalogHttp, options).then(
   (result) => {

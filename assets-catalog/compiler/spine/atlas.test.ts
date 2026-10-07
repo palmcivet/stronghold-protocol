@@ -1,10 +1,10 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { expect, test } from "vitest"
-import { catalogPackageRoot } from "#compiler/repo-root.js"
+import { catalogWorkspace } from "#compiler/workspace.js"
 import { atlasInfo, normalizeAtlas, parseAtlas } from "#compiler/spine/atlas.js"
 
-const spineDir = join(catalogPackageRoot(), "product", "media", "spine")
+const spineDir = join(catalogWorkspace().mediaDir, "spine")
 const haveSpine = existsSync(spineDir)
 
 const fexli = "\nchar_x.png\nformat: RGBA8888\nfilter: Linear,Linear\nrepeat: none\nArm\n  rotate: false\n  xy: 2, 2\n  size: 10, 12\n  orig: 10, 12\n  offset: 0, 0\n  index: -1\nLeg\n  rotate: 270\n  xy: 20, 2\n  size: 8, 8\n  orig: 8, 8\n  offset: 0, 0\n  index: -1\n"

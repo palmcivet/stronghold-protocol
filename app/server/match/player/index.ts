@@ -785,7 +785,7 @@ export class PlayerState {
   // =================================================================================================
   // economy
 
-  addFunds(n: any, { reason = '' }: any = {}) : any {
+  addFunds(n: any, { reason: _reason = '' }: any = {}) : any {
     if (!Number.isFinite(n) || n === 0) return 0;
     const v = Math.trunc(n);
     const before = this.funds;
@@ -1063,7 +1063,7 @@ export class PlayerState {
    * battle. Returns the number taken off the board; a toast names them.
    */
   _liftOutOfRange() : any {
-    const back: any[] = [], gone = [];
+    const back: any[] = [], gone: string[] = [];
     for (const [k, p] of [...this.board]) {
       if (p.kind !== 'token') continue;
       const range = this.summonRange(p);
