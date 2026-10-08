@@ -22,7 +22,7 @@ export interface CatalogWorkspaceOptions {
  * Resolve the catalog workspace.
  *
  * `root` is the explicit workspace root used by deployment and CI. The package
- * root fallback is retained only for local migration and old commands.
+ * root is the fallback for local runs.
  */
 export function catalogWorkspace(options: CatalogWorkspaceOptions = {}): CatalogWorkspace {
   const root = resolve(options.root ?? catalogPackageRoot())

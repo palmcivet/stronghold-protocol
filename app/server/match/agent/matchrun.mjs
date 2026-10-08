@@ -25,7 +25,7 @@
 //   --odds      shop tier distribution of rolled chess slots per shop level (all runs)
 //   --json      print machine-readable results
 //   --tuning off     play on the research-faithful numbers (data/tuning.json ignored; docs/BALANCE.md)
-//   --legacy-time    read combat limits as game seconds (the reading before docs/BALANCE.md §2.1)
+//   --unscaled-time  read combat limits as game seconds (the reading before docs/BALANCE.md §2.1)
 // Examples:
 //   node tools/matchrun.mjs --mode solo --difficulty FUNNY --seed 3
 //   node tools/matchrun.mjs --mode coop --difficulty HARD --players 4 --seeds 20
@@ -66,7 +66,7 @@ const quiet = !!opt.quiet || seeds > 1 || difficulties.length > 1;
 const rehearsal = opt.rehearsal != null && opt.rehearsal !== true ? Math.max(0, Math.floor(Number(opt.rehearsal) || 0)) : undefined;
 let data = getData({ log: { warn() {}, error() {}, info() {} } });
 if (opt.tuning === 'off') { const { tuning, ...rest } = data; void tuning; data = Object.freeze(rest); }
-if (opt['legacy-time']) data = Object.freeze({ ...data, config: { ...data.config, combatTimeScale: 1 } });
+if (opt['unscaled-time']) data = Object.freeze({ ...data, config: { ...data.config, combatTimeScale: 1 } });
 
 // ---- error collection (--errors) ------------------------------------------------------------------------------
 // Battle errors are logged once per unique key inside the sim; to count every occurrence the tool runs a Battle

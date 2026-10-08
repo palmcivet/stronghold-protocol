@@ -147,6 +147,8 @@ test("系统按阶段槽和优先级运行", () => {
     }),
     [probe, costModule, redeployModule],
   )
+  const initialEvents = battle.drainEvents()
+  expect(initialEvents.map((event) => event.type)).toEqual(["deploy"])
   battle.step()
   const events = battle.drainEvents()
   const labels = events.map((event) => (event.type === "trace" ? String(event.data.name) : event.type))

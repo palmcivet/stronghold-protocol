@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { legacyBattle } from "#server/content/support/legacy-battle.js"
+import { battleFacade } from "#server/content/support/battle-facade.js"
 // server/sim/content/bonds/addon/battle.js — battle side of the 15 add-on bonds (research 02 §3.9–§3.23).
 //
 // Every number comes from data/bonds.json (`env_gbuff_new` buff blackboards). ATK / DEF / max HP "+X%" are 直接乘算
@@ -362,7 +362,7 @@ function raidRedeploy(battle, u, r, c) {
 // install
 
 export function install(ctx: any): void {
-  const battle: any = legacyBattle(ctx);
+  const battle: any = battleFacade(ctx);
 
   if (!battle || !Array.isArray(battle.players) || !battle.players.length) return;
   const states = [];

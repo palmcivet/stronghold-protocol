@@ -1,4 +1,4 @@
-import type { AttackClip, AttackShape, Direction, HitArea, Motion, SkillHook, SkillModifier, UnitSpec } from "#contract/spec.js"
+import type { AttackClip, AttackShape, Direction, HitArea, Motion, SkillHook, SkillModifier, UnitKind, UnitSpec } from "#contract/spec.js"
 import type { AttributeModifier, SkillRuntime, TimerState } from "#port/content.js"
 import { copyModifiers } from "#battle/skill/modifier.js"
 import {
@@ -85,6 +85,7 @@ export interface SkillInstance extends SkillRuntime {
 export interface UnitState {
   readonly id: string
   readonly side: UnitSpec["side"]
+  readonly kind: UnitKind
   readonly attributes: Record<string, number>
   readonly skills: SkillInstance[]
   readonly attackRange: readonly UnitSpec["attackRange"][number][]
@@ -203,6 +204,7 @@ export function createUnit(spec: UnitSpec, fielded: boolean, order: number): Uni
   return {
     id: spec.id,
     side: spec.side,
+    kind: spec.kind ?? (spec.side === "enemy" ? "enemy" : "operator"),
     attributes,
     skills,
     attackRange: spec.attackRange.map((cell) => ({ x: cell.x, y: cell.y })),

@@ -1,7 +1,7 @@
 import { createBattle, TICK, type BattleSpec, type MissionModule, type SkillSpec, type TileSpec, type UnitSpec } from "arknights-mission-core"
 import { getChess, getStage } from "#server/entry/packet.js"
 import { contentModules } from "#server/content/loader.js"
-import { legacyBattle } from "#server/content/support/legacy-battle.js"
+import { battleFacade } from "#server/content/support/battle-facade.js"
 import { noteBlocked } from "#server/content/support/blocked.js"
 
 const HIGH = new Set(["A", "I", "a", "h", "H"])
@@ -258,7 +258,7 @@ export function makeBattle(opts: Record<string, any> = {}): any {
   const capture: MissionModule = {
     id: "content:harness",
     install(ctx) {
-      facade = legacyBattle(ctx as never)
+      facade = battleFacade(ctx as never)
       ctx.registerSystem({
         id: "content-harness-attack",
         slot: "schedule",
@@ -309,6 +309,6 @@ export function makeBattle(opts: Record<string, any> = {}): any {
     snapshot() { return engine.snapshot() },
     invariants() { return checkInvariants(facade) },
   }
-  noteBlocked("harness.legacy-hooks")
+  noteBlocked("harness.facade-hooks")
   return harness
 }

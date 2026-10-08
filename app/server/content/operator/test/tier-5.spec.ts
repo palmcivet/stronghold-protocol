@@ -1448,7 +1448,7 @@ test('determinism: a full tier-5 lineup on a real wave replays identically', () 
 
 test('soak: random tier-5 lineups (normal + elite) on real stages/waves — normal, unite and boss fields — zero content errors', async () => {
   const { getDefaultSource, spawnsFromTemplate } = await import('#server/content/support/sim-data.js');
-  const { Battle } = await import('#server/content/support/legacy-battle.js');
+  const { Battle } = await import('#server/content/support/battle-facade.js');
   const { createRng } = await import('../../server/sim/rng.js');
   const ds = getDefaultSource();
   const T5 = ds.chessIds().filter((id) => /^chess_char_5_\d+_[ab]$/.test(id));

@@ -26,10 +26,11 @@ export type {
   TileCoord,
   TileSpec,
   UnitAttributes,
+  UnitKind,
   UnitSide,
   UnitSpec,
 } from "#contract/spec.js"
-export { ATTACK_DAMAGE_KINDS, DIRECTIONS, MOTIONS, PROJECTILE_KINDS, SKILL_OPERATIONS, SP_TYPES, UNIT_SIDES } from "#contract/spec.js"
+export { ATTACK_DAMAGE_KINDS, DIRECTIONS, MOTIONS, PROJECTILE_KINDS, SKILL_OPERATIONS, SP_TYPES, UNIT_KINDS, UNIT_SIDES } from "#contract/spec.js"
 export type { BattleEvent } from "#contract/event.js"
 export type { BattleResult } from "#contract/result.js"
 export type { BattleSnapshot, UnitSnapshot } from "#contract/snapshot.js"

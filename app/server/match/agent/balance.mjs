@@ -34,7 +34,7 @@
 //   --profile         curve multiplier for elites, items and layers (weak 0.6, competent 1, strong 1.4, or a number;
 //                     a bond's layers stop at BOND_LAYER_CAP, 999)
 //   --tuning off      ignore data/tuning.json (it only holds title rules now: no effect on the numbers)
-//   --legacy-time     read the combat limits as game seconds (the reading before the fix of docs/BALANCE.md §2.1)
+//   --unscaled-time   read the combat limits as game seconds (the reading before the fix of docs/BALANCE.md §2.1)
 //   --boss-lp N       team LP per alive player entering the Final Assault (default 15)
 //   --bots N          also run N bot matches per mode × difficulty (tools/matchrun.mjs logic, 4 AI in multi, the
 //                     match's default bot rehearsal) and print rounds survived / wins
@@ -586,8 +586,8 @@ async function main() {
   const full = getData({ log: QUIET_LOG });
   ENEMY_NAME = (k) => (full.enemies && full.enemies[k] ? full.enemies[k].name : k);
   let data = opt.tuning === 'off' ? withoutTuning(full) : full;
-  // --legacy-time: combat limits read as game seconds (the pre-fix reading, docs/BALANCE.md §2.1)
-  if (opt['legacy-time']) data = Object.freeze({ ...data, config: { ...data.config, combatTimeScale: 1 } });
+  // --unscaled-time: combat limits read as game seconds (the pre-fix reading, docs/BALANCE.md §2.1)
+  if (opt['unscaled-time']) data = Object.freeze({ ...data, config: { ...data.config, combatTimeScale: 1 } });
   const modes = opt.mode === 'all' ? ['solo', 'multi'] : [opt.mode === 'solo' ? 'solo' : 'multi'];
   const dArg = String(opt.difficulty || 'NORMAL').toUpperCase();
   const diffs = dArg === 'ALL' ? DIFFS : [DIFFS.includes(dArg) ? dArg : 'NORMAL'];

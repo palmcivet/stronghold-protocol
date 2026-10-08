@@ -208,7 +208,7 @@ test('server-run fallback (SP_COMBAT=server): the match simulates every field an
   FakeBattle.script = () => ({ duration: 1 });
   serverCombat = true;
   try {
-    const c = await player('Legacy');
+    const c = await player('Veteran');
     await ok(c, { t: 'room.create', mode: 'solo', difficulty: 'FUNNY' });
     await c.waitFor('room.state');
     await ok(c, { t: 'room.start' });

@@ -10,7 +10,7 @@ function kindOf(address: string): CatalogKind {
   return "image"
 }
 
-/** Convert a legacy manifest URL into a resource handle during migration. */
+/** Convert a manifest URL into a resource handle. */
 export function assetRefFromAddress(address: string, kind = kindOf(address), fallbackId: string | null = null): AssetRef {
   return { id: address, kind, address, fallbackId }
 }

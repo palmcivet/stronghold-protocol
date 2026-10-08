@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { legacyBattle } from "#server/content/support/legacy-battle.js"
+import { battleFacade } from "#server/content/support/battle-facade.js"
 // server/sim/content/bands/battle.js — battle side of the strategies (bands, data/bands.json; research 01 §11).
 //
 // Each player of a battle installs the IN_BATTLE parts of its own band, dispatched on the band buff's bbStr.key
@@ -256,7 +256,7 @@ export function hasBattlePart(bandId: any): any {
 }
 
 export function install(ctx: any): void {
-  const battle: any = legacyBattle(ctx);
+  const battle: any = battleFacade(ctx);
 
   for (const ps of battle.players) {
     const band = ps.bandId ? bandRecord(ps.bandId) : null;

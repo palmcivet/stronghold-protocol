@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { legacyBattle } from "#server/content/support/legacy-battle.js"
+import { battleFacade } from "#server/content/support/battle-facade.js"
 // server/sim/content/enemies.js — enemy special types (特训敌人) and individual enemy abilities (DESIGN §7).
 //
 // Battle side: install(battle) registers ONE set of global dispatch hooks per battle (ensureInstalled — idempotent,
@@ -267,7 +267,7 @@ export function ensureInstalled(b: any): any {
 }
 
 export function install(ctx: any): void {
-  const battle: any = legacyBattle(ctx);
+  const battle: any = battleFacade(ctx);
  ensureInstalled(battle); }
 export function registerMeta(): any {}
 

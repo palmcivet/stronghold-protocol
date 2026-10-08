@@ -1,8 +1,9 @@
-import type { TileCoord, UnitAttributes, UnitSide } from "#contract/spec.js"
+import type { TileCoord, UnitAttributes, UnitKind, UnitSide } from "#contract/spec.js"
 
 export interface UnitSnapshot {
   readonly id: string
   readonly side: UnitSide
+  readonly kind: UnitKind
   readonly x: number
   readonly y: number
   readonly attributes: UnitAttributes

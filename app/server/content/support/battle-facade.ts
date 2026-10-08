@@ -94,8 +94,8 @@ function damageKind(type: unknown): string {
   return "physical"
 }
 
-export function legacyBattle(ctx: ContentContext): any {
-  const shared = ctx.shared("content-legacy")
+export function battleFacade(ctx: ContentContext): any {
+  const shared = ctx.shared("content-facade")
   const existing = shared.facade
   if (existing && typeof existing === "object") return existing
   const facade = createFacade(ctx, shared)
@@ -285,7 +285,7 @@ function createFacade(ctx: ContentContext, shared: Record<string, unknown>) {
     }
   }
 
-  function legacyEvent(type: string, event: BattleEvent): Record<string, unknown> {
+  function facadeEvent(type: string, event: BattleEvent): Record<string, unknown> {
     const data = event.data
     const source = typeof data.sourceId === "string" ? unitProxy(data.sourceId) : null
     const targetId = typeof data.targetId === "string" ? data.targetId : typeof data.unitId === "string" ? data.unitId : ""
@@ -310,13 +310,13 @@ function createFacade(ctx: ContentContext, shared: Record<string, unknown>) {
     }
   }
 
-  function ensureMapped(legacyType: string): void {
-    const mapped = EVENT_MAP[legacyType]
+  function ensureMapped(eventType: string): void {
+    const mapped = EVENT_MAP[eventType]
     if (!mapped || subscribed.has(mapped)) return
     subscribed.add(mapped)
     ctx.subscribe(mapped, (event) => {
       for (const hook of hooks.filter((item) => EVENT_MAP[item.type] === mapped).sort((a, b) => a.priority - b.priority)) {
-        const payload = legacyEvent(hook.type, event)
+        const payload = facadeEvent(hook.type, event)
         if (hook.owner && payload.source !== hook.owner && payload.target !== hook.owner && payload.unit !== hook.owner) continue
         try { hook.fn(payload) } catch (cause) {
           noteBlocked(`hook:${hook.type}:${cause instanceof Error ? cause.message : String(cause)}`)
@@ -329,7 +329,7 @@ function createFacade(ctx: ContentContext, shared: Record<string, unknown>) {
     if (clock) return
     clock = true
     ctx.registerSystem({
-      id: "content-legacy-clock",
+      id: "content-facade-clock",
       slot: "schedule",
       priority: 80,
       run(live) {
@@ -340,7 +340,7 @@ function createFacade(ctx: ContentContext, shared: Record<string, unknown>) {
   }
 
   const facade = {
-    __legacy: true,
+    __facade: true,
     started: true,
     errors: [] as unknown[],
     opts: {},

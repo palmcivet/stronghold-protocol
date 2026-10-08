@@ -6,7 +6,7 @@ import tier4 from "./tier-4.js"
 import tier5 from "./tier-5.js"
 import tier6 from "./tier-6.js"
 import { genericKit } from "./generic.js"
-import { legacyBattle } from "#server/content/support/legacy-battle.js"
+import { battleFacade } from "#server/content/support/battle-facade.js"
 import { noteBlocked } from "#server/content/support/blocked.js"
 
 export { genericKit }
@@ -52,7 +52,7 @@ export function install(ctx: Registration): void {
   const arm = (live: any, id: string): void => {
     if (!id || seen.has(id)) return
     seen.add(id)
-    const battle = legacyBattle(live)
+    const battle = battleFacade(live)
     const unit = battle.unitById(id)
     if (!unit) return
     const def = unit.def ?? {}
@@ -109,6 +109,6 @@ export function install(ctx: Registration): void {
     const id = event.data.unitId
     if (typeof id === "string") arm(live, id)
   })
-  const battle = legacyBattle(ctx as never)
+  const battle = battleFacade(ctx as never)
   for (const unit of battle.allyUnits ?? []) arm(ctx, String(unit.id ?? ""))
 }

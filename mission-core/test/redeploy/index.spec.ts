@@ -92,6 +92,7 @@ test("费用不够就继续等，够了的那一拍再回来", () => {
     }),
     [hit("a"), pay, redeployModule],
   )
+  battle.drainEvents()
   battle.step()
   expect(battle.snapshot().units.find((unit) => unit.id === "a")?.attributes.hp).toBe(0)
   expect(battle.drainEvents().some((event) => event.type === "deploy")).toBe(false)
