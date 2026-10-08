@@ -99,7 +99,7 @@ function entriesOf(value: any): [string, any][] {
 // phase outside its battles (soloUntimed); the co-op strategy draft has ONE countdown — BAND_TURN_SECONDS per turn,
 // published as m.public.deadline — AI seats pick at once and a turn that runs out takes the highlighted strategy
 // (g.bandFocus → timeoutBand); g.unitStats answers m.unitStats: the stats the board's units start their next battle with.
-//   opts.clientCombat  default true (env SP_COMBAT=server → false: the legacy server-run + snapshot streaming mode)
+//   opts.clientCombat  default true (env SP_COMBAT=server → false: the server-run + snapshot streaming mode)
 //   opts.verify        'off' | 'sample' | 'all' (env SP_VERIFY, default 'off'): re-simulate accepted client results
 //                      ('sample': ~1 in 8, in a later callback, mismatches logged; 'all': before accepting — the
 //                      server's result wins on a mismatch)
@@ -868,7 +868,7 @@ export class Match {
       bossRound: this.gd.bossRound,
       hiddenRound: this.gd.hiddenRound,
       spRound: this.gd.spRounds().includes(this.round),
-      // DESIGN §14: 'client' = battles are simulated by the browsers (b.start specs), 'server' = legacy streaming
+      // DESIGN §14: 'client' = battles are simulated by the browsers (b.start specs), 'server' = server-run streaming
       combatMode: this.clientCombat ? 'client' : 'server',
       // solo pause (g.pause, DESIGN §14): the battle, its field clock and every deadline are frozen while true
       paused: !!this.paused,

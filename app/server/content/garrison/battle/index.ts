@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { legacyBattle } from "#server/content/support/legacy-battle.js"
+import { battleFacade } from "#server/content/support/battle-facade.js"
 // server/sim/content/garrisons/battle.js — IN_BATTLE 特质 (garrisons) of the operators on the field.
 //
 // Each operator carries `unit.def.raw.garrisonIds` (elite chess carry the `_b` garrisons); the IN_BATTLE ones are
@@ -59,7 +59,7 @@ function garrisonIdsOf(u) {
 // install
 
 export function install(ctx: any): void {
-  const battle: any = legacyBattle(ctx);
+  const battle: any = battleFacade(ctx);
 
   const all = [];
   const owned = new Map(); // unit → Set(garrisonId)

@@ -7,7 +7,7 @@ import {
   effectRecord,
   gameData,
   isShopItem,
-  modifiersFromLegacy,
+  modifiersFromBuffMods,
   num,
 } from "#server/content/support/record.js"
 
@@ -178,9 +178,9 @@ export function hasBattlePart(effect: unknown): boolean {
 
 function opModifiers(params: Record<string, unknown>): AttributeModifier[] {
   const direct = { atk: 0, def: 0, hp: 0 }
-  const legacy: Record<string, number> = {}
+  const buffMods: Record<string, number> = {}
   const add = (key: string, value: number) => {
-    legacy[key] = (legacy[key] ?? 0) + value
+    buffMods[key] = (buffMods[key] ?? 0) + value
   }
   for (const [key, raw] of Object.entries(params)) {
     const value = num(raw, Number.NaN)
@@ -211,33 +211,33 @@ function opModifiers(params: Record<string, unknown>): AttributeModifier[] {
         add("aspd", Math.abs(value) < 1 ? value * 100 : value)
         break
       case "damage_scale":
-        legacy.dmgDealtMul = (legacy.dmgDealtMul ?? 1) * (1 + value)
+        buffMods.dmgDealtMul = (buffMods.dmgDealtMul ?? 1) * (1 + value)
         break
       default:
         break
     }
   }
-  return directMods(direct, modifiersFromLegacy(legacy))
+  return directMods(direct, modifiersFromBuffMods(buffMods))
 }
 
 function enemyModifiers(params: Record<string, unknown>, multiply: boolean): AttributeModifier[] {
-  const legacy: Record<string, number> = {}
+  const buffMods: Record<string, number> = {}
   for (const [key, raw] of Object.entries(params)) {
     const value = num(raw, Number.NaN)
     if (!Number.isFinite(value) || key === "enemy_level_type") continue
     if (multiply) {
       if (key === "attack_speed") {
-        if (value !== 1) legacy.aspd = (legacy.aspd ?? 0) + (value - 1) * 100
+        if (value !== 1) buffMods.aspd = (buffMods.aspd ?? 0) + (value - 1) * 100
         continue
       }
       const name = key === "max_hp" ? "hpMul" : key === "magic_resistance" ? "resMul" : key === "move_speed" ? "moveMul" : key === "atk" ? "atkMul" : key === "def" ? "defMul" : ""
-      if (name && value > 0 && value !== 1) legacy[name] = (legacy[name] ?? 1) * value
+      if (name && value > 0 && value !== 1) buffMods[name] = (buffMods[name] ?? 1) * value
     } else {
       const name = key === "max_hp" ? "hpFlat" : key === "magic_resistance" ? "resFlat" : key === "move_speed" ? "moveFlat" : key === "atk" ? "atkFlat" : key === "def" ? "defFlat" : key === "attack_speed" ? "aspd" : ""
-      if (name && value !== 0) legacy[name] = (legacy[name] ?? 0) + value
+      if (name && value !== 0) buffMods[name] = (buffMods[name] ?? 0) + value
     }
   }
-  return modifiersFromLegacy(legacy)
+  return modifiersFromBuffMods(buffMods)
 }
 
 export interface EnemyPlan {

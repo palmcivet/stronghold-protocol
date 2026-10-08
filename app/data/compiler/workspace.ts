@@ -24,7 +24,7 @@ export interface DataWorkspaceOptions extends CatalogWorkspaceOptions {
 
 /**
  * Resolve compiler inputs and outputs. Explicit paths are used by deployment and
- * CI; the package-root fallback remains only for local migration.
+ * CI; the package-root fallback is used only for local runs.
  */
 export function dataWorkspace(options: DataWorkspaceOptions = {}): DataWorkspace {
   const catalog = catalogWorkspace(options)

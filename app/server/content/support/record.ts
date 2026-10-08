@@ -160,8 +160,8 @@ const MUL: Readonly<Record<string, string>> = {
   redeployMul: "redeployMul",
 }
 
-/** Legacy buff-mod map (`atkPct`, `atkMul`, …) as port modifiers. */
-export function modifiersFromLegacy(mods: Readonly<Record<string, number>>): AttributeModifier[] {
+/** Buff-mod map (`atkPct`, `atkMul`, …) as port modifiers. */
+export function modifiersFromBuffMods(mods: Readonly<Record<string, number>>): AttributeModifier[] {
   const out: AttributeModifier[] = []
   for (const [key, value] of Object.entries(mods)) {
     if (!Number.isFinite(value) || value === 0) continue

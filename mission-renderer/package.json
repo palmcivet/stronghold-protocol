@@ -13,6 +13,20 @@
       "default": "./dist/index.js"
     }
   },
+  "imports": {
+    "#contract/*.js": {
+      "source": "./contract/*.ts",
+      "default": "./dist/contract/*.js"
+    },
+    "#stage/*.js": {
+      "source": "./stage/*.ts",
+      "default": "./dist/stage/*.js"
+    },
+    "#port/*.js": {
+      "source": "./port/*.ts",
+      "default": "./dist/port/*.js"
+    }
+  },
   "scripts": {
     "build": "tsc -b",
     "lint": "tsc --noEmit",
@@ -20,15 +34,18 @@
   },
   "dependencies": {
     "arknights-assets-catalog": "workspace:*",
-    "arknights-mission-core": "workspace:*",
-    "pixi.js": "^7.4.2",
-    "pixi-spine": "^4.0.6",
-    "three": "^0.186.1"
+    "arknights-mission-core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"
+  },
+  "optionalDependencies": {
+    "@types/three": "^0.186.0"
+  },
+  "peerDependencies": {
+    "three": "^0.186.1"
   }
 }

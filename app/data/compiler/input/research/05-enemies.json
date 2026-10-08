@@ -2,7 +2,7 @@
  "_meta": {
   "source": "ArknightsGameData zh_CN (activity_table autoChessData + act2autochess, enemy_database level 0, enemy_handbook_table, levels/*). Stats are RAW level-0 database values; see generation.scaling for mode multipliers.",
   "fields": "name, index(handbook code), rank NORMAL/ELITE/BOSS, hp, atk, def, res(magic resistance %), spd(moveSpeed tiles/s, x0.5 moveMultiplier in these levels), aspd(attackSpeed, 100=normal), bat(baseAttackTime s), range(rangeRadius tiles; -1/0 = melee/none), mass(massLevel = weight), lpr(lifePointReduce = LP lost when it reaches the objective), motion WALK/FLY, applyWay MELEE/RANGED/ALL/NONE, dmg(damage types from handbook), immune[], extra{hpRecoveryPerSec,epDamageResistance,epResistance,damageHitrate*,tauntLevel,...}, tags, abilities(handbook text, rich tags stripped), talent{blackboard}, skills[[prefabKey,cooldown,initCooldown,{blackboard}]], otherLevels{level:{changed stats}}, autochessOverride (official override from level_autochess_enemy_data), be = (hp*enemyMaxHpFactor1 + atk*enemyAtkFactor5 + def*enemyDefFactor3 + res*enemyMagicResistanceFactor3) / enemyBattleEffectivenessFactor  [ASSUMED reconstruction; factor<1 marks enemies stronger than raw stats, e.g. 需要多次攻击/护盾/召唤], ac = autochess roles.",
-  "acRoles": "template: placeholder slot N/E/S (ground normal/elite/special), NF/EF/SF (fly), T/TF (token); special: this key is a 特训敌人 (special enemy) entry {type,w=randomWeight,firstHalf=isInFirstHalf,N=attachedNormalEnemyKeys,E=attachedEliteEnemyKeys}; attachedTo: [[slot, specialKey]]; typePool: enemyInfoDict type lists containing it; boss: bossIds; bounty: ENEMY_GAIN effectIds that add it; inactiveIn: modes whose inactiveEnemyKey bans it; rand: randomEnemyAttributeDict {factor=enemyBattleEffectivenessFactor, fly, extraId, spawns=extraEnemyKeyList}; legacyOnly: only in randomEnemyAttributeDict (season-1 leftovers / summons), not used by act2 pools."
+  "acRoles": "template: placeholder slot N/E/S (ground normal/elite/special), NF/EF/SF (fly), T/TF (token); special: this key is a 特训敌人 (special enemy) entry {type,w=randomWeight,firstHalf=isInFirstHalf,N=attachedNormalEnemyKeys,E=attachedEliteEnemyKeys}; attachedTo: [[slot, specialKey]]; typePool: enemyInfoDict type lists containing it; boss: bossIds; bounty: ENEMY_GAIN effectIds that add it; inactiveIn: modes whose inactiveEnemyKey bans it; rand: randomEnemyAttributeDict {factor=enemyBattleEffectivenessFactor, fly, extraId, spawns=extraEnemyKeyList}; leftoverOnly: only in randomEnemyAttributeDict (season-1 leftovers / summons), not used by act2 pools."
  },
  "generation": {
   "constData": {
@@ -6500,7 +6500,7 @@
       "enemy_10030_vtwand"
      ]
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_10026_vtzepl_2": {
@@ -6546,7 +6546,7 @@
       "enemy_10030_vtwand"
      ]
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_10027_vtsk": {
@@ -6745,7 +6745,7 @@
      "factor": 1.0,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_10030_vtwand": {
@@ -6876,7 +6876,7 @@
      "factor": 0.9,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_10034_cnvsax": {
@@ -6992,7 +6992,7 @@
      "factor": 0.9,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_10035_cnvdnc": {
@@ -7034,7 +7034,7 @@
      "factor": 0.9,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_10035_cnvdnc_2": {
@@ -7076,7 +7076,7 @@
      "factor": 0.9,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_10040_cnvbln": {
@@ -7837,7 +7837,7 @@
      "factor": 0.4,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1006_shield": {
@@ -8000,7 +8000,7 @@
      "factor": 1.0,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_10073_mpcar": {
@@ -8072,7 +8072,7 @@
      "factor": 0.5,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_10078_mprein_2": {
@@ -8110,7 +8110,7 @@
      "factor": 0.5,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1007_slime": {
@@ -8386,7 +8386,7 @@
      "factor": 0.5,
      "fly": true
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_10085_hllevi": {
@@ -8436,7 +8436,7 @@
      "factor": 0.5,
      "fly": true
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_10085_hllevi_2": {
@@ -8573,7 +8573,7 @@
      "factor": 1.0,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_10094_crstf": {
@@ -8659,7 +8659,7 @@
      "factor": 1.0,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_10097_crshd": {
@@ -8881,7 +8881,7 @@
      "factor": 0.5,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1009_lurker": {
@@ -9221,7 +9221,7 @@
      "factor": 0.5,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_10122_uacann_2": {
@@ -9320,7 +9320,7 @@
      "factor": 0.5,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_10124_uashld_2": {
@@ -9619,7 +9619,7 @@
      "factor": 1.0,
      "fly": true
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_10156_mncrer": {
@@ -10085,7 +10085,7 @@
      "factor": 1.0,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1026_aghost": {
@@ -10801,7 +10801,7 @@
      "factor": 1.0,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1069_icebrk_2": {
@@ -10914,7 +10914,7 @@
      "factor": 1.0,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1072_dlancer": {
@@ -11081,7 +11081,7 @@
      "factor": 0.9,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1093_ccsbr": {
@@ -11119,7 +11119,7 @@
      "factor": 1.0,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1093_ccsbr_2": {
@@ -11157,7 +11157,7 @@
      "factor": 1.0,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1098_cchmpn": {
@@ -11198,7 +11198,7 @@
      "factor": 1.0,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1098_cchmpn_2": {
@@ -11239,7 +11239,7 @@
      "factor": 1.0,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1112_emppnt": {
@@ -11488,7 +11488,7 @@
      "factor": 1.0,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1118_lidbox_2": {
@@ -11643,7 +11643,7 @@
      "factor": 1.0,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1121_lifbos": {
@@ -11791,7 +11791,7 @@
      "factor": 1.0,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1148_dssbr": {
@@ -11948,7 +11948,7 @@
      "factor": 0.3,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1151_dslntc_2": {
@@ -12003,7 +12003,7 @@
      "factor": 0.3,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1153_dsexcu": {
@@ -12041,7 +12041,7 @@
      "factor": 1.0,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1158_divman": {
@@ -12399,7 +12399,7 @@
       "enemy_1161_tidmag_2"
      ]
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1165_duhond": {
@@ -13185,7 +13185,7 @@
      "factor": 0.6,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1175_dushdo_2": {
@@ -13452,7 +13452,7 @@
      "fly": false,
      "extraId": 7
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1196_msfyin_2": {
@@ -13489,7 +13489,7 @@
      "fly": false,
      "extraId": 8
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1197_sfshu": {
@@ -13677,7 +13677,7 @@
      "fly": false,
      "extraId": 9
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1198_msfshu_2": {
@@ -13714,7 +13714,7 @@
      "fly": false,
      "extraId": 10
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1199_sfjin": {
@@ -13819,7 +13819,7 @@
       "enemy_1200_msfjin_2"
      ]
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1200_msfjin": {
@@ -13856,7 +13856,7 @@
      "fly": false,
      "extraId": 11
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1200_msfjin_2": {
@@ -13893,7 +13893,7 @@
      "fly": false,
      "extraId": 12
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1201_sfzhi": {
@@ -13935,7 +13935,7 @@
       "enemy_1202_msfzhi"
      ]
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1201_sfzhi_2": {
@@ -13977,7 +13977,7 @@
       "enemy_1202_msfzhi_2"
      ]
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1202_msfzhi": {
@@ -14014,7 +14014,7 @@
      "fly": false,
      "extraId": 13
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1202_msfzhi_2": {
@@ -14051,7 +14051,7 @@
      "fly": false,
      "extraId": 14
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1203_sfhu": {
@@ -14187,7 +14187,7 @@
      "fly": false,
      "extraId": 15
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1204_msfhu_2": {
@@ -14224,7 +14224,7 @@
      "fly": false,
      "extraId": 16
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1207_sfji": {
@@ -14373,7 +14373,7 @@
      "fly": false,
      "extraId": 17
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1208_msfji_2": {
@@ -14410,7 +14410,7 @@
      "fly": false,
      "extraId": 18
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1209_sfden": {
@@ -14560,7 +14560,7 @@
      "fly": false,
      "extraId": 24
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1210_msfden_2": {
@@ -14639,7 +14639,7 @@
      "fly": false,
      "extraId": 19
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1221_dzomg_2": {
@@ -14678,7 +14678,7 @@
      "fly": false,
      "extraId": 20
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1224_dsuply": {
@@ -14718,7 +14718,7 @@
      "factor": 1.0,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1224_dsuply_2": {
@@ -14758,7 +14758,7 @@
      "factor": 1.0,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1225_dkmage": {
@@ -14805,7 +14805,7 @@
       "enemy_1221_dzomg"
      ]
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1225_dkmage_2": {
@@ -14852,7 +14852,7 @@
       "enemy_1221_dzomg_2"
      ]
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1229_darmy": {
@@ -14992,7 +14992,7 @@
      "factor": 0.3,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1233_dsshtr_2": {
@@ -15032,7 +15032,7 @@
      "factor": 0.3,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1234_dsubrl": {
@@ -15180,7 +15180,7 @@
      "factor": 1.0,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1249_lysdb_2": {
@@ -15370,7 +15370,7 @@
      "factor": 1.0,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1252_lysytb_2": {
@@ -15456,7 +15456,7 @@
      "factor": 1.0,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1253_lysytc_2": {
@@ -15496,7 +15496,7 @@
      "factor": 1.0,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1254_lypa": {
@@ -15531,7 +15531,7 @@
      "factor": 1.0,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1254_lypa_2": {
@@ -15628,7 +15628,7 @@
      "factor": 1.0,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1267_nhpbr": {
@@ -15802,7 +15802,7 @@
      "fly": true,
      "extraId": 21
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1269_nhfly_2": {
@@ -15839,7 +15839,7 @@
      "fly": true,
      "extraId": 22
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1270_nhstlk": {
@@ -16224,7 +16224,7 @@
      "factor": 0.4,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1275_dwlock_2": {
@@ -16642,7 +16642,7 @@
      "factor": 0.7,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1299_ymkilr": {
@@ -16957,7 +16957,7 @@
      "factor": 1.0,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1320_wdrrl": {
@@ -17010,7 +17010,7 @@
      "factor": 0.5,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1320_wdrrl_2": {
@@ -17184,7 +17184,7 @@
       "enemy_1269_nhfly_2"
      ]
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1325_cbgpro": {
@@ -17354,7 +17354,7 @@
      "factor": 0.5,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1329_cbshld": {
@@ -17675,7 +17675,7 @@
      "fly": false,
      "extraId": 27
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1373_ltnhor_2": {
@@ -17736,7 +17736,7 @@
      "factor": 0.5,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1376_ltndru": {
@@ -17797,7 +17797,7 @@
      "factor": 0.25,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1381_winman": {
@@ -17971,7 +17971,7 @@
      "factor": 0.7,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1389_winbab": {
@@ -18004,7 +18004,7 @@
      "factor": 0.5,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1389_winbab_2": {
@@ -18082,7 +18082,7 @@
      "factor": 1.0,
      "fly": true
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1401_pogpro_2": {
@@ -18114,7 +18114,7 @@
      "factor": 1.0,
      "fly": true
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1402_tgshd": {
@@ -18151,7 +18151,7 @@
      "factor": 0.9,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1402_tgshd_2": {
@@ -18303,7 +18303,7 @@
      "factor": 0.4,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1406_chghmr": {
@@ -18348,7 +18348,7 @@
      "factor": 0.4,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1406_chghmr_2": {
@@ -18393,7 +18393,7 @@
      "factor": 0.4,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1407_hummbd": {
@@ -18490,7 +18490,7 @@
      "factor": 0.7,
      "fly": true
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1409_bdguad": {
@@ -18538,7 +18538,7 @@
      "factor": 0.3,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1409_bdguad_2": {
@@ -18586,7 +18586,7 @@
      "factor": 0.3,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1415_mmkabi_2": {
@@ -18691,7 +18691,7 @@
      "factor": 0.7,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1422_lrsldr": {
@@ -18826,7 +18826,7 @@
      "factor": 0.7,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1423_lrfkkt_2": {
@@ -18858,7 +18858,7 @@
      "factor": 0.7,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1425_lrcmra": {
@@ -19136,7 +19136,7 @@
      "factor": 0.1,
      "fly": true
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_1433_dsbasi": {
@@ -20703,7 +20703,7 @@
      "factor": 1.0,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_2002_bearmi": {
@@ -20785,7 +20785,7 @@
      "factor": 1.0,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_2003_rockman": {
@@ -21101,7 +21101,7 @@
      "factor": 1.0,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_2016_csphtm": {
@@ -21401,7 +21401,7 @@
      "factor": 1.0,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_2048_smgrd": {
@@ -21672,7 +21672,7 @@
      "factor": 1.0,
      "fly": false
     },
-    "legacyOnly": true
+    "leftoverOnly": true
    }
   },
   "enemy_9006_actoxi": {

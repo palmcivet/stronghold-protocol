@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { legacyBattle } from "#server/content/support/legacy-battle.js"
+import { battleFacade } from "#server/content/support/battle-facade.js"
 // server/sim/content/devices.js — stage devices & special terrain (data/stages.json, research 05 §2.3–2.4).
 //
 // The engine already spawns active 阻隔工事 crates (obstacle devices, 100 HP) and marks active 射击台/mounds as
@@ -514,7 +514,7 @@ export function terrainAt(battle: any, r: any, c: any): any {
 // install
 
 export function install(ctx: any): void {
-  const battle: any = legacyBattle(ctx);
+  const battle: any = battleFacade(ctx);
 
   const st = {
     byPlayer: new Map((battle.players || []).map((ps) => [ps.playerId, playerDeviceOverrides(ps)])),

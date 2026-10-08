@@ -12,7 +12,7 @@ import { CURVES, planBoard, applyBoard, makeMatch, runNormal, runBoss, withoutTu
 
 const RAW = withoutTuning(DATA);
 
-test('no custom balance: legacy tuning multipliers are ignored; enemy scale = the PRTS table; leader pool = bloodPoint', () => {
+test('no custom balance: tuning multipliers are ignored; enemy scale = the PRTS table; leader pool = bloodPoint', () => {
   const tuning = {
     modes: {
       '*': { enemyHpMul: 0.5, enemyAtkMul: 0.9 },

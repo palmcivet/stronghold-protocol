@@ -10,7 +10,7 @@ import { makeBattle, chessRec, enemyRec, checkInvariants } from '#server/content
 import { createRegistry } from '#server/content/support/registry.js';
 import { applyCard, generateDraft, tacticCard } from '#server/match/choice/index.js';
 import { withBounties } from '#server/match/fight/wave/index.js';
-import { Battle } from '#server/content/support/legacy-battle.js';
+import { Battle } from '#server/content/support/battle-facade.js';
 import { bountyOf, battlePlanOf, choiceCardIds, gateOf, hasBattlePart, mapAliases, BUILTIN_REFS } from '#server/content/choice/battle/index.js';
 
 const QUIET = { warn() {}, error() {}, info() {} };

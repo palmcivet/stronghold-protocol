@@ -24,6 +24,8 @@ function runSteps(battle: Battle, steps: number): BattleResult
 
 `runSteps` 连续调用 `step`，然后返回 `result`。`createFrameClock()` 按帧累积秒数。`advance(battle, frameSeconds, speed?)` 把 `frameSeconds × speed` 换成拍，`speed` 缺省 1。每走完一拍就把这一拍的事件放进单独的一组。不满一拍的余数留到下一次。一帧最多补 `FRAME_CATCHUP`（150）拍。
 
+创建战斗时，如果 `deployStrategy` 是 `null`，已经在场的单位会立即产生一次 `deploy` 事件；调用方应在第一次 `step` 前读取或丢弃这批初始事件。使用部署策略时，开场部署在战斗阶段槽中执行。
+
 ## 阶段槽
 
 `step` 按下面的顺序走完一拍，然后 `tick` 加 1。同一槽里 `priority` 小的先执行，相同则按注册先后。槽名是 `PhaseSlot`：

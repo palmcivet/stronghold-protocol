@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { legacyBattle } from "#server/content/support/legacy-battle.js"
+import { battleFacade } from "#server/content/support/battle-facade.js"
 // server/sim/content/items/battle.js — battle side of the 56 equipment items (research 04 §4, docs/DATA.md §5).
 //
 // Every operator's `unit.items` (equipped ids; merged items are golden `_b` ids with their own numbers) becomes a set of
@@ -900,7 +900,7 @@ export function installItem(battle: any, u: any, itemId: any, { lent = false }: 
 
 /** Battle install: every operator's equipped items. Nearly free when nobody carries equipment. */
 export function install(ctx: any): void {
-  const battle: any = legacyBattle(ctx);
+  const battle: any = battleFacade(ctx);
 
   let any = false;
   for (const u of battle.allyUnits) if (u.kind === 'op' && itemsOf(u).length) { any = true; break; }

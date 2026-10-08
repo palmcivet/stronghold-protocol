@@ -46,4 +46,24 @@ describe("renderer resource port", () => {
     await port.spine(ref)
     expect(spine).toHaveBeenCalledTimes(2)
   })
+
+  it("reference counts model loads separately from spine", async () => {
+    const resolver = createResourceResolver(release)
+    const ref = assetRef(entry)
+    const model = vi.fn(async () => ({ model: true }))
+    const port = createRendererResourcePort({
+      resolver,
+      image: async () => "image",
+      spine: async () => "spine",
+      model,
+    })
+
+    await port.model(ref)
+    await port.model(ref)
+    expect(model).toHaveBeenCalledTimes(1)
+    port.release(ref, "model")
+    port.release(ref, "model")
+    await port.model(ref)
+    expect(model).toHaveBeenCalledTimes(2)
+  })
 })

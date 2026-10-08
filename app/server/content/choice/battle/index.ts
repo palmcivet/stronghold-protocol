@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { legacyBattle } from "#server/content/support/legacy-battle.js"
+import { battleFacade } from "#server/content/support/battle-facade.js"
 // server/sim/content/choices.js — 机变 (SP draft) card content (DESIGN §6.1 / §7; research 01 §12 + Addendum A4,
 // 04 Addendum, 05 §3.2 step 8, 06 §4.4 / §8 / §11.5). Card GENERATION (family per SP round, 6 shared / 3 solo cards,
 // pick order, timers) lives in server/match/choices.js; this module owns what a picked card DOES.
@@ -414,7 +414,7 @@ function maxRowOps(battle, pid) {
 }
 
 export function install(ctx: any): void {
-  const battle: any = legacyBattle(ctx);
+  const battle: any = battleFacade(ctx);
 
   const cards = [];
   for (const ps of battle.players || []) {

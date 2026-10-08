@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 import { assetRefAt, assetRefFromAddress } from "#runtime/media/resource.js"
 
 describe("resource handles", () => {
-  it("keeps a legacy address usable as a migration handle", () => {
+  it("turns a plain address into a resource handle", () => {
     expect(assetRefFromAddress("/assets/char/avatar/a.png")).toEqual({
       id: "/assets/char/avatar/a.png",
       kind: "image",
@@ -11,7 +11,7 @@ describe("resource handles", () => {
     })
   })
 
-  it("reads a typed handle from a legacy manifest", () => {
+  it("reads a typed handle from a manifest", () => {
     expect(assetRefAt({ ui: { "skillIcon/empty": "/assets/skill/empty.png" } }, "ui", "skillIcon/empty")).toMatchObject({
       kind: "image",
       address: "/assets/skill/empty.png",

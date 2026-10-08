@@ -9,7 +9,7 @@
 // fake (true → test/match/fakeBattle.js as BattleClass), script (FakeBattle.script), registry, instant (virtual
 // scheduler runs battles synchronously; default true), timerScale, battleContent, botRehearsal (default 0),
 // botSliceMs (bot rehearsal slice budget; default: unbounded in virtual time).
-// Combat mode: clientCombat (default false here: the legacy server-run mode most suites were written for; production
+// Combat mode: clientCombat (default false here: the server-run mode most suites were written for; production
 // defaults to client-side combat, DESIGN §14). With clientCombat: true every human gets a scripted browser
 // (test/match/simClient.js SimClient: h.clients) unless clients: false; pace 'instant' | 'paced', perPlayer
 // { [playerId]: SimClient options } (tamper / mute / stall …), verify ('off' | 'sample' | 'all'), headlessSliceMs
@@ -145,11 +145,11 @@ export function makeMatch(o: any = {}) : any {
 export function checkInvariants(m: any) : any {
   const violations = collectViolations(m);
   assert.deepEqual(violations, [], `invariants violated (${m.phase} R${m.round}):\n  ${violations.join('\n  ')}`);
-  return legacyInvariants(m);
+  return harnessInvariants(m);
 }
 
-/** The original harness checks (kept alongside collectViolations; they must agree). */
-function legacyInvariants(m) {
+/** Harness checks kept alongside collectViolations; they must agree with it. */
+function harnessInvariants(m) {
   const pool = m.pool;
   const held = new Map();
   const uids = new Set();

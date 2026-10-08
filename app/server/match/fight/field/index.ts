@@ -3,7 +3,7 @@ function entriesOf(value: any): [string, any][] {
 }
 // server/match/fields.js — runs the battles of one combat phase (DESIGN §4, §11, §14).
 //
-// Server-run combat (legacy streaming mode, SP_COMBAT=server; and the Final Assault when no field has a connected human):
+// Server-run combat (streaming mode, SP_COMBAT=server; and the Final Assault when no field has a connected human):
 // FieldRunner steps every live field in lockstep:
 //   * real-time pacing (RealScheduler, or VirtualScheduler with instantCombat=false): an interval every 1000/30 ms
 //     accumulates elapsed real time × the match's game speed (forced 2×; `opts.combatSpeed` in tests/tools) and

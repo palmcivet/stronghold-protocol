@@ -368,7 +368,7 @@ export class Lobby implements NetHandler {
       changed = true
     }
     if (!room.hostId) {
-      this.migrateHost(room)
+      this.transferHost(room)
       changed = true
     }
     if (changed) this.broadcastState(room)
@@ -775,7 +775,7 @@ export class Lobby implements NetHandler {
     }
     for (const seat of room.spectators) if (!seat.connected) this.startGrace(room, seat)
     const host = room.hostId ? room.seatOf(room.hostId) : null
-    if (!host || host.isBot || host.left) this.migrateHost(room)
+    if (!host || host.isBot || host.left) this.transferHost(room)
     if (room.activeHumans().length === 0) this.disposeRoom(room, "empty")
     else this.broadcastState(room)
   }
@@ -996,7 +996,7 @@ export class Lobby implements NetHandler {
       room.seats[seat.seat] = null
     }
     if (room.disposed) return
-    if (room.hostId === playerId) this.migrateHost(room)
+    if (room.hostId === playerId) this.transferHost(room)
     if (room.activeHumans().length === 0) this.disposeRoom(room, "empty")
     else this.broadcastState(room)
   }
@@ -1011,7 +1011,7 @@ export class Lobby implements NetHandler {
     return true
   }
 
-  private migrateHost(room: Room): void {
+  private transferHost(room: Room): void {
     const humans = room.activeHumans()
     const pick = humans.find((seat) => seat.connected) ?? humans[0] ?? null
     const prev = room.hostId

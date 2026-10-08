@@ -21,6 +21,7 @@ function readUnit(unit: UnitState): UnitSnapshot {
   return {
     id: unit.id,
     side: unit.side,
+    kind: unit.kind,
     x: unit.x,
     y: unit.y,
     attributes,

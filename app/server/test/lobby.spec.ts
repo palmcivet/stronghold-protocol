@@ -397,7 +397,7 @@ describe('websocket lobby', () => {
     assert.equal(back.log.filter((x) => x.t === 'm.private').length, 0);
   });
 
-  test('host-only commands, difficulty change un-readies guests, host migration on leave', async () => {
+  test('host-only commands, difficulty change un-readies guests, host transfer on leave', async () => {
     const host = await pool.player('Host');
     const st = await createRoom(host, 'coop', 'NORMAL');
     const a = await pool.player('A');
@@ -414,9 +414,9 @@ describe('websocket lobby', () => {
     assert.equal(seatOf(changed, a.id).ready, false, 'difficulty change resets ready');
 
     await expectOk(host, { t: 'room.leave' });
-    const migrated = await a.waitFor('room.state', (s) => s.hostId !== host.id);
-    assert.equal(migrated.hostId, a.id, 'lowest remaining seat becomes host');
-    assert.equal(migrated.seats[0], null);
+    const transferred = await a.waitFor('room.state', (s) => s.hostId !== host.id);
+    assert.equal(transferred.hostId, a.id, 'lowest remaining seat becomes host');
+    assert.equal(transferred.seats[0], null);
     await b.waitFor('room.state', (s) => s.hostId === a.id);
 
     // new joiner takes the lowest free seat (0); host stays with A
@@ -862,14 +862,14 @@ describe('lobby timers and match interface', () => {
     await back.expectNone('room.state');
   });
 
-  test('lobby grace: host removed → host migrates to the connected guest', async () => {
+  test('lobby grace: host removed → host transfers to the connected guest', async () => {
     const host = await pool.player('Host');
     const st = await createRoom(host);
     const guest = await pool.player('Guest');
     await joinRoom(guest, st.code);
     await host.terminate();
-    const migrated = await guest.waitFor('room.state', (s) => s.hostId === guest.id, GRACE + 1000);
-    assert.equal(migrated.seats[0], null);
+    const transferred = await guest.waitFor('room.state', (s) => s.hostId === guest.id, GRACE + 1000);
+    assert.equal(transferred.seats[0], null);
     await expectOk(guest, { t: 'room.addBot' });
   });
 

@@ -2,6 +2,11 @@ export const UNIT_SIDES = ["ally", "enemy"] as const
 
 export type UnitSide = (typeof UNIT_SIDES)[number]
 
+/** What a unit is in the battle: a deployed operator, an enemy, a summon, or a stage device (crate, turret). */
+export const UNIT_KINDS = ["operator", "enemy", "token", "device"] as const
+
+export type UnitKind = (typeof UNIT_KINDS)[number]
+
 export const DIRECTIONS = ["UP", "RIGHT", "DOWN", "LEFT"] as const
 
 export type Direction = (typeof DIRECTIONS)[number]
@@ -158,6 +163,8 @@ export interface AttackShape {
 export interface UnitSpec {
   readonly id: string
   readonly side: UnitSide
+  /** 缺省时，友方是 operator，敌方是 enemy。 */
+  readonly kind?: UnitKind
   readonly attributes: UnitAttributes
   readonly skills: readonly SkillSpec[]
   readonly attackRange: readonly TileCoord[]
