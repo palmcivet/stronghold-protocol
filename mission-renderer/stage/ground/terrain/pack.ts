@@ -1,6 +1,6 @@
-import type { AssetRef } from "arknights-assets-catalog"
+import type { AssetKey } from "arknights-assets-catalog"
 import type { Object3D, Texture } from "three"
-import type { RendererAssetKind } from "#port/resource.js"
+import type { RendererAssetKind, RendererResourcePort } from "#port/resource.js"
 import { resolveUvTable, type TerrainUvTable } from "./atlas.js"
 import { isParsedMesh, parseObj, type ParsedMesh } from "./mesh.js"
 
@@ -41,23 +41,21 @@ export type TerrainGateSlot = keyof typeof TERRAIN_GATE_NODES
 export type TerrainProp = ParsedMesh | Object3D
 
 export interface TerrainPackRequest {
-  readonly images: Partial<Record<TerrainImageSlot, AssetRef>>
-  readonly meshes?: Partial<Record<TerrainMeshSlot, AssetRef>>
+  readonly images: Partial<Record<TerrainImageSlot, AssetKey>>
+  readonly meshes?: Partial<Record<TerrainMeshSlot, AssetKey>>
   /** Explicit gate piece meshes; a slot missing here is looked up in `gatePrefab`. */
-  readonly gates?: Partial<Record<TerrainGateSlot, AssetRef>>
+  readonly gates?: Partial<Record<TerrainGateSlot, AssetKey>>
   /** The prefab table (`map/fx/prefab.json`): node name → mesh name, used for the gate pieces not given explicitly. */
-  readonly gatePrefab?: AssetRef
-  /** Maps a mesh name from the prefab table to its catalog reference. */
-  readonly resolveMesh?: (name: string) => AssetRef | null
-  readonly tiles?: AssetRef
+  readonly gatePrefab?: AssetKey
+  /** Maps a mesh name from the prefab table to its asset key. */
+  readonly resolveMesh?: (name: string) => AssetKey | null
+  readonly tiles?: AssetKey
 }
 
-export interface TerrainPackPort {
-  readonly image?: (ref: AssetRef) => Promise<unknown>
-  readonly model?: (ref: AssetRef) => Promise<unknown>
-  readonly json?: (ref: AssetRef) => Promise<unknown>
-  readonly release: (ref: AssetRef, kind?: RendererAssetKind) => void
-}
+/** The part of the renderer port that the ground loads through. */
+export type TerrainResourcePort = Pick<RendererResourcePort, "image" | "model" | "json" | "release">
+
+type TerrainLoadKind = Extract<RendererAssetKind, "image" | "model" | "json">
 
 export interface TerrainPack {
   readonly images: Partial<Record<TerrainImageSlot, Texture>>
@@ -107,46 +105,42 @@ function prefabFor(records: readonly PrefabRecord[], node: string): PrefabRecord
  * Load the board pack through the resource port. Every entry is optional except the diffuse atlas: without it the
  * pack is null and the ground stays hidden. A missing map or mesh drops only its own feature.
  */
-export async function loadTerrainPack(port: TerrainPackPort, request: TerrainPackRequest): Promise<TerrainPack | null> {
-  const held: { readonly ref: AssetRef, readonly kind: RendererAssetKind }[] = []
+export async function loadTerrainPack(port: TerrainResourcePort, request: TerrainPackRequest): Promise<TerrainPack | null> {
+  const held: { readonly key: AssetKey, readonly kind: TerrainLoadKind }[] = []
   const releaseHeld = (): void => {
-    for (const item of held.splice(0)) port.release(item.ref, item.kind)
+    for (const item of held.splice(0)) port.release(item.key, item.kind)
   }
-  const take = async (
-    ref: AssetRef | undefined,
-    kind: RendererAssetKind,
-    load: ((ref: AssetRef) => Promise<unknown>) | undefined,
-  ): Promise<unknown> => {
-    if (!ref || !load) return null
+  const take = async (key: AssetKey | null | undefined, kind: TerrainLoadKind): Promise<unknown> => {
+    if (!key) return null
     try {
-      const value = await load(ref)
-      held.push({ ref, kind })
+      const value = await port[kind](key)
+      held.push({ key, kind })
       return value
     } catch {
-      port.release(ref, kind)
+      port.release(key, kind)
       return null
     }
   }
 
-  const diffuse = await take(request.images.D, "image", port.image)
+  const diffuse = await take(request.images.D, "image")
   if (!isTexture(diffuse)) {
     releaseHeld()
     return null
   }
   const images: Partial<Record<TerrainImageSlot, Texture>> = { D: diffuse }
   await Promise.all(TERRAIN_IMAGE_SLOTS.filter((slot) => slot !== "D").map(async (slot) => {
-    const value = await take(request.images[slot], "image", port.image)
+    const value = await take(request.images[slot], "image")
     if (isTexture(value)) images[slot] = value
   }))
 
   const meshes: Partial<Record<TerrainMeshSlot, TerrainProp>> = {}
   await Promise.all(TERRAIN_MESH_SLOTS.map(async (slot) => {
-    const value = propOf(await take(request.meshes?.[slot], "model", port.model))
+    const value = propOf(await take(request.meshes?.[slot], "model"))
     if (value) meshes[slot] = value
   }))
 
   const prefab = request.gatePrefab
-    ? prefabRecords(await take(request.gatePrefab, "model", port.json))
+    ? prefabRecords(await take(request.gatePrefab, "json"))
     : []
   const gates: Partial<Record<TerrainGateSlot, TerrainProp>> = {}
   await Promise.all((Object.keys(TERRAIN_GATE_NODES) as TerrainGateSlot[]).map(async (slot) => {
@@ -154,12 +148,12 @@ export async function loadTerrainPack(port: TerrainPackPort, request: TerrainPac
     const node = TERRAIN_GATE_NODES[slot]
     const record = prefabFor(prefab, node)
     const meshName = record?.mesh ?? node
-    const ref = explicit ?? (request.resolveMesh ? request.resolveMesh(meshName) : null)
-    const value = propOf(await take(ref ?? undefined, "model", port.model))
+    const key = explicit ?? (request.resolveMesh ? request.resolveMesh(meshName) : null)
+    const value = propOf(await take(key, "model"))
     if (value) gates[slot] = value
   }))
 
-  const tiles = await take(request.tiles, "model", port.json)
+  const tiles = await take(request.tiles, "json")
   let released = false
   return {
     images,

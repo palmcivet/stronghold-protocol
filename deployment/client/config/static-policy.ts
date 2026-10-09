@@ -28,7 +28,11 @@ export const GZIP_CACHE_MAX_TOTAL: number = 96 << 20
 
 const LONG_CACHE: string = "public, max-age=86400"
 const IMMUTABLE_CACHE: string = "public, max-age=31536000, immutable"
-const LONG_CACHE_DIRECTORIES: readonly string[] = ["assets", "fonts", "vendor"]
+/** Vite output (hashed file names) and vendored scripts, under the site root. */
+const LONG_CACHE_DIRECTORIES: readonly string[] = ["assets", "vendor"]
+/** Resource directory under the site root, laid out by `RESOURCE_ROOT` in assets-catalog. */
+const RESOURCE_DIRECTORY = "res"
+const MANIFEST_CACHE = "public, max-age=300"
 
 export const MEDIA_TYPES: Readonly<Record<string, string>> = {
   ".html": "text/html; charset=utf-8",
@@ -137,11 +141,23 @@ export function isNotModified(ifNoneMatch: string | undefined, ifModifiedSince: 
   return false
 }
 
-/** 页面短缓存。带 `v=` 的地址长期不可变。素材、字体和 vendor 缓存一天。 */
+/**
+ * Cache header of one static file. Pages are never cached. Under `/res/`, a file with `?v=` is immutable,
+ * a manifest is cached for a few minutes (with its ETag), and the local overlay is never cached.
+ * Other files: a `v=` address is immutable; Vite output and vendored scripts are cached for a day.
+ */
 export function cacheControl(extension: string, segments: readonly string[], query: string): string {
   if (extension === ".html" || extension === ".htm") return "no-cache"
-  if (/(^|&)v=/.test(query)) return IMMUTABLE_CACHE
   const first = segments[0]
+  const second = segments[1]
+  if (first === RESOURCE_DIRECTORY) {
+    if (second === "local") return "no-cache"
+    if (/(^|&)v=/.test(query)) return IMMUTABLE_CACHE
+    if (second === "packs") return MANIFEST_CACHE
+    if (second === "files") return LONG_CACHE
+    return "no-cache"
+  }
+  if (/(^|&)v=/.test(query)) return IMMUTABLE_CACHE
   if (segments.length > 1 && first && LONG_CACHE_DIRECTORIES.includes(first)) return LONG_CACHE
   return "no-cache"
 }

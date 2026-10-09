@@ -49,7 +49,7 @@ stage.update(deltaSeconds)
 
 返回值中的 `snapshot` 是 `b`，标记（`flags`）和属性（`attributes`）都取自它。
 
-舞台只把 `sample().units` 写入 `view.units`。`moving` 集合目前不被舞台使用。
+舞台只把 `sample().units` 写入 `view.units`。舞台不读取 `moving` 集合。
 
 ## 事件
 

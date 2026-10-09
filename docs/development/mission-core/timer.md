@@ -33,7 +33,7 @@ id 是 `ammo`。视图有 `ammo`、`elapsed`。启动和每次 `deploy` 时补�
 
 id 是 `boomerang`。视图有 `out`、`elapsed`。`elapsed` 按 `independentDt` 走。飞行中的数量读单位上的 `boomerangsOut`，攻击形状写入这个字段，并抄到属性 `boomerangsOut`。这里不发射、不命中、不飞回。
 
-`deploy` 时，带了这条计时的单位把 `boomerangsOut` 写成 0，并把回旋世代加一。飞出时记下世代。回程落地只在世代还对得上时把数量减一。再部署之后飞回来的旧回旋不再改这个数。
+`deploy` 时，带了这条计时的单位把 `boomerangsOut` 写成 0，并把回旋世代加一。飞出时记下世代。回程落地只在世代对得上时把数量减一。世代对不上的回旋落地不改这个数。
 
 ## 出手
 

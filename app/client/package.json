@@ -16,6 +16,7 @@
     "@alliance/contract": "workspace:*",
     "@alliance/data": "workspace:*",
     "arknights-assets-catalog": "workspace:*",
+    "arknights-compat-upstream": "workspace:*",
     "arknights-mission-core": "workspace:*",
     "arknights-mission-renderer": "workspace:*"
   },

@@ -946,14 +946,13 @@ export class Match {
     const units: any[] = [];
     for (const { r, c, piece } of boardOrder(ps.board)) {
       const rec = piece.kind === 'token' ? this.gd.token(piece.id) : this.gd.chess(piece.id);
-      const assets = (rec && rec.assets) || {};
       // DESIGN §16: the skill / module THIS player's operator fights with (the scout's detail card shows it, like the
       // sim's UnitInfo in a shared field); moduleId only for an elite
       const lo = piece.kind === 'chess' && rec ? ps.loadoutFor(rec) : null;
       units.push({
         id: piece.uid, uid: piece.uid, kind: piece.kind === 'token' ? 'token' : 'op', side: 'ally', ownerId: ps.playerId, defId: piece.id,
         name: rec ? rec.name : piece.id, tier: rec && Number.isInteger(rec.tier) ? rec.tier : 1, golden: !!(rec && rec.isGolden),
-        spine: assets.spine || (rec && rec.charId) || piece.id, avatar: assets.avatar || (rec && rec.charId) || piece.id,
+        spine: (rec && rec.charId) || piece.id, avatar: (rec && rec.charId) || piece.id,
         x: c, y: r, dir: pieceDir(piece), facing: pieceDir(piece) === 'LEFT' ? -1 : 1, maxHp: rec && rec.stats && Number.isFinite(rec.stats.maxHp) ? rec.stats.maxHp : 1,
         skillIndex: lo && Number.isInteger(lo.skillIndex) ? lo.skillIndex : undefined,
         moduleId: lo && typeof lo.moduleId === 'string' ? lo.moduleId : undefined,
@@ -968,13 +967,12 @@ export class Match {
     // (test/match/spectator.test.js). User playtest #2 item 1 (GitHub #44).
     const benchUnit = (piece?: any, i?: any, y?: any) : any => {
       const rec = piece.kind === 'item' ? this.gd.item(piece.id) : piece.kind === 'token' ? this.gd.token(piece.id) : this.gd.chess(piece.id);
-      const assets = (rec && rec.assets) || {};
       const lo = piece.kind === 'chess' && rec ? ps.loadoutFor(rec) : null;
       units.push({
         id: piece.uid, uid: piece.uid, kind: piece.kind === 'token' ? 'token' : piece.kind === 'item' ? 'item' : 'op',
         side: 'ally', ownerId: ps.playerId, defId: piece.id,
         name: rec ? rec.name : piece.id, tier: rec && Number.isInteger(rec.tier) ? rec.tier : 1, golden: !!(rec && rec.isGolden),
-        spine: assets.spine || (rec && rec.charId) || piece.id, avatar: assets.avatar || (rec && rec.charId) || piece.id,
+        spine: (rec && rec.charId) || piece.id, avatar: (rec && rec.charId) || piece.id,
         x: i, y, maxHp: rec && rec.stats && Number.isFinite(rec.stats.maxHp) ? rec.stats.maxHp : 1,
         skillIndex: lo && Number.isInteger(lo.skillIndex) ? lo.skillIndex : undefined,
         moduleId: lo && typeof lo.moduleId === 'string' ? lo.moduleId : undefined,

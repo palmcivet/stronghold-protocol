@@ -1,8 +1,8 @@
-// 用文件头判断下载结果是不是完整资源，丢掉错误页和截断内容。
+// 用文件头判断上游文件是不是完整资源，挡住错误页、LFS 指针和截断内容。
+
+import type { FileFormat } from "arknights-assets-catalog"
 
 const PNG_SIGNATURE: Uint8Array = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
-
-export type AssetKind = "png" | "mp3" | "font" | "atlas" | "skel" | "json" | "bin"
 
 export interface PngSize {
   readonly width: number
@@ -24,12 +24,18 @@ export function pngSize(buf: Buffer | Uint8Array | null | undefined): PngSize | 
   return { width, height }
 }
 
-/** 签名、IHDR 和末尾 IEND 都在，才算一张下完的 PNG。 */
+/** 签名、IHDR 和末尾 IEND 都在，才算一张完整的 PNG。 */
 export function isCompletePng(buf: Buffer | Uint8Array | null | undefined): boolean {
   if (!pngSize(buf)) return false
   if (!buf || buf.length < 12) return false
   const bytes = asBuffer(buf)
   return bytes.toString("latin1", bytes.length - 8, bytes.length - 4) === "IEND"
+}
+
+export function isWebp(buf: Buffer | Uint8Array | null | undefined): boolean {
+  if (!buf || buf.length < 16) return false
+  const bytes = asBuffer(buf)
+  return bytes.toString("latin1", 0, 4) === "RIFF" && bytes.toString("latin1", 8, 12) === "WEBP" && bytes.readUInt32LE(4) + 8 === bytes.length
 }
 
 export function isMp3(buf: Buffer | Uint8Array | null | undefined): boolean {
@@ -57,44 +63,68 @@ export function isAtlasText(data: Buffer | Uint8Array | string | null | undefine
   return /^[^\s:][^\r\n:]*\.(png|webp|jpg)\s*$/im.test(text)
 }
 
-/** Spine 3.8 二进制以变长整数开头的哈希开头；这里只排除明显的 HTML / 404 正文。 */
+/** Spine 3.8 二进制以变长整数开头的哈希开头；这里只排除明显的 HTML、404 正文和 LFS 指针。 */
 export function isSkelBinary(buf: Buffer | Uint8Array | null | undefined): boolean {
   if (!buf || buf.length < 32) return false
   const head = asBuffer(buf).toString("latin1", 0, 16).toLowerCase()
-  return !head.startsWith("<!doctype") && !head.startsWith("<html") && !head.startsWith("404")
+  return !head.startsWith("<!doctype") && !head.startsWith("<html") && !head.startsWith("404") && !head.startsWith("version https:")
 }
 
-export function validate(kind: AssetKind, buf: Buffer | Uint8Array | null | undefined): boolean {
-  switch (kind) {
+function isText(buf: Buffer | Uint8Array | null | undefined): boolean {
+  return !!buf && buf.length > 0 && !asBuffer(buf).includes(0)
+}
+
+function isJson(buf: Buffer | Uint8Array | null | undefined): boolean {
+  if (!buf) return false
+  try {
+    JSON.parse(asBuffer(buf).toString("utf8"))
+    return true
+  } catch {
+    return false
+  }
+}
+
+export function validate(format: FileFormat, buf: Buffer | Uint8Array | null | undefined): boolean {
+  switch (format) {
     case "png":
       return isCompletePng(buf)
+    case "webp":
+      return isWebp(buf)
     case "mp3":
       return isMp3(buf)
-    case "font":
+    case "otf":
+    case "ttf":
       return isSfnt(buf)
+    case "woff2":
+      return isWoff2(buf)
     case "atlas":
       return isAtlasText(buf)
     case "skel":
       return isSkelBinary(buf)
+    case "obj":
+      return isText(buf)
     case "json":
-      try {
-        JSON.parse(asBuffer(buf ?? new Uint8Array()).toString("utf8"))
-        return true
-      } catch {
-        return false
-      }
-    case "bin":
-      return !!buf && buf.length > 0
+      return isJson(buf)
   }
 }
 
-export function kindOf(name: string): AssetKind {
-  const ext = String(name).toLowerCase().split(".").pop() ?? ""
-  if (ext === "png") return "png"
-  if (ext === "mp3") return "mp3"
-  if (ext === "otf" || ext === "ttf") return "font"
-  if (ext === "atlas") return "atlas"
-  if (ext === "skel") return "skel"
-  if (ext === "json") return "json"
-  return "bin"
+const EXTENSION_FORMATS: Readonly<Record<string, FileFormat>> = {
+  png: "png",
+  webp: "webp",
+  skel: "skel",
+  atlas: "atlas",
+  mp3: "mp3",
+  woff2: "woff2",
+  otf: "otf",
+  ttf: "ttf",
+  obj: "obj",
+  json: "json",
+}
+
+/** File format from the extension of an upstream path, case-insensitive; null for an unknown extension. */
+export function formatOfPath(path: string): FileFormat | null {
+  const name = path.slice(path.lastIndexOf("/") + 1)
+  const dot = name.lastIndexOf(".")
+  if (dot < 0) return null
+  return EXTENSION_FORMATS[name.slice(dot + 1).toLowerCase()] ?? null
 }

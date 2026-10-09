@@ -1,38 +1,34 @@
 import { existsSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 import { expect, test } from "vitest"
+import { cacheLayout } from "arknights-assets-extractor"
+import { fileAddress, formatAssetKey } from "arknights-assets-catalog"
 import { dataWorkspace } from "#workspace.js"
+import { animRolesKey } from "#compiler/media/derive/anim-roles.js"
 import { roleAnimationNames, type AnimRoles } from "#compiler/media/spine/anim-role.js"
 
-const manifestPath = join(dataWorkspace().seasonDir("act2autochess"), "assets.json")
-const haveManifest = existsSync(manifestPath)
+const SEASON_ID = "act2autochess"
+const workspace = dataWorkspace()
+const rolesPath = join(workspace.derivedDir, fileAddress(animRolesKey(SEASON_ID), { name: null, format: "json" }))
+const haveRoles = existsSync(rolesPath)
 
-interface SpineSide {
-  readonly anims?: AnimRoles
-  readonly animations?: Record<string, unknown>
+/** Side file of a spine key: `spine:<path>` is stored as `json:spine-meta/<path>` in the extractor cache. */
+function sidePathOf(spineKey: string): string {
+  const key = formatAssetKey("json", `spine-meta/${spineKey.slice("spine:".length)}`)
+  return join(cacheLayout(workspace.extractCacheDir).files, fileAddress(key, { name: null, format: "json" }))
 }
 
-interface SeasonManifest {
-  readonly chars: Record<string, { readonly spine?: Record<string, SpineSide> }>
-  readonly enemies: Record<string, { readonly spine?: SpineSide }>
-  readonly tokens: Record<string, { readonly spine?: SpineSide }>
-}
-
-test.skipIf(!haveManifest)("spine animation roles in the season manifest name clips that exist", () => {
-  const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as SeasonManifest
-  const entries: (readonly [string, SpineSide])[] = []
-  for (const [id, row] of Object.entries(manifest.chars)) {
-    for (const [side, spine] of Object.entries(row.spine ?? {})) entries.push([`${id}.${side}`, spine])
-  }
-  for (const [id, row] of Object.entries(manifest.enemies)) if (row.spine) entries.push([id, row.spine])
-  for (const [id, row] of Object.entries(manifest.tokens)) if (row.spine) entries.push([id, row.spine])
-
-  expect(entries.length).toBeGreaterThan(400)
-  for (const [id, spine] of entries) {
-    const names = Object.keys(spine.animations ?? {})
-    expect(names.length, id).toBeGreaterThan(0)
-    expect(typeof spine.anims?.idle === "string" && names.includes(spine.anims.idle), `${id} idle`).toBe(true)
-    expect(spine.anims?.attack && names.includes(spine.anims.attack.loop), `${id} attack`).toBe(true)
-    for (const name of roleAnimationNames(spine.anims)) expect(names, `${id} role anim ${name}`).toContain(name)
+test.skipIf(!haveRoles)("spine animation roles of the season name clips that exist in their side files", () => {
+  const roles = JSON.parse(readFileSync(rolesPath, "utf8")) as Record<string, AnimRoles>
+  const keys = Object.keys(roles)
+  expect(keys.length).toBeGreaterThan(400)
+  for (const key of keys) {
+    const side = JSON.parse(readFileSync(sidePathOf(key), "utf8")) as { animations: Record<string, unknown> }
+    const names = Object.keys(side.animations)
+    const row = roles[key] as AnimRoles
+    expect(names.length, key).toBeGreaterThan(0)
+    expect(typeof row.idle === "string" && names.includes(row.idle), `${key} idle`).toBe(true)
+    expect(row.attack && names.includes(row.attack.loop), `${key} attack`).toBe(true)
+    for (const name of roleAnimationNames(row)) expect(names, `${key} role anim ${name}`).toContain(name)
   }
 })

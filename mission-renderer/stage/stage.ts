@@ -16,7 +16,7 @@ import type { TerrainMode, TerrainStage, TerrainStageOptions } from "./ground/te
 import { pickBoard } from "./pointer.js"
 import { calculateBoardTransform, type BoardTransform } from "./projection.js"
 
-export type { TerrainPackPort, TerrainPackRequest, TerrainStage, TerrainStageOptions } from "./ground/terrain/stage.js"
+export type { TerrainPackRequest, TerrainResourcePort, TerrainStage, TerrainStageOptions } from "./ground/terrain/stage.js"
 export { TERRAIN_GATE_NODES, TERRAIN_IMAGE_SLOTS, TERRAIN_MESH_SLOTS } from "./ground/terrain/stage.js"
 
 export type MissionBoard = MissionStage & {

@@ -1,21 +1,19 @@
 #!/usr/bin/env node
 import { join, resolve } from "node:path"
-import { BuildReadError, fetchBuildHttp, nodeBuildFiles } from "arknights-assets-extractor"
+import { BuildReadError, nodeBuildFiles } from "arknights-assets-extractor"
 import { compileSeason, type CompileOptions } from "#compiler/packet/compile/season.js"
 import { dataWorkspace } from "#workspace.js"
 import { seasonPacketDirectory } from "#schema/packet-file.js"
 
-const USAGE: string = "usage: --season <id> [--refresh | --offline] [--out <dir>] [--cache <dir>] [--report <file>] [--quiet] [--no-research] [--force]"
+const USAGE: string = "usage: --season <id> [--out <dir>] [--cache <dir>] [--report <file>] [--quiet] [--no-research] [--force]"
 
 interface ParsedArgs {
-  readonly refresh: boolean
-  readonly offline: boolean
   readonly quiet: boolean
   readonly noResearch: boolean
   readonly force: boolean
   readonly seasonId: string
   readonly outDir: string
-  readonly cacheDir: string
+  readonly extractCacheDir: string
   readonly reportPath: string
   readonly researchDir: string
   readonly tuningPath: string
@@ -27,8 +25,6 @@ function fail(message: string): never {
 }
 
 function parseArgs(argv: readonly string[], workspace: ReturnType<typeof dataWorkspace>): ParsedArgs {
-  let refresh = false
-  let offline = false
   let quiet = false
   let noResearch = false
   let force = false
@@ -36,9 +32,7 @@ function parseArgs(argv: readonly string[], workspace: ReturnType<typeof dataWor
   let outDir: string | null = null
   let cacheDir: string | null = null
   let reportPath: string | null = null
-  const flags: Readonly<Record<string, "refresh" | "offline" | "quiet" | "noResearch" | "force">> = {
-    "--refresh": "refresh",
-    "--offline": "offline",
+  const flags: Readonly<Record<string, "quiet" | "noResearch" | "force">> = {
     "--quiet": "quiet",
     "--no-research": "noResearch",
     "--force": "force",
@@ -60,9 +54,7 @@ function parseArgs(argv: readonly string[], workspace: ReturnType<typeof dataWor
     }
     const flag = flags[name]
     if (flag && inline === null) {
-      if (flag === "refresh") refresh = true
-      else if (flag === "offline") offline = true
-      else if (flag === "quiet") quiet = true
+      if (flag === "quiet") quiet = true
       else if (flag === "noResearch") noResearch = true
       else force = true
       continue
@@ -79,7 +71,6 @@ function parseArgs(argv: readonly string[], workspace: ReturnType<typeof dataWor
     }
     fail(`unknown option ${token}\n${USAGE}`)
   }
-  if (refresh && offline) fail(`--refresh and --offline are mutually exclusive\n${USAGE}`)
   if (!seasonId) fail(`--season is required\n${USAGE}`)
   try {
     seasonPacketDirectory(seasonId)
@@ -87,23 +78,22 @@ function parseArgs(argv: readonly string[], workspace: ReturnType<typeof dataWor
     fail(cause instanceof Error ? cause.message : String(cause))
   }
   return {
-    refresh,
-    offline,
     quiet,
     noResearch,
     force,
     seasonId,
     outDir: outDir ?? workspace.seasonDir(seasonId),
-    cacheDir: cacheDir ?? workspace.gamedataCacheDir,
+    extractCacheDir: cacheDir ?? workspace.extractCacheDir,
     reportPath: reportPath ?? workspace.reportPath,
     researchDir: workspace.researchDir,
     tuningPath: join(workspace.seasonInputDir(seasonId), "tuning.json"),
   }
 }
 
-const options: CompileOptions = parseArgs(process.argv.slice(2), dataWorkspace())
+const parsed = parseArgs(process.argv.slice(2), dataWorkspace())
+const options: CompileOptions = parsed
 
-compileSeason(nodeBuildFiles, fetchBuildHttp, options).then(
+compileSeason(nodeBuildFiles, options).then(
   (result) => {
     process.exitCode = result.exitCode
   },

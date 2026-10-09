@@ -18,6 +18,8 @@ import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { PHASE } from '@alliance/contract/match.js';
+import { dataWorkspace } from '@alliance/data/workspace';
+import { gamedataPath } from '@alliance/data/gamedata';
 import { DATA, makeMatch } from './harness.js';
 import { FakeBattle } from './fake-battle.js';
 import { GameData } from '#server/match/mode/index.js';
@@ -96,7 +98,7 @@ test('#2 screenshots → data: every card read is one act2autochess (下半) eff
   assert.equal(resolve(['悬赏·持续I', '萨卡兹枯朽战士', 1, 2]), 'enemyeffect_20_1', 'not 萨卡兹枯朽战士组长 (13_4)');
   assert.equal(CARD.get('enemyeffect_18_1').enemyKey, 'enemy_10094_crstf');
   assert.equal(CARD.get('enemyeffect_12_4').enemyKey, 'enemy_1148_dssbr');
-  const p = new URL('../../.cache/gamedata/excel/activity_table.json', import.meta.url);
+  const p = gamedataPath(dataWorkspace().extractCacheDir, 'excel/activity_table.json');
   if (!existsSync(p)) return;
   const act = JSON.parse(readFileSync(p, 'utf8')).activity.AUTOCHESS_SEASON;
   for (const id of seen) {
@@ -271,7 +273,7 @@ test('#2 R11 (22 matches: 悬赏决策 14, 机密商店 4, 战术决策 4, 道�
   assert.equal(H.pick, 'slot');
   // the data's block order, which does NOT settle which events R11 fires: bounty_hunter_1..7 after bossInitial_1..6;
   // 8..15 after artifact_paid_4 / 5 and right before the 绝境 / 终极-only hardbuff_select (read by blocks, R11 = 8..15)
-  const p = new URL('../../.cache/gamedata/excel/activity_table.json', import.meta.url);
+  const p = gamedataPath(dataWorkspace().extractCacheDir, 'excel/activity_table.json');
   if (existsSync(p)) {
     const keys = Object.keys(JSON.parse(readFileSync(p, 'utf8')).activity.AUTOCHESS_SEASON.act2autochess.effectChoiceInfoDict);
     const at = (k) => keys.indexOf(k);

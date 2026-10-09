@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest"
 import { DataTexture } from "three"
-import type { AssetRef } from "arknights-assets-catalog"
+import type { AssetKey } from "arknights-assets-catalog"
 import type { MissionMap } from "#contract/view.js"
-import { createTerrainStage, type TerrainRenderView } from "./stage.js"
+import { createTerrainStage, type TerrainRenderView, type TerrainResourcePort } from "./stage.js"
 import type { WebGLContextEvent } from "./webgl.js"
 
 const map: MissionMap = {
@@ -11,7 +11,11 @@ const map: MissionMap = {
   tiles: [{ x: 0, y: 0, height: 0, deployable: true, walkableBy: ["ground"], objective: true }],
 }
 
-const diffuse = { id: "board-d", kind: "image", address: "/board/d.png", fallbackId: null } satisfies AssetRef
+const diffuse: AssetKey = "texture:map/autochess/TX_autochessi_D"
+
+function resourcesWith(image: () => Promise<unknown>, release = vi.fn()): TerrainResourcePort {
+  return { image, model: async () => null, json: async () => null, release }
+}
 
 interface MockView extends TerrainRenderView {
   readonly listeners: Map<string, (event: WebGLContextEvent) => void>
@@ -48,7 +52,7 @@ describe("terrain stage", () => {
     const view = viewOf()
     const stage = createTerrainStage({
       view,
-      resources: { image: async () => atlas(), release: vi.fn() },
+      resources: resourcesWith(async () => atlas()),
       pack: { images: { D: diffuse } },
     })
 
@@ -67,7 +71,7 @@ describe("terrain stage", () => {
     const view = viewOf()
     const stage = createTerrainStage({
       view,
-      resources: { image: async () => atlas(), release: vi.fn() },
+      resources: resourcesWith(async () => atlas()),
       pack: { images: { D: diffuse } },
     })
 
@@ -82,7 +86,7 @@ describe("terrain stage", () => {
   it("stays hidden when there is no GPU view", async () => {
     const stage = createTerrainStage({
       view: null,
-      resources: { image: async () => atlas(), release: vi.fn() },
+      resources: resourcesWith(async () => atlas()),
       pack: { images: { D: diffuse } },
     })
 
@@ -99,12 +103,9 @@ describe("terrain stage", () => {
     const release = vi.fn()
     const stage = createTerrainStage({
       view: viewOf(),
-      resources: {
-        image: async () => {
-          throw new Error("missing atlas")
-        },
-        release,
-      },
+      resources: resourcesWith(async () => {
+        throw new Error("missing atlas")
+      }, release),
       pack: { images: { D: diffuse } },
     })
 
@@ -121,7 +122,7 @@ describe("terrain stage", () => {
     const modes: string[] = []
     const stage = createTerrainStage({
       view,
-      resources: { image: async () => atlas(), release: vi.fn() },
+      resources: resourcesWith(async () => atlas()),
       pack: { images: { D: diffuse } },
       onMode: (mode) => modes.push(mode),
     })

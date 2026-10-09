@@ -14,17 +14,30 @@
     }
   },
   "imports": {
+    "#address/*.js": {
+      "source": "./address/*.ts",
+      "default": "./dist/address/*.js"
+    },
+    "#cache/*.js": {
+      "source": "./cache/*.ts",
+      "default": "./dist/cache/*.js"
+    },
+    "#key/*.js": {
+      "source": "./key/*.ts",
+      "default": "./dist/key/*.js"
+    },
+    "#resolver/*.js": {
+      "source": "./resolver/*.ts",
+      "default": "./dist/resolver/*.js"
+    },
     "#schema/*.js": {
       "source": "./schema/*.ts",
       "default": "./dist/schema/*.js"
-    },
-    "#runtime/*.js": {
-      "source": "./runtime/*.ts",
-      "default": "./dist/runtime/*.js"
     }
   },
   "scripts": {
     "build": "tsc -b",
+    "lint": "tsc --noEmit && tsc -p tsconfig.test.json --noEmit",
     "test": "vitest run"
   },
   "devDependencies": {

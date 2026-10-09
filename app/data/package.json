@@ -12,6 +12,18 @@
       "source": "./workspace.ts",
       "import": "./dist/workspace.js",
       "default": "./dist/workspace.js"
+    },
+    "./gamedata": {
+      "types": "./dist/compiler/gamedata.d.ts",
+      "source": "./compiler/gamedata.ts",
+      "import": "./dist/compiler/gamedata.js",
+      "default": "./dist/compiler/gamedata.js"
+    },
+    "./refs": {
+      "types": "./dist/schema/pack-refs.d.ts",
+      "source": "./schema/pack-refs.ts",
+      "import": "./dist/schema/pack-refs.js",
+      "default": "./dist/schema/pack-refs.js"
     }
   },
   "imports": {
@@ -36,10 +48,12 @@
     "build": "tsc -b",
     "lint": "tsc --noEmit",
     "test": "vitest run",
+    "compile:needs": "node dist/compiler/scripts/needs.js",
+    "extract:media": "node dist/compiler/scripts/extract.js",
+    "compile:derive": "node dist/compiler/scripts/derive.js",
+    "compile:packs": "node dist/compiler/scripts/packs.js",
     "compile:packet": "node dist/compiler/scripts/packet.js",
-    "compile:assets": "node dist/compiler/scripts/assets.js",
-    "compile:emotes": "node dist/compiler/scripts/emotes.js",
-    "crop:board": "node dist/compiler/scripts/board-atlas.js"
+    "compile:emotes": "node dist/compiler/scripts/emotes.js"
   },
   "dependencies": {
     "arknights-assets-catalog": "workspace:*",

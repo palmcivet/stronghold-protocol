@@ -2,11 +2,11 @@ import type { Scene } from "three"
 import { OrthographicCamera, WebGLRenderer } from "three"
 import type { MissionCamera, MissionMap } from "#contract/view.js"
 import { createTerrainScene, type TerrainFocusRect, type TerrainScene } from "./scene.js"
-import { loadTerrainPack, type TerrainPack, type TerrainPackPort, type TerrainPackRequest } from "./pack.js"
+import { loadTerrainPack, type TerrainPack, type TerrainPackRequest, type TerrainResourcePort } from "./pack.js"
 import type { TerrainLayout } from "./layout.js"
 import type { WebGLContextEvent, WebGLSurface } from "./webgl.js"
 
-export type { TerrainPackPort, TerrainPackRequest } from "./pack.js"
+export type { TerrainPackRequest, TerrainResourcePort } from "./pack.js"
 export { TERRAIN_GATE_NODES, TERRAIN_IMAGE_SLOTS, TERRAIN_MESH_SLOTS } from "./pack.js"
 export type { TerrainGateSlot, TerrainImageSlot, TerrainMeshSlot } from "./pack.js"
 export { createTerrainScene, TERRAIN_LIGHTING, gatePulse, type TerrainFocusRect, type TerrainScene } from "./scene.js"
@@ -28,7 +28,7 @@ export interface TerrainStageOptions {
   /** Pixels per board tile before the stage's display scale; the canvas is board-sized × display scale × pixel ratio. */
   readonly tileSize?: number
   readonly pixelRatio?: number
-  readonly resources?: TerrainPackPort
+  readonly resources?: TerrainResourcePort
   readonly pack?: TerrainPackRequest
   /** The GPU view. Null leaves the ground hidden. Undefined creates a WebGL renderer when the browser has one. */
   readonly view?: TerrainRenderView | null

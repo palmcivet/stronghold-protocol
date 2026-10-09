@@ -1,7 +1,7 @@
 // @ts-nocheck
 // Adversarial cross-checks of waves.js against the official client algorithms (research 08 §2–§5):
 //   * an independent re-implementation of RandomEnemyGenerater (_DoReplaceActionDataClient / BE count rule) and of
-//     AutoChessEnemyPreviewManager's zone choice, run straight on the raw official files in .cache/gamedata, compared
+//     AutoChessEnemyPreviewManager's zone choice, run straight on the raw official gamedata tables in the extractor cache, compared
 //     with buildNormalWave / buildBossWave for every mode × round × template (leader and hidden rounds included) ×
 //     allowed special entry — key, count, spawn time, unit step and preview zone of every action (skipped when the
 //     cache is absent);
@@ -12,17 +12,17 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
 import { dataWorkspace } from '@alliance/data/workspace';
+import { gamedataPath } from '@alliance/data/gamedata';
 import { GameData } from '#server/match/mode/index.js';
 import { buildNormalWave, buildBossWave, buildUniteWave, gateOf, previewOf, bountySpawns, withBounties } from '#server/match/fight/wave/index.js';
 import {  createRandom as createRng  } from 'arknights-mission-core';
 import { DATA } from './harness.js';
 
-const CACHE = dataWorkspace().gamedataCacheDir;
+const EXTRACT_CACHE = dataWorkspace().extractCacheDir;
 const HAS_CACHE = ['excel/activity_table.json', 'levels/enemydata/enemy_database.json', 'levels/activities/act1autochess/level_act1autochess_01.json']
-  .every((rel) => existsSync(join(CACHE, rel)));
-const raw = (rel) => JSON.parse(readFileSync(join(CACHE, rel), 'utf8'));
+  .every((rel) => existsSync(gamedataPath(EXTRACT_CACHE, rel)));
+const raw = (rel) => JSON.parse(readFileSync(gamedataPath(EXTRACT_CACHE, rel), 'utf8'));
 const TS = DATA.factions.templateSlots;
 
 /** Forced pick of a special entry for round r. */
@@ -30,7 +30,7 @@ function pickOf(e, round) {
   return { round, type: e.type, key: e.key, normal: e.N[0].key, elite: e.E[0].key, fly: e.fly, firstHalf: e.firstHalf };
 }
 
-test('independent official generator on the raw client data: every mode × round × template × entry (keys, counts, times, steps, preview zones)', { skip: !HAS_CACHE && 'no .cache/gamedata' }, () => {
+test('independent official generator on the raw client data: every mode × round × template × entry (keys, counts, times, steps, preview zones)', { skip: !HAS_CACHE && 'no gamedata tables in the extractor cache' }, () => {
   const act = raw('excel/activity_table.json');
   const ac = act.autoChessData;
   const season = act.activity.AUTOCHESS_SEASON.act2autochess;

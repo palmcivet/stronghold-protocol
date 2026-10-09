@@ -1,85 +1,66 @@
 ---
 title: 资源端口
-description: createRendererResourcePort 按 AssetRef 申请图片、Spine 与模型句柄，按种类做引用计数；TerrainPackPort 是地面用到的子集。
+description: createRendererResourcePort 按资源键申请图片、Spine、模型与 JSON 句柄，沿回退链加载、失败重试并做引用计数。
 ---
 
 # 资源端口
 
-画面不直接读文件。它通过资源端口按 `AssetRef` 申请句柄，`AssetRef` 来自 `arknights-assets-catalog`，资源地址由 `ResourceResolver` 解析。
+画面不直接读文件。它通过资源端口按资源键（`AssetKey`）申请句柄。键由 `arknights-assets-catalog` 定义，文件地址由它的解析器 `AssetResolver` 给出。
 
 ```ts
 import { createRendererResourcePort } from "arknights-mission-renderer"
 
 const port = createRendererResourcePort({
   resolver,
-  origin: "https://assets.example.com",
   image: (url) => textureLoader.loadAsync(url),
-  spine: (url) => loadSpine(url),
+  spine: (source) => loadSpine(source.skel, source.atlas, source.pages),
   model: (url) => loadModel(url),
+  json: async (url) => (await fetch(url)).json(),
 })
 
-const texture = await port.image(diffuseRef)
-port.release(diffuseRef, "image")
+const texture = await port.image("texture:map/autochess/TX_autochessi_D")
+port.release("texture:map/autochess/TX_autochessi_D")
 ```
 
 ## 接口
 
 ```ts
-interface RendererResourceLoaders<TImage, TSpine, TModel> {
-  readonly resolver: ResourceResolver
-  readonly origin?: string
-  readonly image: (url: string, ref: AssetRef) => Promise<TImage>
-  readonly spine: (url: string, ref: AssetRef) => Promise<TSpine>
-  readonly model?: (url: string, ref: AssetRef) => Promise<TModel>
+interface RendererResourceLoaders<TImage, TSpine, TModel, TJson> {
+  readonly resolver: AssetResolver
+  readonly image: (url: string, key: AssetKey) => Promise<TImage>
+  readonly spine: (source: SpineSource) => Promise<TSpine>
+  readonly model: (url: string, key: AssetKey) => Promise<TModel>
+  readonly json: (url: string, key: AssetKey) => Promise<TJson>
+  readonly retryDelays?: readonly number[] // 缺省 [250, 1000]
+  readonly spineCache?: Omit<SpineCacheOptions, "load">
 }
 
-interface RendererResourcePort<TImage, TSpine, TModel> {
-  url(ref: AssetRef): string
-  image(ref: AssetRef): Promise<TImage>
-  spine(ref: AssetRef): Promise<TSpine>
-  model(ref: AssetRef): Promise<TModel>
-  release(ref: AssetRef, kind?: RendererAssetKind): void
+interface RendererResourcePort<TImage, TSpine, TModel, TJson> {
+  image(key: AssetKey): Promise<TImage>
+  spine(key: AssetKey): Promise<TSpine>
+  model(key: AssetKey): Promise<TModel>
+  json(key: AssetKey): Promise<TJson>
+  release(key: AssetKey, kind?: "image" | "spine" | "model" | "json"): void
 }
 ```
-
-`createRendererResourcePort` 返回的对象还多一个 `clear()`，见下文。`RendererAssetKind` 为 `"image"`、`"spine"`、`"model"`，包入口不导出这个类型。
 
 | 方法 | 行为 |
 | --- | --- |
-| `url(ref)` | 用 `resolver.url(ref, origin)` 得到地址 |
-| `image(ref)`、`spine(ref)` | 按 `ref.id` 查缓存。没有则调用加载器，有则复用，并把引用计数加 1 |
-| `model(ref)` | 同上。没有配置 `model` 加载器时返回被拒绝的 Promise |
-| `release(ref, kind)` | 引用计数减 1，归零时从缓存删除 |
-| `clear()` | 清空全部缓存，不看引用计数 |
+| `image(key)` | 接受 `image` 与 `texture` 键。取条目的 `main` 文件（没有时取第一个文件）的地址交给 `image` 加载器 |
+| `model(key)`、`json(key)` | 同上，分别只接受 `model`、`json` 键 |
+| `spine(key)` | 只接受 `spine` 键。用 `spineSource` 取出 skel、atlas、全部图集页与侧车地址，经 `assets-catalog` 的 Spine 缓存加载 |
+| `release(key, kind)` | 放掉一次引用。不传 `kind` 时由键推出：`texture` 按 `image` 处理 |
 
-## 缓存规则
+每次申请都要配一次 `release`，申请失败时也一样。
 
-- 缓存按种类分开，同一个 `ref.id` 在 `image`、`spine`、`model` 之间互不影响。
-- 同一个 `ref.id` 的第二次申请返回第一次的同一个 Promise。
-- 加载失败的 Promise 也留在缓存里。引用归零之前，再次申请拿到的仍是那个失败的 Promise；归零后再申请会重新加载。
-- `release` 只减少引用计数。归零时从缓存删除该项，不调用任何卸载逻辑。
+## 加载规则
 
-`release` 的 `kind` 缺省为 `"spine"`。申请图片后释放时要传 `"image"`，否则释放不到图片的缓存项。
+- 键不在任何覆盖层里，或种类不被该方法接受时，返回被拒绝的 Promise。
+- 每个文件加载失败后按 `retryDelays` 依次等待再试；全部失败后，把这一环记为失败，沿 `fallbackId` 解析下一环再加载。整条回退链都失败时拒绝。
+- 同一个键在同一种类下只加载一次。第二次申请返回同一个 Promise，并把引用计数加 1；引用归零时从缓存删除，再申请会重新加载。
+- 图片、模型、JSON 的缓存按种类分开，同一个键在不同种类之间互不影响。
+- Spine 由 `createSpineCache` 管理。回退命中时，缓存里保存的是实际加载的那个键；释放请求的键时一并释放它。空闲淘汰、内存预算与卸载回调见 [缓存](../assets-catalog/cache.md#spine)，可用 `spineCache` 调整。
 
-## TerrainPackPort
+## 地面使用的部分
 
-地面的地形资源包使用 `TerrainPackPort`。它是下面这些字段的结构类型：
-
-```ts
-interface TerrainPackPort {
-  readonly image?: (ref: AssetRef) => Promise<unknown>
-  readonly model?: (ref: AssetRef) => Promise<unknown>
-  readonly json?: (ref: AssetRef) => Promise<unknown>
-  readonly release: (ref: AssetRef, kind?: RendererAssetKind) => void
-}
-```
-
-`RendererResourcePort` 可以直接传给地面的 `resources`，它提供 `image`、`model` 和 `release`。它没有 `json`，所以预制件表（`gatePrefab`）与 `tiles.json` 不会被加载。需要它们时，宿主额外提供 `json`：
-
-```ts
-const resources = { ...port, json: (ref) => loadJson(port.url(ref)) }
-```
-
-`json` 不进入缓存，由宿主自己决定是否缓存。
-
-图片、模型和 JSON 的对应关系见 [地面](./ground.md#地形资源包)。
+地面通过端口的 `image`、`model`、`json` 与 `release` 加载地形资源包，`RendererResourcePort` 可以直接传给地面的 `resources`。图片、模型和 JSON 的对应关系见 [地面](./ground.md#地形资源包)。

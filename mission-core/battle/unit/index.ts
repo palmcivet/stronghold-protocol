@@ -97,7 +97,7 @@ export interface UnitState {
   readonly attackShape: AttackShape | null
   /** 已经飞出、还没回到手上的回旋物。计时器读这个数，攻击形状不因此停手。 */
   boomerangsOut: number
-  /** 再部署清零回旋时加一。旧的飞行回程对不上这个数就不改计数。 */
+  /** 再部署清零回旋时加一。回程的世代对不上这个数时不改计数。 */
   boomerangEpoch: number
   /** 还没走完的推、拉、恐惧或诱导。倒地时先写到落点。 */
   shiftRun: ShiftRun | null

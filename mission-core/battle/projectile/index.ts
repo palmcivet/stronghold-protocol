@@ -23,7 +23,7 @@ export interface ProjectileFlight {
   age: number
   retain: boolean
   attack: ProjectileImpact | null
-  /** 发出时来源的回旋世代。再部署加一后，旧的回程不再改计数。 */
+  /** 发出时来源的回旋世代。再部署加一后，世代对不上的回程不改计数。 */
   epoch: number
 }
 

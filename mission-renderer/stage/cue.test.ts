@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest"
+import type { AssetKey } from "arknights-assets-catalog"
 import type { BattleEvent, UnitSnapshot } from "arknights-mission-core"
 import { audioCueFor, effectCueFor } from "./cue.js"
 
-const asset = { id: "sfx-hit", kind: "audio" as const, address: "/sfx/hit.mp3", fallbackId: null }
+const asset: AssetKey = "audio:sfx/battle/b_hit"
 
 function event(type: string, data: Readonly<Record<string, unknown>> = {}): BattleEvent {
   return { tick: 1, type, data }
@@ -49,7 +50,7 @@ describe("audio cues", () => {
     expect(effectCueFor(down, [])?.type).toBe("downed")
   })
 
-  it("attaches the caller resource handle to an audio cue", () => {
+  it("attaches the caller asset key to an audio cue", () => {
     expect(audioCueFor(event("damaged", { unitId: "guard", targetId: "enemy", amount: 12 }), () => asset)).toEqual({
       type: "damage",
       eventType: "damaged",

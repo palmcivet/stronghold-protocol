@@ -1,0 +1,1000 @@
+{
+  "version": 1,
+  "hash": "7ae1d03466cb",
+  "generator": "tools/fetch-assets.mjs",
+  "stats": {
+    "files": 7969,
+    "bytes": 485061859,
+    "chars": 209,
+    "charsWithBack": 206,
+    "enemies": 252,
+    "enemiesWithSpine": 251,
+    "tokens": 58,
+    "tokensWithSpine": 13,
+    "spineModels": 671,
+    "bonds": 23,
+    "items": 59,
+    "bands": 40,
+    "skills": 522,
+    "modules": 131,
+    "ui": 602,
+    "sfxUnits": 483,
+    "voiceChars": 191
+  },
+  "chars": {
+    "char_003_kalts": {
+      "avatar": "/assets/char/avatar/char_003_kalts.png",
+      "avatarE2": "/assets/char/avatar/char_003_kalts_2.png",
+      "portrait": "/assets/char/portrait/char_003_kalts_1.png",
+      "portraitE2": "/assets/char/portrait/char_003_kalts_2.png",
+      "spine": {
+        "front": {
+          "skel": "/assets/spine/op/char_003_kalts/front/char_003_kalts.skel",
+          "atlas": "/assets/spine/op/char_003_kalts/front/char_003_kalts.atlas",
+          "textures": [
+            "/assets/spine/op/char_003_kalts/front/char_003_kalts.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null,
+              "via": "attack",
+              "index": 0,
+              "idle": null
+            },
+            "die": "Die",
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 1,
+                "idle": null
+              },
+              "2": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 2,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1,
+            "Default": 0,
+            "Die": 1,
+            "Idle": 9,
+            "Start": 1
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.433
+            ]
+          },
+          "bounds": {
+            "x": -227.579,
+            "y": -138.244,
+            "width": 532.04,
+            "height": 551.479
+          }
+        },
+        "back": {
+          "skel": "/assets/spine/op/char_003_kalts/back/char_003_kalts.skel",
+          "atlas": "/assets/spine/op/char_003_kalts/back/char_003_kalts.atlas",
+          "textures": [
+            "/assets/spine/op/char_003_kalts/back/char_003_kalts.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null,
+              "via": "attack",
+              "index": 0,
+              "idle": null
+            },
+            "die": null,
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 1,
+                "idle": null
+              },
+              "2": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 2,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1,
+            "Default": 0,
+            "Idle": 9,
+            "Start": 1
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.433
+            ]
+          },
+          "bounds": {
+            "x": 410.785,
+            "y": -2.26,
+            "width": 531.785,
+            "height": 416.492
+          }
+        }
+      }
+    },
+    "char_010_chen": {
+      "avatar": "/assets/char/avatar/char_010_chen.png",
+      "avatarE2": "/assets/char/avatar/char_010_chen_2.png",
+      "portrait": "/assets/char/portrait/char_010_chen_1.png",
+      "portraitE2": "/assets/char/portrait/char_010_chen_2.png",
+      "spine": {
+        "front": {
+          "skel": "/assets/spine/op/char_010_chen/front/char_010_chen.skel",
+          "atlas": "/assets/spine/op/char_010_chen/front/char_010_chen.atlas",
+          "textures": [
+            "/assets/spine/op/char_010_chen/front/char_010_chen.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Skill",
+              "end": "Skill_End",
+              "index": 0,
+              "idle": null
+            },
+            "die": "Die",
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Skill",
+                "end": "Skill_End",
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Skill_2",
+                "end": null,
+                "index": 1,
+                "idle": null
+              },
+              "2": {
+                "begin": null,
+                "loop": "Skill_3",
+                "end": null,
+                "index": 2,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1.5,
+            "Attack_End": 0.6,
+            "Attack_Pre": 0.6,
+            "Default": 0,
+            "Die": 1,
+            "Idle": 2,
+            "Skill": 1,
+            "Skill_2": 1.167,
+            "Skill_3": 2.933,
+            "Skill_End": 0.6,
+            "Skill_End_2": 0.6,
+            "Skill_End_3": 0.3,
+            "Start": 0.833
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.433,
+              1
+            ],
+            "Skill": [
+              0.467
+            ],
+            "Skill_2": [
+              0.467
+            ],
+            "Skill_3": [
+              0.6,
+              0.8,
+              1,
+              1.2,
+              1.4,
+              1.6,
+              1.8,
+              2,
+              2.2,
+              2.833,
+              2.933
+            ]
+          },
+          "bounds": {
+            "x": -322.335,
+            "y": -109.274,
+            "width": 663.549,
+            "height": 524.806
+          }
+        },
+        "back": {
+          "skel": "/assets/spine/op/char_010_chen/back/char_010_chen.skel",
+          "atlas": "/assets/spine/op/char_010_chen/back/char_010_chen.atlas",
+          "textures": [
+            "/assets/spine/op/char_010_chen/back/char_010_chen.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Skill",
+              "end": "Skill_End",
+              "index": 0,
+              "idle": null
+            },
+            "die": null,
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Skill",
+                "end": "Skill_End",
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Skill",
+                "end": "Skill_End",
+                "index": 1,
+                "idle": null
+              },
+              "2": {
+                "begin": null,
+                "loop": "Skill",
+                "end": "Skill_End",
+                "index": 2,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1.5,
+            "Attack_End": 0.6,
+            "Attack_Pre": 0.6,
+            "Default": 0,
+            "Idle": 2,
+            "Skill": 1,
+            "Skill_End": 0.6,
+            "Start": 0.833
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.433,
+              1
+            ],
+            "Skill": [
+              0.467
+            ]
+          },
+          "bounds": {
+            "x": -173.082,
+            "y": -13.829,
+            "width": 315.887,
+            "height": 404.623
+          }
+        }
+      }
+    },
+    "char_600_cpione": {
+      "avatar": "/assets/char/avatar/char_600_cpione.png",
+      "portrait": "/assets/char/portrait/char_600_cpione_1.png",
+      "spine": {
+        "front": {
+          "skel": "/assets/spine/op/char_600_cpione/front/char_600_cpione.skel",
+          "atlas": "/assets/spine/op/char_600_cpione/front/char_600_cpione.atlas",
+          "textures": [
+            "/assets/spine/op/char_600_cpione/front/char_600_cpione.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null,
+              "via": "attack",
+              "index": 2,
+              "idle": null
+            },
+            "die": "Die",
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 1,
+                "idle": null
+              },
+              "2": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 2,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1,
+            "Default": 0,
+            "Die": 1,
+            "Idle": 2,
+            "Start": 1
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.5
+            ]
+          },
+          "bounds": {
+            "x": -139.612,
+            "y": -1.149,
+            "width": 371.986,
+            "height": 366.019
+          }
+        },
+        "back": {
+          "skel": "/assets/spine/op/char_600_cpione/back/char_600_cpione.skel",
+          "atlas": "/assets/spine/op/char_600_cpione/back/char_600_cpione.atlas",
+          "textures": [
+            "/assets/spine/op/char_600_cpione/back/char_600_cpione.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null,
+              "via": "attack",
+              "index": 2,
+              "idle": null
+            },
+            "die": null,
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 1,
+                "idle": null
+              },
+              "2": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 2,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1,
+            "Default": 0,
+            "Idle": 2,
+            "Start": 1
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.5
+            ]
+          },
+          "bounds": {
+            "x": -158.167,
+            "y": -2.157,
+            "width": 389.986,
+            "height": 366.027
+          }
+        }
+      }
+    }
+  },
+  "enemies": {
+    "enemy_10001_trslim": {
+      "icon": "/assets/enemy/icon/enemy_10001_trslim.png",
+      "spine": {
+        "skel": "/assets/spine/enemy/enemy_10001_trslim/enemy_10001_trslim.skel",
+        "atlas": "/assets/spine/enemy/enemy_10001_trslim/enemy_10001_trslim.atlas",
+        "textures": [
+          "/assets/spine/enemy/enemy_10001_trslim/enemy_10001_trslim.png"
+        ],
+        "pma": true,
+        "anims": {
+          "idle": "Idle_A",
+          "deploy": "Idle_A",
+          "attack": {
+            "begin": null,
+            "loop": "Attack_A",
+            "end": null,
+            "via": "attackAny"
+          },
+          "attackDown": null,
+          "skill": {
+            "begin": null,
+            "loop": "Skill_Begin",
+            "end": null,
+            "index": 0,
+            "idle": null
+          },
+          "die": "Die_A",
+          "move": {
+            "begin": null,
+            "loop": "Move_A",
+            "end": null
+          },
+          "stun": null
+        },
+        "animations": {
+          "Attack_A": 1.067,
+          "Attack_B": 1.067,
+          "Default": 0,
+          "Die_A": 1,
+          "Die_B": 1,
+          "Idle_A": 2,
+          "Idle_B": 2,
+          "Move_A": 1,
+          "Move_B": 0.5,
+          "Skill_Begin": 1
+        },
+        "events": [
+          "OnAttack"
+        ],
+        "hits": {
+          "Attack_A": [
+            0.533
+          ],
+          "Attack_B": [
+            0.533
+          ]
+        },
+        "bounds": null
+      }
+    },
+    "enemy_1305_mhslim": {
+      "icon": "/assets/enemy/icon/enemy_1305_mhslim.png",
+      "spineAliasOf": "enemy_1007_slime",
+      "spine": {
+        "skel": "/assets/spine/enemy/enemy_1007_slime/enemy_1007_slime.skel",
+        "atlas": "/assets/spine/enemy/enemy_1007_slime/enemy_1007_slime.atlas",
+        "textures": [
+          "/assets/spine/enemy/enemy_1007_slime/enemy_1007_slime.png"
+        ],
+        "pma": true,
+        "anims": {
+          "idle": "Idle",
+          "deploy": "Idle",
+          "attack": {
+            "begin": null,
+            "loop": "Attack",
+            "end": null
+          },
+          "attackDown": null,
+          "skill": {
+            "begin": null,
+            "loop": "Attack",
+            "end": null,
+            "via": "attack",
+            "index": 0,
+            "idle": null
+          },
+          "die": "Die",
+          "move": {
+            "begin": "Move_Begin",
+            "loop": "Move_Loop",
+            "end": "Move_End"
+          },
+          "stun": null
+        },
+        "animations": {
+          "Attack": 0.767,
+          "Default": 0,
+          "Die": 0.5,
+          "Idle": 2,
+          "Move_Begin": 0.5,
+          "Move_End": 0.5,
+          "Move_Loop": 2
+        },
+        "events": [
+          "OnAttack"
+        ],
+        "hits": {
+          "Attack": [
+            0.333
+          ]
+        },
+        "bounds": {
+          "x": -135.754,
+          "y": -2.309,
+          "width": 286.507,
+          "height": 185.003
+        }
+      },
+      "spineLocal": {
+        "group": "spine/enemy/enemy_1305_mhslim",
+        "skel": "enemy_1305_mhslim.skel",
+        "atlas": "enemy_1305_mhslim.atlas",
+        "textures": [
+          "enemy_1305_mhslim.png"
+        ],
+        "pma": true,
+        "anims": {
+          "idle": "Idle",
+          "deploy": "Idle",
+          "attack": {
+            "begin": null,
+            "loop": "Attack",
+            "end": null
+          },
+          "attackDown": null,
+          "skill": {
+            "begin": null,
+            "loop": "Attack",
+            "end": null,
+            "via": "attack",
+            "index": 0,
+            "idle": null
+          },
+          "die": "Die",
+          "move": {
+            "begin": null,
+            "loop": "Move",
+            "end": null
+          },
+          "stun": null
+        },
+        "animations": {
+          "Attack": 1,
+          "Default": 0,
+          "Die": 1,
+          "Idle": 2,
+          "Move": 1
+        },
+        "events": [
+          "OnAttack"
+        ],
+        "hits": {
+          "Attack": [
+            0.667
+          ]
+        },
+        "bounds": {
+          "x": -118.121,
+          "y": -1.969,
+          "width": 230,
+          "height": 164
+        }
+      }
+    },
+    "enemy_9016_acstmr": {
+      "icon": "/assets/enemy/icon/enemy_9016_acstmr.png"
+    }
+  },
+  "tokens": {
+    "token_10000_silent_healrb": {
+      "owner": "char_108_silent",
+      "avatar": "/assets/token/avatar/token_10000_silent_healrb.png",
+      "spine": {
+        "skel": "/assets/spine/token/token_10000_silent_healrb/token_10000_silent_healrb.skel",
+        "atlas": "/assets/spine/token/token_10000_silent_healrb/token_10000_silent_healrb.atlas",
+        "textures": [
+          "/assets/spine/token/token_10000_silent_healrb/token_10000_silent_healrb.png"
+        ],
+        "pma": false,
+        "anims": {
+          "idle": "Idle",
+          "deploy": "Idle",
+          "attack": {
+            "begin": null,
+            "loop": "Idle",
+            "end": null,
+            "via": "idle"
+          },
+          "attackDown": null,
+          "skill": {
+            "begin": null,
+            "loop": "Idle",
+            "end": null,
+            "via": "attack",
+            "index": 0,
+            "idle": null
+          },
+          "die": null,
+          "move": null,
+          "stun": null
+        },
+        "animations": {
+          "Default": 0,
+          "Idle": 1
+        },
+        "events": [],
+        "hits": {},
+        "bounds": {
+          "x": 121.096,
+          "y": 358,
+          "width": 226.011,
+          "height": 119.992
+        }
+      }
+    },
+    "token_10006_vodfox_doll": {
+      "owner": "char_254_vodfox",
+      "avatar": "/assets/token/avatar/token_10006_vodfox_doll.png",
+      "spineVariant": "token_10006_vodfox_doll_witch_2",
+      "spine": {
+        "skel": "/assets/spine/token/token_10006_vodfox_doll/token_10006_vodfox_doll_witch_2.skel",
+        "atlas": "/assets/spine/token/token_10006_vodfox_doll/token_10006_vodfox_doll_witch_2.atlas",
+        "textures": [
+          "/assets/spine/token/token_10006_vodfox_doll/token_10006_vodfox_doll_witch_2.png"
+        ],
+        "pma": false,
+        "anims": {
+          "idle": "Idle",
+          "deploy": "Start",
+          "attack": {
+            "begin": null,
+            "loop": "Idle",
+            "end": null,
+            "via": "idle"
+          },
+          "attackDown": null,
+          "skill": {
+            "begin": null,
+            "loop": "Idle",
+            "end": null,
+            "via": "attack",
+            "index": 0,
+            "idle": null
+          },
+          "die": "Die",
+          "move": null,
+          "stun": null
+        },
+        "animations": {
+          "Default": 0,
+          "Die": 0.667,
+          "Idle": 0.933,
+          "Start": 1
+        },
+        "events": [
+          "OnAttack",
+          "OnStart"
+        ],
+        "hits": {},
+        "bounds": {
+          "x": -162.531,
+          "y": 2.667,
+          "width": 230.759,
+          "height": 187.717
+        }
+      }
+    },
+    "token_10002_kalts_mon3tr": {
+      "avatar": "/assets/token/avatar/token_10002_kalts_mon3tr.png",
+      "spineLocal": {
+        "group": "spine/token/token_10002_kalts_mon3tr",
+        "skel": "token_10002_kalts_mon3tr.skel",
+        "atlas": "token_10002_kalts_mon3tr.atlas",
+        "textures": [
+          "token_10002_kalts_mon3tr.png"
+        ],
+        "pma": true,
+        "anims": {
+          "idle": "Idle",
+          "deploy": "Start",
+          "attack": {
+            "begin": null,
+            "loop": "Attack",
+            "end": null
+          },
+          "attackDown": null,
+          "skill": {
+            "begin": null,
+            "loop": "Skill",
+            "end": null,
+            "index": 0,
+            "idle": null
+          },
+          "die": "Die",
+          "move": null,
+          "stun": null
+        },
+        "animations": {
+          "Attack": 0.933,
+          "Default": 0,
+          "Die": 1,
+          "Idle": 1.333,
+          "Skill": 1,
+          "Skill_2": 1.267,
+          "Start": 1.667
+        },
+        "events": [
+          "OnAttack",
+          "OnStart"
+        ],
+        "hits": {
+          "Attack": [
+            0.233
+          ],
+          "Skill": [
+            0.367
+          ],
+          "Skill_2": [
+            0.667
+          ]
+        },
+        "bounds": {
+          "x": -518.63,
+          "y": 13.1,
+          "width": 744.033,
+          "height": 561.75
+        }
+      }
+    }
+  },
+  "bonds": {
+    "yanShip": "/assets/bond/yanShip.png"
+  },
+  "items": {
+    "trap_1041_acarm041": "/assets/item/trap_1041_acarm041.png"
+  },
+  "bands": {
+    "band_bldsk": "/assets/band/band_bldsk.png"
+  },
+  "skills": {
+    "skchr_kalts_1": "/assets/skill/skchr_kalts_1.png",
+    "skcom_powerstrike[3]": "/assets/skill/skcom_powerstrike_3_.png"
+  },
+  "skillsById": {
+    "skchr_kalts_1": "skchr_kalts_1",
+    "skchr_huang_1": "skcom_powerstrike[3]"
+  },
+  "modules": {
+    "WAH-Y": "/assets/module/wah-y.png"
+  },
+  "ui": {
+    "garrisonTypeIcon/icon_battle": "/assets/ui/garrisonTypeIcon/icon_battle.png",
+    "garrisonTypeIcon/icon_bond": "/assets/ui/garrisonTypeIcon/icon_bond.png"
+  },
+  "prof": {
+    "icon": {
+      "caster": "/assets/prof/icon_caster.png",
+      "tank": "/assets/prof/icon_tank.png"
+    },
+    "large": {
+      "caster": "/assets/prof/large_caster.png"
+    },
+    "battlecard": {
+      "caster": "/assets/prof/battlecard_caster.png"
+    },
+    "sub": {
+      "fastshot": "/assets/prof/sub/fastshot.png"
+    }
+  },
+  "audio": {
+    "bgm": {
+      "lobby": {
+        "loop": "/assets/audio/bgm/m_sys_act1autochess_loop.mp3",
+        "intro": "/assets/audio/bgm/m_sys_act1autochess_intro.mp3"
+      },
+      "combatAlts": [
+        {
+          "loop": "/assets/audio/bgm/m_bat_kazimierz2_1_loop.mp3",
+          "intro": "/assets/audio/bgm/m_bat_kazimierz2_1_intro.mp3"
+        }
+      ]
+    },
+    "bossBgm": {
+      "boss_1": {
+        "loop": "/assets/audio/bgm/m_bat_ancestor_loop.mp3"
+      }
+    },
+    "voice": {
+      "char_102_texas": {
+        "start": "/assets/audio/voice/cn/char_102_texas/cn_019.mp3",
+        "select": [
+          "/assets/audio/voice/cn/char_102_texas/cn_021.mp3",
+          "/assets/audio/voice/cn/char_102_texas/cn_022.mp3"
+        ],
+        "skill1": "/assets/audio/voice/cn/char_102_texas/cn_025.mp3"
+      }
+    },
+    "sfx": {
+      "ui": {
+        "click": "/assets/audio/sfx/general/g_ui/g_ui_btn_h.mp3",
+        "income": "/assets/audio/sfx/customse/act1autochess/act1autochess_b_ui_getmoney.mp3"
+      },
+      "battle": {
+        "deploy": "/assets/audio/sfx/battle/b_char/b_char_set.mp3",
+        "enemyHit": "/assets/audio/sfx/enemy/e_imp/e_imp_general_w.mp3"
+      },
+      "units": {
+        "char_003_kalts": {
+          "attack": "/assets/audio/sfx/player/p_atk/p_atk_healpistol_n.mp3",
+          "skill": "/assets/audio/sfx/battle/b_char/b_char_defboost.mp3",
+          "skills": {
+            "0": "/assets/audio/sfx/battle/b_char/b_char_defboost.mp3",
+            "1": "/assets/audio/sfx/battle/b_char/b_char_atkboost.mp3"
+          }
+        },
+        "char_1026_gvial2": {
+          "hit": "/assets/audio/sfx/player/p_imp/p_imp_crocsaw_n.mp3",
+          "skill": "/assets/audio/sfx/battle/b_char/b_char_atkboost.mp3",
+          "skills": {
+            "0": "/assets/audio/sfx/battle/b_char/b_char_atkboost.mp3",
+            "1": "/assets/audio/sfx/battle/b_char/b_char_atkboost.mp3",
+            "2": "/assets/audio/sfx/battle/b_char/b_char_atkboost.mp3"
+          },
+          "mix": {
+            "hit": {
+              "vol": 1.5
+            }
+          }
+        },
+        "token_10071_aglna2_agairp": {
+          "die": "/assets/audio/sfx/ambience/a_bat/a_bat_arngmkdpr.mp3",
+          "born": "/assets/audio/sfx/ambience/a_bat/a_bat_arngmkpr.mp3"
+        }
+      }
+    }
+  },
+  "fonts": {
+    "css": "/fonts/fonts.css",
+    "faces": {
+      "bender-regular": {
+        "family": "Bender",
+        "weight": 400,
+        "original": "/fonts/bender-regular.otf",
+        "woff2": "/fonts/bender-regular.woff2"
+      },
+      "novecento-wide-normal": {
+        "family": "Novecento Wide",
+        "weight": 400,
+        "original": "/fonts/novecento-wide-normal.otf",
+        "woff2": "/fonts/novecento-wide-normal.woff2"
+      }
+    }
+  }
+}

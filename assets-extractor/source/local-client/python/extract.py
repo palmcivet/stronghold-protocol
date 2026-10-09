@@ -28,7 +28,7 @@ aklz4.py registers a decoder for it. This script pulls the art the web sources l
     the manifest lists the copy
 
 Usage:
-  extract.py [--game <AB root>] [--out product/media] [--only <subdir prefix>]
+  extract.py [--game <AB root>] [--out <dir>] [--only <subdir prefix>]
   extract.py --print-jobs     (the job table as JSON; needs no dependencies)
   extract.py --webp           (only the WebP copies, from the PNGs already extracted —
                                                           e.g. the local art copied from a release bundle; needs Pillow)
@@ -135,7 +135,7 @@ DERIVED = [
 # The board textures every player downloads when a match shows the 3D board (public/js/render/board3d/load.js
 # PACK_IMAGES; D / common_D / BG also feed the 2D board art, render/boardArt.js): (output subdir, name, mode). A WebP
 # copy is written next to the PNG and the manifest lists the copy instead (≈ 6.7 MB → 2.0 MB per cold start); the PNG
-# stays for app/data/compiler/scripts/board-atlas.ts and setup's check. 'lossy' = colour maps at quality 95 with the alpha lossless
+# stays for app/data/compiler/media/derive/board/atlas.ts and setup's check. 'lossy' = colour maps at quality 95 with the alpha lossless
 # and the RGB under transparent texels kept (`exact`: the board material is opaque and samples it); 'lossless' =
 # normal and data maps, whose channels hold independent values that lossy WebP's chroma subsampling would mix (a
 # normal map ends up tens of degrees off). A Pillow without WebP support keeps the PNG.
@@ -623,7 +623,8 @@ def export_enemy_spines(ab_root, out_root, manifest, log, ids=None):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--game', help='AssetBundle root (…/StreamingAssets/AB/Windows or …/Documents/Bundles)')
-    ap.add_argument('--out', default=str(ROOT.parent / 'assets-catalog/product/media'))
+    ap.add_argument('--out', default=str(ROOT / '.cache/assets/sources/local-client/files'),
+                    help='output directory (default: .cache/assets/sources/local-client/files under the package root)')
     ap.add_argument('--only', action='append', default=[], metavar='SUBDIR',
                     help='only run the jobs whose output subdir starts with this prefix (repeatable), e.g. emoticon')
     ap.add_argument('--print-jobs', action='store_true', help='print the job table as JSON and exit')

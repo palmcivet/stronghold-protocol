@@ -1,10 +1,21 @@
 import { access, mkdir, readFile, readdir, rename, writeFile } from "node:fs/promises"
 import { dirname } from "node:path"
-import { BuildReadError } from "./build-error.js"
-import type { BuildFiles } from "./build-files.js"
+import { BuildReadError } from "#port/build-error.js"
+import type { BuildFiles } from "#port/build-files.js"
 
 function fail(path: string, cause: unknown): never {
   throw new BuildReadError(path, cause instanceof Error ? cause.message : String(cause))
+}
+
+async function writeAtomic(path: string, data: string | Uint8Array): Promise<void> {
+  try {
+    await mkdir(dirname(path), { recursive: true })
+    const temporary = `${path}.tmp-${process.pid}`
+    await writeFile(temporary, data)
+    await rename(temporary, path)
+  } catch (cause) {
+    fail(path, cause)
+  }
 }
 
 export const nodeBuildFiles: BuildFiles = {
@@ -22,16 +33,8 @@ export const nodeBuildFiles: BuildFiles = {
       fail(path, cause)
     }
   },
-  async writeTextAtomic(path, text) {
-    try {
-      await mkdir(dirname(path), { recursive: true })
-      const temporary = `${path}.tmp-${process.pid}`
-      await writeFile(temporary, text)
-      await rename(temporary, path)
-    } catch (cause) {
-      fail(path, cause)
-    }
-  },
+  writeTextAtomic: writeAtomic,
+  writeBytesAtomic: writeAtomic,
   async exists(path) {
     try {
       await access(path)

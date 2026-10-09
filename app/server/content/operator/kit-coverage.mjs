@@ -6,8 +6,9 @@
 import fs from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
+import { dataWorkspace } from "@alliance/data/workspace"
 
-const PACKET = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../product/season/act2autochess/chess.json")
+const PACKET = path.join(dataWorkspace().seasonDir("act2autochess"), "chess.json")
 const USAGE = "usage: node kit-coverage.mjs [--json] [--missing] [--tier N] [--strict]"
 
 /** `${chessId}:${skillId}` pairs with a hand-authored spec. */

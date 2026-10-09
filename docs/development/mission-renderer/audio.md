@@ -37,7 +37,7 @@ interface MissionAudioCue {
   readonly eventType: string
   readonly unitId?: string
   readonly targetId?: string
-  readonly asset?: AssetRef
+  readonly asset?: AssetKey
 }
 ```
 
@@ -69,9 +69,9 @@ interface MissionAudioCue {
 ## 资源句柄
 
 ```ts
-type EffectAudioFor = (event: BattleEvent, type: MissionAudioCue["type"]) => AssetRef | null
+type EffectAudioFor = (event: BattleEvent, type: MissionAudioCue["type"]) => AssetKey | null
 ```
 
-`audioCueFor(event, audioFor)` 调用 `audioFor` 得到资源引用，并放入 `asset`。`audioFor` 返回 `null` 时，线索不带 `asset`。
+`audioCueFor(event, audioFor)` 调用 `audioFor` 得到资源键，并放入 `asset`。`audioFor` 返回 `null` 时，线索不带 `asset`。
 
 舞台内部调用 `effectCueFor` 时不传入 `audioFor`，所以舞台发出的线索没有 `asset`。宿主需要资源时，自行按 `eventType` 或 `type` 查找。

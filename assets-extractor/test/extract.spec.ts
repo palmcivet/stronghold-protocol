@@ -3,18 +3,58 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { expect, test } from "vitest"
-import { extractorWorkspace } from "#workspace.js"
+import { extractorPackageRoot } from "#package-root.js"
 
-const workspace = extractorWorkspace()
-const packageRoot = workspace.root
-const repoRoot = workspace.workspaceRoot
+const packageRoot = extractorPackageRoot()
+const repoRoot = join(packageRoot, "..")
+const mediaDir = join(packageRoot, ".cache", "assets", "sources", "local-client", "files")
 const tool = join(packageRoot, "source/local-client/python")
 const env = { ...process.env, PYTHONDONTWRITEBYTECODE: "1" }
 const python = ["python3", "python"].find((bin) => spawnSync(bin, ["--version"]).status === 0)
 const pillow = !!python && spawnSync(python, ["-c", "import PIL"], { env }).status === 0
 const webp = pillow && spawnSync(python, ["-c", "import sys; from PIL import features; sys.exit(0 if features.check('webp') else 1)"], { env }).status === 0
 
-const manifest = null
+interface LocalEntry {
+  readonly path?: string
+  readonly kind?: string
+  readonly count?: number
+  readonly verts?: number
+  readonly webp?: string
+}
+
+type LocalGroup = Readonly<Record<string, LocalEntry>>
+
+interface LocalManifest {
+  readonly groups: Readonly<Record<string, LocalGroup>>
+}
+
+const OPTIONAL_FIELDS = { path: "string", kind: "string", count: "number", verts: "number", webp: "string" } as const
+
+function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+}
+
+function isLocalEntry(value: unknown): value is LocalEntry {
+  if (!isRecord(value)) return false
+  return Object.entries(OPTIONAL_FIELDS).every(([field, type]) => value[field] === undefined || typeof value[field] === type)
+}
+
+function isLocalGroup(value: unknown): value is LocalGroup {
+  return isRecord(value) && Object.values(value).every(isLocalEntry)
+}
+
+function isLocalManifest(value: unknown): value is LocalManifest {
+  return isRecord(value) && isRecord(value["groups"]) && Object.values(value["groups"]).every(isLocalGroup)
+}
+
+/** The local-client manifest (`groups.<subdir>.<name>`) beside the extracted files, or null when it is absent or malformed. */
+function readLocalManifest(path: string): LocalManifest | null {
+  if (!existsSync(path)) return null
+  const value: unknown = JSON.parse(readFileSync(path, "utf8"))
+  return isLocalManifest(value) ? value : null
+}
+
+const manifest = readLocalManifest(join(mediaDir, "local-assets.json"))
 
 function runPython(code: string): unknown {
   const src = `import sys, json\nfrom types import SimpleNamespace as NS\nsys.path.insert(0, ${JSON.stringify(tool)})\nimport extract as e\n${code}`
@@ -26,7 +66,7 @@ function runPython(code: string): unknown {
 function onDisk(assetPath: string): string {
   const decoded = decodeURIComponent(assetPath).replace(/^\//, "")
   const rel = decoded.startsWith("assets/") ? decoded.slice("assets/".length) : decoded
-  return join(workspace.mediaDir, rel)
+  return join(mediaDir, rel)
 }
 
 test.skipIf(!python)("job table exports map materials and board meshes with their prefabs", () => {
@@ -249,7 +289,7 @@ print(json.dumps([e.prefab_node(go)['mesh'], e.prefab_node(go, {42: 'Start_back_
   expect(out).toEqual(["Start_back", "Start_back_42", "Start_back"])
 })
 
-const meshFiles = existsSync(join(workspace.mediaDir, "mesh"))
+const meshFiles = existsSync(join(mediaDir, "mesh"))
 const mapGroup = manifest?.groups?.["map/autochess"]
 
 test.skipIf(!mapGroup?.["materials"])("map/autochess materials.json matches the extracted group", () => {
@@ -317,7 +357,7 @@ test.skipIf(!python)("enemy scale groups drop the standard and the enemy_ prefix
   expect(enemy).toContain('[0.16, ["1005_yokai_3"]]')
 })
 
-const fxFiles = existsSync(join(workspace.mediaDir, "map/fx"))
+const fxFiles = existsSync(join(mediaDir, "map/fx"))
 
 test.skipIf(!manifest?.groups?.["map/fx"] || !fxFiles)("webp copies listed by the local manifest sit beside their pngs", () => {
   const groups = manifest?.groups ?? {}

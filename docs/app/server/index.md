@@ -7,7 +7,7 @@ description: 对局进程对外的公开接口。浏览器和外壳通过这些�
 
 对局进程对浏览器和外壳提供两项操作：`GET /healthz`，以及路径 `/ws` 上的 WebSocket。页面、赛季 JSON 和媒体由站点提供，不在这份契约里。
 
-线路上的事实来自当前实现：`server/index.js` 的健康检查与升级，`server/net.js` 的会话，`shared/protocol.js` 的消息校验，`server/lobby.js` 的房间，`server/match/Match.js` 的对局与作战帧。消息名和字段以下面各页为准，供以后写成接口规格。
+线路上的事实来自当前实现：`server/index.js` 的健康检查与升级，`server/net.js` 的会话，`shared/protocol.js` 的消息校验，`server/lobby.js` 的房间，`server/match/Match.js` 的对局与作战帧。消息名和字段以下面各页为准。
 
 ## 帧
 

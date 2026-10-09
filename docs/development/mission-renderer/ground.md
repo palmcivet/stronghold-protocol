@@ -12,7 +12,7 @@ import { createTerrainStage } from "arknights-mission-renderer"
 
 const terrain = createTerrainStage({
   resources: port,
-  pack: { images: { D: diffuseRef } },
+  pack: { images: { D: "texture:map/autochess/TX_autochessi_D" } },
   pixelRatio: window.devicePixelRatio,
   onMode: (mode) => console.log(mode),
 })
@@ -27,7 +27,7 @@ interface TerrainStageOptions {
   readonly available?: boolean
   readonly tileSize?: number
   readonly pixelRatio?: number
-  readonly resources?: TerrainPackPort
+  readonly resources?: Pick<RendererResourcePort, "image" | "model" | "json" | "release">
   readonly pack?: TerrainPackRequest
   readonly view?: TerrainRenderView | null
   readonly onMode?: (mode: TerrainMode) => void
@@ -100,12 +100,12 @@ interface TerrainStage {
 
 ```ts
 interface TerrainPackRequest {
-  readonly images: Partial<Record<TerrainImageSlot, AssetRef>>
-  readonly meshes?: Partial<Record<TerrainMeshSlot, AssetRef>>
-  readonly gates?: Partial<Record<TerrainGateSlot, AssetRef>>
-  readonly gatePrefab?: AssetRef
-  readonly resolveMesh?: (name: string) => AssetRef | null
-  readonly tiles?: AssetRef
+  readonly images: Partial<Record<TerrainImageSlot, AssetKey>>
+  readonly meshes?: Partial<Record<TerrainMeshSlot, AssetKey>>
+  readonly gates?: Partial<Record<TerrainGateSlot, AssetKey>>
+  readonly gatePrefab?: AssetKey
+  readonly resolveMesh?: (name: string) => AssetKey | null
+  readonly tiles?: AssetKey
 }
 ```
 
@@ -115,15 +115,15 @@ interface TerrainPackRequest {
 | `meshes` | 模型，键见 `TERRAIN_MESH_SLOTS`：`crate`、`blower`、`bgPlane` |
 | `gates` | 门与目标的部件模型，键见 `TERRAIN_GATE_NODES`：`startDown`、`startUp`、`startBack`、`endDown`、`endUp` |
 | `gatePrefab` | 预制件表（JSON）。把节点名映射到模型名，用于 `gates` 中没有给出的部件 |
-| `resolveMesh` | 把预制件表里的模型名映射为资源引用 |
-| `tiles` | `tiles.json`。其中的 `board3d` 段替换表面在图集中的矩形 |
+| `resolveMesh` | 把预制件表里的模型名映射为资源键 |
+| `tiles` | 棋盘 tiles（`json:board/<theme>/tiles`）。其中的 `board3d` 段替换表面在图集中的矩形 |
 
 `TERRAIN_GATE_NODES` 把部件槽位映射到预制件的节点名，例如 `startDown` 对应 `Start_down`。`startBack` 只在 `[opt]start_box` 下的节点上生效。
 
 ### 加载规则
 
 - `images.D` 加载失败，或加载到的值不是 Three.js 的 `Texture`，整个资源包作废，地面隐藏。
-- 其他图片、模型、预制件表、`tiles.json` 各自失败时只影响自己对应的部分，其余照常。
+- 其他图片、模型、预制件表、棋盘 tiles 各自失败时只影响自己对应的部分，其余照常。
 - 模型可以是 OBJ 文本、已解析的网格，或 Three.js 的 `Object3D`。
 
 ## WebGL 上下文

@@ -1,0 +1,33 @@
+{
+  "name": "stronghold-deployment-client-config",
+  "version": "0.0.0",
+  "private": true,
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./static-policy": {
+      "types": "./dist/static-policy.d.ts",
+      "source": "./static-policy.ts",
+      "import": "./dist/static-policy.js",
+      "default": "./dist/static-policy.js"
+    }
+  },
+  "imports": {
+    "#static-policy.js": {
+      "source": "./static-policy.ts",
+      "default": "./dist/static-policy.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "lint": "tsc --noEmit && tsc -p tsconfig.test.json --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}

@@ -1,6 +1,6 @@
 import { Buffer } from "node:buffer"
 import { join } from "node:path"
-import { BuildReadError, type BuildFiles, type BuildHttp } from "arknights-assets-extractor"
+import { BuildReadError, type BuildFiles } from "arknights-assets-extractor"
 import { seasonPacketDirectory } from "#schema/packet-file.js"
 import { bandBondIds, buildBands } from "#compiler/packet/record/band.js"
 import { buildBonds } from "#compiler/packet/record/bond.js"
@@ -22,13 +22,11 @@ import { buildWaves } from "#compiler/packet/record/wave.js"
 
 export interface CompileOptions {
   readonly seasonId: string
-  readonly refresh: boolean
-  readonly offline: boolean
   readonly quiet: boolean
   readonly noResearch: boolean
   readonly force: boolean
   readonly outDir: string
-  readonly cacheDir: string
+  readonly extractCacheDir: string
   readonly reportPath: string
   readonly researchDir: string
   readonly tuningPath: string
@@ -45,7 +43,7 @@ const PACKET_NAMES: readonly (keyof SeasonFiles)[] = [
   "config", "chess", "bonds", "garrisons", "items", "bands", "effects", "choices", "enemies", "factions", "waves", "stages", "bosses", "tokens",
 ]
 
-export async function compileSeason(catalog: BuildFiles, http: BuildHttp, options: CompileOptions): Promise<CompileResult> {
+export async function compileSeason(catalog: BuildFiles, options: CompileOptions): Promise<CompileResult> {
     try {
       seasonPacketDirectory(options.seasonId)
     } catch (cause) {
@@ -54,14 +52,11 @@ export async function compileSeason(catalog: BuildFiles, http: BuildHttp, option
     const notes = new BuildNotes()
     notes.quiet = options.quiet
     const started = Date.now()
-    const ctx: SeasonContext = await loadContext(catalog, http, {
+    const ctx: SeasonContext = await loadContext(catalog, {
       seasonId: options.seasonId,
-      refresh: options.refresh,
-      offline: options.offline,
       noResearch: options.noResearch,
-      cacheDir: options.cacheDir,
+      extractCacheDir: options.extractCacheDir,
       researchDir: options.researchDir,
-      assetsManifest: join(options.outDir, "assets.json"),
       notes,
     })
     notes.log("building…")
