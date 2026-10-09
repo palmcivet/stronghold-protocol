@@ -4,7 +4,7 @@
 import { createHash } from "node:crypto"
 import { existsSync, statSync } from "node:fs"
 import { join } from "node:path"
-import { assetUrl, mirrorUrl, type DownloadJob, type Downloader } from "arknights-assets-catalog/compile"
+import { assetUrl, mirrorUrl, type DownloadJob, type Downloader } from "arknights-assets-extractor"
 
 export const MANIFEST_VERSION: number = 1
 

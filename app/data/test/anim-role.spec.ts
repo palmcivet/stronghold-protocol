@@ -1,14 +1,14 @@
 import { existsSync, readFileSync } from "node:fs"
 import { join } from "node:path"
-import { roleAnimationNames } from "arknights-assets-catalog/compile"
 import { expect, test } from "vitest"
-import { dataWorkspace } from "#compiler/workspace.js"
+import { dataWorkspace } from "#workspace.js"
+import { roleAnimationNames, type AnimRoles } from "#compiler/media/spine/anim-role.js"
 
 const manifestPath = join(dataWorkspace().seasonDir("act2autochess"), "assets.json")
 const haveManifest = existsSync(manifestPath)
 
 interface SpineSide {
-  readonly anims?: import("arknights-assets-catalog/compile").AnimRoles
+  readonly anims?: AnimRoles
   readonly animations?: Record<string, unknown>
 }
 

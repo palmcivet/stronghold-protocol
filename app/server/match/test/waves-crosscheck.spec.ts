@@ -13,7 +13,7 @@ import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { dataWorkspace } from '@alliance/data/compiler';
+import { dataWorkspace } from '@alliance/data/workspace';
 import { GameData } from '#server/match/mode/index.js';
 import { buildNormalWave, buildBossWave, buildUniteWave, gateOf, previewOf, bountySpawns, withBounties } from '#server/match/fight/wave/index.js';
 import {  createRandom as createRng  } from 'arknights-mission-core';

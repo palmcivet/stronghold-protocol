@@ -1,6 +1,6 @@
 import { join } from "node:path"
 import { defineConfig, type UserConfig } from "vite"
-import { dataWorkspace } from "@alliance/data/compiler"
+import { dataWorkspace } from "@alliance/data/workspace"
 
 const workspace = dataWorkspace()
 const repoRoot = workspace.workspaceRoot

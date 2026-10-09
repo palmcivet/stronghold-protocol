@@ -7,14 +7,18 @@
   "sideEffects": false,
   "exports": {
     "./package.json": "./package.json",
-    "./compiler": {
-      "types": "./dist/compiler/workspace.d.ts",
-      "source": "./compiler/workspace.ts",
-      "import": "./dist/compiler/workspace.js",
-      "default": "./dist/compiler/workspace.js"
+    "./workspace": {
+      "types": "./dist/workspace.d.ts",
+      "source": "./workspace.ts",
+      "import": "./dist/workspace.js",
+      "default": "./dist/workspace.js"
     }
   },
   "imports": {
+    "#workspace.js": {
+      "source": "./workspace.ts",
+      "default": "./dist/workspace.js"
+    },
     "#compiler/*.js": {
       "source": "./compiler/*.ts",
       "default": "./dist/compiler/*.js"
@@ -39,6 +43,7 @@
   },
   "dependencies": {
     "arknights-assets-catalog": "workspace:*",
+    "arknights-assets-extractor": "workspace:*",
     "arknights-mission-core": "workspace:*"
   },
   "devDependencies": {

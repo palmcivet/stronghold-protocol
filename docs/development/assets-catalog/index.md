@@ -7,7 +7,7 @@ description: arknights-assets-catalog 准备可发布的基础媒体目录，并
 
 `arknights-assets-catalog` 负责基础媒体的字节和发布索引。它不关注游戏的模式或战斗规则；调用方决定要哪些文件，再由本包下载、校验、处理并生成 catalog release。
 
-包可以单独成仓库。编译脚本可从 `/compile` 复用下载、缓存、Spine 和字体处理；浏览器或应用客户端从 `/` 根入口复用资源解析、音频和缓存基础设施。
+包的入口 `arknights-assets-catalog` 只包含运行时：资源解析、媒体路由、音频和 Spine 缓存。下载、Spine 与字体的构建处理在 [资源提取](../assets-extractor/index.md) 中，只在构建期使用。
 
 ## 基础资源
 
@@ -21,5 +21,4 @@ description: arknights-assets-catalog 准备可发布的基础媒体目录，并
 
 1. [目录](./layout.md) — 包里每一层做什么。
 2. [运行时](./runtime.md) — 按地址取字节。
-3. [编译](./compiler.md) — 按一份 id 清单把字节准备好。
-4. [设计](./design.md) — 基础字节和模式记录为什么分成两层。
+3. [设计](./design.md) — 基础字节和模式记录为什么分成两层。

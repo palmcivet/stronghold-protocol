@@ -1,18 +1,17 @@
 import { join } from "node:path"
 import { defineConfig } from "vite"
-import { catalogWorkspace } from "arknights-assets-catalog/compile"
-import { dataWorkspace } from "@alliance/data/compiler"
+import { dataWorkspace } from "@alliance/data/workspace"
 import { devResourcesPlugin } from "./vite-plugins"
 
-const dataWorkspaceRoot = dataWorkspace()
-const catalog = catalogWorkspace()
-const repoRoot = dataWorkspaceRoot.workspaceRoot
+const workspace = dataWorkspace()
+const catalog = workspace.catalog
+const repoRoot = workspace.workspaceRoot
 const clientRoot = join(repoRoot, "app", "client")
 
 export default defineConfig({
   root: clientRoot,
   plugins: [devResourcesPlugin({
-    productRoot: dataWorkspaceRoot.productDir,
+    productRoot: workspace.productDir,
     mediaRoot: catalog.mediaDir,
     fontRoot: catalog.fontDir,
   })],

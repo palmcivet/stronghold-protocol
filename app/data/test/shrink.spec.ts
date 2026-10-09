@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, statSync } from "node:fs"
 import { join } from "node:path"
 import { expect, test } from "vitest"
-import { dataWorkspace } from "#compiler/workspace.js"
+import { dataWorkspace } from "#workspace.js"
 import { parseArgs, shrinkGuard } from "#compiler/media/fetch/assets.js"
 import { droppedEntries } from "#compiler/media/fetch/manifest.js"
 

@@ -5,6 +5,8 @@
     { "path": "./mission-core/tsconfig.test.json" },
     { "path": "./assets-catalog" },
     { "path": "./assets-catalog/tsconfig.test.json" },
+    { "path": "./assets-extractor" },
+    { "path": "./assets-extractor/tsconfig.test.json" },
     { "path": "./mission-renderer" },
     { "path": "./mission-renderer/tsconfig.test.json" },
     { "path": "./app/contract" },
