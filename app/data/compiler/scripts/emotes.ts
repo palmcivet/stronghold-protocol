@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-import { fetchCatalogHttp, nodeCatalogFiles } from "arknights-assets-catalog"
+import { fetchBuildHttp, nodeBuildFiles } from "arknights-assets-extractor"
 import { compileEmotes } from "#compiler/media/emote.js"
 
-compileEmotes(nodeCatalogFiles, fetchCatalogHttp, process.argv.slice(2)).then(
+compileEmotes(nodeBuildFiles, fetchBuildHttp, process.argv.slice(2)).then(
   (code) => {
     process.exitCode = code
   },

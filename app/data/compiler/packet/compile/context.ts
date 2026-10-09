@@ -1,6 +1,6 @@
 import { setTimeout as delay } from "node:timers/promises"
 import { join } from "node:path"
-import { CatalogReadError, type CatalogFiles, type CatalogHttp } from "arknights-assets-catalog"
+import { BuildReadError, type BuildFiles, type BuildHttp } from "arknights-assets-extractor"
 import type { BuildNotes } from "#compiler/packet/text/notes.js"
 import { levelPath, naturalCmp, templateIdOf, type GameRecord } from "#compiler/packet/text/parse.js"
 
@@ -47,18 +47,18 @@ export interface LoadInput {
 
 function asObject(value: unknown, path: string): GameRecord {
   if (value !== null && typeof value === "object" && !Array.isArray(value)) return value as GameRecord
-  throw new CatalogReadError(path, "expected a JSON object")
+  throw new BuildReadError(path, "expected a JSON object")
 }
 
 function parseJson(text: string, path: string): unknown {
   try {
     return JSON.parse(text) as unknown
   } catch (cause) {
-    throw new CatalogReadError(path, cause instanceof Error ? cause.message : String(cause))
+    throw new BuildReadError(path, cause instanceof Error ? cause.message : String(cause))
   }
 }
 
-export async function loadContext(files: CatalogFiles, http: CatalogHttp, input: LoadInput): Promise<SeasonContext> {
+export async function loadContext(files: BuildFiles, http: BuildHttp, input: LoadInput): Promise<SeasonContext> {
   const notes = input.notes
   const jsonCache = new Map<string, GameRecord>()
 
@@ -67,7 +67,7 @@ export async function loadContext(files: CatalogFiles, http: CatalogHttp, input:
     if (!input.refresh && (await files.exists(abs))) return abs
     if (input.offline) {
       if (await files.exists(abs)) return abs
-      throw new CatalogReadError(abs, `missing cached file ${rel} (offline mode)`)
+      throw new BuildReadError(abs, `missing cached file ${rel} (offline mode)`)
     }
     const url = GAMEDATA_URL + rel
     let lastMessage = "unknown error"
@@ -87,7 +87,7 @@ export async function loadContext(files: CatalogFiles, http: CatalogHttp, input:
       notes.warn(`download failed for ${rel}, using stale cache: ${lastMessage}`)
       return abs
     }
-    throw new CatalogReadError(rel, `cannot obtain ${rel}: ${lastMessage}`)
+    throw new BuildReadError(rel, `cannot obtain ${rel}: ${lastMessage}`)
   }
 
   const loadGamedata = async (rel: string): Promise<GameRecord> => {
@@ -159,7 +159,7 @@ export async function loadContext(files: CatalogFiles, http: CatalogHttp, input:
   const act = activity.activity?.AUTOCHESS_SEASON?.[input.seasonId]
   const ac = activity.autoChessData
   if (!act || !ac) {
-    throw new CatalogReadError("excel/activity_table.json", `activity_table has no ${input.seasonId} / autoChessData section`)
+    throw new BuildReadError("excel/activity_table.json", `activity_table has no ${input.seasonId} / autoChessData section`)
   }
 
   const enemyDb = new Map<string, any>()

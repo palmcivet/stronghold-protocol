@@ -2,8 +2,8 @@
 
 import { setTimeout as delay } from "node:timers/promises"
 import { join, resolve } from "node:path"
-import { CatalogReadError, type CatalogFiles, type CatalogHttp } from "arknights-assets-catalog"
-import { dataWorkspace } from "#compiler/workspace.js"
+import { BuildReadError, type BuildFiles, type BuildHttp } from "arknights-assets-extractor"
+import { dataWorkspace } from "#workspace.js"
 
 const workspace = dataWorkspace()
 const GAMEDATA_URL = "https://raw.githubusercontent.com/Kengxxiao/ArknightsGameData/master/zh_CN/gamedata/"
@@ -196,12 +196,12 @@ interface GamedataRequest {
   readonly optional?: boolean
 }
 
-async function ensureGamedata(files: CatalogFiles, http: CatalogHttp, request: GamedataRequest): Promise<string | null> {
+async function ensureGamedata(files: BuildFiles, http: BuildHttp, request: GamedataRequest): Promise<string | null> {
   const absolute = join(request.cache, request.rel)
   if (await files.exists(absolute)) return absolute
   if (request.offline) {
     if (request.optional) return null
-    throw new CatalogReadError(absolute, `missing cached file ${request.rel} (offline mode)`)
+    throw new BuildReadError(absolute, `missing cached file ${request.rel} (offline mode)`)
   }
   let lastError = "unknown error"
   for (let attempt = 1; attempt <= 3; attempt++) {
@@ -230,7 +230,7 @@ async function ensureGamedata(files: CatalogFiles, http: CatalogHttp, request: G
     return absolute
   }
   if (request.optional) return null
-  throw new CatalogReadError(request.rel, `download failed for ${request.rel}: ${lastError}`)
+  throw new BuildReadError(request.rel, `download failed for ${request.rel}: ${lastError}`)
 }
 
 interface EmoteArgs {
@@ -269,17 +269,17 @@ function parseEmoteArgs(argv: readonly string[]): EmoteArgs {
   return { offline, check, out: out ?? seasonOut, cache: cache ?? workspace.gamedataCacheDir }
 }
 
-async function readJson(files: CatalogFiles, path: string | null): Promise<unknown> {
+async function readJson(files: BuildFiles, path: string | null): Promise<unknown> {
   if (!path) return null
   const text = await files.readText(path)
   try {
     return JSON.parse(text) as unknown
   } catch (cause) {
-    throw new CatalogReadError(path, cause instanceof Error ? cause.message : String(cause))
+    throw new BuildReadError(path, cause instanceof Error ? cause.message : String(cause))
   }
 }
 
-export async function compileEmotes(files: CatalogFiles, http: CatalogHttp, argv: readonly string[]): Promise<number> {
+export async function compileEmotes(files: BuildFiles, http: BuildHttp, argv: readonly string[]): Promise<number> {
     const options = parseEmoteArgs(argv)
     const display = await readJson(files, await ensureGamedata(files, http, { cache: options.cache, rel: "excel/display_meta_table.json", offline: options.offline }))
     const activity = await readJson(files, await ensureGamedata(files, http, { cache: options.cache, rel: "excel/activity_table.json", offline: options.offline }))

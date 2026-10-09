@@ -13,6 +13,7 @@
   "references": [
     { "path": "./tsconfig.json" },
     { "path": "../../assets-catalog" },
+    { "path": "../../assets-extractor" },
     { "path": "../../mission-core" }
   ]
 }

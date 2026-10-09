@@ -2,8 +2,9 @@
 
 import { readdir, unlink } from "node:fs/promises"
 import { join, relative, sep } from "node:path"
-import { assetRef, CatalogReadError, type CatalogEntry, type CatalogFiles, type CatalogHttp } from "arknights-assets-catalog"
+import { assetRef, type CatalogEntry } from "arknights-assets-catalog"
 import {
+  BuildReadError,
   Downloader,
   buildFonts,
   buildCatalogRelease,
@@ -11,8 +12,13 @@ import {
   loadIndexes,
   processModels,
   skelParserAvailable,
-} from "arknights-assets-catalog/compile"
-import { dataWorkspace } from "#compiler/workspace.js"
+  type BuildFiles,
+  type BuildHttp,
+  type PlannedSpineModel,
+  type SpineEntry,
+} from "arknights-assets-extractor"
+import { dataWorkspace } from "#workspace.js"
+import { resolveRoles, type AnimRoles } from "#compiler/media/spine/anim-role.js"
 import { indexAudio, type VoiceLang } from "./audio-bank.js"
 import {
   collectLeaves,
@@ -140,21 +146,21 @@ function manifestPath(season: string): string {
   return join(workspace.seasonDir(season), "assets.json")
 }
 
-async function readJson(files: CatalogFiles, path: string): Promise<unknown> {
+async function readJson(files: BuildFiles, path: string): Promise<unknown> {
   let text: string
   try {
     text = await files.readText(path)
   } catch (cause) {
-    throw new CatalogReadError(path, `cannot read ${path}: ${errorMessage(cause)}`)
+    throw new BuildReadError(path, `cannot read ${path}: ${errorMessage(cause)}`)
   }
   try {
     return JSON.parse(text) as unknown
   } catch (cause) {
-    throw new CatalogReadError(path, `cannot read ${path}: ${errorMessage(cause)}`)
+    throw new BuildReadError(path, `cannot read ${path}: ${errorMessage(cause)}`)
   }
 }
 
-async function readOptionalJson(files: CatalogFiles, rel: string): Promise<unknown> {
+async function readOptionalJson(files: BuildFiles, rel: string): Promise<unknown> {
   try {
     return await readJson(files, rel)
   } catch {
@@ -268,18 +274,41 @@ function requiredMisses(manifest: Record<string, unknown>, charIds: readonly str
   return out
 }
 
-export async function fetchAssets(files: CatalogFiles, http: CatalogHttp, argv: readonly string[]): Promise<number> {
+type SpineWithRoles = Omit<SpineEntry, "animationNames"> & { readonly anims: AnimRoles }
+
+/** 把提取出的 Spine 条目补上动画角色，字段顺序与数据包清单一致。 */
+function spineWithRoles(entries: ReadonlyMap<string, SpineEntry>, models: ReadonlyMap<string, PlannedSpineModel>): Map<string, SpineWithRoles> {
+  const out = new Map<string, SpineWithRoles>()
+  for (const model of models.values()) {
+    const entry = entries.get(model.key)
+    if (!entry) continue
+    out.set(model.key, {
+      skel: entry.skel,
+      atlas: entry.atlas,
+      textures: entry.textures,
+      pma: entry.pma,
+      anims: resolveRoles(entry.animationNames, { skillIndices: model.skillIndices, durations: entry.animations }),
+      animations: entry.animations,
+      events: entry.events,
+      hits: entry.hits,
+      bounds: entry.bounds,
+    })
+  }
+  return out
+}
+
+export async function fetchAssets(files: BuildFiles, http: BuildHttp, argv: readonly string[]): Promise<number> {
     const options = parseArgs(argv)
     if (options.help) {
       log(HELP_TEXT)
       return 0
     }
-    if (!options.season) throw new CatalogReadError(workspace.productDir, "--season is required")
+    if (!options.season) throw new BuildReadError(workspace.productDir, "--season is required")
     const started = Date.now()
     const output = manifestPath(options.season)
     log(`[assets] data product ${workspace.productDir}`)
     log(`[assets] catalog ${catalogRoot}`)
-    if (!skelParserAvailable()) throw new CatalogReadError(catalogRoot, "@pixi-spine/runtime-3.8 not found — run `npm install` first")
+    if (!skelParserAvailable()) throw new BuildReadError(catalogRoot, "@pixi-spine/runtime-3.8 not found — run `npm install` first")
     const assets07 = await readJson(files, join(researchDir, "07-assets.json"))
     const ops03 = await readJson(files, join(researchDir, "03-operators.json"))
     const enemies05 = await readJson(files, join(researchDir, "05-enemies.json"))
@@ -354,7 +383,7 @@ export async function fetchAssets(files: CatalogFiles, http: CatalogHttp, argv: 
     const spine = await processModels(plan.models, { root: assetsDir, dl: downloader, cachePath: join(cacheDir, "spine-info.json"), download: !options.offline, log })
     const resolved = resolveTemplate(plan.template, {
       root: assetsDir,
-      spine: spine.entries,
+      spine: spineWithRoles(spine.entries, plan.models),
       sourceOf: (rel) => downloader.ledger.files[rel]?.url,
     })
     const body = resolved.value

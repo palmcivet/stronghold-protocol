@@ -1,10 +1,10 @@
 import { existsSync, readFileSync } from "node:fs"
 import { join } from "node:path"
-import { catalogWorkspace } from "arknights-assets-catalog/compile"
+import { dataWorkspace } from "#workspace.js"
 import { expect, test } from "vitest"
 import { decodePng } from "#compiler/media/board/atlas.js"
 
-const catalog = catalogWorkspace()
+const catalog = dataWorkspace().catalog
 const mediaDir = catalog.mediaDir
 const ready = existsSync(join(mediaDir, "map/autochess/TX_autochessi_N_rgb.png"))
 

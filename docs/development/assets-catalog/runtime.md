@@ -5,7 +5,7 @@ description: 按资源引用解析基础资源，并提供媒体路由、Spine�
 
 # 运行时
 
-安装并构建之后，从包名导入运行时：解析 `AssetRef`、展开依赖、生成 URL、缓存 Spine、解码音频，并复用静态服务策略。
+安装并构建之后，从包名导入运行时：解析 `AssetRef`、展开依赖、生成 URL、缓存 Spine、解码音频。
 
 ```ts
 import {
@@ -44,4 +44,4 @@ import {
 
 ## 静态文件
 
-`runtime/service/static-policy.ts` 约定 gzip、ETag、单区间 Range，以及页面短缓存、素材一天缓存和带 `v=` 地址的一年 immutable 缓存。它是策略库，不是 HTTP server；deployment 或站点服务器负责执行这些策略。
+静态文件策略位于 `deployment/client/config/static-policy.ts`，约定 gzip、ETag、单区间 Range，以及页面短缓存、素材一天缓存和带 `v=` 地址的一年 immutable 缓存。它是策略库，不是 HTTP server；deployment 或站点服务器负责执行这些策略。

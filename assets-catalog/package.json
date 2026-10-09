@@ -11,12 +11,6 @@
       "source": "./index.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
-    },
-    "./compile": {
-      "types": "./dist/compile.d.ts",
-      "source": "./compile.ts",
-      "import": "./dist/compile.js",
-      "default": "./dist/compile.js"
     }
   },
   "imports": {
@@ -24,33 +18,17 @@
       "source": "./schema/*.ts",
       "default": "./dist/schema/*.js"
     },
-    "#port/*.js": {
-      "source": "./port/*.ts",
-      "default": "./dist/port/*.js"
-    },
     "#runtime/*.js": {
       "source": "./runtime/*.ts",
       "default": "./dist/runtime/*.js"
-    },
-    "#compiler/*.js": {
-      "source": "./compiler/*.ts",
-      "default": "./dist/compiler/*.js"
     }
   },
   "scripts": {
     "build": "tsc -b",
-    "test": "vitest run",
-    "fetch:media": "node dist/compiler/scripts/fetch-media.js",
-    "extract:local": "python3 compiler/extraction/extract.py"
-  },
-  "dependencies": {
-    "@pixi-spine/runtime-3.8": "^4.0.6",
-    "pngjs": "^7.0.0",
-    "wawoff2": "^2.0.1"
+    "test": "vitest run"
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "@types/pngjs": "^6.0.5",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"

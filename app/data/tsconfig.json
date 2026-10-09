@@ -12,6 +12,7 @@
   "exclude": ["dist", "dist-test", "node_modules", "**/*.test.ts", "**/*.spec.ts", "vitest.config.ts"],
   "references": [
     { "path": "../../assets-catalog" },
+    { "path": "../../assets-extractor" },
     { "path": "../../mission-core" }
   ]
 }

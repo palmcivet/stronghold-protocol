@@ -23,7 +23,7 @@ import {
   type AssetKind,
   type DownloadJob,
   type PlannedSpineModel,
-} from "arknights-assets-catalog/compile"
+} from "arknights-assets-extractor"
 import { EMOTE_CATALOG } from "./emote-catalog.js"
 
 const VOICE_ID_LANG = "CN"

@@ -25,9 +25,13 @@ app/data/
       board/              atlas、surface
       emote.ts            对局表情
       fetch/              assets、plan、manifest、audio-bank、emote-catalog
+      spine/              anim-role，把 Spine 动画名收成角色表
     input/                tuning 与研究表
     scripts/
+  workspace.ts            目录路径，供 Vite 配置导入（@alliance/data/workspace），不依赖构建器
   runtime/
+    packet/               读取赛季 JSON
+    port/                 运行时的文件端口与读取错误
     media/                按领域清单解释资源
     packet/               读取赛季 JSON
   schema/                 赛季文件名

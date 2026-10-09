@@ -5,11 +5,11 @@ import { writeFile } from "node:fs/promises"
 import { isAbsolute, relative, resolve, sep } from "node:path"
 import { join } from "node:path"
 import { deflateSync, inflateSync } from "node:zlib"
-import { catalogWorkspace } from "arknights-assets-catalog/compile"
-import type { CatalogFiles } from "arknights-assets-catalog"
+import type { BuildFiles } from "arknights-assets-extractor"
+import { dataWorkspace } from "#workspace.js"
 import { BOARD_SURFACES, type BoardSurface } from "./surface.js"
 
-const catalog = catalogWorkspace()
+const catalog = dataWorkspace().catalog
 const root = catalog.root
 const mediaRoot = catalog.mediaDir
 
@@ -324,7 +324,7 @@ function isCrop(layer: MaterialLayer): layer is CropLayer {
   return !("proc" in layer)
 }
 
-export async function cropBoardAtlas(files: CatalogFiles, argv: readonly string[]): Promise<number> {
+export async function cropBoardAtlas(files: BuildFiles, argv: readonly string[]): Promise<number> {
     const options = parseCropArgs(argv)
     const urlBase = "/assets/" + relative(mediaRoot, options.dir).split(sep).join("/")
     const problems: string[] = []

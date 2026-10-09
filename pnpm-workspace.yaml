@@ -1,6 +1,7 @@
 packages:
   - "app/*"
   - "assets-catalog"
+  - "assets-extractor"
   - "deployment"
   - "mission-core"
   - "mission-renderer"

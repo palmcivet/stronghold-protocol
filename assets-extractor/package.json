@@ -1,0 +1,62 @@
+{
+  "name": "arknights-assets-extractor",
+  "version": "0.0.0",
+  "private": true,
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "source": "./index.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "imports": {
+    "#catalog/*.js": {
+      "source": "./catalog/*.ts",
+      "default": "./dist/catalog/*.js"
+    },
+    "#download/*.js": {
+      "source": "./download/*.ts",
+      "default": "./dist/download/*.js"
+    },
+    "#font/*.js": {
+      "source": "./font/*.ts",
+      "default": "./dist/font/*.js"
+    },
+    "#port/*.js": {
+      "source": "./port/*.ts",
+      "default": "./dist/port/*.js"
+    },
+    "#spine/*.js": {
+      "source": "./spine/*.ts",
+      "default": "./dist/spine/*.js"
+    },
+    "#package-root.js": {
+      "source": "./package-root.ts",
+      "default": "./dist/package-root.js"
+    },
+    "#workspace.js": {
+      "source": "./workspace.ts",
+      "default": "./dist/workspace.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest run",
+    "fetch:media": "node dist/script/fetch-media.js",
+    "extract:local": "python3 source/local-client/python/extract.py"
+  },
+  "dependencies": {
+    "@pixi-spine/runtime-3.8": "^4.0.6",
+    "arknights-assets-catalog": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}

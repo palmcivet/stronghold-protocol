@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import { join, resolve } from "node:path"
-import { CatalogReadError, fetchCatalogHttp, nodeCatalogFiles } from "arknights-assets-catalog"
+import { BuildReadError, fetchBuildHttp, nodeBuildFiles } from "arknights-assets-extractor"
 import { compileSeason, type CompileOptions } from "#compiler/packet/compile/season.js"
-import { dataWorkspace } from "#compiler/workspace.js"
+import { dataWorkspace } from "#workspace.js"
 import { seasonPacketDirectory } from "#schema/packet-file.js"
 
 const USAGE: string = "usage: --season <id> [--refresh | --offline] [--out <dir>] [--cache <dir>] [--report <file>] [--quiet] [--no-research] [--force]"
@@ -103,12 +103,12 @@ function parseArgs(argv: readonly string[], workspace: ReturnType<typeof dataWor
 
 const options: CompileOptions = parseArgs(process.argv.slice(2), dataWorkspace())
 
-compileSeason(nodeCatalogFiles, fetchCatalogHttp, options).then(
+compileSeason(nodeBuildFiles, fetchBuildHttp, options).then(
   (result) => {
     process.exitCode = result.exitCode
   },
   (cause: unknown) => {
-    if (cause instanceof CatalogReadError) console.error(`packet failed: ${cause.path}: ${cause.message}`)
+    if (cause instanceof BuildReadError) console.error(`packet failed: ${cause.path}: ${cause.message}`)
     else if (cause instanceof Error) console.error("packet failed:", cause.stack ?? cause.message)
     else console.error("packet failed:", cause)
     process.exitCode = 1

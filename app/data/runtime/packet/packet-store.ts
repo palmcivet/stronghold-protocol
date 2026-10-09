@@ -1,5 +1,5 @@
-import { CatalogReadError, type CatalogFiles } from "arknights-assets-catalog"
 import { PACKET_FILES, type PacketName } from "#schema/packet-file.js"
+import { PacketReadError, type PacketFiles } from "#runtime/port/packet-files.js"
 import type { PacketDocuments } from "./record-index.js"
 
 export interface LoadedPackets {
@@ -30,7 +30,7 @@ function documentKey(name: PacketName): string {
 
 /** 读一个赛季目录里的 JSON，并冻结结果。缺的预期文件列在 missing。 */
 export async function readSeasonPackets(
-  files: CatalogFiles,
+  files: PacketFiles,
   directory: string,
   expected: readonly PacketName[],
 ): Promise<LoadedPackets> {
@@ -43,7 +43,7 @@ export async function readSeasonPackets(
     try {
       documents[key] = JSON.parse(text) as unknown
     } catch (cause) {
-      throw new CatalogReadError(`${directory}/${name}`, cause instanceof Error ? cause.message : String(cause))
+      throw new PacketReadError(`${directory}/${name}`, cause instanceof Error ? cause.message : String(cause))
     }
   }
   const missing = expected.filter((name) => !Object.hasOwn(documents, documentKey(name)))

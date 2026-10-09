@@ -1,6 +1,6 @@
 import { Buffer } from "node:buffer"
 import { join } from "node:path"
-import { CatalogReadError, type CatalogFiles, type CatalogHttp } from "arknights-assets-catalog"
+import { BuildReadError, type BuildFiles, type BuildHttp } from "arknights-assets-extractor"
 import { seasonPacketDirectory } from "#schema/packet-file.js"
 import { bandBondIds, buildBands } from "#compiler/packet/record/band.js"
 import { buildBonds } from "#compiler/packet/record/bond.js"
@@ -45,11 +45,11 @@ const PACKET_NAMES: readonly (keyof SeasonFiles)[] = [
   "config", "chess", "bonds", "garrisons", "items", "bands", "effects", "choices", "enemies", "factions", "waves", "stages", "bosses", "tokens",
 ]
 
-export async function compileSeason(catalog: CatalogFiles, http: CatalogHttp, options: CompileOptions): Promise<CompileResult> {
+export async function compileSeason(catalog: BuildFiles, http: BuildHttp, options: CompileOptions): Promise<CompileResult> {
     try {
       seasonPacketDirectory(options.seasonId)
     } catch (cause) {
-      throw new CatalogReadError(options.seasonId, cause instanceof Error ? cause.message : String(cause))
+      throw new BuildReadError(options.seasonId, cause instanceof Error ? cause.message : String(cause))
     }
     const notes = new BuildNotes()
     notes.quiet = options.quiet
