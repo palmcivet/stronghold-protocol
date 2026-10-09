@@ -27,7 +27,7 @@ description: 费用按阵营分池，再部署扣费后回到当前坐标，阻�
 
 `block` 模块在敌人槽跑两次：路线之前，以及路线和泄漏之后、敌人攻击之前。只让友方挡敌人。
 
-接触用中心距。地面半径是 `BLOCK_RADIUS`（0.70709997），平方是 `BLOCK_RADIUS_SQ`。飞行敌人用 `BLOCK_RADIUS_FLY`（0.8944）。带 `device` 标签的阻挡者用 `BLOCK_RADIUS_DEVICE`（0.4472），不再改用飞行半径。飞行敌人还要阻挡者带 `blockFly` 标签或同名旗标。地面敌人不能被站在围栏上的单位挡住：阻挡者脚下的格子地面走不过（`walkableBy` 里没有地面）时，不挡地面敌人。
+接触用中心距。地面半径是 `BLOCK_RADIUS`（0.70709997），平方是 `BLOCK_RADIUS_SQ`。飞行敌人用 `BLOCK_RADIUS_FLY`（0.8944）。带 `device` 标签的阻挡者用 `BLOCK_RADIUS_DEVICE`（0.4472）。飞行敌人还要阻挡者带 `blockFly` 标签或同名旗标。地面敌人不能被站在围栏上的单位挡住：阻挡者脚下的格子地面走不过（`walkableBy` 里没有地面）时，不挡地面敌人。
 
 多个阻挡者里更近的优先；距离相同，行号小的优先，再比列号。挡上之后就留着，直到阻挡者离场、不能再挡，或敌人不能再被挡。不能再挡包括 `noBlock` 和 `sleep`。不能再被挡包括 `unblockable` 和 `sleep`。放开时如果这名敌人还带着 `stealth`，再施加 `stealthOff`。时长是隐匿状态的强度（大于 0 时），否则是 `STEALTH_RESTORE`（3 秒）。这段时间里隐匿不挡住选择。
 
@@ -45,7 +45,7 @@ description: 费用按阵营分池，再部署扣费后回到当前坐标，阻�
 
 `launchProjectile` 从来源的坐标出发，也可以自带出发的 `x`、`y`。缺省速度是 `PROJECTILE_SPEED`（12 格/秒），也可以自带 `speed`。投射物槽每拍朝仍在场上的目标飞一段。目标已倒地、离场或生命不大于 0 时，这一发消掉，不结算。`retain` 为真时改为飞向最后看到的坐标，到达后仍结算。
 
-剩余距离不超过这一拍的步长，或飞行已满 `PROJECTILE_MAX_AGE`（10 秒），就落在目标当前位置。没有 `attack` 时按 `amount` 走 `physical`。带了 `attack` 时按那份攻击形状结算。`returnSpeed` 大于 0 的飞出到达后，从落点再朝来源飞一发，回程不造成伤害；来源已经离场则不飞回。回程记着飞出时的回旋世代。带 `boomerang` 计时的单位在 `deploy` 时把 `boomerangsOut` 清零并把世代加一，旧的回程落地不再改这个数。`projectiles()` 只列出还在飞的。
+剩余距离不超过这一拍的步长，或飞行已满 `PROJECTILE_MAX_AGE`（10 秒），就落在目标当前位置。没有 `attack` 时按 `amount` 走 `physical`。带了 `attack` 时按那份攻击形状结算。`returnSpeed` 大于 0 的飞出到达后，从落点再朝来源飞一发，回程不造成伤害；来源已经离场则不飞回。回程记着飞出时的回旋世代。带 `boomerang` 计时的单位在 `deploy` 时把 `boomerangsOut` 清零并把世代加一，回程的世代对不上时，落地不改这个数。`projectiles()` 只列出还在飞的。
 
 普攻在 `attackShape.projectile` 上写了种类时，出手调用这里，速度用种类表。没写种类的普攻仍在命中时直接结算。见 [攻击](./attack.md)。
 

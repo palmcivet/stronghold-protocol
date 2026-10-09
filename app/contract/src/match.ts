@@ -423,9 +423,10 @@ export function emoteArtGroup(id: unknown): string | null {
   return entry ? `emoticon/${entry.dir}` : null
 }
 
-export function emoteArtPath(id: unknown): string | null {
+/** Asset key of the emote picture, e.g. `image:ui/emoticon/<theme>/<name>`. */
+export function emoteArtKey(id: unknown): string | null {
   const entry = emoteInfo(id)
-  return entry ? `/assets/ui/emoticon/${entry.dir}/${entry.picId}.png` : null
+  return entry ? `image:ui/emoticon/${entry.dir}/${entry.picId}` : null
 }
 
 export const EMOTE_COOLDOWN_MS: number = 1000

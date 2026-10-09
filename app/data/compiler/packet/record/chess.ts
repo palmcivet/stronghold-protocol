@@ -19,12 +19,6 @@ import { bestCandidate, naturalCmp, phaseIdx, unlocked } from "#compiler/packet/
 /** Elite modules that let a melee chess stand on a ranged tile. The branch trait 「可以放置于远程位」 is not this. */
 const MELEE_ON_HIGH_GROUND: ReadonlySet<string> = new Set(["uniequip_003_glady"])
 
-function hasE2Art(ctx: SeasonContext, charId: string, kind: string): boolean {
-  const art = ctx.research.assets?.operators?.[charId]?.[kind]
-  if (art) return !!art.e2
-  return (ctx.charTable[charId]?.phases?.length || 0) >= 3
-}
-
 export function buildChess(ctx: SeasonContext): { chess: Record<string, any>, tokenOwners: Map<string, any[]> } {
   const { act, charTable, uniequip, battleEquip } = ctx
   const out: Record<string, any> = {}
@@ -88,7 +82,6 @@ export function buildChess(ctx: SeasonContext): { chess: Record<string, any>, to
       talents: [],
       tokens: [],
       module: null,
-      assets: null,
     }
     if (isDiy) {
       rec.name = "甄选干员"
@@ -266,15 +259,6 @@ export function buildChess(ctx: SeasonContext): { chess: Record<string, any>, to
         skillAlts,
         moduleAlts,
       })
-    }
-    const e2Avatar = isGolden && hasE2Art(ctx, shop.charId, "avatar")
-    const e2Portrait = isGolden && hasE2Art(ctx, shop.charId, "portrait")
-    rec.assets = {
-      avatar: e2Avatar ? `${shop.charId}_2` : shop.charId,
-      portrait: `${shop.charId}_${e2Portrait ? 2 : 1}`,
-      spine: shop.charId,
-      skillIcon: rec.skill?.iconId || null,
-      subProfIcon: `sub_${char.subProfessionId}_icon`,
     }
     out[chessId] = rec
   }

@@ -30,6 +30,14 @@
       "source": "./port/*.ts",
       "default": "./dist/port/*.js"
     },
+    "#script/*.js": {
+      "source": "./script/*.ts",
+      "default": "./dist/script/*.js"
+    },
+    "#source/*.js": {
+      "source": "./source/*.ts",
+      "default": "./dist/source/*.js"
+    },
     "#spine/*.js": {
       "source": "./spine/*.ts",
       "default": "./dist/spine/*.js"
@@ -45,8 +53,9 @@
   },
   "scripts": {
     "build": "tsc -b",
+    "lint": "tsc --noEmit && tsc -p tsconfig.test.json --noEmit",
     "test": "vitest run",
-    "fetch:media": "node dist/script/fetch-media.js",
+    "extract": "node dist/script/extract.js",
     "extract:local": "python3 source/local-client/python/extract.py"
   },
   "dependencies": {

@@ -1,9 +1,6 @@
 import { packetAddress, PACKET_FILES, type PacketName } from "#schema/packet-file.js"
 
 export const PACKET_RETRY_DELAYS_MS = [600, 2000] as const
-export const ART_MANIFEST_TIMEOUT_MS = 8000
-
-const ART_MANIFESTS = new Set<PacketName>(["assets"])
 
 export type PacketStatus = "idle" | "loading" | "ready" | "missing"
 
@@ -33,15 +30,11 @@ interface StoreOptions {
   readonly fetch?: PacketFetch
   readonly retryDelays?: readonly number[]
   readonly wait?: (ms: number) => Promise<void>
-  readonly timeoutMs?: number
-  readonly setTimeout?: (fn: () => void, ms: number) => unknown
-  readonly clearTimeout?: (timer: unknown) => void
 }
 
 interface LoadFailure extends Error {
   status?: number | null
   badJson?: boolean
-  timeout?: boolean
 }
 
 interface PacketSlot {
@@ -89,9 +82,6 @@ export function createRemotePacketStore(options: StoreOptions): RemotePacketStor
   const loadJson: PacketFetch = options.fetch ?? ((url, init) => globalThis.fetch(url, init) as Promise<PacketResponse>)
   const retryDelays = options.retryDelays ?? PACKET_RETRY_DELAYS_MS
   const wait = options.wait ?? ((ms: number) => new Promise((resolve) => setTimeout(resolve, ms)))
-  const timeoutMs = options.timeoutMs === undefined ? ART_MANIFEST_TIMEOUT_MS : options.timeoutMs
-  const armTimer = options.setTimeout ?? ((fn: () => void, ms: number) => setTimeout(fn, ms))
-  const disarmTimer = options.clearTimeout ?? ((timer: unknown) => clearTimeout(timer as ReturnType<typeof setTimeout>))
   const entries = new Map<PacketName, PacketSlot>()
   const listeners = new Set<(name: PacketName) => void>()
   const warned = new Set<PacketName>()
@@ -108,59 +98,27 @@ export function createRemotePacketStore(options: StoreOptions): RemotePacketStor
 
   const urlFor = (name: PacketName): string => packetAddress(options.seasonId, name)
 
-  const readJson = (name: PacketName): Promise<unknown> => {
-    const run = async (): Promise<unknown> => {
-      const response = await loadJson(urlFor(name), { cache: "no-cache" })
-      if (!response.ok) {
-        const error = new Error(`HTTP ${response.status}`) as LoadFailure
-        error.status = response.status
-        throw error
-      }
-      try {
-        return await response.json()
-      } catch (cause) {
-        const error = (cause instanceof Error ? cause : new Error(String(cause))) as LoadFailure
-        error.badJson = true
-        throw error
-      }
+  const readJson = async (name: PacketName): Promise<unknown> => {
+    const response = await loadJson(urlFor(name), { cache: "no-cache" })
+    if (!response.ok) {
+      const error = new Error(`HTTP ${response.status}`) as LoadFailure
+      error.status = response.status
+      throw error
     }
-    if (!ART_MANIFESTS.has(name) || !(timeoutMs > 0)) return run()
-    let timer: unknown = null
-    let done = false
-    const finish = (): boolean => {
-      if (done) return false
-      done = true
-      if (timer !== null) disarmTimer(timer)
-      return true
+    try {
+      return await response.json()
+    } catch (cause) {
+      const error = (cause instanceof Error ? cause : new Error(String(cause))) as LoadFailure
+      error.badJson = true
+      throw error
     }
-    const timed = new Promise<never>((_resolve, reject) => {
-      timer = armTimer(() => {
-        if (!finish()) return
-        const error = new Error("timeout") as LoadFailure
-        error.timeout = true
-        reject(error)
-      }, timeoutMs)
-    })
-    const request = run().then(
-      (json) => {
-        finish()
-        return json
-      },
-      (error: unknown) => {
-        finish()
-        throw error
-      },
-    )
-    return Promise.race([request, timed])
   }
 
   const load = (name: PacketName): Promise<unknown> => {
     const current = entries.get(name)
     if (current) return current.promise
     const slot: PacketSlot = { status: "loading", promise: Promise.resolve(null), value: null, index: null }
-    const art = ART_MANIFESTS.has(name)
     slot.promise = (async () => {
-      let toldMissing = false
       for (let attempt = 0; ; attempt += 1) {
         try {
           slot.value = await readJson(name)
@@ -170,13 +128,6 @@ export function createRemotePacketStore(options: StoreOptions): RemotePacketStor
           const error = (cause instanceof Error ? cause : new Error(String(cause))) as LoadFailure
           const stillCurrent = entries.get(name) === slot
           const again = transientFailure(error) && attempt < retryDelays.length && stillCurrent
-          if (art && stillCurrent && slot.status !== "missing") {
-            slot.value = null
-            slot.index = null
-            slot.status = "missing"
-            toldMissing = true
-            notify(name)
-          }
           if (again) {
             const delay = retryDelays[attempt]
             if (delay !== undefined) await wait(delay)
@@ -195,7 +146,7 @@ export function createRemotePacketStore(options: StoreOptions): RemotePacketStor
           break
         }
       }
-      if (entries.get(name) === slot && !(toldMissing && slot.status === "missing")) notify(name)
+      if (entries.get(name) === slot) notify(name)
       return slot.value
     })()
     entries.set(name, slot)

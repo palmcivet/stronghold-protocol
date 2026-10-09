@@ -1,199 +1,91 @@
-// 下载 skel / atlas / 页图，补 size 和 pma，再解析动画角色。
-import { mkdir, readFile, rename, stat, unlink, writeFile } from "node:fs/promises"
-import { dirname, join } from "node:path"
-import type { Stats } from "node:fs"
-import { atlasInfo, normalizeAtlas } from "./atlas.js"
-import type { DownloadJob, Downloader } from "#download/downloader.js"
-import { kindOf, pngSize } from "#download/format.js"
-import { assetUrl, safeName, urlDir } from "#download/source.js"
-import { parseSkel, type SkelInfo, type SpineBounds } from "./skel.js"
+// 组装一个 Spine 模型：骨架原样保留，图集补 size（按真实页图）与 pma，页名换成安全名，再解析骨架写出 SpineMeta 侧车。
 
-export interface SpineEntry {
-  readonly skel: string
+import type { FileFormat, FileRole, SpineMeta } from "arknights-assets-catalog"
+import { isCompletePng, isSkelBinary, pngSize } from "#download/format.js"
+import { safeName } from "#source/name.js"
+import { atlasInfo, normalizeAtlas, parseAtlas } from "#spine/atlas.js"
+import { parseSkel } from "#spine/skel.js"
+
+export interface SpineInput {
+  /** Base name for the skeleton, atlas and sidecar files. */
+  readonly name: string
+  readonly skel: Uint8Array
   readonly atlas: string
-  readonly textures: readonly string[]
-  readonly pma: boolean
-  /** Animation names in skeleton order; duplicates are kept as the skeleton lists them. */
-  readonly animationNames: readonly string[]
-  readonly animations: Readonly<Record<string, number>>
-  readonly events: readonly string[]
-  readonly hits: Readonly<Record<string, readonly number[]>>
-  readonly bounds: SpineBounds | null
+  /** Page images by their upstream file name. */
+  readonly pages: ReadonlyMap<string, Uint8Array>
+  readonly premultipliedAlpha: boolean
 }
 
-export interface PlannedSpineModel {
-  readonly key: string
-  readonly kind: string
-  readonly dir: string
-  readonly pma: boolean
-  readonly skillIndices: readonly number[]
-  readonly baseUrl: string
-  readonly skel: DownloadJob
-  readonly atlas: DownloadJob
-  pngs: DownloadJob[]
+export interface SpineOutputFile {
+  readonly role: FileRole
+  readonly name: string
+  readonly format: FileFormat
+  readonly data: Uint8Array
 }
 
-async function fileStat(path: string): Promise<Stats | null> {
+export interface SpineModel {
+  /** Skeleton, atlas, pages sorted by name, then the sidecar. */
+  readonly files: readonly SpineOutputFile[]
+  readonly meta: SpineMeta
+}
+
+export class SpineAssemblyError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "SpineAssemblyError"
+  }
+}
+
+function sortObject<T>(value: Readonly<Record<string, T>>): Record<string, T> {
+  const out: Record<string, T> = {}
+  for (const key of Object.keys(value).sort()) out[key] = value[key] as T
+  return out
+}
+
+/** The sidecar as stable JSON text. */
+export function spineMetaText(meta: SpineMeta): string {
+  return `${JSON.stringify({ ...meta, animations: sortObject(meta.animations) }, null, 2)}\n`
+}
+
+export function assembleSpine(input: SpineInput): SpineModel {
+  if (!isSkelBinary(input.skel)) throw new SpineAssemblyError(`${input.name}.skel is not a Spine binary`)
+  const upstreamPages = parseAtlas(input.atlas).pages.map((page) => page.name)
+  if (upstreamPages.length === 0) throw new SpineAssemblyError(`${input.name}.atlas has no pages`)
+  const pageFiles = new Map<string, Uint8Array>()
+  for (const page of upstreamPages) {
+    const data = input.pages.get(page)
+    if (!data) throw new SpineAssemblyError(`${input.name}.atlas page ${page} is not in the source folder`)
+    if (!isCompletePng(data)) throw new SpineAssemblyError(`${input.name}.atlas page ${page} is not a complete PNG`)
+    pageFiles.set(safeName(page), data)
+  }
+  const normalized = normalizeAtlas(input.atlas, {
+    pageSize: (page) => pngSize(input.pages.get(page)),
+    pma: input.premultipliedAlpha,
+    renamePage: safeName,
+  })
+  const info = atlasInfo(normalized.text)
+  let facts
   try {
-    const info = await stat(path)
-    return info.isFile() ? info : null
-  } catch {
-    return null
+    facts = parseSkel(input.skel, info.regions)
+  } catch (cause) {
+    throw new SpineAssemblyError(`${input.name}.skel parse failed: ${cause instanceof Error ? cause.message : String(cause)}`)
   }
-}
-
-function errorMessage(cause: unknown): string {
-  return cause instanceof Error ? cause.message : String(cause)
-}
-
-export interface ProcessModelsOptions {
-  readonly root: string
-  readonly dl: Downloader
-  readonly cachePath: string
-  readonly download?: boolean
-  readonly log?: (message: string) => void
-}
-
-export interface ProcessModelsResult {
-  readonly entries: Map<string, SpineEntry>
-  readonly problems: readonly string[]
-}
-
-interface SpineCacheEntry {
-  readonly key: string
-  readonly info: SkelInfo
-}
-
-export async function processModels(
-  models: ReadonlyMap<string, PlannedSpineModel>,
-  options: ProcessModelsOptions,
-): Promise<ProcessModelsResult> {
-  const problems: string[] = []
-  const list = [...models.values()]
-  const download = options.download ?? true
-  const log = options.log ?? console.log
-  const { root, dl, cachePath } = options
-  if (download) {
-    const jobs: DownloadJob[] = []
-    for (const model of list) jobs.push(model.skel, model.atlas, ...model.pngs)
-    await dl.run(jobs, "spine")
-    const extra: DownloadJob[] = []
-    for (const model of list) {
-      const text = await readFile(join(root, model.atlas.rel), "utf8").catch(() => null)
-      if (!text) continue
-      for (const page of atlasInfo(text).pages) {
-        const rel = model.dir + safeName(page)
-        if (model.pngs.some((png) => png.rel === rel)) continue
-        const recorded = dl.ledger.files[model.atlas.rel]?.url
-        const dirs = [...new Set([recorded ? urlDir(recorded) : null, model.baseUrl, ...model.atlas.urls.map(urlDir)].filter((dir): dir is string => !!dir))]
-        const job: DownloadJob = { rel, urls: dirs.map((dir) => dir + encodeURIComponent(page)), kind: kindOf(page) }
-        model.pngs.push(job)
-        extra.push(job)
-      }
-    }
-    if (extra.length) await dl.run(extra, "spine pages")
+  const meta: SpineMeta = {
+    spineVersion: facts.version || "unknown",
+    premultipliedAlpha: info.hasPma,
+    bounds: facts.bounds,
+    animations: facts.animations,
+    pages: [...info.pages],
+    missingRegions: facts.missingRegions,
   }
-
-  let cache: Record<string, SpineCacheEntry | undefined> = {}
-  try {
-    const parsed: unknown = JSON.parse(await readFile(cachePath, "utf8"))
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) cache = parsed as Record<string, SpineCacheEntry | undefined>
-  } catch {
-    cache = {}
+  const encoder = new TextEncoder()
+  return {
+    files: [
+      { role: "skel", name: `${input.name}.skel`, format: "skel", data: input.skel },
+      { role: "atlas", name: `${input.name}.atlas`, format: "atlas", data: encoder.encode(normalized.text) },
+      ...[...pageFiles.keys()].sort().map((name): SpineOutputFile => ({ role: "page", name, format: "png", data: pageFiles.get(name) as Uint8Array })),
+      { role: "meta", name: `${input.name}.meta.json`, format: "json", data: encoder.encode(spineMetaText(meta)) },
+    ],
+    meta,
   }
-  const nextCache: Record<string, SpineCacheEntry> = {}
-  const entries = new Map<string, SpineEntry>()
-  let parsedCount = 0
-  let cachedCount = 0
-  let ledgerDirty = false
-  const started = Date.now()
-  for (const model of list) {
-    const skelAbs = join(root, model.skel.rel)
-    const atlasAbs = join(root, model.atlas.rel)
-    const skelStat = await fileStat(skelAbs)
-    const atlasText = await readFile(atlasAbs, "utf8").catch(() => null)
-    if (!skelStat || !atlasText) {
-      problems.push(`${model.key}: missing ${!skelStat ? "skel" : "atlas"}`)
-      continue
-    }
-    const info0 = atlasInfo(atlasText)
-    const sizes = new Map<string, { width: number; height: number }>()
-    let pagesOk = info0.pages.length > 0
-    for (const page of info0.pages) {
-      const buf = await readFile(join(root, model.dir + safeName(page))).catch(() => null)
-      const size = buf ? pngSize(buf) : null
-      if (!size) {
-        pagesOk = false
-        problems.push(`${model.key}: missing/invalid page ${page}`)
-        continue
-      }
-      sizes.set(page, size)
-    }
-    if (!pagesOk) continue
-    const normalized = normalizeAtlas(atlasText, {
-      pageSize: (page) => sizes.get(page) ?? null,
-      pma: !!model.pma,
-      renamePage: (page) => safeName(page),
-    })
-    if (normalized.missingSize.length) {
-      problems.push(`${model.key}: cannot size pages ${normalized.missingSize.join(",")}`)
-      continue
-    }
-    if (normalized.changed) {
-      await writeFile(atlasAbs + ".tmp", normalized.text)
-      await rename(atlasAbs + ".tmp", atlasAbs)
-    }
-    const atlasStat = await fileStat(atlasAbs)
-    const info = atlasInfo(normalized.text)
-    const cacheKey = `${model.skel.rel}|${skelStat.size}|${Math.floor(skelStat.mtimeMs)}|${atlasStat?.size}|${Math.floor(atlasStat?.mtimeMs ?? 0)}`
-    const cachedEntry = cache[model.skel.rel]
-    let skel: SkelInfo | null = cachedEntry?.key === cacheKey && cachedEntry.info ? cachedEntry.info : null
-    if (skel) cachedCount++
-    else {
-      try {
-        skel = parseSkel(await readFile(skelAbs), info.regions)
-        parsedCount++
-      } catch (cause) {
-        problems.push(`${model.key}: skel parse failed (${errorMessage(cause)}); deleted, re-run to re-download`)
-        try {
-          await unlink(skelAbs)
-        } catch {
-          // 文件可能已经不在。
-        }
-        delete dl.ledger.files[model.skel.rel]
-        ledgerDirty = true
-        continue
-      }
-    }
-    nextCache[model.skel.rel] = { key: cacheKey, info: skel }
-    const sample = skel.missingRegions[0]
-    if (skel.missingRegions.length && sample) problems.push(`${model.key}: ${skel.missingRegions.length} attachment(s) not in atlas (e.g. ${sample})`)
-    if (!skel.animations.length) {
-      problems.push(`${model.key}: skeleton has no animations`)
-      continue
-    }
-    entries.set(model.key, {
-      skel: assetUrl(model.skel.rel),
-      atlas: assetUrl(model.atlas.rel),
-      textures: info.pages.map((page) => assetUrl(model.dir + page)),
-      pma: !!model.pma,
-      animationNames: skel.animations,
-      animations: skel.durations,
-      events: skel.events,
-      hits: skel.hits,
-      bounds: skel.bounds,
-    })
-    if (Date.now() - started > 0 && (parsedCount + cachedCount) % 100 === 0) log(`[spine] processed ${parsedCount + cachedCount}/${list.length}`)
-  }
-  await mkdir(dirname(cachePath), { recursive: true })
-  await writeFile(cachePath, JSON.stringify(nextCache))
-  if (ledgerDirty) {
-    try {
-      await dl.saveLedger()
-    } catch {
-      // 下次运行会按文件内容重新校验。
-    }
-  }
-  log(`[spine] models ok=${entries.size}/${list.length} (parsed ${parsedCount}, cached ${cachedCount})`)
-  return { entries, problems }
 }

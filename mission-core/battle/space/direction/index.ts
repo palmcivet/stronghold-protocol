@@ -27,7 +27,7 @@ export function isDirection(value: string): value is Direction {
   return value === "UP" || value === "RIGHT" || value === "DOWN" || value === "LEFT"
 }
 
-/** 朝向名、大小写或旧的左右符号。无法识别时用 fallback。 */
+/** 朝向名与左右符号，大小写不限。无法识别时用 fallback。 */
 export function normDirection(value: unknown, fallback: Direction = DEFAULT_DIRECTION): Direction {
   if (typeof value === "string") {
     const text = value.trim().toUpperCase()

@@ -15,7 +15,7 @@ export const DEFAULT_PACKET_DIR: string = path.resolve(
 
 export const DATA_FILES: readonly string[] = Object.freeze([
   "config", "tuning", "chess", "bonds", "garrisons", "items", "bands", "effects", "choices",
-  "enemies", "factions", "waves", "stages", "bosses", "tokens", "assets",
+  "enemies", "factions", "waves", "stages", "bosses", "tokens",
 ])
 
 export type PacketData = Readonly<Record<string, unknown>>

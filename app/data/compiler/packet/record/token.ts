@@ -158,7 +158,6 @@ export function buildTokens(ctx: SeasonContext, tokenOwners: Map<string, any[]>,
       count: first.count,
       abnormal: abnormal ? [...abnormal] : [],
       variants,
-      assets: { avatar: tokenId, spine: tokenId },
     }
   }
   const loon = enemies["enemy_9012_acloon"]
@@ -193,7 +192,6 @@ export function buildTokens(ctx: SeasonContext, tokenOwners: Map<string, any[]>,
       count: 1,
       abnormal: [...loonAbnormal],
       variants: {},
-      assets: { avatar: loon.iconId, spine: loon.spine, isEnemyModel: true },
     }
   } else ctx.notes.warn("炎佑 enemy_9012_acloon missing from enemies")
   const mapChars = new Map<string, { inst: any, positions: any[] }>()
@@ -258,7 +256,6 @@ export function buildTokens(ctx: SeasonContext, tokenOwners: Map<string, any[]>,
       abnormal: [],
       positions: positions.sort((left, right) => naturalCmp(left.alias, right.alias)),
       variants: {},
-      assets: { avatar: charId, spine: charId },
       source: "band_amedic (aceffect_band_61 auto_chess_change_map)",
     }
   }

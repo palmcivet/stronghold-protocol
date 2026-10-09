@@ -228,16 +228,11 @@ function enemyAttrPower(ctx: SeasonContext, key: string, level: number): number 
   return power
 }
 
-function enemyAttackAnim(manifest: any, spineId: string): any {
-  const spine = manifest?.enemies?.[spineId]?.spine
-  const attack = spine?.anims?.attack
-  if (!attack || typeof attack.loop !== "string" || attack.via === "idle") return null
-  const duration = spine.animations?.[attack.loop]
-  if (!(typeof duration === "number" && duration > 0)) return null
-  const hits = spine.hits?.[attack.loop]
-  const hit = Array.isArray(hits) && Number.isFinite(hits[0]) ? Math.min(duration, Math.max(0, hits[0])) : null
-  return hit != null ? { clip: attack.loop, dur: duration, hit } : { clip: attack.loop, dur: duration }
-}
+/**
+ * Attack animation of every enemy record. `null` means no clip: `mission-core/battle/unit/attack.ts`
+ * then rests for `ATTACK_PAUSE` with no windup, which is the timing every enemy has today.
+ */
+export const DEFAULT_ATTACK_ANIM: null = null
 
 const BAND_SWAP_LPR: number = 1
 
@@ -340,7 +335,6 @@ export function buildEnemies(ctx: SeasonContext): Record<string, any> {
     const prefab = mv(merged.prefabKey) || key
     const hitArea = HIT_AREAS[prefab] || null
     const modelScale = MODEL_SCALE_BY_PREFAB.get(prefab) ?? null
-    const attackAnim = enemyAttackAnim(ctx.manifest, prefab)
     out[key] = {
       key,
       name,
@@ -373,7 +367,7 @@ export function buildEnemies(ctx: SeasonContext): Record<string, any> {
       ...(hitArea ? { hitArea: { ...hitArea } } : {}),
       ...(STATIC_BODIES.has(key) ? { staticBody: true } : {}),
       ...(modelScale != null && modelScale !== 1 ? { modelScale } : {}),
-      ...(attackAnim ? { attackAnim } : {}),
+      attackAnim: DEFAULT_ATTACK_ANIM,
       ...(abilities.some((ability: any) => ability.text.includes("不停止移动")) ? { attackMoves: true } : {}),
     }
   }

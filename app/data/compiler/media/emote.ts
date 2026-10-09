@@ -1,12 +1,12 @@
 // 从官方 display / activity / item 表编译对局表情清单，写到 product/season/<id>/emotes.json。
 
-import { setTimeout as delay } from "node:timers/promises"
 import { join, resolve } from "node:path"
-import { BuildReadError, type BuildFiles, type BuildHttp } from "arknights-assets-extractor"
+import { formatAssetKey, type AssetKey } from "arknights-assets-catalog"
+import { BuildReadError, type BuildFiles } from "arknights-assets-extractor"
+import { gamedataPath, readGamedata } from "#compiler/gamedata.js"
 import { dataWorkspace } from "#workspace.js"
 
 const workspace = dataWorkspace()
-const GAMEDATA_URL = "https://raw.githubusercontent.com/Kengxxiao/ArknightsGameData/master/zh_CN/gamedata/"
 const SCENE = "AUTOCHESS_BATTLE"
 
 export const THEME_DIRS: Readonly<Record<string, string>> = Object.freeze({
@@ -53,7 +53,8 @@ export interface EmoteRecord {
   readonly themeId: string
   readonly sortId: number
   readonly picId: string
-  readonly art: string
+  /** Asset key of the picture, `image:ui/emoticon/<dir>/<picId>`. */
+  readonly art: AssetKey
   readonly label: string
 }
 
@@ -80,6 +81,11 @@ function field(value: unknown, key: string): unknown {
   const row = record(value)
   if (!row || !Object.hasOwn(row, key)) return undefined
   return row[key]
+}
+
+/** Asset key of an emote picture; the same key as `emoteArtKey` in `@alliance/contract`. */
+export function emoteArtKey(dir: string, picId: string): AssetKey {
+  return formatAssetKey("image", `ui/emoticon/${dir}/${picId}`)
 }
 
 function themeDir(themeId: string): string {
@@ -159,7 +165,7 @@ export function buildEmotes(source: { readonly display: unknown; readonly activi
         themeId,
         sortId: row.sortId,
         picId: row.picId,
-        art: `/assets/ui/emoticon/${dir}/${row.picId}.png`,
+        art: emoteArtKey(dir, row.picId),
         label: EMOTE_LABELS[row.id] ?? `${shortName(name, themeId)} ${index + 1}`,
       })
     })
@@ -189,67 +195,20 @@ export function formatEmotes(doc: EmoteDocument): string {
   )
 }
 
-interface GamedataRequest {
-  readonly cache: string
-  readonly rel: string
-  readonly offline: boolean
-  readonly optional?: boolean
-}
-
-async function ensureGamedata(files: BuildFiles, http: BuildHttp, request: GamedataRequest): Promise<string | null> {
-  const absolute = join(request.cache, request.rel)
-  if (await files.exists(absolute)) return absolute
-  if (request.offline) {
-    if (request.optional) return null
-    throw new BuildReadError(absolute, `missing cached file ${request.rel} (offline mode)`)
-  }
-  let lastError = "unknown error"
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    let text: string
-    try {
-      text = await http.getText(GAMEDATA_URL + request.rel, 180000)
-    } catch (cause) {
-      lastError = cause instanceof Error ? cause.message : String(cause)
-      await delay(500 * attempt)
-      continue
-    }
-    try {
-      JSON.parse(text)
-    } catch (cause) {
-      lastError = cause instanceof Error ? cause.message : String(cause)
-      await delay(500 * attempt)
-      continue
-    }
-    try {
-      await files.writeTextAtomic(absolute, text)
-    } catch (cause) {
-      lastError = cause instanceof Error ? cause.message : String(cause)
-      await delay(500 * attempt)
-      continue
-    }
-    return absolute
-  }
-  if (request.optional) return null
-  throw new BuildReadError(request.rel, `download failed for ${request.rel}: ${lastError}`)
-}
-
 interface EmoteArgs {
-  readonly offline: boolean
   readonly check: boolean
   readonly out: string
   readonly cache: string
 }
 
 function parseEmoteArgs(argv: readonly string[]): EmoteArgs {
-  let offline = false
   let check = false
   let out: string | null = null
   let cache: string | null = null
   let season: string | null = null
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i]
-    if (arg === "--offline") offline = true
-    else if (arg === "--check") check = true
+    if (arg === "--check") check = true
     else if (arg === "--out" || arg === "--cache" || arg === "--season") {
       const value = argv[++i]
       if (!value || value.startsWith("--")) throw new Error(`${arg} needs a value`)
@@ -261,12 +220,12 @@ function parseEmoteArgs(argv: readonly string[]): EmoteArgs {
       if (!value) throw new Error("--season needs an id")
       season = value
     } else {
-      throw new Error(`unknown option ${arg}\nusage: [--offline] [--check] --season <id> [--out <file>] [--cache <dir>]`)
+      throw new Error(`unknown option ${arg}\nusage: [--check] --season <id> [--out <file>] [--cache <dir>]`)
     }
   }
   if (!season && !out) throw new Error("--season is required")
   const seasonOut = season ? join(workspace.seasonDir(season), "emotes.json") : ""
-  return { offline, check, out: out ?? seasonOut, cache: cache ?? workspace.gamedataCacheDir }
+  return { check, out: out ?? seasonOut, cache: cache ?? workspace.extractCacheDir }
 }
 
 async function readJson(files: BuildFiles, path: string | null): Promise<unknown> {
@@ -279,14 +238,12 @@ async function readJson(files: BuildFiles, path: string | null): Promise<unknown
   }
 }
 
-export async function compileEmotes(files: BuildFiles, http: BuildHttp, argv: readonly string[]): Promise<number> {
+export async function compileEmotes(files: BuildFiles, argv: readonly string[]): Promise<number> {
     const options = parseEmoteArgs(argv)
-    const display = await readJson(files, await ensureGamedata(files, http, { cache: options.cache, rel: "excel/display_meta_table.json", offline: options.offline }))
-    const activity = await readJson(files, await ensureGamedata(files, http, { cache: options.cache, rel: "excel/activity_table.json", offline: options.offline }))
-    const items = await readJson(
-      files,
-      await ensureGamedata(files, http, { cache: options.cache, rel: "excel/item_table.json", offline: options.offline, optional: true }),
-    )
+    const display = JSON.parse(await readGamedata(files, options.cache, "excel/display_meta_table.json")) as unknown
+    const activity = JSON.parse(await readGamedata(files, options.cache, "excel/activity_table.json")) as unknown
+    const itemsPath = gamedataPath(options.cache, "excel/item_table.json")
+    const items = (await files.exists(itemsPath)) ? await readJson(files, itemsPath) : null
     if (!items) console.warn("build-emotes: item_table unavailable, theme names fall back to theme ids")
     const built = items == null ? buildEmotes({ display, activity }) : buildEmotes({ display, activity, items })
     for (const warning of built.warnings) console.warn(`build-emotes: ${warning}`)

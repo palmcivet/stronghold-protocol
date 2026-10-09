@@ -1,11 +1,10 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { expect, test } from "vitest"
-import { extractorWorkspace } from "#workspace.js"
+import { extractorPackageRoot } from "#package-root.js"
 import { atlasInfo, normalizeAtlas, parseAtlas } from "#spine/atlas.js"
 
-const spineDir = join(extractorWorkspace().mediaDir, "spine")
-const haveSpine = existsSync(spineDir)
+const spineDir = join(extractorPackageRoot(), "test", "fixture", "spine")
 
 const fexli = "\nchar_x.png\nformat: RGBA8888\nfilter: Linear,Linear\nrepeat: none\nArm\n  rotate: false\n  xy: 2, 2\n  size: 10, 12\n  orig: 10, 12\n  offset: 0, 0\n  index: -1\nLeg\n  rotate: 270\n  xy: 20, 2\n  size: 8, 8\n  orig: 8, 8\n  offset: 0, 0\n  index: -1\n"
 const sizeOf = (): { readonly width: number; readonly height: number } => ({ width: 256, height: 128 })
@@ -51,7 +50,7 @@ test("handles multiple pages and CRLF and reports unsized pages", () => {
   ])
 })
 
-test.skipIf(!haveSpine)("every atlas on disk has a size, and enemy atlases have pma", () => {
+test("every extracted atlas has a size, and enemy atlases have pma", () => {
   const atlases: string[] = []
   const walk = (dir: string): void => {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -61,7 +60,10 @@ test.skipIf(!haveSpine)("every atlas on disk has a size, and enemy atlases have 
     }
   }
   walk(spineDir)
-  expect(atlases.length).toBeGreaterThan(400)
+  expect(atlases.map((path) => path.slice(spineDir.length + 1)).sort()).toEqual([
+    join("enemy", "enemy_1007_slime", "enemy_1007_slime.atlas"),
+    join("token", "token_10000_silent_healrb", "token_10000_silent_healrb.atlas"),
+  ])
   for (const path of atlases) {
     const info = atlasInfo(readFileSync(path, "utf8"))
     expect(info.hasSize, path).toBe(true)

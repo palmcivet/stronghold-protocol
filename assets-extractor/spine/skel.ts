@@ -1,5 +1,5 @@
-// 用 @pixi-spine/runtime-3.8 读 Spine 3.8 二进制骨架，只要动画名、时长、OnAttack 时间和包围盒。
-// 附件不加载贴图；如果给了 atlas 区域名，对不上的路径记进 missingRegions。
+// 用 @pixi-spine/runtime-3.8 读 Spine 3.8 二进制骨架：版本、每个动画的时长与事件、包围盒。
+// 附件不加载贴图；给了 atlas 区域名时，对不上的附件路径记进 missingRegions。
 
 import { createRequire } from "node:module"
 import { join } from "node:path"
@@ -102,46 +102,37 @@ function makeLoader(spine: SpineRuntime, regions: ReadonlySet<string> | undefine
 
 const round3 = (value: number): number => Math.round(Number(value) * 1000) / 1000
 
-export interface SpineBounds {
-  readonly x: number
-  readonly y: number
-  readonly width: number
-  readonly height: number
+export interface SkelAnimation {
+  /** Seconds, rounded to milliseconds. */
+  readonly duration: number
+  /** Every event key of the animation, sorted by time and name. */
+  readonly events: readonly { readonly name: string; readonly time: number }[]
 }
 
-export interface SkelInfo {
+export interface SkelFacts {
   readonly version: string
-  readonly animations: readonly string[]
-  readonly durations: Readonly<Record<string, number>>
-  readonly events: readonly string[]
-  readonly hits: Readonly<Record<string, readonly number[]>>
-  readonly bounds: SpineBounds | null
+  readonly animations: Readonly<Record<string, SkelAnimation>>
+  readonly bounds: { readonly x: number; readonly y: number; readonly width: number; readonly height: number } | null
   readonly missingRegions: readonly string[]
 }
 
-export function parseSkel(bytes: Uint8Array, atlasRegions?: ReadonlySet<string>): SkelInfo {
+export function parseSkel(bytes: Uint8Array, atlasRegions?: ReadonlySet<string>): SkelFacts {
   const spine = loadRuntime()
   const missing = new Set<string>()
   const binary = new spine.SkeletonBinary(makeLoader(spine, atlasRegions, missing))
   const data = binary.readSkeletonData(bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes))
-  const animations = data.animations.map((animation) => animation.name)
-  const durations: Record<string, number> = {}
-  const hits: Record<string, number[]> = {}
-  for (const animation of data.animations) {
-    durations[animation.name] = round3(animation.duration)
+  const animations: Record<string, SkelAnimation> = {}
+  for (const animation of [...data.animations].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))) {
+    const events: { name: string; time: number }[] = []
     for (const timeline of animation.timelines) {
       if (!timeline || !Array.isArray(timeline.events)) continue
       for (const event of timeline.events) {
         const name = event?.data?.name
-        if (typeof name === "string" && /^onattack$/i.test(name)) {
-          const list = hits[animation.name] ?? []
-          list.push(round3(Number(event.time)))
-          hits[animation.name] = list
-        }
+        if (typeof name === "string" && name.length > 0) events.push({ name, time: round3(Number(event.time)) })
       }
     }
-    const attackHits = hits[animation.name]
-    if (attackHits) attackHits.sort((a, b) => a - b)
+    events.sort((a, b) => a.time - b.time || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
+    animations[animation.name] = { duration: round3(animation.duration), events }
   }
   const width = Number(data.width)
   const height = Number(data.height)
@@ -152,9 +143,6 @@ export function parseSkel(bytes: Uint8Array, atlasRegions?: ReadonlySet<string>)
   return {
     version: String(data.version ?? ""),
     animations,
-    durations,
-    events: data.events.map((event) => event.name),
-    hits,
     bounds,
     missingRegions: [...missing].sort(),
   }

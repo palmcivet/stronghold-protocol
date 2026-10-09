@@ -1,26 +1,23 @@
 import { basename, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
-export interface AssetsCatalogPaths {
-  readonly root: string
-  readonly productDir: string
-  readonly mediaDir: string
-  readonly fontDir: string
-  readonly releasePath: string
-  readonly cacheDir: string
-}
-
 export interface DataWorkspace {
   readonly workspaceRoot: string
   readonly root: string
   readonly compilerDir: string
   readonly inputDir: string
   readonly researchDir: string
+  /** Input of the base pack: `base/pack.json`. */
+  readonly baseInputDir: string
   readonly productDir: string
   readonly cacheDir: string
-  readonly gamedataCacheDir: string
+  /** Cache of `assets-extractor`, which holds the gamedata tables this package compiles from. */
+  readonly extractCacheDir: string
+  /** Need lists the extractor reads: `base.json` and `season-<id>.json`. */
+  readonly needsDir: string
+  /** Files this package derives from extracted ones, laid out by address and listed by `catalog.json`. */
+  readonly derivedDir: string
   readonly reportPath: string
-  readonly catalog: AssetsCatalogPaths
   seasonDir(seasonId: string): string
   seasonInputDir(seasonId: string): string
 }
@@ -45,27 +42,22 @@ export function dataWorkspace(options: DataWorkspaceOptions = {}): DataWorkspace
   const inputDir = join(root, "compiler", "input")
   const productDir = resolve(options.productDir ?? join(root, "product"))
   const cacheDir = resolve(options.dataCacheDir ?? join(root, ".cache"))
-  const gamedataCacheDir = join(cacheDir, "gamedata")
-  const catalogRoot = join(workspaceRoot, "assets-catalog")
-  const catalogProductDir = join(catalogRoot, "product")
+  const extractCacheDir = join(cacheDir, "assets")
+  const needsDir = join(cacheDir, "needs")
+  const derivedDir = join(cacheDir, "derived")
   return {
     root,
     workspaceRoot,
     compilerDir,
     inputDir,
     researchDir: join(inputDir, "research"),
+    baseInputDir: join(inputDir, "base"),
     productDir,
     cacheDir,
-    gamedataCacheDir,
+    extractCacheDir,
+    needsDir,
+    derivedDir,
     reportPath: join(cacheDir, "build-data-report.json"),
-    catalog: {
-      root: catalogRoot,
-      productDir: catalogProductDir,
-      mediaDir: join(catalogProductDir, "media"),
-      fontDir: join(catalogProductDir, "font"),
-      releasePath: join(catalogProductDir, "catalog.json"),
-      cacheDir: join(workspaceRoot, "assets-extractor", ".cache"),
-    },
     seasonDir: (seasonId) => join(productDir, "season", seasonId),
     seasonInputDir: (seasonId) => join(inputDir, "season", seasonId),
   }

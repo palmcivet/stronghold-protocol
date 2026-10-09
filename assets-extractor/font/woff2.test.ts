@@ -1,10 +1,10 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs"
 import { join } from "node:path"
 import { expect, test } from "vitest"
-import { extractorWorkspace } from "#workspace.js"
 import { decodeWoff2Tables, encodeWoff2, readSfnt, uintBase128 } from "#font/woff2.js"
+import { extractorPackageRoot } from "#package-root.js"
 
-const fontDir = extractorWorkspace().fontDir
+const fontDir = join(extractorPackageRoot(), "test", "fixture", "font")
 
 test("UIntBase128", () => {
   expect(uintBase128(0)).toEqual([0])
@@ -51,10 +51,10 @@ test("lossless round trip of a synthetic font including an unknown tag", () => {
   }
 })
 
-const fontsReady = existsSync(join(fontDir, "fonts.css"))
-
-test.skipIf(!fontsReady)("shipped fonts decode back to their sources", () => {
-  for (const name of readdirSync(fontDir).filter((file) => /\.(otf|ttf)$/.test(file))) {
+test("converted fonts decode back to their sources", () => {
+  const sources = readdirSync(fontDir).filter((file) => /\.(otf|ttf)$/.test(file)).sort()
+  expect(sources).toEqual(["bender-light.ttf", "bender-regular.otf"])
+  for (const name of sources) {
     const woff2 = join(fontDir, name.replace(/\.(otf|ttf)$/, ".woff2"))
     expect(existsSync(woff2), `${woff2} exists`).toBe(true)
     const source = readSfnt(readFileSync(join(fontDir, name)))

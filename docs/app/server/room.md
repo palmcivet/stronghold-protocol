@@ -11,7 +11,7 @@ description: 建房、入座、准备、观战，以及房间状态推送。
 
 `difficulty` 为 `FUNNY`、`NORMAL`、`HARD`、`ABYSS`。模式编号由服务端写成 `mode_single_<difficulty>` 或 `mode_multi_<difficulty>`，小写难度，出现在对局公开状态的 `modeId` 里。
 
-建房消息目前只有 `mode` 与 `difficulty`。帧里没有赛季字段。
+建房消息只有 `mode` 与 `difficulty`。帧里没有赛季字段。
 
 人在大厅房间里发送 `room.create` 或 `room.join` 时，会先离开当前房间。对局已经开始时，这两条回复 `ROOM_STARTED`，要先 `room.leave` 或 `g.leave`。
 

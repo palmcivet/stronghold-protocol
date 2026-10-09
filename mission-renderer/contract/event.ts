@@ -1,4 +1,4 @@
-import type { AssetRef } from "arknights-assets-catalog"
+import type { AssetKey } from "arknights-assets-catalog"
 
 export type MissionPointerHit =
   | { readonly type: "unit"; readonly unitId: string }
@@ -22,5 +22,5 @@ export interface MissionAudioCue {
   readonly eventType: string
   readonly unitId?: string
   readonly targetId?: string
-  readonly asset?: AssetRef
+  readonly asset?: AssetKey
 }

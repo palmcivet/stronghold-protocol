@@ -1,15 +1,16 @@
 packages:
   - "app/*"
+  - "app/compat/upstream"
   - "assets-catalog"
   - "assets-extractor"
   - "deployment"
+  - "deployment/client/config"
   - "mission-core"
   - "mission-renderer"
 
 catalog:
   "@types/node": ^26.6.4
   cross-env: ^10.1.0
-  effect: ^4.0.1
   typescript: ^7.0.2
   vite: ^8.3.2
   vitest: ^5.0.3

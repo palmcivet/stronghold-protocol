@@ -1,11 +1,11 @@
-import type { AssetRef } from "arknights-assets-catalog"
+import type { AssetKey } from "arknights-assets-catalog"
 import type { BattleEvent, UnitSnapshot } from "arknights-mission-core"
 import type { MissionAudioCue } from "#contract/event.js"
 
 export type EffectAudioFor = (
   event: BattleEvent,
   type: MissionAudioCue["type"],
-) => AssetRef | null
+) => AssetKey | null
 
 const AUDIO_TYPES: Readonly<Record<string, MissionAudioCue["type"]>> = {
   attack: "attack",
