@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import type { UnitSpec } from "#contract/spec.js"
 import { readSnapshot } from "#battle/snapshot.js"
-import { createUnit } from "#battle/unit/index.js"
+import { createUnit } from "#unit/record/index.js"
 
 function spec(id: string, side: UnitSpec["side"], kind?: UnitSpec["kind"]): UnitSpec {
   return {

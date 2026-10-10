@@ -2,11 +2,11 @@ import type { BattleEvent } from "#contract/event.js"
 import type { BattleResult } from "#contract/result.js"
 import type { BattleSpec, UnitSide, UnitSpec } from "#contract/spec.js"
 import type { ContentContext, TimerState } from "#port/content.js"
-import type { ProjectileFlight } from "#battle/projectile/index.js"
-import type { Random } from "#random/index.js"
-import type { FieldGrid } from "#battle/space/grid/index.js"
-import { compileRoute } from "#battle/space/grid/route.js"
-import { createUnit, type UnitState } from "#battle/unit/index.js"
+import type { ProjectileFlight } from "#combat/projectile/index.js"
+import type { Random } from "#kernel/random/index.js"
+import type { FieldGrid } from "#field/grid/index.js"
+import { compileRoute } from "#field/grid/route.js"
+import { createUnit, type UnitState } from "#unit/record/index.js"
 
 export interface ScheduledCallback {
   tick: number

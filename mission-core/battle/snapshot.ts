@@ -1,6 +1,6 @@
 import type { BattleSnapshot, UnitSnapshot } from "#contract/snapshot.js"
-import { overlaySkillAttributes } from "#battle/skill/modifier.js"
-import type { UnitState } from "#battle/unit/index.js"
+import { overlaySkillAttributes } from "#ability/skill/modifier.js"
+import type { UnitState } from "#unit/record/index.js"
 
 /** 把单位上已经写好的标志、路线消失、属性和元素槽抄成快照。 */
 export function readSnapshot(tick: number, units: Iterable<UnitState>): BattleSnapshot {

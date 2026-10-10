@@ -1,7 +1,7 @@
 import type { PhaseSlot } from "#contract/phase.js"
 import type { BattleEvent } from "#contract/event.js"
 import type { AttackShape, Direction, Motion, TileCoord, TileSpec, UnitSide, UnitSpec } from "#contract/spec.js"
-import type { Random } from "#random/index.js"
+import type { Random } from "#kernel/random/index.js"
 
 export const MODIFIER_OPS = ["add", "percent", "mul"] as const
 
