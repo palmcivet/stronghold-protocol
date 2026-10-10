@@ -10,7 +10,7 @@ import {
   type MissionModule,
   type TileSpec,
 } from "arknights-mission-core"
-import { ally, spec } from "../fixture.js"
+import { ally, spec } from "#test/fixture.js"
 
 function ground(x: number, y: number, deployable = true): TileSpec {
   return { x, y, height: 0, deployable, walkableBy: ["WALK"] }

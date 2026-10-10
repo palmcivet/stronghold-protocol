@@ -3,7 +3,7 @@ import type { BattleRegistry } from "#battle/registry.js"
 import { drainSkillSp } from "#battle/skill/point.js"
 import { emit, requireUnit, type BattleState } from "#battle/state.js"
 import { ELEMENT, ELEMENT_GAUGE_MAX } from "#battle/damage/constants.js"
-import { TICK } from "#tick/index.js"
+import { TICK } from "#kernel/tick/index.js"
 import type { UnitState } from "#battle/unit/index.js"
 
 export function hasHp(unit: UnitState): boolean {

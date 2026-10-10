@@ -5,8 +5,8 @@ import {
   setAttackTargetThisTick,
   type MissionModule,
 } from "arknights-mission-core"
-import { sessionOf } from "../../battle/session.js"
-import { ally, spec } from "../fixture.js"
+import { sessionOf } from "#battle/session.js"
+import { ally, spec } from "#test/fixture.js"
 
 const body = { hp: 100, atk: 40, def: 0, aspd: 100, bat: 1 }
 

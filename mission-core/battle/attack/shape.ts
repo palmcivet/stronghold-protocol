@@ -5,6 +5,8 @@ import { bodyDist } from "#battle/space/body/index.js"
 import type { BattleState } from "#battle/state.js"
 import { maxHpOf } from "#battle/unit/attribute.js"
 import { isFlying, type UnitState } from "#battle/unit/index.js"
+import { hypot } from "#kernel/math/hypot.js"
+import { powi } from "#kernel/math/powi.js"
 
 /** 治疗链在主目标周围找下一名友方的半径，格。 */
 export const CHAIN_HEAL_RADIUS = 2.5
@@ -162,7 +164,7 @@ function resolveBounce(
     const next = nearest(state, attacker, prev, radius, seen)
     if (!next) return
     seen.add(next.id)
-    pay(ctx, impact.sourceId, next.id, scaled(impact.amount * Math.pow(1 - falloff, jump)), damage)
+    pay(ctx, impact.sourceId, next.id, scaled(impact.amount * powi(1 - falloff, jump)), damage)
     if (pause > 0 && present(state.units.get(next.id))) ctx.applyStatus(next.id, "sluggish", { duration: pause })
     prev = next
   }
@@ -191,7 +193,7 @@ function resolveChain(
     const next = lowestAlly(state, registry, attacker, prev, radius, seen)
     if (!next) return
     seen.add(next.id)
-    pay(ctx, impact.sourceId, next.id, scaled(impact.amount * Math.pow(1 - falloff, jump)), "heal")
+    pay(ctx, impact.sourceId, next.id, scaled(impact.amount * powi(1 - falloff, jump)), "heal")
     prev = next
   }
 }
@@ -261,7 +263,7 @@ function around(
   const found: UnitState[] = []
   for (const unit of state.units.values()) {
     if (!selectable(unit, attacker)) continue
-    const distance = measure === "centre" ? Math.hypot(unit.x - x, unit.y - y) : bodyDist(unit, x, y)
+    const distance = measure === "centre" ? hypot(unit.x - x, unit.y - y) : bodyDist(unit, x, y)
     if (distance <= radius + 1e-9) found.push(unit)
   }
   found.sort((left, right) => left.spawnSeq - right.spawnSeq)
@@ -304,7 +306,7 @@ function lowestAlly(
     if (seen.has(unit.id) || unit.side !== attacker.side) continue
     if (!present(unit) || unit.flags.has("noHeal")) continue
     if (!injured(unit, registry)) continue
-    const distance = Math.hypot(unit.x - prev.x, unit.y - prev.y)
+    const distance = hypot(unit.x - prev.x, unit.y - prev.y)
     if (distance > radius + 1e-9) continue
     const ratio = hpRatio(unit, registry)
     if (best === null || ratio < bestRatio - 1e-9 || (Math.abs(ratio - bestRatio) <= 1e-9 && unit.spawnSeq < best.spawnSeq)) {

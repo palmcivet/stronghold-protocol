@@ -1,6 +1,6 @@
 import { expect, test } from "vitest"
 import { createBattle, PROJECTILE_SPEED, type MissionModule } from "arknights-mission-core"
-import { ally, spec } from "../fixture.js"
+import { ally, spec } from "#test/fixture.js"
 
 function launch(speed?: number): MissionModule {
   return {

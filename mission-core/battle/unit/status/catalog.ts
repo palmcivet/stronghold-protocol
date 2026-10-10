@@ -2,7 +2,7 @@ import type { AttributeModifier, ContentContext, StatusDefinition } from "#port/
 import type { BattleRegistry } from "#battle/registry.js"
 import { requireUnit, type BattleState } from "#battle/state.js"
 import { attributeOf } from "#battle/unit/attribute.js"
-import { TICK } from "#tick/index.js"
+import { TICK } from "#kernel/tick/index.js"
 import type { StatusInstance, UnitState } from "#battle/unit/index.js"
 import {
   COLD_ASPD,

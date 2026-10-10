@@ -1,6 +1,6 @@
 import { expect, test } from "vitest"
 import { createBattle, type MissionModule, type StatusDefinition } from "arknights-mission-core"
-import { ally, spec } from "../fixture.js"
+import { ally, spec } from "#test/fixture.js"
 
 const stealth: StatusDefinition = {
   id: "stealth",

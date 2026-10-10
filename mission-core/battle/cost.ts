@@ -2,7 +2,7 @@ import { UNIT_SIDES, type CostPoolSpec, type UnitSide } from "#contract/spec.js"
 import type { MissionModule } from "#port/content.js"
 import { emit, type BattleState } from "#battle/state.js"
 import { sessionOf } from "#battle/session.js"
-import { TICK } from "#tick/index.js"
+import { TICK } from "#kernel/tick/index.js"
 
 const COST_EPSILON = 1e-9
 

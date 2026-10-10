@@ -8,7 +8,7 @@ import {
   deployModule,
   type MissionModule,
 } from "arknights-mission-core"
-import { ally, spec } from "../fixture.js"
+import { ally, spec } from "#test/fixture.js"
 
 const lane = [0, 1, 2, 3, 4, 5].map((x) => ({
   x,

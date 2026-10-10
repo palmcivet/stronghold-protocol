@@ -5,7 +5,7 @@ import {
   type MissionModule,
   type PhaseSlot,
 } from "arknights-mission-core"
-import { ally, spec } from "../fixture.js"
+import { ally, spec } from "#test/fixture.js"
 
 const skill = {
   id: "s",

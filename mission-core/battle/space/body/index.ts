@@ -1,4 +1,5 @@
 import type { HitArea } from "#contract/spec.js"
+import { hypot } from "#kernel/math/hypot.js"
 
 export interface BodyUnit {
   readonly x: number
@@ -103,10 +104,10 @@ export function bodyInKeys(unit: BodyUnit, keys: KeyCollection, span: BoardSpan)
 /** 点 (x, y) 到身体的距离。在矩形内部是 0。点单位量到站位。 */
 export function bodyDist(unit: BodyUnit, x: number, y: number): number {
   const rect = bodyRect(unit)
-  if (!rect) return Math.hypot(unit.x - x, unit.y - y)
+  if (!rect) return hypot(unit.x - x, unit.y - y)
   const dx = x < rect.x0 ? rect.x0 - x : x > rect.x1 ? x - rect.x1 : 0
   const dy = y < rect.y0 ? rect.y0 - y : y > rect.y1 ? y - rect.y1 : 0
-  return Math.hypot(dx, dy)
+  return hypot(dx, dy)
 }
 
 /** 身体是否在点 (x, y) 的 r 格以内。 */

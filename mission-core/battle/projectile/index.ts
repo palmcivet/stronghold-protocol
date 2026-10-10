@@ -2,7 +2,8 @@ import type { ContentContext, ProjectileImpact, ProjectileLaunch, ProjectileView
 import { resolveAttackImpact } from "#battle/attack/shape.js"
 import type { BattleRegistry } from "#battle/registry.js"
 import type { BattleState } from "#battle/state.js"
-import { TICK } from "#tick/index.js"
+import { TICK } from "#kernel/tick/index.js"
+import { hypot } from "#kernel/math/hypot.js"
 
 /** 缺省飞行速度，格/秒。 */
 export const PROJECTILE_SPEED = 12
@@ -81,7 +82,7 @@ export function advanceProjectiles(state: BattleState, registry: BattleRegistry,
     const goalY = live && target ? target.y : projectile.aimY
     const dx = goalX - projectile.x
     const dy = goalY - projectile.y
-    const distance = Math.hypot(dx, dy)
+    const distance = hypot(dx, dy)
     const step = projectile.speed * TICK
     if (distance <= step + 1e-8 || projectile.age >= PROJECTILE_MAX_AGE) {
       projectile.x = goalX

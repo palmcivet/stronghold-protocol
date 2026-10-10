@@ -1,6 +1,6 @@
 import { expect, test } from "vitest"
 import { createBattle, type Direction, type MissionModule } from "arknights-mission-core"
-import { ally, spec } from "../fixture.js"
+import { ally, spec } from "#test/fixture.js"
 
 const cell = { x: 1, y: 2 }
 const origin = { x: 5, y: 5 }

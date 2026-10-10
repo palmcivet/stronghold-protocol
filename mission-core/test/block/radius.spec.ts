@@ -7,7 +7,7 @@ import {
   createBattle,
   type MissionModule,
 } from "arknights-mission-core"
-import { ally, spec } from "../fixture.js"
+import { ally, spec } from "#test/fixture.js"
 
 const lane = [0, 1, 2, 3].map((x) => ({ x, y: 0, height: 0, deployable: true, walkableBy: ["ground"] }))
 

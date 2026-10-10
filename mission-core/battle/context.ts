@@ -22,7 +22,7 @@ import { addUnit, emit as publish, requireUnit, type BattleState } from "#battle
 import { activateSkill, configureSkill as writeSkill, gainSkillSp, readySkill as fillSkill } from "#battle/skill/point.js"
 import { shouldCast as askTrigger } from "#battle/skill/trigger.js"
 import { bodyRect, normHitArea } from "#battle/space/body/index.js"
-import { TICK } from "#tick/index.js"
+import { TICK } from "#kernel/tick/index.js"
 import { attributeOf, maxHpOf } from "#battle/unit/attribute.js"
 import type { FieldGrid } from "#battle/space/grid/index.js"
 import { selectUnits, unitsInRange as rangeUnits } from "#battle/target/selector.js"

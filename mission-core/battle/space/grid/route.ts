@@ -3,6 +3,7 @@ import type { GridRect } from "#battle/space/grid/index.js"
 import type { FlowField, FieldGrid } from "#battle/space/grid/index.js"
 import type { GridPoint } from "#battle/space/grid/sight.js"
 import type { UnitState } from "#battle/unit/index.js"
+import { hypot } from "#kernel/math/hypot.js"
 
 /** 每秒移动格数 = moveSpeed × MOVE_SCALE。 */
 export const MOVE_SCALE = 0.5
@@ -137,7 +138,7 @@ export function advanceRoute(grid: FieldGrid, unit: UnitState, dt: number, tiles
       if (!point) break
       const dx = point.x - unit.x
       const dy = point.y - unit.y
-      const length = Math.hypot(dx, dy)
+      const length = hypot(dx, dy)
       if (length <= distance) {
         unit.x = point.x
         unit.y = point.y
@@ -175,13 +176,13 @@ export function remainingDistance(unit: UnitState): number {
       for (let pointIndex = route.ptIdx; pointIndex < route.pts.length; pointIndex += 1) {
         const point = route.pts[pointIndex]
         if (!point) continue
-        total += Math.hypot(point.x - x, point.y - y)
+        total += hypot(point.x - x, point.y - y)
         x = point.x
         y = point.y
       }
       continue
     }
-    total += Math.hypot(leg.x - x, leg.y - y)
+    total += hypot(leg.x - x, leg.y - y)
     x = leg.x
     y = leg.y
   }

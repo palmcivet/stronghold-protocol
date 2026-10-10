@@ -52,7 +52,8 @@ export interface StatusDefinition {
   readonly id: string
   readonly flags: readonly string[]
   readonly modifiers: readonly AttributeModifier[]
-  /** 身上已有这些状态时，挡住别的状态。名单用 master 的免疫名，例如冻结是 frozen。 */
+  /** 身上已有这些状态时，挡住别的状态。名单用免疫名，例如冻结是 frozen。 */
+  // TRACE: source/immunity-names
   readonly immunity: readonly string[]
   /**
    * 这个状态自己被挡住时，单位免疫名单里对应的名字。

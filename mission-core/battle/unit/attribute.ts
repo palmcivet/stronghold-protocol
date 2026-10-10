@@ -2,6 +2,7 @@ import type { BattleRegistry } from "#battle/registry.js"
 import { skillModSum } from "#battle/skill/modifier.js"
 import type { AttributeModifier } from "#port/content.js"
 import type { UnitState } from "#battle/unit/index.js"
+import { powi } from "#kernel/math/powi.js"
 
 const MULTIPLIERS = new Set([
   "dmgDealt",
@@ -55,7 +56,7 @@ function applyLayer(sum: ModSum, modifier: AttributeModifier, stacks: number): v
   sum.touched = true
   if (modifier.op === "add") sum.add += modifier.value * stacks
   else if (modifier.op === "percent") sum.percent += modifier.value * stacks
-  else sum.mul *= stacks === 1 ? modifier.value : Math.pow(modifier.value, stacks)
+  else sum.mul *= stacks === 1 ? modifier.value : powi(modifier.value, stacks)
 }
 
 function eachModifier(unit: UnitState, registry: BattleRegistry, visit: (modifier: AttributeModifier, stacks: number) => void): void {
@@ -99,6 +100,6 @@ function dodgeOf(unit: UnitState, registry: BattleRegistry, key: "dodgePhys" | "
   const first = rolls[0]
   if (rolls.length === 1 && first && first.stacks === 1) return first.p
   let miss = 1
-  for (const roll of rolls) miss *= Math.pow(1 - roll.p, roll.stacks)
+  for (const roll of rolls) miss *= powi(1 - roll.p, roll.stacks)
   return Math.min(1, Math.max(0, 1 - miss))
 }

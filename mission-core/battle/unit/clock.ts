@@ -4,7 +4,7 @@ import { requireUnit, type BattleState } from "#battle/state.js"
 import { attackHasTarget } from "#battle/unit/aim.js"
 import { attributeOf } from "#battle/unit/attribute.js"
 import type { UnitState } from "#battle/unit/index.js"
-import { TICK } from "#tick/index.js"
+import { reached, READY_EPSILON, TICK } from "#kernel/tick/index.js"
 
 /** 充能计时器 id。 */
 export const CHARGE_TIMER = "charge"
@@ -36,7 +36,6 @@ export const BOOMERANGS_OUT_ATTRIBUTE = "boomerangsOut"
 const ASPD_MIN = 20
 const ASPD_MAX = 600
 const RELOAD_GAP = 1
-const READY_EPSILON = 1e-9
 
 export interface AttackTiming {
   canAttack: boolean
@@ -159,7 +158,7 @@ function advanceCharge(
   let elapsed = number(timer, "elapsed") + independentDt(unit, registry)
   const interval = attackInterval(unit, registry)
   if (interval > 0) {
-    while (stored < cap && elapsed + READY_EPSILON >= interval) {
+    while (stored < cap && reached(elapsed, interval)) {
       elapsed -= interval
       stored += 1
     }
@@ -205,14 +204,14 @@ function advanceAmmo(state: BattleState, registry: BattleRegistry, unit: UnitSta
   const cap = ammoCap(unit, registry)
   let ammo = Math.min(cap, number(timer, "ammo"))
   const sinceAttack = now - number(timer, "attackAt")
-  const reloading = onField(unit) && sinceAttack + READY_EPSILON >= RELOAD_GAP && ammo < cap
+  const reloading = onField(unit) && reached(sinceAttack, RELOAD_GAP) && ammo < cap
   if (!reloading) {
     timer.ammo = ammo
     timer.elapsed = 0
     return
   }
   let elapsed = number(timer, "elapsed") + independentDt(unit, registry)
-  while (ammo < cap && elapsed + READY_EPSILON >= RELOAD_GAP) {
+  while (ammo < cap && reached(elapsed, RELOAD_GAP)) {
     elapsed -= RELOAD_GAP
     ammo += 1
   }

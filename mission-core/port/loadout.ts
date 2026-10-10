@@ -1,10 +1,4 @@
-// shared/loadoutRecord.js — operator loadouts (DESIGN §16, DATA.md §2.2): a data/chess.json record as the selected
-// skill / module make it. Pure ESM shared by the simulation (server/sim/simdata.js re-exports it: getChess(id, loadout)
-// builds unit defs from it) and the client UI (the detail card shows the stats / 特性 / talents the unit fights with —
-// user playtest #2 integration: an elite on 不装备 showed its default module's ATK and trait; attackRangeGrid = the range
-// it is deployed with, also the board overlay and the deploy wheel — extendedGrid is the battle's own 攻击距离 growth,
-// re-exported by server/sim/targeting.js). One implementation, so the card and the battle never disagree. (Which
-// choices a player may make: shared/protocol.js loadoutOptions.)
+// Operator loadouts: a chess record as the selected skill and module make it, and the attack range it is deployed with.
 
 const GEO = { COLS: 21 }
 
@@ -93,7 +87,8 @@ export function resolveRecordLoadout(rec: any, loadout: any = null): any {
 
 const clean6 = (v: unknown): unknown => (typeof v !== 'number' || !Number.isFinite(v) || Number.isInteger(v) || Math.abs(v) >= 1e6 ? v : Math.round(v * 1e6) / 1e6);
 
-/** Stats with a module: the no-module `statsBase` + the module's flat `attr` (same arithmetic as tools/build-data.mjs). */
+/** Stats with a module: the no-module `statsBase` + the module's flat `attr`, rounded to six decimals. */
+// TRACE: source/loadout-compose
 export function composeStats(statsBase: any, attr: any): any {
   const s = { ...(statsBase || {}) };
   for (const [f, v] of Object.entries(attr || {})) s[f] = clean6((s[f] || 0) + v);
@@ -101,10 +96,10 @@ export function composeStats(statsBase: any, attr: any): any {
 }
 
 /**
- * Talents with a module: apply ModuleRecord.talentChanges to the no-module talents — the merge rule of
- * tools/build-data.mjs mergeTalentChanges (override of an existing index: module values win, base keys the module does
- * not restate are kept; otherwise appended; empty placeholders dropped).
+ * Talents with a module: apply ModuleRecord.talentChanges to the no-module talents (override of an existing index:
+ * module values win, base keys the module does not restate are kept; otherwise appended; empty placeholders dropped).
  */
+// TRACE: source/loadout-compose
 export function composeTalents(base: any, changes: any): any {
   const talents: TalentRecord[] = (Array.isArray(base) ? base : []).map((t: TalentRecord) => ({ ...t }));
   const talentChanges: readonly TalentChange[] = Array.isArray(changes) ? changes : [];
@@ -167,7 +162,7 @@ export function loadoutRecord(rec: any, lo: any): any {
 
 /**
  * The attack range a (loadout-resolved) chess record fights with from its deployment — the detail card without a live
- * entry, the board's range overlay and the deploy wheel (DESIGN §16), the same tiles the battle unit starts with (prep
+ * entry, the board's range overlay and the deploy wheel, the same tiles the battle unit starts with (prep
  * m.unitStats `range`): the selected skill's grid when it reads "被动效果：攻击范围扩大" (引星棘刺 S3 3-9: her own range
  * while she carries it, tier5 kit); else an elite whose equipped module reads "攻击范围扩大" uses that module's own grid
  * — its range-only talent change (talentIndex −1), e.g. SPC-X = the 3×3 caster range + the centre tile [0,3] — as the
@@ -176,6 +171,7 @@ export function loadoutRecord(rec: any, lo: any): any {
  * @param {object|null} rec loadoutRecord(…) output (or a data/chess.json record: its default module)
  * @returns {number[][]|null}
  */
+// TRACE: source/loadout-range
 export function attackRangeGrid(rec: any): any {
   if (!rec || typeof rec !== 'object') return null;
   let g = Array.isArray(rec.rangeGrid) ? rec.rangeGrid : null;
@@ -206,15 +202,14 @@ export function traitRangeExtend(rec: any): any {
 }
 
 /**
- * A range grid (`[dRow, dCol]`, facing RIGHT) grown by `extend` (rangeExtend / 攻击距离, DESIGN §3): every row gains
- * the whole tiles 1 … ⌊extend⌋ beyond its far (+dCol) end — the relative form of what server/sim/targeting.js
- * absoluteRangeKeys builds, deduplicated, junk entries dropped. One implementation for the battle (re-exported by
- * targeting.js: Battle._refreshRange keeps it as `unit.liveRangeGrid`, the card's live 攻击范围, when an extend applies)
- * and the record's attackRangeGrid.
+ * A range grid (`[dRow, dCol]`, facing RIGHT) grown by `extend` (rangeExtend / 攻击距离): every row gains the whole
+ * tiles 1 … ⌊extend⌋ beyond its far (+dCol) end, deduplicated, junk entries dropped. The battle keeps it as the live
+ * range of a unit while an extend applies, and attackRangeGrid uses it for the deployed range.
  * @param {Array<[number, number]>|null|undefined} grid
  * @param {number} [extend]
  * @returns {Array<[number, number]>}
  */
+// TRACE: source/range-extend
 export function extendedGrid(grid: any, extend: any = 0): any {
   const out: GridCell[] = [];
   const seen = new Set();

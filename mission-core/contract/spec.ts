@@ -191,9 +191,9 @@ export interface UnitSpec {
   /** 打开后，这一次结算达到首领限伤阈值就整段取消。 */
   readonly hitLimit?: boolean
   /**
-   * 免疫名单，名字与 master 的 def.immune 相同。
-   * 冻结是 frozen，恐惧和战栗是 feared，其余与状态 id 相同。
+   * 免疫名单。冻结是 frozen，恐惧和战栗是 feared，其余与状态 id 相同。
    */
+  // TRACE: source/immunity-names
   readonly immunity?: readonly string[]
   /** 要启动的独立计时器 id。引擎对每一项调用 startTimer。 */
   readonly timers?: readonly string[]

@@ -9,7 +9,7 @@ import {
   type HitShape,
   type MissionModule,
 } from "arknights-mission-core"
-import { ally, spec } from "../fixture.js"
+import { ally, spec } from "#test/fixture.js"
 
 const span = { x0: 0, y0: 0, x1: 12, y1: 12 }
 const huge = {

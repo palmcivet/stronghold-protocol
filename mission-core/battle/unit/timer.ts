@@ -6,7 +6,7 @@ import type { UnitState } from "#battle/unit/index.js"
 import { advanceAttack } from "#battle/unit/attack.js"
 import { openIndependentTimer, registerIndependentTimers } from "#battle/unit/clock.js"
 import { advanceSkillBody, advanceSkillPoint } from "#battle/skill/point.js"
-import { TICK } from "#tick/index.js"
+import { TICK } from "#kernel/tick/index.js"
 
 export {
   AMMO_CAP,

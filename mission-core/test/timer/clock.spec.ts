@@ -14,9 +14,9 @@ import {
   type MissionModule,
   type TimerView,
 } from "arknights-mission-core"
-import { sessionOf } from "../../battle/session.js"
-import type { UnitState } from "../../battle/unit/index.js"
-import { ally, spec } from "../fixture.js"
+import { sessionOf } from "#battle/session.js"
+import type { UnitState } from "#battle/unit/index.js"
+import { ally, spec } from "#test/fixture.js"
 
 const body = { hp: 100, atk: 10, def: 0, aspd: 100, bat: 1 }
 

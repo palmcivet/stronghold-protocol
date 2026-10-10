@@ -1,6 +1,6 @@
 import { expect, test } from "vitest"
 import { createBattle, type ContentContext, type MissionModule, type UnitSpec } from "arknights-mission-core"
-import { ally, spec } from "../fixture.js"
+import { ally, spec } from "#test/fixture.js"
 
 test("元素槽按标识存放", () => {
   const bursts: string[] = []

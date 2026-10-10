@@ -2,6 +2,7 @@ import type { Motion } from "#contract/spec.js"
 import type { Random } from "#random/index.js"
 import type { FieldGrid } from "#battle/space/grid/index.js"
 import type { GridPoint } from "#battle/space/grid/sight.js"
+import { hypot } from "#kernel/math/hypot.js"
 
 /** 恐惧扇形半径。 */
 export const FEAR_RADIUS = 10
@@ -50,7 +51,7 @@ export function fearReachableTiles(
   if (selfFear) return []
   const dx = hitX - sourceX
   const dy = hitY - sourceY
-  const length = Math.hypot(dx, dy)
+  const length = hypot(dx, dy)
   if (!(length > 1e-9)) return []
   const ux = dx / length
   const uy = dy / length
@@ -62,7 +63,7 @@ export function fearReachableTiles(
     for (let x = grid.rect.x0; x <= grid.rect.x1; x += 1) {
       const vx = x - hitX
       const vy = y - hitY
-      const reach = Math.hypot(vx, vy)
+      const reach = hypot(vx, vy)
       if (reach > FEAR_RADIUS + 1e-9) continue
       if (reach > 1e-9 && vx * ux + vy * uy < FEAR_HALF_COS * reach - 1e-9) continue
       if (!passable(grid, fly, x, y) || grid.at(x, y)?.objective) continue
