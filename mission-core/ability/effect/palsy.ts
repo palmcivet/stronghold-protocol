@@ -1,9 +1,9 @@
-import type { BattleRegistry } from "#kernel/registry/index.js"
-import type { BattleState } from "#battle/state.js"
-import { dropStatus } from "#kernel/world/tag.js"
+import type { BattleRegistry } from "#port/definition.js"
+import type { BattleWorld } from "#unit/record/index.js"
+import { dropStatus } from "#ability/effect/tag.js"
 
 /** 敌人身上有麻痹时，这一次普攻被取消并消耗一层。 */
-export function interruptEnemyAttack(state: BattleState, registry: BattleRegistry, unitId: string): boolean {
+export function interruptEnemyAttack(state: BattleWorld, registry: BattleRegistry, unitId: string): boolean {
   const unit = state.units.get(unitId)
   if (!unit || unit.side !== "enemy") return false
   const palsy = unit.statuses.find((status) => status.id === "palsy" && !status.dropped)

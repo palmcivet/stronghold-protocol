@@ -21,7 +21,7 @@ interface StatusApplication {
 ```ts
 interface StatusDefinition {
   id: string
-  flags: readonly string[]
+  tags: readonly TagKey[]
   modifiers: readonly AttributeModifier[]
   immunity: readonly string[]
   immune?: string
@@ -34,6 +34,8 @@ interface StatusDefinition {
   onTick?(unitId: string, stacks: number, ctx: ContentContext): void
 }
 ```
+
+`tags` 是状态在身上时以 `status:<状态id>` 为来源授予的标签，状态施加、刷新、取下时重算。标签要用 `defineTag` 定义的键，见 [世界、组件、资源与标签](./world.md)。
 
 `immune` 是「挡住我时，单位 `immunity` 里的名字」。它可以和状态 id 不同。`immunity` 数组是这个状态在身上时，用来挡住别的状态的名字，名单用状态 id 或免疫名。
 
@@ -68,7 +70,7 @@ interface StatusDefinition {
 | --- | --- | --- |
 | `slow` | 0.5 | `moveSpeed` 乘 (1 − 强度) |
 | `sluggish` |  | `moveSpeed` 乘 0.2 |
-| `bind` |  | `noMove`，`moveSpeed` 乘 0 |
+| `bind` |  | `moveSpeed` 乘 0 |
 | `fragile` | 0.3 | `dmgTaken` 乘 (1 + 强度) |
 | `artsFragile` | 0.3 | `artsTaken` 乘 (1 + 强度) |
 | `physFragile` | 0.3 | `physTaken` 乘 (1 + 强度) |
@@ -79,4 +81,4 @@ interface StatusDefinition {
 | `defDown` | 0.3 | `def` 乘 (1 − 强度) |
 | `resDown` | 20 | `res` 减强度 |
 
-`stun` 带 `noBlock`，并取消攻击计时器。会取消攻击的内置状态见 [攻击](./attack.md)。`tremble` 只带同名旗标：被挡住时这一拍不出手，冷却仍减少。`stealthOff` 只带同名旗标，挡住隐匿的选择。`overheal` 不带旗标，治疗溢出时写下它的时长，结束时去掉对应护盾。见 [伤害](./damage.md)。
+`stun` 带 `stun` 与 `noBlock`，并取消攻击计时器。`sleep` 带 `sleep` 与 `noBlock`。`bind` 带 `bind` 与 `noMove`。会取消攻击的内置状态见 [攻击](./attack.md)。`tremble` 只带同名标签：被挡住时这一拍不出手，冷却仍减少。`stealthOff` 只带同名标签，隐匿不再挡住选择。`overheal` 不带标签，治疗溢出时写下它的时长，结束时去掉对应护盾。见 [伤害](./damage.md)。

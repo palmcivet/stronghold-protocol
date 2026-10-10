@@ -1,8 +1,8 @@
 import { expect, test } from "vitest"
 import {
-  DEFER_DEPLOY_TAG,
+  DEFER_DEPLOY,
   DEPLOY_STRATEGY,
-  TOKEN_TAG,
+  TOKEN,
   createBattle,
   deployModule,
   redeployModule,
@@ -69,8 +69,8 @@ test("开战按列从上到下，干员先于召唤物，推迟的不上场", ()
         ally("right", { x: 2, y: 2 }),
         ally("m", { x: 3, y: 1 }),
         ally("k", { x: 3, y: 1 }),
-        ally("wolf", { x: 0, y: 2, tags: [TOKEN_TAG] }),
-        ally("drone", { x: 1, y: 1, tags: [TOKEN_TAG, DEFER_DEPLOY_TAG] }),
+        ally("wolf", { x: 0, y: 2, tags: [TOKEN.id] }),
+        ally("drone", { x: 1, y: 1, tags: [TOKEN.id, DEFER_DEPLOY.id] }),
         ally("foe", { side: "enemy", x: 1, y: 0 }),
       ],
     }),
@@ -117,7 +117,7 @@ test("自己的初始格子被占着就留在倒下的格子，倒地干员占�
 })
 
 test("召唤物倒在别人的初始格子上，不回到自己的初始格子", () => {
-  const battle = battleOf([ally("a"), ally("wolf", { x: 2, tags: [TOKEN_TAG] })], (ctx) => {
+  const battle = battleOf([ally("a"), ally("wolf", { x: 2, tags: [TOKEN.id] })], (ctx) => {
     ctx.displace("a", 3, 0)
     ctx.displace("wolf", 0, 0)
     ctx.dealDamage({ sourceId: "wolf", targetId: "wolf", amount: 500, kind: "true" })
@@ -134,7 +134,7 @@ test("还没上场的召唤物占着初始格子，不可部署的格子也不�
   const battle = battleOf(
     [
       ally("a"),
-      ally("drone", { x: 1, tags: [TOKEN_TAG, DEFER_DEPLOY_TAG] }),
+      ally("drone", { x: 1, tags: [TOKEN.id, DEFER_DEPLOY.id] }),
       ally("b", { x: 2 }),
     ],
     (ctx) => {

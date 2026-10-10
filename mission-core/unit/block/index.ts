@@ -1,7 +1,11 @@
-import type { ContentContext, MissionModule } from "#port/content.js"
-import type { BattleRegistry } from "#kernel/registry/index.js"
-import { emit, type BattleState } from "#battle/state.js"
-import { sessionOf } from "#battle/session.js"
+import type { ContentContext } from "#port/context.js"
+import type { MissionModule } from "#port/module.js"
+import type { BattleRegistry } from "#port/definition.js"
+import { emit } from "#kernel/event/index.js"
+import { engineOf, type BattleWorld } from "#unit/record/index.js"
+import { gridOf } from "#field/grid/index.js"
+import { hasTag } from "#kernel/world/tag.js"
+import { BLOCK_FLY, DEVICE, NO_BLOCK, STEALTH, UNBLOCKABLE } from "#port/tag.js"
 import { allowsGround } from "#field/grid/pass.js"
 import { applyStatus } from "#ability/effect/index.js"
 import { attributeOf, carriesAttribute } from "#ability/effect/attribute.js"
@@ -18,16 +22,11 @@ export const BLOCK_RADIUS_FLY = 0.8944
 
 export const BLOCK_RADIUS_FLY_SQ = 0.79995137
 
-/** 装置的阻挡接触半径。带 `device` 标签的阻挡者用它。 */
+/** 装置的阻挡接触半径。带 DEVICE 标签的阻挡者用它。 */
 export const BLOCK_RADIUS_DEVICE = 0.4472
 
 export const BLOCK_RADIUS_DEVICE_SQ: number = BLOCK_RADIUS_DEVICE * BLOCK_RADIUS_DEVICE
 
-/** 装置。接触用装置半径，不看飞行半径。 */
-export const DEVICE_TAG = "device"
-
-/** 能挡住飞行单位。标签或同名旗标都可以。 */
-export const BLOCK_FLY_TAG = "blockFly"
 
 /** 解除阻挡后，隐匿过这么多秒才恢复。隐匿状态的强度大于 0 时改用那个秒数。 */
 export const STEALTH_RESTORE = 3
@@ -35,7 +34,7 @@ export const STEALTH_RESTORE = 3
 const COUNT_EPSILON = 1e-9
 
 export function releaseBlock(
-  state: BattleState,
+  state: BattleWorld,
   enemy: UnitState,
   hook?: { registry: BattleRegistry; ctx: ContentContext },
 ): void {
@@ -52,7 +51,7 @@ export function releaseBlock(
 }
 
 /** 解开失效的阻挡，按阻挡数丢掉最晚挡住的，再给还没被挡的敌人找最近的阻挡者。 */
-export function maintainBlocks(state: BattleState, registry: BattleRegistry, ctx?: ContentContext): void {
+export function maintainBlocks(state: BattleWorld, registry: BattleRegistry, ctx?: ContentContext): void {
   const hook = ctx ? { registry, ctx } : undefined
   for (const unit of state.units.values()) {
     if (unit.side !== "enemy" || !unit.blockedBy) continue
@@ -74,8 +73,8 @@ export function maintainBlocks(state: BattleState, registry: BattleRegistry, ctx
 }
 
 function maintain(ctx: ContentContext): void {
-  const session = sessionOf(ctx)
-  maintainBlocks(session.state, session.registry, ctx)
+  const session = engineOf(ctx)
+  maintainBlocks(session.world, session.registry, ctx)
 }
 
 export const blockModule: MissionModule = {
@@ -88,19 +87,19 @@ export const blockModule: MissionModule = {
 
 // MARK: rule
 
-function keepsBlock(state: BattleState, enemy: UnitState, blocker: UnitState, registry: BattleRegistry): boolean {
+function keepsBlock(state: BattleWorld, enemy: UnitState, blocker: UnitState, registry: BattleRegistry): boolean {
   return canBeBlocked(enemy) && canBlock(blocker, registry) && reaches(state, blocker, enemy)
 }
 
 function canBeBlocked(unit: UnitState): boolean {
   if (unit.side !== "enemy" || !unit.fielded || unit.downed || unit.routeHidden) return false
-  if (unit.flags.has("unblockable") || unit.flags.has("sleep")) return false
+  if (hasTag(unit, UNBLOCKABLE)) return false
   return true
 }
 
 function canBlock(unit: UnitState, registry: BattleRegistry): boolean {
   if (unit.side !== "ally" || !unit.fielded || unit.downed || unit.routeHidden) return false
-  if (unit.flags.has("noBlock") || unit.flags.has("sleep")) return false
+  if (hasTag(unit, NO_BLOCK)) return false
   return blockCount(unit, registry) > COUNT_EPSILON
 }
 
@@ -111,25 +110,25 @@ function inContact(blocker: UnitState, enemy: UnitState): boolean {
 }
 
 function contactRadiusSq(blocker: UnitState, enemy: UnitState): number {
-  if (blocker.tags.includes(DEVICE_TAG)) return BLOCK_RADIUS_DEVICE_SQ
+  if (hasTag(blocker, DEVICE)) return BLOCK_RADIUS_DEVICE_SQ
   if (isFlying(enemy)) return BLOCK_RADIUS_FLY_SQ
   return BLOCK_RADIUS_SQ
 }
 
-/** 飞行敌人要阻挡者带 blockFly。地面敌人不能被围栏上的单位挡住。 */
-function reaches(state: BattleState, blocker: UnitState, enemy: UnitState): boolean {
-  if (isFlying(enemy)) return blocker.tags.includes(BLOCK_FLY_TAG) || blocker.flags.has(BLOCK_FLY_TAG)
+/** 飞行敌人要阻挡者带 BLOCK_FLY。地面敌人不能被围栏上的单位挡住。 */
+function reaches(state: BattleWorld, blocker: UnitState, enemy: UnitState): boolean {
+  if (isFlying(enemy)) return hasTag(blocker, BLOCK_FLY)
   return !fenced(state, blocker)
 }
 
-function fenced(state: BattleState, blocker: UnitState): boolean {
-  const tile = state.grid.at(blocker.x, blocker.y)
+function fenced(state: BattleWorld, blocker: UnitState): boolean {
+  const tile = gridOf(state).at(blocker.x, blocker.y)
   if (!tile) return false
   return !allowsGround(tile.walkableBy)
 }
 
-function restoreStealth(state: BattleState, registry: BattleRegistry, ctx: ContentContext, enemy: UnitState): void {
-  if (!enemy.flags.has("stealth") || !enemy.fielded || enemy.downed) return
+function restoreStealth(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext, enemy: UnitState): void {
+  if (!hasTag(enemy, STEALTH) || !enemy.fielded || enemy.downed) return
   const stealth = enemy.statuses.find((status) => status.id === "stealth" && !status.dropped)
   const delay = stealth && stealth.strength > 0 ? stealth.strength : STEALTH_RESTORE
   if (!(delay > 0)) return
@@ -152,7 +151,7 @@ function blockWeight(unit: UnitState, registry: BattleRegistry): number {
   return value
 }
 
-function usedWeight(state: BattleState, registry: BattleRegistry, blocker: UnitState): number {
+function usedWeight(state: BattleWorld, registry: BattleRegistry, blocker: UnitState): number {
   let used = 0
   for (const id of blocker.blocking) {
     const enemy = state.units.get(id)
@@ -162,12 +161,12 @@ function usedWeight(state: BattleState, registry: BattleRegistry, blocker: UnitS
   return used
 }
 
-function hasRoom(state: BattleState, registry: BattleRegistry, blocker: UnitState, weight: number): boolean {
+function hasRoom(state: BattleWorld, registry: BattleRegistry, blocker: UnitState, weight: number): boolean {
   return usedWeight(state, registry, blocker) + weight <= blockCount(blocker, registry) + COUNT_EPSILON
 }
 
 function enforceCapacity(
-  state: BattleState,
+  state: BattleWorld,
   registry: BattleRegistry,
   blocker: UnitState,
   hook?: { registry: BattleRegistry; ctx: ContentContext },
@@ -193,7 +192,7 @@ function enforceCapacity(
   }
 }
 
-function pickBlocker(state: BattleState, registry: BattleRegistry, enemy: UnitState): UnitState | null {
+function pickBlocker(state: BattleWorld, registry: BattleRegistry, enemy: UnitState): UnitState | null {
   const weight = blockWeight(enemy, registry)
   let chosen: UnitState | null = null
   let best = Infinity

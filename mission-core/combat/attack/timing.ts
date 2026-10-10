@@ -1,9 +1,11 @@
-import type { ContentContext, TimerDefinition, TimerState } from "#port/content.js"
-import type { BattleRegistry } from "#kernel/registry/index.js"
-import { requireUnit, type BattleState } from "#battle/state.js"
+import type { ContentContext } from "#port/context.js"
+import type { BattleRegistry, TimerDefinition } from "#port/definition.js"
+import { CANNOT_ACT } from "#port/tag.js"
+import type { TimerState } from "#kernel/timer/index.js"
+import { hasTag } from "#kernel/world/tag.js"
+import { requireUnit, type BattleWorld, type UnitState } from "#unit/record/index.js"
 import { attackHasTarget } from "#combat/target/aim.js"
 import { attributeOf } from "#ability/effect/attribute.js"
-import type { UnitState } from "#unit/record/index.js"
 import { reached, READY_EPSILON, TICK } from "#kernel/tick/index.js"
 
 /** 充能计时器 id。 */
@@ -43,28 +45,16 @@ export interface AttackTiming {
   damageScale: number
 }
 
-type Opener = (state: BattleState, registry: BattleRegistry, unit: UnitState, timer: TimerState) => void
-
-const openers = new Map<string, Opener>()
 const targetMarks = new WeakMap<UnitState, boolean>()
 
-export function registerIndependentTimers(registry: BattleRegistry, state: BattleState): void {
+export function registerIndependentTimers(registry: BattleRegistry, state: BattleWorld): void {
   registry.registerTimer(chargeTimer(state, registry))
   registry.registerTimer(ammoTimer(state, registry))
   registry.registerTimer(boomerangTimer(state, registry))
 }
 
-export function openIndependentTimer(
-  state: BattleState,
-  registry: BattleRegistry,
-  unit: UnitState,
-  timerId: string,
-  timer: TimerState,
-): void {
-  openers.get(timerId)?.(state, registry, unit, timer)
-}
 
-export function bindIndependentTimers(state: BattleState, registry: BattleRegistry, ctx: ContentContext): void {
+export function bindIndependentTimers(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext): void {
   ctx.subscribe("deploy", (event) => {
     const unitId = event.data.unitId
     if (typeof unitId !== "string") return
@@ -122,7 +112,7 @@ export function independentDt(unit: UnitState, registry: BattleRegistry): number
 
 // MARK: charge
 
-function chargeTimer(state: BattleState, registry: BattleRegistry): TimerDefinition {
+function chargeTimer(state: BattleWorld, registry: BattleRegistry): TimerDefinition {
   return {
     id: CHARGE_TIMER,
     slot: "ally",
@@ -142,7 +132,7 @@ function chargeTimer(state: BattleState, registry: BattleRegistry): TimerDefinit
 }
 
 function advanceCharge(
-  state: BattleState,
+  state: BattleWorld,
   registry: BattleRegistry,
   ctx: ContentContext,
   unit: UnitState,
@@ -169,18 +159,18 @@ function advanceCharge(
 
 // MARK: ammo
 
-function ammoTimer(state: BattleState, registry: BattleRegistry): TimerDefinition {
-  openers.set(AMMO_TIMER, (_state, openRegistry, unit, timer) => {
-    timer.ammo = ammoCap(unit, openRegistry)
-    timer.elapsed = 0
-    timer.attackAt = 0
-    timer.spent = 0
-  })
+function ammoTimer(state: BattleWorld, registry: BattleRegistry): TimerDefinition {
   return {
     id: AMMO_TIMER,
     slot: "ally",
     sides: ["ally"],
     create: () => ({ ammo: AMMO_CAP, elapsed: 0, attackAt: 0, spent: 0 }),
+    open(timer, unitId) {
+      timer.ammo = ammoCap(requireUnit(state, unitId), registry)
+      timer.elapsed = 0
+      timer.attackAt = 0
+      timer.spent = 0
+    },
     advance(timer, unitId) {
       advanceAmmo(state, registry, requireUnit(state, unitId), timer)
     },
@@ -194,7 +184,7 @@ function ammoTimer(state: BattleState, registry: BattleRegistry): TimerDefinitio
   }
 }
 
-function advanceAmmo(state: BattleState, registry: BattleRegistry, unit: UnitState, timer: TimerState): void {
+function advanceAmmo(state: BattleWorld, registry: BattleRegistry, unit: UnitState, timer: TimerState): void {
   const now = state.tick * TICK
   if (number(timer, "spent") === 1) {
     timer.attackAt = now
@@ -228,7 +218,7 @@ function refillAmmo(registry: BattleRegistry, unit: UnitState): void {
 
 // MARK: boomerang
 
-function boomerangTimer(state: BattleState, registry: BattleRegistry): TimerDefinition {
+function boomerangTimer(state: BattleWorld, registry: BattleRegistry): TimerDefinition {
   return {
     id: BOOMERANG_TIMER,
     slot: "ally",
@@ -274,7 +264,7 @@ function takeTargetMark(unit: UnitState): boolean | undefined {
 function canAct(unit: UnitState): boolean {
   if (!unit.fielded || unit.downed || unit.routeHidden) return false
   if ((unit.attributes.hp ?? 0) <= 0) return false
-  return !unit.flags.has("stun") && !unit.flags.has("sleep")
+  return !hasTag(unit, CANNOT_ACT)
 }
 
 function onField(unit: UnitState): boolean {

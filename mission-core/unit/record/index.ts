@@ -1,5 +1,11 @@
 import type { AttackClip, AttackShape, Direction, HitArea, Motion, SkillHook, SkillModifier, UnitKind, UnitSpec } from "#contract/spec.js"
-import type { AttributeModifier, SkillRuntime, TimerState } from "#port/content.js"
+import type { AttributeModifier, BattleRegistry, SkillRuntime } from "#port/definition.js"
+import type { ContentContext } from "#port/context.js"
+import { AIRBORNE } from "#port/tag.js"
+import type { TimerState } from "#kernel/timer/index.js"
+import { requireEntity, type World } from "#kernel/world/index.js"
+import { defineResource } from "#kernel/world/resource.js"
+import { createTagGrants, grantTag, hasTag, heldTagIds, type TagGrants } from "#kernel/world/tag.js"
 import { copyModifiers } from "#ability/skill/modifier.js"
 import {
   isSkillOperation,
@@ -8,7 +14,8 @@ import {
   type SkillOperation,
   type SpType,
 } from "#ability/skill/constants.js"
-import type { RouteRun } from "#field/grid/route.js"
+import { compileRoute, type RouteRun } from "#field/grid/route.js"
+import { gridOf } from "#field/grid/index.js"
 
 /** 一段还在走的位移。落点在 landing，路径在 points。 */
 export interface ShiftRun {
@@ -43,7 +50,7 @@ export interface StatusInstance {
 export function isFlying(unit: UnitState): boolean {
   if (unit.motion === "FLY") return true
   if (unit.side !== "enemy") return false
-  return unit.flags.has("float") || unit.flags.has("levitate")
+  return hasTag(unit, AIRBORNE)
 }
 
 export interface ElementSlot {
@@ -89,7 +96,8 @@ export interface UnitState {
   readonly attributes: Record<string, number>
   readonly skills: SkillInstance[]
   readonly attackRange: readonly UnitSpec["attackRange"][number][]
-  readonly tags: readonly string[]
+  /** 规格、状态、技能与模块按来源授予的标签。 */
+  readonly tags: TagGrants
   readonly deployPositions: readonly string[]
   /** 免疫名单。冻结写成 frozen，恐惧和战栗写成 feared，其余与状态 id 相同。 */
   // TRACE: source/immunity-names
@@ -116,15 +124,13 @@ export interface UnitState {
   hitArea: HitArea | null
   motion: Motion
   route: RouteRun | null
-  /** 路线消失。状态重写 flags 时留在单位上。 */
+  /** 路线消失。快照把它写成 hidden。 */
   routeHidden: boolean
-  readonly flags: Set<string>
   readonly statuses: StatusInstance[]
   readonly elements: Map<string, ElementSlot>
   readonly timers: Map<string, TimerState>
   /** 规格列出的独立计时器 id。 */
   readonly listedTimers: readonly string[]
-  readonly moduleData: Map<string, Record<string, unknown>>
   /** 按 key 挂上的属性修饰。remaining 是还没走到的终局拍数，Infinity 一直留着。 */
   readonly modifiers: Map<string, { modifiers: readonly AttributeModifier[]; remaining: number }>
   readonly script: Readonly<Record<string, string | number | boolean>>
@@ -209,7 +215,7 @@ export function createUnit(spec: UnitSpec, fielded: boolean, order: number): Uni
     attributes,
     skills,
     attackRange: spec.attackRange.map((cell) => ({ x: cell.x, y: cell.y })),
-    tags: [...spec.tags],
+    tags: createTagGrants(),
     deployPositions: [...spec.deployPositions],
     immunity: new Set(spec.immunity ?? []),
     attackClip: spec.attackClip ? { duration: spec.attackClip.duration, hit: spec.attackClip.hit } : null,
@@ -231,12 +237,10 @@ export function createUnit(spec: UnitSpec, fielded: boolean, order: number): Uni
     motion: spec.motion ?? "WALK",
     route: null,
     routeHidden: false,
-    flags: new Set(),
     statuses: [],
     elements: new Map(),
     timers: new Map(),
     listedTimers: spec.timers ? [...spec.timers] : [],
-    moduleData: new Map(),
     modifiers: new Map(),
     script: spec.script ? { ...spec.script } : {},
     base,
@@ -247,4 +251,100 @@ export function createUnit(spec: UnitSpec, fielded: boolean, order: number): Uni
     fielded,
     downed: false,
   }
+}
+
+// MARK: world
+
+/** 一场战斗的世界，核心记录是 UnitState。 */
+export type BattleWorld = World<UnitState>
+
+/** 本场的世界与注册表。内置模块从内容上下文按这个资源取到它们。 */
+export interface Engine {
+  readonly world: BattleWorld
+  readonly registry: BattleRegistry
+}
+
+export const ENGINE = defineResource<Engine>("core:engine", () => {
+  throw new Error("engine is set when the battle is created")
+})
+
+export function engineOf(ctx: ContentContext): Engine {
+  return ctx.resource(ENGINE).ensure()
+}
+
+export function requireUnit(world: BattleWorld, unitId: string): UnitState {
+  return requireEntity(world, unitId)
+}
+
+/** 放入一个单位并授予规格里的标签。 */
+export function placeUnit(world: BattleWorld, registry: BattleRegistry, spec: UnitSpec, fielded: boolean): UnitState {
+  checkSpecTags(registry, spec)
+  const unit = addUnit(world, spec, fielded)
+  grantSpecTags(registry, unit, spec)
+  return unit
+}
+
+/** 放入一个单位。规格的标签另由 grantSpecTags 授予。 */
+export function addUnit(world: BattleWorld, spec: UnitSpec, fielded: boolean): UnitState {
+  if (world.units.has(spec.id)) throw new Error(`单位重复: ${spec.id}`)
+  const unit = createUnit(spec, fielded, world.units.size + 1)
+  unit.route = compileRoute(spec.route ?? null, gridOf(world).rect)
+  world.units.set(spec.id, unit)
+  return unit
+}
+
+// MARK: tag
+
+/** 规格静态标签的来源。 */
+export const SPEC_SOURCE = "spec"
+
+/** 规格里的标签和技能标签都要已注册。未注册时报出标签与单位规格。 */
+export function checkSpecTags(registry: BattleRegistry, spec: UnitSpec): void {
+  for (const tag of spec.tags) registry.requireTag(tag, `unit spec ${spec.id}`)
+  for (const skill of spec.skills) {
+    for (const tag of skill.flags ?? []) registry.requireTag(tag, `unit spec ${spec.id}, skill ${skill.id}`)
+  }
+}
+
+export function grantSpecTags(registry: BattleRegistry, unit: UnitState, spec: UnitSpec): void {
+  for (const tag of spec.tags) grantTag(unit, registry.requireTag(tag, `unit spec ${spec.id}`), SPEC_SOURCE)
+}
+
+/** 规格写的标签 id，按规格顺序。 */
+export function specTagIds(unit: UnitState): readonly string[] {
+  return tagIdsOf(unit).spec
+}
+
+interface TagIds {
+  readonly version: number
+  readonly spec: readonly string[]
+  readonly granted: readonly string[]
+}
+
+const tagIdCache = new WeakMap<TagGrants, TagIds>()
+
+/** 持有列表没变时返回上次算好的两份 id。 */
+function tagIdsOf(unit: UnitState): TagIds {
+  const cached = tagIdCache.get(unit.tags)
+  if (cached && cached.version === unit.tags.version) return cached
+  const ids: TagIds = {
+    version: unit.tags.version,
+    spec: Object.freeze(heldTagIds(unit, fromSpec)),
+    granted: Object.freeze(heldTagIds(unit, notFromSpec)),
+  }
+  tagIdCache.set(unit.tags, ids)
+  return ids
+}
+
+function fromSpec(sourceId: string): boolean {
+  return sourceId === SPEC_SOURCE
+}
+
+function notFromSpec(sourceId: string): boolean {
+  return sourceId !== SPEC_SOURCE
+}
+
+/** 状态、技能与模块授予的标签 id，按第一次授予的顺序。 */
+export function grantedTagIds(unit: UnitState): readonly string[] {
+  return tagIdsOf(unit).granted
 }

@@ -1,4 +1,5 @@
 import { expect, test } from "vitest"
+import { NO_SP, UNTARGETABLE } from "#port/tag.js"
 import {
   AUTO_OP_COOLDOWN,
   TICK,
@@ -20,7 +21,7 @@ test("随时间的技力在眩晕时仍涨，阻回时不涨", () => {
     install(ctx) {
       ctx.registerStatus({
         id: "stop-sp",
-        flags: ["noSp"],
+        tags: [NO_SP],
         modifiers: [],
         immunity: [],
         stackCap: 1,
@@ -339,7 +340,7 @@ test("技能范围无视不可选中，初始范围不放", () => {
     install(ctx) {
       ctx.registerStatus({
         id: "ghost",
-        flags: ["untargetable"],
+        tags: [UNTARGETABLE],
         modifiers: [],
         immunity: [],
         stackCap: 1,

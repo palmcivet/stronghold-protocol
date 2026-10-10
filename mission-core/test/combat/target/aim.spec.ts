@@ -5,7 +5,10 @@ import {
   setAttackTargetThisTick,
   type MissionModule,
 } from "arknights-mission-core"
-import { sessionOf } from "#battle/session.js"
+import { engineOf } from "#unit/record/index.js"
+import { attackTargetIds } from "#combat/target/aim.js"
+import { hasTag } from "#kernel/world/tag.js"
+import { SLEEP, UNTARGETABLE } from "#port/tag.js"
 import { ally, spec } from "#test/fixture.js"
 
 const body = { hp: 100, atk: 40, def: 0, aspd: 100, bat: 1 }
@@ -72,7 +75,7 @@ test("没有目标这一拍会打断已经开始的前摇", () => {
         run(runCtx) {
           if (runCtx.tick() === 0) runCtx.startTimer("a", "attack")
           if (runCtx.tick() === 4) {
-            const unit = sessionOf(runCtx).state.units.get("a")
+            const unit = engineOf(runCtx).world.units.get("a")
             if (unit) setAttackTargetThisTick(unit, false)
           }
         },
@@ -110,7 +113,7 @@ test("atk_scale 走属性汇总", () => {
     install(ctx) {
       ctx.registerStatus({
         id: "ammo-up",
-        flags: [],
+        tags: [],
         modifiers: [{ attribute: "atk_scale", op: "mul", value: 2 }],
         immunity: [],
         stackCap: 1,
@@ -122,9 +125,9 @@ test("atk_scale 走属性汇总", () => {
         slot: "ally",
         priority: 10,
         run(runCtx) {
-          const unit = sessionOf(runCtx).state.units.get("a")
+          const unit = engineOf(runCtx).world.units.get("a")
           if (!unit) return
-          scale = readAttackTiming(unit, sessionOf(runCtx).registry).damageScale
+          scale = readAttackTiming(unit, engineOf(runCtx).registry).damageScale
         },
       })
     },
@@ -190,4 +193,56 @@ test("友方槽的计时写在敌人身上不会启动", () => {
   battle.step()
   battle.step()
   expect(started).toBe(false)
+})
+
+test("治疗照常选中沉睡的友方；带不可选中的友方不选", () => {
+  const hurt = { hp: 10, maxHp: 100, atk: 0, def: 0 }
+  let picked: readonly string[] = []
+  let sleeperAsleep = false
+  let sleeperUntargetable = true
+  const probe: MissionModule = {
+    id: "probe",
+    install(ctx) {
+      ctx.registerSystem({
+        id: "probe",
+        slot: "schedule",
+        priority: 0,
+        run(runCtx) {
+          if (runCtx.tick() === 0) {
+            runCtx.applyStatus("asleep", "sleep", { duration: 5 })
+            runCtx.grantTag("veiled", UNTARGETABLE, "case")
+            return
+          }
+          if (runCtx.tick() !== 1) return
+          const { world, registry } = engineOf(runCtx)
+          const healer = world.units.get("a")
+          const sleeper = world.units.get("asleep")
+          if (!healer || !sleeper) return
+          sleeperAsleep = hasTag(sleeper, SLEEP)
+          sleeperUntargetable = hasTag(sleeper, UNTARGETABLE)
+          picked = attackTargetIds(world, registry, runCtx, healer)
+        },
+      })
+    },
+  }
+  const battle = createBattle(
+    spec({
+      modules: ["probe"],
+      units: [
+        ally("a", {
+          attributes: body,
+          attackShape: { damage: "heal", healCount: 3 },
+          attackRange: [{ x: 1, y: 0 }, { x: 2, y: 0 }],
+        }),
+        ally("asleep", { x: 1, attributes: hurt }),
+        ally("veiled", { x: 2, attributes: hurt }),
+      ],
+    }),
+    [probe],
+  )
+  battle.step()
+  battle.step()
+  expect(sleeperAsleep).toBe(true)
+  expect(sleeperUntargetable).toBe(false)
+  expect(picked).toEqual(["asleep"])
 })

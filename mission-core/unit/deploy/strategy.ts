@@ -1,10 +1,12 @@
-import type { ContentContext } from "#port/content.js"
+import type { ContentContext } from "#port/context.js"
 import { landShift } from "#field/motion/index.js"
-import type { BattleRegistry } from "#kernel/registry/index.js"
-import { emit, readTimer, requireUnit, type BattleState } from "#battle/state.js"
-import { startTimer } from "#kernel/timer/index.js"
+import type { BattleRegistry } from "#port/definition.js"
+import { emit } from "#kernel/event/index.js"
+import { readTimer } from "#kernel/timer/index.js"
+import { requireUnit, type BattleWorld } from "#unit/record/index.js"
+import { startTimer } from "#unit/record/timer.js"
 
-export function openBattle(state: BattleState, registry: BattleRegistry, ctx: ContentContext): void {
+export function openBattle(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext): void {
   const strategyId = state.spec.deployStrategy
   if (strategyId === null) return
   const strategy = registry.requireDeployStrategy(strategyId)
@@ -18,7 +20,7 @@ export function openBattle(state: BattleState, registry: BattleRegistry, ctx: Co
   }
 }
 
-export function knockDown(state: BattleState, registry: BattleRegistry, ctx: ContentContext, unitId: string): void {
+export function knockDown(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext, unitId: string): void {
   const unit = requireUnit(state, unitId)
   if (unit.downed) return
   landShift(unit)

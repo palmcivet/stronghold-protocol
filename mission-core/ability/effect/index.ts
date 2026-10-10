@@ -1,15 +1,18 @@
-import type { ContentContext, StatusApplication, StatusDefinition, StatusIncoming } from "#port/content.js"
-import type { BattleRegistry } from "#kernel/registry/index.js"
-import { requireUnit, type BattleState } from "#battle/state.js"
+import type { ContentContext } from "#port/context.js"
+import type { StatusApplication, StatusDefinition, StatusIncoming } from "#port/definition.js"
+import type { BattleRegistry } from "#port/definition.js"
+import { requireUnit, type BattleWorld } from "#unit/record/index.js"
 import { clearElements } from "#combat/element/index.js"
-import { refuseStatus, shortenControlled } from "#ability/effect/catalog.js"
-import { immuneTo, writeFlags } from "#kernel/world/tag.js"
+import { immuneTo, refuseStatus, shortenControlled } from "#ability/effect/catalog.js"
+import { refreshTags } from "#ability/effect/tag.js"
 import { refreshOverlap } from "#ability/effect/stacking.js"
-import { cancelTimer, startTimer } from "#kernel/timer/index.js"
+import { cancelTimer, startTimer } from "#unit/record/timer.js"
+import { hasTag } from "#kernel/world/tag.js"
+import { BURST_LOCK } from "#port/tag.js"
 import { TICK } from "#kernel/tick/index.js"
 import type { StatusInstance, UnitState } from "#unit/record/index.js"
 
-export function registerStatusTimer(registry: BattleRegistry, state: BattleState): void {
+export function registerStatusTimer(registry: BattleRegistry, state: BattleWorld): void {
   registry.registerTimer({
     id: "status",
     slot: "status",
@@ -28,7 +31,7 @@ export function registerStatusTimer(registry: BattleRegistry, state: BattleState
 }
 
 export function applyStatus(
-  state: BattleState,
+  state: BattleWorld,
   registry: BattleRegistry,
   ctx: ContentContext,
   unitId: string,
@@ -51,16 +54,16 @@ export function applyStatus(
   const applied = overlap(unit.statuses, existing, incoming, definition) as StatusInstance | undefined
   if (!applied) return
   shortenControlled(unit, applied)
-  writeFlags(registry, unit)
+  refreshTags(registry, unit)
   for (const timerId of definition.cancels) cancelTimer(state, registry, unitId, timerId)
   startTimer(state, registry, unitId, "status")
   definition.onApply?.(unitId, applied.stacks, ctx)
   ctx.emit("status", { unitId, statusId, stacks: applied.stacks })
 }
 
-function tickStatuses(state: BattleState, registry: BattleRegistry, ctx: ContentContext, unitId: string): void {
+function tickStatuses(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext, unitId: string): void {
   const unit = requireUnit(state, unitId)
-  const locked = unit.flags.has("burstLock")
+  const locked = hasTag(unit, BURST_LOCK)
   const current = unit.statuses.slice()
   const kept: StatusInstance[] = []
   for (const status of current) {
@@ -82,8 +85,8 @@ function tickStatuses(state: BattleState, registry: BattleRegistry, ctx: Content
   unit.statuses.length = 0
   unit.statuses.push(...next)
   if (overhealWas && !overhealLeft) clearOverhealShield(unit)
-  writeFlags(registry, unit)
-  if (locked && !unit.flags.has("burstLock")) clearElements(unit)
+  refreshTags(registry, unit)
+  if (locked && !hasTag(unit, BURST_LOCK)) clearElements(unit)
 }
 
 function resumeTail(status: StatusInstance, definition: StatusDefinition, tick: number): boolean {

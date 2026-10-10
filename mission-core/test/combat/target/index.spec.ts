@@ -1,5 +1,6 @@
 import { expect, test } from "vitest"
 import {
+  UNTARGETABLE,
   UnknownRegistrationError,
   createBattle,
   type MissionModule,
@@ -171,6 +172,89 @@ test("飞行、隐匿、迷彩和范围效果按各自的筛选分开", () => {
   createBattle(spec({ modules: ["case"], tiles: lane, units: [enemy, camou] }), [paint]).step()
   expect(plain).toEqual([])
   expect(area).toEqual(["camou"])
+})
+
+test("范围效果不选隐匿、不可选中、沉睡的单位，隐匿的挡着施法者也不选；地面来源不选起飞的；迷彩照选", () => {
+  let area: readonly string[] = []
+  let all: readonly string[] = []
+  const paint: MissionModule = {
+    id: "case",
+    install(ctx) {
+      ctx.registerSystem({
+        id: "case",
+        slot: "schedule",
+        priority: 1,
+        run(runCtx) {
+          runCtx.applyStatus("blocker", "stealth")
+          runCtx.applyStatus("hidden", "stealth")
+          runCtx.grantTag("untargetable", UNTARGETABLE, "case")
+          runCtx.applyStatus("asleep", "sleep")
+          runCtx.applyStatus("lifted", "liftoff")
+          runCtx.applyStatus("camou", "camou")
+          area = runCtx.unitsInRange("e", ["ally", "area"])
+          all = runCtx.unitsInRange("e", "ally")
+        },
+      })
+    },
+  }
+  const near = { x: 1, y: 0 }
+  createBattle(
+    spec({
+      modules: ["case"],
+      tiles: lane,
+      units: [
+        ally("e", { side: "enemy", x: 0, y: 0, attackRange: [{ x: 0, y: 0 }, { x: 1, y: 0 }], blockedBy: "blocker" }),
+        ally("blocker", { x: 0, y: 0, blocking: ["e"] }),
+        ally("hidden", near),
+        ally("untargetable", near),
+        ally("asleep", near),
+        ally("lifted", near),
+        ally("camou", near),
+        ally("plain", near),
+      ],
+    }),
+    [paint],
+  ).step()
+  expect(area).toEqual(["camou", "plain"])
+  expect(all).toEqual(["blocker", "hidden", "untargetable", "asleep", "lifted", "camou", "plain"])
+})
+
+test("没被挡的隐匿敌人和不可选中的敌人不被选中；被挡住或显形的隐匿敌人可以选中", () => {
+  const picks: Record<string, readonly string[]> = {}
+  const probe: MissionModule = {
+    id: "case",
+    install(ctx) {
+      ctx.registerSystem({
+        id: "case",
+        slot: "schedule",
+        priority: 1,
+        run(runCtx) {
+          for (const id of ["loose", "held", "shown"]) runCtx.applyStatus(id, "stealth")
+          runCtx.applyStatus("shown", "reveal")
+          runCtx.grantTag("ghost", UNTARGETABLE, "case")
+          picks.foes = runCtx.unitsInRange("a", ["enemy", "stealth", "untargetable"])
+          picks.everyone = runCtx.unitsInRange("a", "enemy")
+        },
+      })
+    },
+  }
+  const near = { side: "enemy" as const, x: 1, y: 0 }
+  createBattle(
+    spec({
+      modules: ["case"],
+      tiles: lane,
+      units: [
+        ally("a", { blocking: ["held"] }),
+        ally("loose", near),
+        ally("held", { ...near, blockedBy: "a" }),
+        ally("shown", near),
+        ally("ghost", near),
+      ],
+    }),
+    [probe],
+  ).step()
+  expect(picks.foes).toEqual(["held", "shown"])
+  expect(picks.everyone).toEqual(["loose", "held", "shown", "ghost"])
 })
 
 test("阻挡优先只读已有关系，特殊优先级、仇恨、路程、生命和防御按键排序", () => {

@@ -1,30 +1,33 @@
 import type { BattleEvent } from "#contract/event.js"
 import type { PhaseSlot } from "#contract/phase.js"
+import type { BattleResult } from "#contract/result.js"
 import type { TileCoord, TileSpec, UnitSide, UnitSpec } from "#contract/spec.js"
-import type {
-  AttributeModifier,
-  ContentContext,
-  DamageInfo,
-  DamagePreview,
-  EventRevision,
-  HitShape,
-  ProjectileLaunch,
-  TimerView,
-  UnitView,
-} from "#port/content.js"
-import type { BattleRegistry } from "#kernel/registry/index.js"
+import type { AttributeModifier, DamageInfo, DamagePreview, ProjectileLaunch } from "#port/definition.js"
+import type { ContentContext, EventRevision, HitShape, UnitView } from "#port/context.js"
+import type { TimerView } from "#kernel/timer/index.js"
+import type { BattleRegistry } from "#port/definition.js"
 import { applyShift } from "#field/motion/index.js"
 import { healUnit, loseLife, runDamage } from "#combat/damage/index.js"
 import { addCost, costOf, spendCost } from "#economy/index.js"
 import { launchProjectile as storeProjectile, projectileViews } from "#combat/projectile/index.js"
-import { bindSession } from "#battle/session.js"
-import { addUnit, emit as publish, requireUnit, type BattleState } from "#battle/state.js"
+import { SCHEDULE } from "#battle/step.js"
+import {
+  ENGINE,
+  grantedTagIds,
+  placeUnit,
+  requireUnit,
+  specTagIds,
+  type BattleWorld,
+} from "#unit/record/index.js"
+import { emit as publish, subscribe } from "#kernel/event/index.js"
+import { defineResource } from "#kernel/world/resource.js"
+import { grantTag, hasTag, revokeTag, tagSources } from "#kernel/world/tag.js"
+import { gridOf } from "#field/grid/index.js"
 import { activateSkill, configureSkill as writeSkill, gainSkillSp, readySkill as fillSkill } from "#ability/skill/point.js"
 import { shouldCast as askTrigger } from "#ability/skill/trigger.js"
 import { bodyRect, normHitArea } from "#field/body/index.js"
 import { TICK } from "#kernel/tick/index.js"
 import { attributeOf, maxHpOf } from "#ability/effect/attribute.js"
-import type { FieldGrid } from "#field/grid/index.js"
 import { selectUnits, unitsInRange as rangeUnits } from "#combat/target/selector.js"
 import { addElement as chargeElement } from "#combat/element/index.js"
 import { applyStatus as giveStatus } from "#ability/effect/index.js"
@@ -34,9 +37,12 @@ import {
   armListedTimers,
   startTimer as beginTimer,
   timerView as readTimerView,
-} from "#kernel/timer/index.js"
+} from "#unit/record/timer.js"
 
-export function createContext(state: BattleState, registry: BattleRegistry, tiles: FieldGrid): ContentContext {
+/** 本场结果。finish 写上胜方。 */
+export const RESULT = defineResource<BattleResult>("battle:result", () => ({ finished: false, winner: null }))
+
+export function createContext(state: BattleWorld, registry: BattleRegistry): ContentContext {
   const ctx: ContentContext = {
     registerStatus(definition) {
       registry.registerStatus(definition)
@@ -68,16 +74,11 @@ export function createContext(state: BattleState, registry: BattleRegistry, tile
     registerSystem(system) {
       registry.registerSystem(system)
     },
+    registerTag(key) {
+      registry.registerTag(key)
+    },
     subscribe(type, handler) {
-      const list = state.subscribers.get(type) ?? []
-      list.push(handler)
-      state.subscribers.set(type, list)
-      return () => {
-        const current = state.subscribers.get(type)
-        if (!current) return
-        const index = current.indexOf(handler)
-        if (index >= 0) current.splice(index, 1)
-      }
+      return subscribe(state.events, type, (event) => handler(event, ctx))
     },
     dealDamage(info: DamageInfo) {
       runDamage(state, registry, ctx, info, false)
@@ -93,8 +94,7 @@ export function createContext(state: BattleState, registry: BattleRegistry, tile
     },
     spawnUnit(spec: UnitSpec) {
       if (!stands(state, registry, ctx, spec.id, spec.x, spec.y)) return
-      addUnit(state, spec, true)
-      armListedTimers(state, registry, requireUnit(state, spec.id))
+      armListedTimers(state, registry, placeUnit(state, registry, spec, true))
       publish(state, "spawn", { unitId: spec.id })
     },
     displace(unitId, x, y) {
@@ -109,7 +109,7 @@ export function createContext(state: BattleState, registry: BattleRegistry, tile
       return applyShift(state, registry, ctx, actionId, unitId, input)
     },
     setObstacle(x, y, on, kind) {
-      state.grid.setObstacle(x, y, on, kind)
+      gridOf(state).setObstacle(x, y, on, kind)
     },
     launchProjectile(projectile: ProjectileLaunch) {
       storeProjectile(state, projectile)
@@ -145,7 +145,7 @@ export function createContext(state: BattleState, registry: BattleRegistry, tile
       return rangeUnits(state, registry, ctx, unitId, selectorId)
     },
     select(selectorId, unitIds) {
-      return selectUnits(registry, ctx, selectorId, unitIds)
+      return selectUnits(registry, ctx, selectorId, unitIds, { origin: null })
     },
     previewDamage(info: DamageInfo): DamagePreview {
       return runDamage(state, registry, ctx, info, true)
@@ -165,19 +165,33 @@ export function createContext(state: BattleState, registry: BattleRegistry, tile
     addElement(unitId, elementId, amount) {
       chargeElement(state, registry, ctx, unitId, elementId, amount)
     },
-    moduleData(moduleId, unitId) {
-      const unit = requireUnit(state, unitId)
-      const existing = unit.moduleData.get(moduleId)
-      if (existing) return existing
-      const created: Record<string, unknown> = {}
-      unit.moduleData.set(moduleId, created)
-      return created
+    component(key) {
+      return state.components.access(key)
+    },
+    resource(key) {
+      return state.resources.access(key)
+    },
+    hasTag(unitId, key) {
+      const unit = state.units.get(unitId)
+      return unit !== undefined && hasTag(unit, key)
+    },
+    grantTag(unitId, key, sourceId) {
+      registry.requireTag(key.id, `grant from ${sourceId}`)
+      grantTag(requireUnit(state, unitId), key, sourceId)
+    },
+    revokeTag(unitId, key, sourceId) {
+      const unit = state.units.get(unitId)
+      if (unit) revokeTag(unit, key, sourceId)
+    },
+    tagSources(unitId, key) {
+      const unit = state.units.get(unitId)
+      return unit ? tagSources(unit, key) : []
     },
     schedule(tick, run) {
-      state.scheduled.push({ tick, run })
+      state.resources.access(SCHEDULE).ensure().push({ tick, run })
     },
     finish(winner: UnitSide) {
-      state.result = { finished: true, winner }
+      state.resources.access(RESULT).set({ finished: true, winner })
     },
     tick() {
       return state.tick
@@ -204,7 +218,7 @@ export function createContext(state: BattleState, registry: BattleRegistry, tile
       return gainSkillSp(state, unitId, skillId, amount, "grant")
     },
     tile(x, y): TileSpec | null {
-      return tiles.at(x, y)
+      return gridOf(state).at(x, y)
     },
     projectiles() {
       return projectileViews(state)
@@ -223,10 +237,10 @@ export function createContext(state: BattleState, registry: BattleRegistry, tile
         alive: unit.fielded && !unit.downed && hp > 0 && !unit.routeHidden,
         fielded: unit.fielded,
         downed: unit.downed,
-        tags: unit.tags,
+        tags: specTagIds(unit),
         facing: unit.facing,
         motion: unit.motion,
-        flags: [...unit.flags],
+        flags: grantedTagIds(unit),
       }
     },
     units(side) {
@@ -272,13 +286,7 @@ export function createContext(state: BattleState, registry: BattleRegistry, tile
     field() {
       return state.spec.notes ?? EMPTY_FIELD
     },
-    shared(moduleId) {
-      const existing = state.shared.get(moduleId)
-      if (existing) return existing
-      const created: Record<string, unknown> = {}
-      state.shared.set(moduleId, created)
-      return created
-    },
+
     revise(event: BattleEvent, revision: EventRevision) {
       const data = event.data as Record<string, unknown>
       if (revision.prevented !== undefined) data.prevented = revision.prevented
@@ -288,8 +296,7 @@ export function createContext(state: BattleState, registry: BattleRegistry, tile
       if (revision.kind !== undefined) data.kind = revision.kind
     },
   }
-  state.live = ctx
-  bindSession(ctx, state, registry)
+  state.resources.access(ENGINE).set({ world: state, registry })
   return ctx
 }
 
@@ -297,7 +304,7 @@ const EMPTY_SCRIPT: Readonly<Record<string, string | number | boolean>> = Object
 const EMPTY_FIELD: Readonly<Record<string, unknown>> = Object.freeze({})
 
 function stands(
-  state: BattleState,
+  state: BattleWorld,
   registry: BattleRegistry,
   ctx: ContentContext,
   unitId: string,

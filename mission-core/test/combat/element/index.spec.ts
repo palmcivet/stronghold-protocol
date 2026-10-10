@@ -92,7 +92,7 @@ test("元素损伤不吃来源伤害乘算，只吃元素损伤倍率", () => {
     (ctx) => {
       ctx.registerStatus({
         id: "dealt",
-        flags: [],
+        tags: [],
         modifiers: [{ attribute: "dmgDealt", op: "mul", value: 2 }],
         immunity: [],
         stackCap: 1,
@@ -101,7 +101,7 @@ test("元素损伤不吃来源伤害乘算，只吃元素损伤倍率", () => {
       })
       ctx.registerStatus({
         id: "intake",
-        flags: [],
+        tags: [],
         modifiers: [{ attribute: "elemTaken", op: "mul", value: 2 }],
         immunity: [],
         stackCap: 1,
@@ -130,7 +130,7 @@ test("敌人灼燃蓄满后爆发 7000 元素伤害且不再进槽", () => {
     (ctx) => {
       ctx.registerStatus({
         id: "dealt",
-        flags: [],
+        tags: [],
         modifiers: [
           { attribute: "dmgDealt", op: "mul", value: 2 },
           { attribute: "resIgnorePct", op: "add", value: 1 },
@@ -160,7 +160,7 @@ test("干员灼燃是无来源法术伤害，先降法抗", () => {
     (ctx) => {
       ctx.registerStatus({
         id: "dealt",
-        flags: [],
+        tags: [],
         modifiers: [
           { attribute: "dmgDealt", op: "mul", value: 2 },
           { attribute: "resIgnorePct", op: "add", value: 1 },

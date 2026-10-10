@@ -1,4 +1,13 @@
-import { TICK, type AttributeModifier, type BattleEvent, type ContentContext, type ModifierOp } from "arknights-mission-core"
+import {
+  TICK,
+  defineResource,
+  defineTag,
+  type AttributeModifier,
+  type BattleEvent,
+  type ContentContext,
+  type ModifierOp,
+  type TagKey,
+} from "arknights-mission-core"
 import { getChess, getToken } from "#server/entry/packet.js"
 import { noteBlocked } from "#server/content/support/blocked.js"
 import { bodyInKeys } from "#server/content/support/body.js"
@@ -94,16 +103,33 @@ function damageKind(type: unknown): string {
   return "physical"
 }
 
+/** One facade per battle, shared by every content package, plus the battle-wide records it keeps. */
+interface FacadeStore {
+  facade?: object
+  layerGains?: Record<string, Record<string, number>>
+  endReason?: string
+}
+
+const FACADE = defineResource<FacadeStore>("content:facade", () => ({}))
+
+/** Tags the match layer writes into unit specs. */
+const MATCH_TAGS: readonly TagKey[] = [
+  defineTag("op", { meaning: "operator placed by a player" }),
+  defineTag("enemy", { meaning: "enemy from a wave" }),
+  defineTag("boss", { meaning: "boss enemy" }),
+]
+
 export function battleFacade(ctx: ContentContext): any {
-  const shared = ctx.shared("content-facade")
+  const shared = ctx.resource(FACADE).ensure()
   const existing = shared.facade
-  if (existing && typeof existing === "object") return existing
+  if (existing) return existing
+  for (const key of MATCH_TAGS) ctx.registerTag(key)
   const facade = createFacade(ctx, shared)
   shared.facade = facade
   return facade
 }
 
-function createFacade(ctx: ContentContext, shared: Record<string, unknown>) {
+function createFacade(ctx: ContentContext, shared: FacadeStore) {
   const buffs = new Map<string, Map<string, { key: string; mods: Record<string, number>; started: number; duration?: number }>>()
 
   function buffOf(unitId: string, key: string): { key: string; mods: Record<string, number>; timeLeft: number; duration?: number } | null {
@@ -515,7 +541,7 @@ function createFacade(ctx: ContentContext, shared: Record<string, unknown>) {
       const bond = player?.bonds?.[bondId]
       if (!bond) return 0
       bond.layers = (bond.layers ?? 0) + count
-      const gains = (shared.layerGains ??= {}) as Record<string, Record<string, number>>
+      const gains = (shared.layerGains ??= {})
       const key = String(pid)
       const row = (gains[key] ??= {})
       row[bondId] = (row[bondId] ?? 0) + count
@@ -531,7 +557,7 @@ function createFacade(ctx: ContentContext, shared: Record<string, unknown>) {
       ctx.finish("enemy")
     },
     result() {
-      const gains = (shared.layerGains ?? {}) as Record<string, Record<string, number>>
+      const gains = shared.layerGains ?? {}
       const perPlayer: Record<string, { layerGains: Record<string, number> }> = {}
       for (const [pid, row] of Object.entries(gains)) perPlayer[pid] = { layerGains: row }
       return { finished: false, winner: null, reason: shared.endReason ?? null, perPlayer }

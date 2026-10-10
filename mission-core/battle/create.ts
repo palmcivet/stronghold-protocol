@@ -3,28 +3,33 @@ import type { BattleEvent } from "#contract/event.js"
 import type { BattleResult } from "#contract/result.js"
 import type { BattleSnapshot } from "#contract/snapshot.js"
 import type { BattleSpec, UnitSpec } from "#contract/spec.js"
-import type { MissionModule } from "#port/content.js"
+import type { MissionModule, Registration } from "#port/module.js"
+import type { BattleRegistry } from "#port/definition.js"
+import { CORE_TAGS } from "#port/tag.js"
 import { UnknownRegistrationError } from "#kernel/registry/error.js"
-import { createRandom } from "#kernel/random/index.js"
+import { drainEvents, emit } from "#kernel/event/index.js"
+import { counterTimer, elapsedTimer } from "#kernel/timer/index.js"
+import { createWorld } from "#kernel/world/index.js"
 import { registerBuiltinShifts } from "#field/motion/index.js"
-import { createContext } from "#battle/context.js"
+
+import { RESULT, createContext } from "#battle/context.js"
 import { registerEngineSystems } from "#battle/step.js"
-import { createRegistry, type BattleRegistry } from "#kernel/registry/index.js"
+import { createRegistry } from "#battle/registry.js"
 import { readSnapshot } from "#battle/snapshot.js"
-import { createGrid, type GridPoint } from "#field/grid/index.js"
 import { openBattle } from "#unit/deploy/strategy.js"
 import { normalizeTrigger } from "#ability/skill/constants.js"
 import { registerBuiltinSkillBodies } from "#ability/skill/body.js"
-import { armField, bindSkillSignals } from "#ability/skill/point.js"
+import { armField, bindSkillSignals, registerSkillTimers } from "#ability/skill/point.js"
 import { registerBuiltinSkillTriggers } from "#ability/skill/trigger.js"
-import { initialCost } from "#economy/index.js"
-import { addUnit, emit, type BattleState } from "#battle/state.js"
+import { addUnit, checkSpecTags, grantSpecTags, type BattleWorld, type UnitState } from "#unit/record/index.js"
+import { armListedTimers } from "#unit/record/timer.js"
 import { registerDamageSteps } from "#combat/damage/index.js"
 import { registerBuiltinElements } from "#combat/element/index.js"
+import { registerAttackTimers } from "#combat/attack/index.js"
+import { bindIndependentTimers } from "#combat/attack/timing.js"
 import { registerStatusCatalog } from "#ability/effect/catalog.js"
 import { registerStatusTimer } from "#ability/effect/index.js"
 import { registerBuiltinSelectors } from "#combat/target/catalog.js"
-import { armListedTimers, bindIndependentTimers, registerBuiltinTimers } from "#kernel/timer/index.js"
 
 export interface Battle {
   step(): void
@@ -34,22 +39,26 @@ export interface Battle {
 }
 
 export function createBattle(spec: BattleSpec, modules: readonly MissionModule[]): Battle {
-  const grid = createGrid(spec.tiles, spanPoints(spec))
-  const state = createState(spec, grid)
+  const state = createState(spec)
   const registry = createRegistry()
+  for (const key of CORE_TAGS) registry.registerTag(key)
   registerBuiltinSkillBodies(registry)
   registerBuiltinSkillTriggers(state, registry)
   registerBuiltinSelectors(state, registry)
-  registerBuiltinTimers(registry, state)
+  registerSkillTimers(registry, state)
+  registry.registerTimer(counterTimer("trait", "ally", "count"))
+  registry.registerTimer(elapsedTimer("redeploy", "redeploy"))
+  registerAttackTimers(registry, state)
   registerStatusTimer(registry, state)
   registerStatusCatalog(state, registry)
   registerBuiltinElements(state, registry)
   registerDamageSteps(state, registry)
-  const ctx = createContext(state, registry, grid)
+  const ctx = createContext(state, registry)
   registerBuiltinShifts(registry)
   registerEngineSystems(registry, state)
   installModules(spec, modules, ctx)
-  validateSkills(spec, registry)
+  validateUnits(spec, registry)
+  for (const unit of spec.units) grantSpecTags(registry, requireSpecUnit(state, unit), unit)
   if (spec.deployStrategy !== null) registry.requireDeployStrategy(spec.deployStrategy)
   bindSkillSignals(state, registry, ctx)
   for (const unit of state.units.values()) armListedTimers(state, registry, unit)
@@ -61,6 +70,7 @@ export function createBattle(spec: BattleSpec, modules: readonly MissionModule[]
     }
   }
   armField(state, registry, ctx, true)
+  const result = state.resources.access(RESULT)
   return {
     step() {
       for (const slot of PHASE_SLOTS) {
@@ -72,51 +82,30 @@ export function createBattle(spec: BattleSpec, modules: readonly MissionModule[]
       return readSnapshot(state.tick, state.units.values())
     },
     drainEvents() {
-      const events = state.events.slice()
-      state.events.length = 0
-      return events
+      return drainEvents(state.events)
     },
     result() {
-      return { finished: state.result.finished, winner: state.result.winner }
+      const current = result.ensure()
+      return { finished: current.finished, winner: current.winner }
     },
   }
 }
 
-function spanPoints(spec: BattleSpec): GridPoint[] {
-  const points: GridPoint[] = []
-  for (const unit of spec.units) points.push({ x: unit.x, y: unit.y })
-  for (const spawn of spec.spawns) points.push({ x: spawn.unit.x, y: spawn.unit.y })
-  return points
-}
-
-function createState(spec: BattleSpec, grid: ReturnType<typeof createGrid>): BattleState {
-  const state: BattleState = {
-    spec,
-    grid,
-    tick: 0,
-    units: new Map(),
-    spawned: new Set(),
-    projectiles: [],
-    cost: {
-      ally: initialCost(spec.cost.ally),
-      enemy: initialCost(spec.cost.enemy),
-    },
-    events: [],
-    subscribers: new Map(),
-    scheduled: [],
-    result: { finished: false, winner: null },
-    random: createRandom(spec.seed),
-    damagePreview: false,
-    selectorOrigin: null,
-    shared: new Map(),
-    live: null,
-  }
+/** 建出世界，放入开场单位。规格标签等模块装好后再授予。 */
+function createState(spec: BattleSpec): BattleWorld {
+  const state: BattleWorld = createWorld(spec)
   const fielded = spec.deployStrategy === null
   for (const unit of spec.units) addUnit(state, unit, fielded)
   return state
 }
 
-function installModules(spec: BattleSpec, modules: readonly MissionModule[], ctx: Parameters<MissionModule["install"]>[0]): void {
+function requireSpecUnit(state: BattleWorld, spec: UnitSpec): UnitState {
+  const unit = state.units.get(spec.id)
+  if (!unit) throw new Error(`单位不存在: ${spec.id}`)
+  return unit
+}
+
+function installModules(spec: BattleSpec, modules: readonly MissionModule[], ctx: Registration): void {
   const catalog = new Map<string, MissionModule>()
   for (const module of modules) {
     if (catalog.has(module.id)) throw new Error(`模块重复: ${module.id}`)
@@ -147,7 +136,8 @@ function installModules(spec: BattleSpec, modules: readonly MissionModule[], ctx
   for (const module of ordered) module.install(ctx)
 }
 
-function validateSkills(spec: BattleSpec, registry: BattleRegistry): void {
+/** 开场与出场单位的技能体、技能触发和标签都要已注册。 */
+function validateUnits(spec: BattleSpec, registry: BattleRegistry): void {
   const units: UnitSpec[] = [...spec.units, ...spec.spawns.map((spawn) => spawn.unit)]
   for (const unit of units) {
     for (const skill of unit.skills) {
@@ -155,5 +145,6 @@ function validateSkills(spec: BattleSpec, registry: BattleRegistry): void {
       const trigger = normalizeTrigger(skill.trigger)
       if (!registry.hasSkillTrigger(trigger)) throw new UnknownRegistrationError("skill-trigger", trigger)
     }
+    checkSpecTags(registry, unit)
   }
 }

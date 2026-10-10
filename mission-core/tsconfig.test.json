@@ -7,7 +7,7 @@
     "rootDir": ".",
     "tsBuildInfoFile": "dist-test/.tsbuildinfo"
   },
-  "include": ["**/*.test.ts", "**/*.spec.ts", "test/**/*.ts"],
+  "include": ["test", "**/*.test.ts", "**/*.spec.ts", "**/*.bench.ts"],
   "exclude": ["dist", "dist-test", "node_modules"],
   "references": [{ "path": "./tsconfig.json" }]
 }

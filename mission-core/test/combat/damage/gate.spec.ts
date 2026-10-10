@@ -1,4 +1,5 @@
 import { expect, test } from "vitest"
+import { HIT_COUNT, HIT_COUNT_ARTS, HIT_SLEEP } from "#port/tag.js"
 import { createBattle, type ContentContext, type MissionModule, type UnitSpec } from "arknights-mission-core"
 import { ally, spec } from "#test/fixture.js"
 
@@ -27,7 +28,7 @@ function hpOf(battle: ReturnType<typeof createBattle>, id: string): number {
 
 const counted = {
   id: "counted",
-  flags: ["hitCount"],
+  tags: [HIT_COUNT],
   modifiers: [],
   immunity: [],
   stackCap: 1,
@@ -71,7 +72,7 @@ test("沉睡挡住伤害和元素槽，能打沉睡或这一击声明忽略时�
     (ctx) => {
       ctx.registerStatus({
         id: "awake",
-        flags: ["hitSleep"],
+        tags: [HIT_SLEEP],
         modifiers: [],
         immunity: [],
         stackCap: 1,
@@ -207,7 +208,7 @@ test("只数法术的受击次数放过物理", () => {
       ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 400, kind: "arts" })
     },
     (ctx) => {
-      ctx.registerStatus({ ...counted, id: "arts-only", flags: ["hitCountArts"] })
+      ctx.registerStatus({ ...counted, id: "arts-only", tags: [HIT_COUNT_ARTS] })
     },
   )
   battle.step()

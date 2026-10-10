@@ -1,9 +1,11 @@
 import type { AttackDamageKind, AttackShape, ProjectileKind } from "#contract/spec.js"
-import type { ContentContext } from "#port/content.js"
-import type { BattleRegistry } from "#kernel/registry/index.js"
+import type { ContentContext } from "#port/context.js"
+import type { BattleRegistry } from "#port/definition.js"
 import { bodyDist } from "#field/body/index.js"
-import type { BattleState } from "#battle/state.js"
+import type { BattleWorld } from "#unit/record/index.js"
 import { maxHpOf } from "#ability/effect/attribute.js"
+import { hasTag } from "#kernel/world/tag.js"
+import { CAN_HIT_FLY, NO_HEAL, REVEAL, STEALTH, STEALTH_OFF, UNTARGETABLE } from "#port/tag.js"
 import { isFlying, type UnitState } from "#unit/record/index.js"
 import { hypot } from "#kernel/math/hypot.js"
 import { powi } from "#kernel/math/powi.js"
@@ -49,7 +51,7 @@ export interface AttackImpact {
 
 export interface AttackResolver {
   readonly id: string
-  resolve(state: BattleState, registry: BattleRegistry, ctx: ContentContext, impact: AttackImpact): void
+  resolve(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext, impact: AttackImpact): void
 }
 
 const resolvers: AttackResolver[] = []
@@ -62,7 +64,7 @@ export function registerAttackResolver(resolver: AttackResolver): void {
 }
 
 export function resolveAttackImpact(
-  state: BattleState,
+  state: BattleWorld,
   registry: BattleRegistry,
   ctx: ContentContext,
   impact: AttackImpact,
@@ -95,7 +97,7 @@ export function boomerangsOut(unit: { boomerangsOut: number }): number {
 // MARK: strike
 
 function resolveStrike(
-  state: BattleState,
+  state: BattleWorld,
   _registry: BattleRegistry,
   ctx: ContentContext,
   impact: AttackImpact,
@@ -117,7 +119,7 @@ function resolveStrike(
 // MARK: splash
 
 function resolveSplash(
-  state: BattleState,
+  state: BattleWorld,
   _registry: BattleRegistry,
   ctx: ContentContext,
   impact: AttackImpact,
@@ -141,7 +143,7 @@ function resolveSplash(
 // MARK: bounce
 
 function resolveBounce(
-  state: BattleState,
+  state: BattleWorld,
   _registry: BattleRegistry,
   ctx: ContentContext,
   impact: AttackImpact,
@@ -173,7 +175,7 @@ function resolveBounce(
 // MARK: chain
 
 function resolveChain(
-  state: BattleState,
+  state: BattleWorld,
   registry: BattleRegistry,
   ctx: ContentContext,
   impact: AttackImpact,
@@ -238,7 +240,7 @@ function present(unit: UnitState | undefined): unit is UnitState {
 }
 
 function hitsFlying(unit: UnitState): boolean {
-  return unit.tags.includes("canHitFly") || (unit.attributes.canHitFly ?? 0) > 0
+  return hasTag(unit, CAN_HIT_FLY) || (unit.attributes.canHitFly ?? 0) > 0
 }
 
 function opposing(side: UnitState["side"]): UnitState["side"] {
@@ -247,13 +249,13 @@ function opposing(side: UnitState["side"]): UnitState["side"] {
 
 function selectable(unit: UnitState, attacker: UnitState): boolean {
   if (!present(unit) || unit.id === attacker.id) return false
-  if (unit.flags.has("untargetable")) return false
-  if (unit.flags.has("stealth") && !unit.flags.has("reveal") && !unit.flags.has("stealthOff")) return false
+  if (hasTag(unit, UNTARGETABLE)) return false
+  if (hasTag(unit, STEALTH) && !hasTag(unit, REVEAL) && !hasTag(unit, STEALTH_OFF)) return false
   return unit.side === opposing(attacker.side)
 }
 
 function around(
-  state: BattleState,
+  state: BattleWorld,
   attacker: UnitState,
   x: number,
   y: number,
@@ -271,7 +273,7 @@ function around(
 }
 
 function nearest(
-  state: BattleState,
+  state: BattleWorld,
   attacker: UnitState,
   prev: UnitState,
   radius: number,
@@ -293,7 +295,7 @@ function nearest(
 }
 
 function lowestAlly(
-  state: BattleState,
+  state: BattleWorld,
   registry: BattleRegistry,
   attacker: UnitState,
   prev: UnitState,
@@ -304,7 +306,7 @@ function lowestAlly(
   let bestRatio = Infinity
   for (const unit of state.units.values()) {
     if (seen.has(unit.id) || unit.side !== attacker.side) continue
-    if (!present(unit) || unit.flags.has("noHeal")) continue
+    if (!present(unit) || hasTag(unit, NO_HEAL)) continue
     if (!injured(unit, registry)) continue
     const distance = hypot(unit.x - prev.x, unit.y - prev.y)
     if (distance > radius + 1e-9) continue

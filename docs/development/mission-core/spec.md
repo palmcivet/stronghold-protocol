@@ -83,7 +83,7 @@ interface UnitSpec {
 
 `attackShape` 可选。溅射、弹射、治疗链、治疗人数、锁定范围和投射物可以写在同一次攻击上。`damage` 单独表示物理、法术或治疗。没写时是单体即时物理攻击。字段见 [攻击](./attack.md)。
 
-`tags` 里，`token` 表示召唤物，`deferDeploy` 表示开战不上场。内置部署策略读这两个标签，见 [模块](./module.md)。
+`tags` 里的每个 id 都要已注册：核心标签之外的由内容模块在 `install` 里 `registerTag`，否则 `createBattle` 报错。`token` 表示召唤物，`deferDeploy` 表示开战不上场，内置部署策略读这两个标签，见 [模块](./module.md)。核心标签见 [世界、组件、资源与标签](./world.md)。
 
 `targetPriority` 交给选择器的 `priority` 键。空字符串不改变顺序。`blocking` 是这个单位正在阻挡的单位 id。`blockedBy` 是挡住它的单位 id。`aggroSeq` 缺省按入场先后，越晚越大。
 

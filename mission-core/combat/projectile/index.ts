@@ -1,7 +1,9 @@
-import type { ContentContext, ProjectileImpact, ProjectileLaunch, ProjectileView } from "#port/content.js"
+import type { ContentContext } from "#port/context.js"
+import type { ProjectileImpact, ProjectileLaunch, ProjectileView } from "#port/definition.js"
 import { resolveAttackImpact } from "#combat/attack/shape.js"
-import type { BattleRegistry } from "#kernel/registry/index.js"
-import type { BattleState } from "#battle/state.js"
+import type { BattleRegistry } from "#port/definition.js"
+import type { BattleWorld } from "#unit/record/index.js"
+import { defineResource } from "#kernel/world/resource.js"
 import { TICK } from "#kernel/tick/index.js"
 import { hypot } from "#kernel/math/hypot.js"
 
@@ -28,12 +30,19 @@ export interface ProjectileFlight {
   epoch: number
 }
 
-export function launchProjectile(state: BattleState, projectile: ProjectileLaunch): void {
+/** 仍在飞的投射物，按发出顺序。 */
+export const PROJECTILES = defineResource<ProjectileFlight[]>("combat:projectiles", () => [])
+
+function flightsOf(state: BattleWorld): ProjectileFlight[] {
+  return state.resources.access(PROJECTILES).ensure()
+}
+
+export function launchProjectile(state: BattleWorld, projectile: ProjectileLaunch): void {
   const source = state.units.get(projectile.sourceId)
   const target = state.units.get(projectile.targetId)
   const given = projectile.speed
   const attack = projectile.attack ?? null
-  state.projectiles.push({
+  flightsOf(state).push({
     id: projectile.id,
     sourceId: projectile.sourceId,
     targetId: projectile.targetId,
@@ -51,8 +60,8 @@ export function launchProjectile(state: BattleState, projectile: ProjectileLaunc
   if (attack?.leg === "out") noteBoomerang(state, projectile.sourceId, 1, source?.boomerangEpoch ?? 0)
 }
 
-export function projectileViews(state: BattleState): readonly ProjectileView[] {
-  return state.projectiles.map((projectile) => ({
+export function projectileViews(state: BattleWorld): readonly ProjectileView[] {
+  return flightsOf(state).map((projectile) => ({
     id: projectile.id,
     sourceId: projectile.sourceId,
     targetId: projectile.targetId,
@@ -64,10 +73,11 @@ export function projectileViews(state: BattleState): readonly ProjectileView[] {
 }
 
 /** 朝仍在场的目标飞一拍。普通一发在目标离场时消掉。retain 的一发落到最后坐标。 */
-export function advanceProjectiles(state: BattleState, registry: BattleRegistry, ctx: ContentContext): void {
+export function advanceProjectiles(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext): void {
   const keep: ProjectileFlight[] = []
   const arrived: ProjectileFlight[] = []
-  for (const projectile of state.projectiles) {
+  const flights = flightsOf(state)
+  for (const projectile of flights) {
     projectile.age += TICK
     const target = state.units.get(projectile.targetId)
     const live = target !== undefined && target.fielded && !target.downed && (target.attributes.hp ?? 0) > 0
@@ -94,11 +104,11 @@ export function advanceProjectiles(state: BattleState, registry: BattleRegistry,
       keep.push(projectile)
     }
   }
-  state.projectiles.splice(0, state.projectiles.length, ...keep)
+  flights.splice(0, flights.length, ...keep)
   for (const projectile of arrived) arrive(state, registry, ctx, projectile)
 }
 
-function arrive(state: BattleState, registry: BattleRegistry, ctx: ContentContext, projectile: ProjectileFlight): void {
+function arrive(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext, projectile: ProjectileFlight): void {
   const attack = projectile.attack
   if (attack?.leg === "back") {
     release(state, projectile, false)
@@ -125,7 +135,7 @@ function arrive(state: BattleState, registry: BattleRegistry, ctx: ContentContex
     })
   }
   if (attack?.leg === "out" && attack.returnSpeed !== undefined && attack.returnSpeed > 0 && atHome(state, projectile.sourceId)) {
-    state.projectiles.push({
+    flightsOf(state).push({
       id: `${projectile.id}:return`,
       sourceId: projectile.sourceId,
       targetId: projectile.sourceId,
@@ -151,17 +161,17 @@ function arrive(state: BattleState, registry: BattleRegistry, ctx: ContentContex
   release(state, projectile, false)
 }
 
-function atHome(state: BattleState, unitId: string): boolean {
+function atHome(state: BattleWorld, unitId: string): boolean {
   const unit = state.units.get(unitId)
   return unit !== undefined && unit.fielded && !unit.downed && (unit.attributes.hp ?? 0) > 0
 }
 
-function release(state: BattleState, projectile: ProjectileFlight, handedOff: boolean): void {
+function release(state: BattleWorld, projectile: ProjectileFlight, handedOff: boolean): void {
   if (handedOff || projectile.attack?.leg === undefined) return
   noteBoomerang(state, projectile.sourceId, -1, projectile.epoch)
 }
 
-function noteBoomerang(state: BattleState, unitId: string, delta: number, epoch: number): void {
+function noteBoomerang(state: BattleWorld, unitId: string, delta: number, epoch: number): void {
   const unit = state.units.get(unitId)
   if (!unit) return
   if (delta < 0 && unit.boomerangEpoch !== epoch) return

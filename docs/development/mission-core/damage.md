@@ -27,7 +27,7 @@ interface DamageInfo {
 
 `dealDamage(info)` 走伤害步骤。`kind` 收成 `physical`、`arts`、`true`、`elemental`、`element`。`phys` 记成 `physical`。
 
-目标不存在或已倒地时不进入步骤。进入之前，无敌会挡下。沉睡会挡下，除非 `ignoreSleep`，或来源带有 `hitSleep`。起飞会挡下来源是地面敌人的一击，除非 `ignoreSelect`、`sourceless`，或来源自己在飞行。起飞只在命中事件之前查一次。
+目标不存在或已倒地时不进入步骤。进入之前，直接授予的 `invulnerable` 会挡下。沉睡会挡下，除非 `ignoreSleep`，或来源带有 `hitSleep`。起飞会挡下来源是地面敌人的一击，除非 `ignoreSelect`、`sourceless`，或来源自己在飞行。起飞只在命中事件之前查一次。
 
 不是预览、且种类不是 `element` 时，先送出 `hit`。订阅者可以改 `amount`、`kind`、`cancel`、`mul`。`cancel` 为真则不再进入步骤。
 

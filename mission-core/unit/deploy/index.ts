@@ -1,17 +1,13 @@
 import type { TileCoord } from "#contract/spec.js"
-import type { ContentContext, MissionModule } from "#port/content.js"
-import { sessionOf } from "#battle/session.js"
-import { requireUnit } from "#battle/state.js"
-import type { UnitState } from "#unit/record/index.js"
+import type { ContentContext } from "#port/context.js"
+import type { MissionModule } from "#port/module.js"
+import { DEFER_DEPLOY, TOKEN } from "#port/tag.js"
+import { hasTag } from "#kernel/world/tag.js"
+import { engineOf, requireUnit, type UnitState } from "#unit/record/index.js"
 
 /** 内置部署策略。规格的 `deployStrategy` 与模块 id 都用这个标识。 */
 export const DEPLOY_STRATEGY = "deploy"
 
-/** 召唤物。开战排在干员后面。 */
-export const TOKEN_TAG = "token"
-
-/** 开战不上场，初始格子留给它。 */
-export const DEFER_DEPLOY_TAG = "deferDeploy"
 
 export const deployModule: MissionModule = {
   id: DEPLOY_STRATEGY,
@@ -28,7 +24,7 @@ export const deployModule: MissionModule = {
 // MARK: opening
 
 function opening(ctx: ContentContext): readonly string[] {
-  const { state } = sessionOf(ctx)
+  const { world: state } = engineOf(ctx)
   const enemies: string[] = []
   const operators: UnitState[] = []
   const tokens: UnitState[] = []
@@ -37,8 +33,8 @@ function opening(ctx: ContentContext): readonly string[] {
       enemies.push(unit.id)
       continue
     }
-    if (unit.tags.includes(DEFER_DEPLOY_TAG)) continue
-    if (unit.tags.includes(TOKEN_TAG)) tokens.push(unit)
+    if (hasTag(unit, DEFER_DEPLOY)) continue
+    if (hasTag(unit, TOKEN)) tokens.push(unit)
     else operators.push(unit)
   }
   operators.sort(byColumn)
@@ -58,10 +54,10 @@ function byColumn(left: UnitState, right: UnitState): number {
 // MARK: body
 
 function downedTile(unitId: string, ctx: ContentContext): TileCoord {
-  const { state } = sessionOf(ctx)
+  const { world: state } = engineOf(ctx)
   const unit = requireUnit(state, unitId)
   const fell = tileOf(unit.x, unit.y)
-  if (unit.side !== "ally" || unit.tags.includes(TOKEN_TAG)) return fell
+  if (unit.side !== "ally" || hasTag(unit, TOKEN)) return fell
   if (fell.x === unit.homeX && fell.y === unit.homeY) return fell
   if (!homeOfOther(state.units.values(), unit, fell)) return fell
   const home = { x: unit.homeX, y: unit.homeY }
@@ -70,7 +66,7 @@ function downedTile(unitId: string, ctx: ContentContext): TileCoord {
 }
 
 function canStand(unitId: string, tile: TileCoord, ctx: ContentContext): boolean {
-  const { state } = sessionOf(ctx)
+  const { world: state } = engineOf(ctx)
   const at = tileOf(tile.x, tile.y)
   const ground = ctx.tile(at.x, at.y)
   if (!ground?.deployable) return false
@@ -102,7 +98,7 @@ function reservedByOther(units: Iterable<UnitState>, unitId: string, tile: TileC
   for (const other of units) {
     if (other.id === unitId || other.side !== "ally") continue
     if (other.downed) {
-      if (other.tags.includes(TOKEN_TAG)) continue
+      if (hasTag(other, TOKEN)) continue
       const body = tileOf(other.x, other.y)
       if (body.x === tile.x && body.y === tile.y) return true
       continue

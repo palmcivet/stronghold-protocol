@@ -1,6 +1,6 @@
-import type { BattleRegistry } from "#kernel/registry/index.js"
+import type { BattleRegistry } from "#port/definition.js"
 import { skillModSum } from "#ability/skill/modifier.js"
-import type { AttributeModifier } from "#port/content.js"
+import type { AttributeModifier } from "#port/definition.js"
 import type { UnitState } from "#unit/record/index.js"
 import { powi } from "#kernel/math/powi.js"
 

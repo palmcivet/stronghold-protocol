@@ -41,7 +41,21 @@ pnpm vitest run test/golden -u
 
 `test/trace.spec.ts` 检查 `// TRACE: <种类>/<名字>` 标记与注释、测试名、报错文案，规则与标记表见[追溯标记](../trace.md)。
 
-两个扫描共用 `test/source.ts`：列出包内源码，切分记号，跳过空白与注释。
+## 内核边界扫描
+
+`test/boundary.spec.ts` 读取 `kernel/` 下的源码（测试文件除外），`import` 的目标只能是 `#kernel/` 或 `#contract/`，否则报出文件与目标。
+
+三个扫描共用 `test/source.ts` 列出包内源码；确定性扫描与追溯扫描另用它切分记号，跳过空白与注释。
+
+## 性能观察
+
+`test/perf/golden.perf.ts` 把每个黄金场景从头推进 600 帧，重复 20 次取平均，打印每个场景与合计的毫秒数，不设门槛。它不在 `pnpm test` 里，在 `mission-core` 内单独运行：
+
+```sh
+pnpm perf
+```
+
+配置是 `vitest.perf.config.ts`，只收 `test/perf/**/*.perf.ts`。
 
 ## 路径别名
 

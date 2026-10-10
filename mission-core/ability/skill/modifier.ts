@@ -27,14 +27,6 @@ export function skillModSum(unit: UnitState, key: string): ModSum {
   return { add, percent, mul, touched }
 }
 
-export function skillFlagsOf(unit: UnitState): readonly string[] {
-  const flags: string[] = []
-  for (const skill of unit.skills) {
-    if (!skill.effectsApplied) continue
-    for (const flag of skill.skillFlags) flags.push(flag)
-  }
-  return flags
-}
 
 /** 把正在生效的技能修饰叠到快照属性上。当前生命不叠。 */
 export function overlaySkillAttributes(unit: UnitState, attributes: Record<string, number>): void {

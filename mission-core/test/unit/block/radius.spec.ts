@@ -1,7 +1,7 @@
 import { expect, test } from "vitest"
 import {
-  BLOCK_FLY_TAG,
-  DEVICE_TAG,
+  BLOCK_FLY,
+  DEVICE,
   STEALTH_RESTORE,
   blockModule,
   createBattle,
@@ -27,7 +27,7 @@ test("飞行敌人用飞行半径，而且要阻挡者带 blockFly", () => {
   const plain = open([])
   plain.step()
   expect(plain.snapshot().units.find((unit) => unit.id === "e")?.blockedBy).toBeNull()
-  const flying = open([BLOCK_FLY_TAG])
+  const flying = open([BLOCK_FLY.id])
   flying.step()
   expect(flying.snapshot().units.find((unit) => unit.id === "e")?.blockedBy).toBe("a")
 })
@@ -37,7 +37,7 @@ test("装置用更小的接触半径", () => {
     spec({
       modules: ["block"],
       units: [
-        ally("a", { tags: [DEVICE_TAG] }),
+        ally("a", { tags: [DEVICE.id] }),
         ally("far", { side: "enemy", x: 0.5, y: 0, attributes: { hp: 10 } }),
         ally("near", { side: "enemy", x: 0.3, y: 0, attributes: { hp: 10 } }),
       ],
@@ -57,7 +57,7 @@ test("围栏上的单位挡不住地面敌人，挡得住带 blockFly 的飞行�
       modules: ["block"],
       tiles: [fence, { x: 1, y: 0, height: 0, deployable: true, walkableBy: ["ground"] }],
       units: [
-        ally("a", { tags: [BLOCK_FLY_TAG] }),
+        ally("a", { tags: [BLOCK_FLY.id] }),
         ally("ground", { side: "enemy", x: 0.2, y: 0, attributes: { hp: 10, moveSpeed: 0 } }),
         ally("air", { side: "enemy", x: 0.2, y: 0.1, motion: "FLY", attributes: { hp: 10, moveSpeed: 0 } }),
       ],

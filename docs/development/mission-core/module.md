@@ -50,10 +50,11 @@ const module: MissionModule = {
 | `registerDeployStrategy` | `deploy` |
 | `registerShift` | `shift` |
 | `registerSystem` | 槽名不在 `PHASE_SLOTS` 里时是 `phase` |
+| `registerTag` | 规格写到未注册的标签时是 `tag`，见 [世界、组件、资源与标签](./world.md) |
 
 规格点了没有传入的模块，或依赖不在规格名单里，`registry` 是 `module`。
 
-`subscribe(type, handler)` 返回取消订阅的函数。处理函数在事件送出时立刻调用，缓冲里仍保留这条事件，直到 `drainEvents`。
+`subscribe(type, handler)` 返回取消订阅的函数。处理函数收到事件和 `ContentContext`，在事件送出时立刻调用，缓冲里仍保留这条事件，直到 `drainEvents`。
 
 `registerDamageStep` 的 `priority` 小的先执行。换掉同名步骤后按新的优先级重排。内置步骤见 [伤害](./damage.md)。
 
@@ -81,9 +82,9 @@ interface DeployStrategyDefinition {
 
 `opening` 返回开场要上场的单位 id。倒地时 `downedTile` 给出落点，引擎把坐标写成这个格子，再用 `canStand` 问这一格现在能不能站。结果放进 `downed` 事件。`canStand` 为假时落点不变。
 
-内置模块 `deploy`（`deployModule`）登记同名策略。规格同时写 `modules: ["deploy"]` 和 `deployStrategy: "deploy"`。常量 `DEPLOY_STRATEGY`、`TOKEN_TAG`、`DEFER_DEPLOY_TAG` 从包根导出。
+内置模块 `deploy`（`deployModule`）登记同名策略。规格同时写 `modules: ["deploy"]` 和 `deployStrategy: "deploy"`。常量 `DEPLOY_STRATEGY` 与标签键 `TOKEN`、`DEFER_DEPLOY` 从包根导出。
 
-`token` 是召唤物。`deferDeploy` 是开战不上场的友方，它的初始格子留着。初始格子是放入时的坐标，之后 `displace` 可以离开，初始格子不变。
+带 `token` 标签的是召唤物。带 `deferDeploy` 的是开战不上场的友方，它的初始格子留着。初始格子是放入时的坐标，之后 `displace` 可以离开，初始格子不变。
 
 `opening` 先按放入顺序列出敌人，再列干员，再列召唤物。干员和召唤物按初始格子排：列号小的在前，同一列行号大的在前，再比 id。带 `deferDeploy` 的友方不在这份名单里。
 
@@ -99,13 +100,17 @@ interface DeployStrategyDefinition {
 
 `dealDamage`、`previewDamage`、`loseHp`、`heal`、`addElement` 见 [伤害](./damage.md)。`applyStatus` 见 [状态](./status.md)。`unitsInRange`、`select`、`hitRect` 见 [选择器](./selector.md)。`shouldCast`、`castSkill`、`gainSp` 见 [技能](./skill.md)。
 
-`spawnUnit(spec)` 放入单位并标成在场，送出 `spawn`。它不装技能计时。规格写了部署策略时，`canStand` 为假就不放入。`displace(unitId, x, y)` 改坐标，清掉这条路线已经算好的路径，送出 `displace`。同样，有部署策略且 `canStand` 为假时坐标不动。`shift` 见 [费用、阻挡与投射物](./field.md)。`setObstacle(x, y, on, kind?)` 在格子上摆障碍，`kind` 缺省 `block`，也可以是 `crate`。
+`spawnUnit(spec)` 放入单位并标成在场，授予规格标签，送出 `spawn`。它不装技能计时。规格里有未注册的标签时抛出 `UnknownRegistrationError`。规格写了部署策略时，`canStand` 为假就不放入。`displace(unitId, x, y)` 改坐标，清掉这条路线已经算好的路径，送出 `displace`。同样，有部署策略且 `canStand` 为假时坐标不动。`shift` 见 [费用、阻挡与投射物](./field.md)。`setObstacle(x, y, on, kind?)` 在格子上摆障碍，`kind` 缺省 `block`，也可以是 `crate`。
 
 `launchProjectile` 从来源单位的坐标发出一发，送出 `projectile`。可选 `speed` 是格/秒，缺省 `PROJECTILE_SPEED`（12）。`projectiles()` 读出仍在飞的那些，带当前 `x`、`y`。投射物槽里朝目标飞；目标已离场则消掉，不结算。`retain` 为真时落到最后坐标再结算。没有 `attack` 时到达后按 `amount` 造成 `physical` 伤害。超过 `PROJECTILE_MAX_AGE`（10 秒）仍未飞到，就落在目标当前位置并结算。普攻只在 `attackShape.projectile` 上写了种类时改走投射物。
 
 `spendCost(side, amount)` 从该阵营的池里扣。不够、或数额不是有限非负数时返回 false，池子不动。0 视为已经付过，返回 true。`addCost(side, amount)` 加上去，结果不超过规格里的上限。`costOf(side)` 读当前数量。见 [费用、阻挡与投射物](./field.md)。
 
-`schedule(tick, run)` 把回调交给 `schedule` 槽。`finish(winner)` 写下胜负。`tick()` 读当前拍数。`tile(x, y)` 读地块，没有则是 `null`。`moduleData(moduleId, unitId)` 返回这个模块在这个单位上的一份可变记录，没有就新建。`random` 是这场战斗的发生器。
+`schedule(tick, run)` 把回调交给 `schedule` 槽。`finish(winner)` 写下胜负。`tick()` 读当前拍数。`tile(x, y)` 读地块，没有则是 `null`。`random` 是这场战斗的发生器。
+
+`component(key)` 返回 `defineComponent` 定义的按单位组件表，`resource(key)` 返回 `defineResource` 定义的本场资源。`hasTag`、`grantTag`、`revokeTag`、`tagSources` 按 `defineTag` 的键查询和授予标签。见 [世界、组件、资源与标签](./world.md)。
+
+`unit(unitId)` 读一份视图。视图的 `tags` 是规格写的标签 id，`flags` 是状态、技能与模块授予的标签 id，都不含蕴含得到的标签。
 
 ## 随机数
 

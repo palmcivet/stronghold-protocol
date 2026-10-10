@@ -1,210 +1,95 @@
 import type { PhaseSlot } from "#contract/phase.js"
-import type { ContentContext, TimerDefinition, TimerState, TimerView } from "#port/content.js"
-import type { BattleRegistry } from "#kernel/registry/index.js"
-import { readTimer, requireUnit, type BattleState } from "#battle/state.js"
-import type { UnitState } from "#unit/record/index.js"
-import { advanceAttack } from "#combat/attack/index.js"
-import { openIndependentTimer, registerIndependentTimers } from "#combat/attack/timing.js"
-import { advanceSkillBody, advanceSkillPoint } from "#ability/skill/point.js"
+import type { UnitSide } from "#contract/spec.js"
 import { TICK } from "#kernel/tick/index.js"
 
-export {
-  AMMO_CAP,
-  AMMO_CAP_ATTRIBUTE,
-  AMMO_SCALE,
-  AMMO_SCALE_ATTRIBUTE,
-  AMMO_TIMER,
-  BOOMERANG_TIMER,
-  BOOMERANGS_OUT_ATTRIBUTE,
-  CHARGE_CAP,
-  CHARGE_CAP_ATTRIBUTE,
-  CHARGE_TIMER,
-  TIMER_RATE,
-  TIMER_RATE_ATTRIBUTE,
-  bindIndependentTimers,
-  clearAttackTargetThisTick,
-  consumeAttackTiming,
-  independentDt,
-  peekAttackTargetThisTick,
-  readAttackTiming,
-  setAttackTargetThisTick,
-  type AttackTiming,
-} from "#combat/attack/timing.js"
+export type TimerState = Record<string, string | number | boolean>
 
-export function registerBuiltinTimers(registry: BattleRegistry, state: BattleState): void {
-  registry.registerTimer(skillBodyTimer(state, registry))
-  registry.registerTimer(skillPointTimer(state, registry))
-  registry.registerTimer(counterTimer("trait", "ally", "count"))
-  registry.registerTimer(redeployTimer())
-  registry.registerTimer(attackTimer(state, registry))
-  registerIndependentTimers(registry, state)
+export type TimerView = Readonly<Record<string, string | number | boolean>>
+
+/** 挂在实体上的计时器。C 是推进时交给计时器的上下文。 */
+export interface TimerDefinition<C> {
+  readonly id: string
+  readonly slot: PhaseSlot
+  /**
+   * 这些阵营才会启动。没写时两边都可以。
+   * 写了却对不上的阵营，启动直接跳过，计时器保持未开始。
+   */
+  readonly sides?: readonly UnitSide[]
+  create(): TimerState
+  /** 启动时在 create 之后调用一次。 */
+  open?(state: TimerState, unitId: string): void
+  advance(state: TimerState, unitId: string, ctx: C): void
+  cancel(state: TimerState): void
+  view(state: TimerState): TimerView
 }
 
-export function armListedTimers(state: BattleState, registry: BattleRegistry, unit: UnitState): void {
-  for (const timerId of unit.listedTimers) startTimer(state, registry, unit.id, timerId)
+export interface TimerHost {
+  readonly id: string
+  readonly side: UnitSide
+  readonly timers: Map<string, TimerState>
 }
 
-export function startTimer(state: BattleState, registry: BattleRegistry, unitId: string, timerId: string): void {
-  const definition = registry.requireTimer(timerId)
-  const unit = requireUnit(state, unitId)
-  if (definition.sides && !definition.sides.includes(unit.side)) return
-  if (unit.timers.has(timerId)) return
+export function readTimer(host: TimerHost, timerId: string): TimerState | undefined {
+  return host.timers.get(timerId)
+}
+
+/** 启动计时器。阵营不符或已经启动时什么也不做。 */
+export function openTimer<C>(host: TimerHost, definition: TimerDefinition<C>): void {
+  if (definition.sides && !definition.sides.includes(host.side)) return
+  if (host.timers.has(definition.id)) return
   const timer = definition.create()
-  unit.timers.set(timerId, timer)
-  openIndependentTimer(state, registry, unit, timerId, timer)
+  host.timers.set(definition.id, timer)
+  definition.open?.(timer, host.id)
 }
 
-export function advanceTimer(
-  state: BattleState,
-  registry: BattleRegistry,
-  ctx: ContentContext,
-  unitId: string,
-  timerId: string,
-): void {
-  const definition = registry.requireTimer(timerId)
-  const unit = requireUnit(state, unitId)
-  const timer = readTimer(unit, timerId)
-  if (!timer) throw new Error(`计时器未开始: ${timerId}`)
-  definition.advance(timer, unitId, ctx)
-}
-
-export function advanceStartedTimers(
-  state: BattleState,
-  registry: BattleRegistry,
-  ctx: ContentContext,
-  slot: PhaseSlot,
-): void {
-  for (const unit of unitsInSlot(state, slot)) {
-    for (const definition of registry.timersInSlot(slot)) {
-      const timer = readTimer(unit, definition.id)
-      if (!timer) continue
-      definition.advance(timer, unit.id, ctx)
-    }
-  }
-}
-
-export function cancelTimer(state: BattleState, registry: BattleRegistry, unitId: string, timerId: string): void {
-  const definition = registry.requireTimer(timerId)
-  const unit = requireUnit(state, unitId)
-  const timer = readTimer(unit, timerId)
-  if (!timer) return
-  definition.cancel(timer)
-}
-
-export function timerView(state: BattleState, registry: BattleRegistry, unitId: string, timerId: string): TimerView {
-  const definition = registry.requireTimer(timerId)
-  const unit = requireUnit(state, unitId)
-  const timer = readTimer(unit, timerId)
+export function viewTimer<C>(host: TimerHost, definition: TimerDefinition<C>): TimerView {
+  const timer = host.timers.get(definition.id)
   if (!timer) return { started: false }
   return { ...definition.view(timer), started: true }
 }
 
-function unitsInSlot(state: BattleState, slot: PhaseSlot): readonly UnitState[] {
-  const units = [...state.units.values()]
-  if (slot === "ally") return units.filter((unit) => unit.side === "ally" && unit.fielded && !unit.downed)
-  if (slot === "enemy") return units.filter((unit) => unit.side === "enemy" && unit.fielded && !unit.downed)
-  return units
-}
-
-function attackTimer(state: BattleState, registry: BattleRegistry): TimerDefinition {
-  return {
-    id: "attack",
-    slot: "ally",
-    create: () => ({ phase: "idle", elapsed: 0, cooldown: 0, rest: 0, lead: 0 }),
-    advance(timer, unitId, ctx) {
-      advanceAttack(state, registry, ctx, unitId, timer)
-    },
-    cancel(timer) {
-      timer.phase = "idle"
-      timer.elapsed = 0
-      timer.lead = 0
-    },
-    view(timer) {
-      return { phase: text(timer, "phase", "idle"), elapsed: number(timer, "elapsed") }
-    },
-  }
-}
-
-function redeployTimer(): TimerDefinition {
-  return {
-    id: "redeploy",
-    slot: "redeploy",
-    create: () => ({ elapsed: 0 }),
-    advance(timer) {
-      timer.elapsed = number(timer, "elapsed") + TICK
-    },
-    cancel(timer) {
-      timer.elapsed = 0
-    },
-    view(timer) {
-      return { elapsed: number(timer, "elapsed") }
-    },
-  }
-}
-
-function counterTimer(id: string, slot: PhaseSlot, field: string): TimerDefinition {
+/** 每次推进把 field 加一。 */
+export function counterTimer<C>(id: string, slot: PhaseSlot, field: string): TimerDefinition<C> {
   return {
     id,
     slot,
     create: () => ({ [field]: 0 }),
     advance(timer) {
-      timer[field] = number(timer, field) + 1
+      timer[field] = timerNumber(timer, field) + 1
     },
     cancel(timer) {
       timer[field] = 0
     },
     view(timer) {
-      return { [field]: number(timer, field) }
+      return { [field]: timerNumber(timer, field) }
     },
   }
 }
 
-function skillPointTimer(state: BattleState, registry: BattleRegistry): TimerDefinition {
+/** 每次推进把 elapsed 加一拍的秒数。 */
+export function elapsedTimer<C>(id: string, slot: PhaseSlot): TimerDefinition<C> {
   return {
-    id: "skill-point",
-    slot: "ally",
-    create: () => ({ phase: "recover", elapsed: 0, sp: 0, charges: 0, active: 0, activations: 0 }),
-    advance(timer, unitId, ctx) {
-      advanceSkillPoint(state, registry, ctx, unitId, timer)
-    },
-    cancel(_timer) {},
-    view(timer) {
-      return {
-        phase: text(timer, "phase", "recover"),
-        elapsed: number(timer, "elapsed"),
-        sp: number(timer, "sp"),
-        charges: number(timer, "charges"),
-        active: number(timer, "active"),
-        activations: number(timer, "activations"),
-      }
-    },
-  }
-}
-
-function skillBodyTimer(state: BattleState, registry: BattleRegistry): TimerDefinition {
-  return {
-    id: "skill-body",
-    slot: "ally",
+    id,
+    slot,
     create: () => ({ elapsed: 0 }),
-    advance(timer, unitId, ctx) {
-      timer.elapsed = number(timer, "elapsed") + 1
-      advanceSkillBody(state, registry, ctx, unitId)
+    advance(timer) {
+      timer.elapsed = timerNumber(timer, "elapsed") + TICK
     },
     cancel(timer) {
       timer.elapsed = 0
     },
     view(timer) {
-      return { elapsed: number(timer, "elapsed") }
+      return { elapsed: timerNumber(timer, "elapsed") }
     },
   }
 }
 
-function number(timer: TimerState, key: string): number {
+export function timerNumber(timer: TimerState, key: string): number {
   const value = timer[key]
   return typeof value === "number" ? value : 0
 }
 
-function text(timer: TimerState, key: string, fallback: string): string {
+export function timerText(timer: TimerState, key: string, fallback: string): string {
   const value = timer[key]
   return typeof value === "string" ? value : fallback
 }

@@ -27,9 +27,9 @@ description: 费用按阵营分池，再部署扣费后回到当前坐标，阻�
 
 `block` 模块在敌人槽跑两次：路线之前，以及路线和泄漏之后、敌人攻击之前。只让友方挡敌人。
 
-接触用中心距。地面半径是 `BLOCK_RADIUS`（0.70709997），平方是 `BLOCK_RADIUS_SQ`。飞行敌人用 `BLOCK_RADIUS_FLY`（0.8944）。带 `device` 标签的阻挡者用 `BLOCK_RADIUS_DEVICE`（0.4472）。飞行敌人还要阻挡者带 `blockFly` 标签或同名旗标。地面敌人不能被站在围栏上的单位挡住：阻挡者脚下的格子地面走不过（`walkableBy` 里没有地面）时，不挡地面敌人。
+接触用中心距。地面半径是 `BLOCK_RADIUS`（0.70709997），平方是 `BLOCK_RADIUS_SQ`。飞行敌人用 `BLOCK_RADIUS_FLY`（0.8944）。带 `device` 标签的阻挡者用 `BLOCK_RADIUS_DEVICE`（0.4472）。飞行敌人还要阻挡者带 `blockFly` 标签。地面敌人不能被站在围栏上的单位挡住：阻挡者脚下的格子地面走不过（`walkableBy` 里没有地面）时，不挡地面敌人。
 
-多个阻挡者里更近的优先；距离相同，行号小的优先，再比列号。挡上之后就留着，直到阻挡者离场、不能再挡，或敌人不能再被挡。不能再挡包括 `noBlock` 和 `sleep`。不能再被挡包括 `unblockable` 和 `sleep`。放开时如果这名敌人还带着 `stealth`，再施加 `stealthOff`。时长是隐匿状态的强度（大于 0 时），否则是 `STEALTH_RESTORE`（3 秒）。这段时间里隐匿不挡住选择。
+多个阻挡者里更近的优先；距离相同，行号小的优先，再比列号。挡上之后就留着，直到阻挡者离场、不能再挡，或敌人不能再被挡。不能再挡是带 `noBlock`，不能再被挡是带 `unblockable`；沉睡蕴含这两者。冻结、眩晕、束缚中的敌人照常被挡。放开时如果这名敌人还带着 `stealth`，再施加 `stealthOff`。时长是隐匿状态的强度（大于 0 时），否则是 `STEALTH_RESTORE`（3 秒）。这段时间里隐匿不挡住选择。
 
 `blockCnt` 是这名友方还能用的阻挡数，没写按 1，写了走属性汇总。`blockWeight` 是这名敌人占的重量，没写按 1。重量加起来超过阻挡数时，丢掉最晚挡上的。新关系送出 `blocked`，放开送出 `unblocked`。结果写回 `blocking` 和 `blockedBy`。快照抄这两份。
 
@@ -55,4 +55,4 @@ description: 费用按阵营分池，再部署扣费后回到当前坐标，阻�
 
 `push` 和 `pull` 这一拍写到落点，送出 `displace`，并放开阻挡。距离看 `force` 减 `massLevel`（属性汇总，没写按 0）。推力表是 `PUSH_TILES`，`effect` 为真时用 `PUSH_TILES_EFFECT`。受力等级 ≤ −3 不动，≥ 3 用 3 这一档。`fromX` / `fromY` 是径向起点，`dirX` / `dirY` 是定向。离起点近于 `PUSH_DIRECTIONAL_MIN_DIST`（0.25），或和朝向夹角超过 45°，并且没有 `fixed`，就改成径向并把等级减 2。拉力在等级 ≥ 0 时拉到距中心 `PULL_STOP_RADIUS`（0.6708）；−1 走起点距离的 `PULL_WEAK_SHARE`（0.35）；−2 走 `PULL_CRAWL`（0.03）。
 
-`fear` 和 `attract` 不瞬移。恐惧用扇形里的落点，诱导走向 `toX` / `toY`。敌人槽在沿路线之前按汇总后的 `moveSpeed` 走这段路径。倒地时如果这段还没走完，先把坐标写成落点，倒地格读的就是这个坐标。`noDisplace` 或 `staticBody` 标签的单位移不动。只有在场的敌人会被这些动作移动。
+`fear` 和 `attract` 不瞬移。恐惧用扇形里的落点，诱导走向 `toX` / `toY`。敌人槽在沿路线之前按汇总后的 `moveSpeed` 走这段路径。倒地时如果这段还没走完，先把坐标写成落点，倒地格读的就是这个坐标。带 `noDisplace` 或 `staticBody` 标签的单位移不动。只有在场的敌人会被这些动作移动。

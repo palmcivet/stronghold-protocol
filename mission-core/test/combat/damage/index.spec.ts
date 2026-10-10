@@ -1,4 +1,5 @@
 import { expect, test } from "vitest"
+import { NO_HEAL } from "#port/tag.js"
 import { createBattle, type ContentContext, type MissionModule, type UnitSpec } from "arknights-mission-core"
 import { ally, spec } from "#test/fixture.js"
 
@@ -193,7 +194,7 @@ test("元素伤害含 5% 下限，不吃通用脆弱，吃元素脆弱", () => {
     (ctx) => {
       ctx.registerStatus({
         id: "fragile",
-        flags: [],
+        tags: [],
         modifiers: [{ attribute: "dmgTaken", op: "mul", value: 2 }],
         immunity: [],
         stackCap: 1,
@@ -202,7 +203,7 @@ test("元素伤害含 5% 下限，不吃通用脆弱，吃元素脆弱", () => {
       })
       ctx.registerStatus({
         id: "elemental-fragile",
-        flags: [],
+        tags: [],
         modifiers: [{ attribute: "elementalTaken", op: "mul", value: 1.5 }],
         immunity: [],
         stackCap: 1,
@@ -227,7 +228,7 @@ test("来源伤害乘算和伤害自带乘数", () => {
     (ctx) => {
       ctx.registerStatus({
         id: "dealt",
-        flags: [],
+        tags: [],
         modifiers: [{ attribute: "dmgDealt", op: "mul", value: 2 }],
         immunity: [],
         stackCap: 1,
@@ -510,7 +511,7 @@ test("治疗受乘算、禁疗和最大生命限制，溢出按 overheal 进护�
     (ctx) => {
       ctx.registerStatus({
         id: "noHeal",
-        flags: ["noHeal"],
+        tags: [NO_HEAL],
         modifiers: [],
         immunity: [],
         stackCap: 1,
@@ -533,7 +534,7 @@ test("治疗受乘算、禁疗和最大生命限制，溢出按 overheal 进护�
     (ctx) => {
       ctx.registerStatus({
         id: "heal-dealt",
-        flags: [],
+        tags: [],
         modifiers: [{ attribute: "healingDealt", op: "mul", value: 2 }],
         immunity: [],
         stackCap: 1,
@@ -542,7 +543,7 @@ test("治疗受乘算、禁疗和最大生命限制，溢出按 overheal 进护�
       })
       ctx.registerStatus({
         id: "heal-taken",
-        flags: [],
+        tags: [],
         modifiers: [{ attribute: "healingTaken", op: "mul", value: 2 }],
         immunity: [],
         stackCap: 1,

@@ -1,10 +1,10 @@
-import type { ContentContext, MissionModule } from "#port/content.js"
-import { emit } from "#battle/state.js"
-import { sessionOf } from "#battle/session.js"
+import type { ContentContext } from "#port/context.js"
+import type { MissionModule } from "#port/module.js"
+import { emit } from "#kernel/event/index.js"
 import { resetSkills } from "#ability/skill/point.js"
 import { attributeOf, maxHpOf } from "#ability/effect/attribute.js"
 import { clearElements } from "#combat/element/index.js"
-import type { UnitState } from "#unit/record/index.js"
+import { engineOf, type UnitState } from "#unit/record/index.js"
 
 const READY_EPSILON = 1e-6
 
@@ -19,7 +19,7 @@ export const redeployModule: MissionModule = {
       slot: "redeploy",
       priority: 0,
       run(runCtx) {
-        const { state, registry } = sessionOf(runCtx)
+        const { world: state, registry } = engineOf(runCtx)
         for (const unit of state.units.values()) {
           if (!unit.downed) continue
           if (!countdownFinished(runCtx, unit)) continue
@@ -32,6 +32,7 @@ export const redeployModule: MissionModule = {
           if (timer) timer.elapsed = 0
           clearElements(unit)
           unit.bursting = false
+          state.components.reset(unit.id)
           resetSkills(state, registry, runCtx, unit)
           emit(state, "deploy", { unitId: unit.id })
         }
@@ -53,7 +54,7 @@ function countdownFinished(ctx: ContentContext, unit: UnitState): boolean {
 }
 
 function tileOpen(ctx: ContentContext, unit: UnitState): boolean {
-  const { state, registry } = sessionOf(ctx)
+  const { world: state, registry } = engineOf(ctx)
   const strategyId = state.spec.deployStrategy
   if (strategyId === null) return true
   const strategy = registry.requireDeployStrategy(strategyId)
@@ -61,7 +62,7 @@ function tileOpen(ctx: ContentContext, unit: UnitState): boolean {
 }
 
 function redeployMul(ctx: ContentContext, unit: UnitState): number {
-  const { registry } = sessionOf(ctx)
+  const { registry } = engineOf(ctx)
   const assumed = unit.base[REDEPLOY_MUL_ATTRIBUTE] === undefined
   if (assumed) unit.base[REDEPLOY_MUL_ATTRIBUTE] = 1
   const value = attributeOf(unit, registry, REDEPLOY_MUL_ATTRIBUTE)

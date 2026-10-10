@@ -666,34 +666,37 @@
       "reason": "朝向与范围旋转，核对 next 现有用例"
     },
     "sim/feedback1-followups.test.js::profession splash skips an unblocked 隐匿 enemy and hits it once revealed (PRTS §AOE伤害判定: only enemies that can be selected)": {
-      "status": "pending",
-      "step": "ECS 2",
-      "reason": "隐匿与可选取的标签语义"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/attack/shape.spec.ts::溅射跳过没破隐的隐匿敌人，显形之后打得到"
+      ],
+      "reason": "溅射的副目标按可选取筛选；next 用显形状态代替 master 的阻挡后破隐，职业由攻击形状表达"
     },
     "sim/feedback1-followups.test.js::Battle.foesInRadius: no untargetable or unblocked 隐匿 enemy; a blocked or revealed one counts; enemiesInRadius keeps them all": {
-      "status": "pending",
-      "step": "ECS 2",
-      "reason": "隐匿与可选取的标签语义"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/target/index.spec.ts::没被挡的隐匿敌人和不可选中的敌人不被选中；被挡住或显形的隐匿敌人可以选中"
+      ],
+      "reason": "master 的半径查询在 next 是选择器链：enemy + stealth + untargetable 对应 foesInRadius，只用 enemy 对应 enemiesInRadius"
     },
     "sim/feedback1-followups.test.js::PRTS 溅射半径一览: 投掷手 0.9, 扩散术师 1.1 but 格雷伊 1.0, 链术师 jumps 1.7": {
-      "status": "pending",
-      "step": "ECS 2",
-      "reason": "隐匿与可选取的标签语义"
+      "status": "not-migrated",
+      "reason": "各职业与干员的溅射、弹射半径是内容数据，由 app 写进单位规格的 attackShape；核心按规格半径结算，已由攻击形状用例覆盖"
     },
     "sim/feedback1-followups.test.js::阿罗玛's 非首次标记 is shared (PRTS 备注 \"不同阿罗玛之间的非首次标记通用\") and leaves with its setter (\"自身离场时移除自身已施加的标记\")": {
-      "status": "pending",
-      "step": "ECS 2",
-      "reason": "隐匿与可选取的标签语义"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "干员、敌人、盟约或真实关卡的内容用例，随内容模块改写"
     },
     "sim/feedback1-followups.test.js::奥术法阵 on the field: 炎佑's damage silences its target (PRTS 盟约记录 备注 \"造成伤害时使目标失去特殊能力5秒\"); none without a carrier": {
-      "status": "pending",
-      "step": "ECS 2",
-      "reason": "隐匿与可选取的标签语义"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "干员、敌人、盟约或真实关卡的内容用例，随内容模块改写"
     },
     "sim/feedback1-followups.test.js::琳琅诗怀雅 S3 pays her coins to the ground enemies of range 2-4 in front (PRTS 备注), not only her 1-1 attack range": {
-      "status": "pending",
-      "step": "ECS 2",
-      "reason": "隐匿与可选取的标签语义"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "干员、敌人、盟约或真实关卡的内容用例，随内容模块改写"
     },
     "sim/feedback1-integrate.test.js::隐德来希 S3: candles still standing at the time limit are no leaks (the originals are)": {
       "status": "moved",
@@ -1431,49 +1434,51 @@
       "reason": "干员、敌人、盟约或真实关卡的内容用例，随内容模块改写"
     },
     "sim/feedback2-stealth-splash.test.js::areaSelectable: no 隐匿 ally even when it blocks the source, no untargetable / sleeping one, no 起飞 one for a ground source; 迷彩 is selected": {
-      "status": "pending",
-      "step": "ECS 2",
-      "reason": "隐匿、迷彩与范围伤害的标签语义"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/target/index.spec.ts::范围效果不选隐匿、不可选中、沉睡的单位，隐匿的挡着施法者也不选；地面来源不选起飞的；迷彩照选"
+      ],
+      "reason": "master 的 areaSelectable 在 next 是选择器 area；不可选中用 grantTag 授予"
     },
     "sim/feedback2-stealth-splash.test.js::#32.6 碎骨: a 隐匿 operator next to the grenade's target takes no splash; a 迷彩 one still does": {
-      "status": "pending",
-      "step": "ECS 2",
-      "reason": "隐匿、迷彩与范围伤害的标签语义"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "干员、敌人、盟约或真实关卡的内容用例，随内容模块改写"
     },
     "sim/feedback2-stealth-splash.test.js::#32.6 碎骨: 伪装服's 隐匿 (its carrier's first damage) spares the carrier from the following splashes until it ends": {
-      "status": "pending",
-      "step": "ECS 2",
-      "reason": "隐匿、迷彩与范围伤害的标签语义"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "干员、敌人、盟约或真实关卡的内容用例，随内容模块改写"
     },
     "sim/feedback2-stealth-splash.test.js::#32.6 “庞贝”'s self-blast while blocked misses its 隐匿 blocker and a 隐匿 bystander, and hits a 迷彩 bystander": {
-      "status": "pending",
-      "step": "ECS 2",
-      "reason": "隐匿、迷彩与范围伤害的标签语义"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "干员、敌人、盟约或真实关卡的内容用例，随内容模块改写"
     },
     "sim/feedback2-stealth-splash.test.js::#32.6 boss: 卢西恩's 【aoe】 is not cast for 隐匿 / 迷彩 operators alone; cast, it hits the 迷彩 and plain ones, not the 隐匿 one": {
-      "status": "pending",
-      "step": "ECS 2",
-      "reason": "隐匿、迷彩与范围伤害的标签语义"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "干员、敌人、盟约或真实关卡的内容用例，随内容模块改写"
     },
     "sim/feedback2-stealth-splash.test.js::#32.6 ignoreSelect: 萨卡兹悖谬暴虐兵长's 暴击 (\"无视无法选择\") and 假想敌：淤困's burst spread (\"无视目标可选性\") still reach a 隐匿 operator": {
-      "status": "pending",
-      "step": "ECS 2",
-      "reason": "隐匿、迷彩与范围伤害的标签语义"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "干员、敌人、盟约或真实关卡的内容用例，随内容模块改写"
     },
     "sim/feedback2-stealth-splash.test.js::#32.6 review: 蚀裂's 毒雾 and the buff auras of 深池伙友卫队 / 扎罗 (远古威慑) keep a 隐匿 operator out; an airborne 起飞 one is still reached": {
-      "status": "pending",
-      "step": "ECS 2",
-      "reason": "隐匿、迷彩与范围伤害的标签语义"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "干员、敌人、盟约或真实关卡的内容用例，随内容模块改写"
     },
     "sim/feedback2-stealth-splash.test.js::#32.6 review: 死亡之眼's burst still hits its locked target that turned 隐匿 mid-channel (a direct pick); a 隐匿 bystander is spared": {
-      "status": "pending",
-      "step": "ECS 2",
-      "reason": "隐匿、迷彩与范围伤害的标签语义"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "干员、敌人、盟约或真实关卡的内容用例，随内容模块改写"
     },
     "sim/feedback2-stealth-splash.test.js::#32.6 review: the 斩胄之剑 / 破胄之锤 hover attack skips 隐匿 and 迷彩; the 自行炮's shots and 深溟巢涌者's pulse hit 迷彩; 祈祷邀约 (whole field) skips 隐匿": {
-      "status": "pending",
-      "step": "ECS 2",
-      "reason": "隐匿、迷彩与范围伤害的标签语义"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "干员、敌人、盟约或真实关卡的内容用例，随内容模块改写"
     },
     "sim/feedback2-surtr-stealth.test.js::#52 史尔特尔 余烬: 禁疗 from the lethal blow until she leaves > a medic beside her heals the other injured operator instead — 0 heals reach her, she is never its target, she still leaves at 9 s (8 + the potential step); the 禁疗 status is shown": {
       "status": "moved",
@@ -1736,29 +1741,38 @@
       "reason": "干员、敌人、盟约或真实关卡的内容用例，随内容模块改写"
     },
     "sim/feedback4-sleep-unblock.test.js::沉睡 frees the block slot: the sleeper is let go at once and stays put, the next enemy is blocked; awake with no room it walks on": {
-      "status": "pending",
-      "step": "ECS 2",
-      "reason": "沉睡与阻挡的标签语义"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/unit/block/hold.spec.ts::沉睡的敌人立刻放开，原地不动，阻挡位让给下一个；醒来没有空位时不再被挡"
+      ],
+      "reason": "next 的敌人静止不走，醒来没有空位时断言不再被挡，不断言继续前进"
     },
     "sim/feedback4-sleep-unblock.test.js::沉睡: never blocked while asleep, even beside a blocker with room — blocked again where it stands once it wakes": {
-      "status": "pending",
-      "step": "ECS 2",
-      "reason": "沉睡与阻挡的标签语义"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/unit/block/hold.spec.ts::沉睡期间有空位也不被挡，醒来在原地重新被挡"
+      ],
+      "reason": "沉睡期间不被阻挡由 sleep 蕴含 unblockable 表达"
     },
     "sim/feedback4-sleep-unblock.test.js::沉睡 through a plain buff (flags.sleep) is let go on the enemy's next update; 晕眩 / a refused sleep keep the block": {
-      "status": "pending",
-      "step": "ECS 2",
-      "reason": "沉睡与阻挡的标签语义"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/unit/block/hold.spec.ts::被挡的敌人沉睡后放开；眩晕或免疫沉睡的敌人仍被挡着"
+      ],
+      "reason": "next 只有 sleep 状态这一条授予沉睡的路径；被免疫的沉睡用 immunity 表达"
     },
     "sim/feedback4-sleep-unblock.test.js::沉睡: the blocker's blocked-target list (Battle.blockedTargets — blocked-first targeting, the DEFAULT trigger, hitAllBlocked) drops the sleeper and takes the next enemy": {
-      "status": "pending",
-      "step": "ECS 2",
-      "reason": "沉睡与阻挡的标签语义"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/unit/block/hold.spec.ts::沉睡的敌人立刻放开，原地不动，阻挡位让给下一个；醒来没有空位时不再被挡",
+        "mission-core/test/unit/block/hold.spec.ts::被挡的敌人沉睡后放开；眩晕或免疫沉睡的敌人仍被挡着"
+      ],
+      "reason": "阻挡者的名单是快照的 blocking；按阻挡优先选目标读的就是这份名单"
     },
     "sim/feedback4-sleep-unblock.test.js::#140: 瑕光 S2 puts the 3 enemies she blocks to sleep and still blocks the next 3; when S2 ends the sleepers wake with no room and walk on": {
-      "status": "pending",
-      "step": "ECS 2",
-      "reason": "沉睡与阻挡的标签语义"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "干员、敌人、盟约或真实关卡的内容用例，随内容模块改写"
     },
     "sim/feedback5-active-range.test.js::ACTIVE_RANGE: an enemy inside the running range only casts the skill at once (no attack); nobody, or an enemy outside it, does not": {
       "status": "pending",
@@ -2036,49 +2050,67 @@
       "reason": "敌人出手被控制打断"
     },
     "sim/feedback5-frozen-reblock.test.js::#232: freeze + 隐匿 — the operator redeployed beside the held enemy blocks it while it is still held, which reveals it; the 隐匿 timings stay": {
-      "status": "pending",
-      "step": "ECS 2",
-      "reason": "冻结与重新阻挡的标签语义"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/unit/block/hold.spec.ts::freeze 中的敌人旁边新放下的干员当场挡住它，挡住后隐匿的敌人能被打到"
+      ],
+      "reason": "next 用 spawnUnit 在被定住的敌人旁放下干员，代替 master 的撤退后再部署；只断言阻挡关系与标签"
     },
     "sim/feedback5-frozen-reblock.test.js::#232: freeze — the operator redeployed beside the held enemy blocks it while it is still held": {
-      "status": "pending",
-      "step": "ECS 2",
-      "reason": "冻结与重新阻挡的标签语义"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/unit/block/hold.spec.ts::freeze 中的敌人旁边新放下的干员当场挡住它，挡住后隐匿的敌人能被打到"
+      ],
+      "reason": "next 用 spawnUnit 在被定住的敌人旁放下干员，代替 master 的撤退后再部署；只断言阻挡关系与标签"
     },
     "sim/feedback5-frozen-reblock.test.js::#232: stun + 隐匿 — the operator redeployed beside the held enemy blocks it while it is still held, which reveals it; the 隐匿 timings stay": {
-      "status": "pending",
-      "step": "ECS 2",
-      "reason": "冻结与重新阻挡的标签语义"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/unit/block/hold.spec.ts::stun 中的敌人旁边新放下的干员当场挡住它，挡住后隐匿的敌人能被打到"
+      ],
+      "reason": "next 用 spawnUnit 在被定住的敌人旁放下干员，代替 master 的撤退后再部署；只断言阻挡关系与标签"
     },
     "sim/feedback5-frozen-reblock.test.js::#232: stun — the operator redeployed beside the held enemy blocks it while it is still held": {
-      "status": "pending",
-      "step": "ECS 2",
-      "reason": "冻结与重新阻挡的标签语义"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/unit/block/hold.spec.ts::stun 中的敌人旁边新放下的干员当场挡住它，挡住后隐匿的敌人能被打到"
+      ],
+      "reason": "next 用 spawnUnit 在被定住的敌人旁放下干员，代替 master 的撤退后再部署；只断言阻挡关系与标签"
     },
     "sim/feedback5-frozen-reblock.test.js::contact only: an enemy stunned on its way, short of the blocker, is not blocked meanwhile; afterwards it walks in and is blocked at the same point as one never stunned": {
-      "status": "pending",
-      "step": "ECS 2",
-      "reason": "冻结与重新阻挡的标签语义"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/unit/block/hold.spec.ts::只看接触：没走到阻挡者跟前就被眩晕的敌人不被挡，之后走到同一位置被挡"
+      ],
+      "reason": "按 next 的路线与接触半径断言：眩晕期间没有接触不被挡，之后与未眩晕的敌人在同一坐标被挡"
     },
     "sim/feedback5-frozen-reblock.test.js::capacity: an enemy held by bind where it passes a full blocker is blocked the moment the slot frees (束缚 does not stun: the reference)": {
-      "status": "pending",
-      "step": "ECS 2",
-      "reason": "冻结与重新阻挡的标签语义"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/unit/block/hold.spec.ts::被 bind 定在满员阻挡者旁的敌人，空位一出就被挡住"
+      ],
+      "reason": "next 的敌人静止在满员阻挡者旁，空位由击倒前一个敌人让出"
     },
     "sim/feedback5-frozen-reblock.test.js::capacity: an enemy held by stun where it passes a full blocker is blocked the moment the slot frees, while still held — like the 束缚 one": {
-      "status": "pending",
-      "step": "ECS 2",
-      "reason": "冻结与重新阻挡的标签语义"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/unit/block/hold.spec.ts::被 stun 定在满员阻挡者旁的敌人，空位一出就被挡住"
+      ],
+      "reason": "next 的敌人静止在满员阻挡者旁，空位由击倒前一个敌人让出"
     },
     "sim/feedback5-frozen-reblock.test.js::capacity: an enemy held by freeze where it passes a full blocker is blocked the moment the slot frees, while still held — like the 束缚 one": {
-      "status": "pending",
-      "step": "ECS 2",
-      "reason": "冻结与重新阻挡的标签语义"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/unit/block/hold.spec.ts::被 freeze 定在满员阻挡者旁的敌人，空位一出就被挡住"
+      ],
+      "reason": "next 的敌人静止在满员阻挡者旁，空位由击倒前一个敌人让出"
     },
     "sim/feedback5-frozen-reblock.test.js::refusals unchanged: 沉睡 / 浮空 / 恐惧 + 冻结 / 不可阻挡 + 晕眩 beside the redeployed operator with room — none is blocked": {
-      "status": "pending",
-      "step": "ECS 2",
-      "reason": "冻结与重新阻挡的标签语义"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/unit/block/hold.spec.ts::沉睡、浮空、恐惧加冻结、不可阻挡加眩晕的敌人，旁边新放下的有空位干员也挡不住"
+      ],
+      "reason": "next 用 spawnUnit 在被定住的敌人旁放下干员，代替 master 的撤退后再部署；只断言阻挡关系与标签"
     },
     "sim/feedback5-gravel-double-hit.test.js::砾 (normal, elite): every normal attack is two damage instances of 50 % 伤害倍率 after DEF — the same total, not 50 % 攻击倍率": {
       "status": "moved",

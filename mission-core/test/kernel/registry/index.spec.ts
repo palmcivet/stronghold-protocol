@@ -1,6 +1,8 @@
 import { expect, test } from "vitest"
 import {
   createBattle,
+  defineComponent,
+  defineTag,
   UnknownRegistrationError,
   type MissionModule,
   type PhaseSlot,
@@ -63,6 +65,8 @@ test("未知技能体被拒绝，内置技能体可以装上", () => {
 
 test("未知状态、选择器、计时器、元素和阶段槽被拒绝", () => {
   let other: unknown
+  const leftKey = defineComponent<{ n?: number }>("left:counter", { create: () => ({}) })
+  const rightKey = defineComponent<{ n?: number }>("right:counter", { create: () => ({}) })
   const probe: MissionModule = {
     id: "probe",
     install(ctx) {
@@ -83,8 +87,8 @@ test("未知状态、选择器、计时器、元素和阶段槽被拒绝", () =>
               run() {},
             }),
           ).toThrow(UnknownRegistrationError)
-          const left = runCtx.moduleData("left", "a")
-          const right = runCtx.moduleData("right", "a")
+          const left = runCtx.component(leftKey).ensure("a")
+          const right = runCtx.component(rightKey).ensure("a")
           left.n = 1
           other = right.n
         },
@@ -94,6 +98,35 @@ test("未知状态、选择器、计时器、元素和阶段槽被拒绝", () =>
   const battle = createBattle(spec({ modules: ["probe"], units: [ally("a")] }), [probe])
   battle.step()
   expect(other).toBeUndefined()
+})
+
+test("规格里未注册的标签在建战斗时报错，报出标签与单位规格；模块注册过的标签可以写", () => {
+  expect(() => createBattle(spec({ units: [ally("a", { tags: ["glowing"] })] }), [])).toThrow(UnknownRegistrationError)
+  expect(() => createBattle(spec({ units: [ally("a", { tags: ["glowing"] })] }), [])).toThrow(/glowing.*unit spec a/)
+  const late = { atTick: 5, unit: ally("late", { tags: ["glowing"] }) }
+  expect(() => createBattle(spec({ spawns: [late] }), [])).toThrow(/glowing.*unit spec late/)
+  const skillFlag = { ...skill, trigger: "always", flags: ["glowing"] }
+  expect(() => createBattle(spec({ units: [ally("a", { skills: [skillFlag] })] }), [])).toThrow(/glowing.*unit spec a, skill s/)
+  const GLOWING = defineTag("glowing", { meaning: "lit up by the test module" })
+  let seen = false
+  const glow: MissionModule = {
+    id: "glow",
+    install(ctx) {
+      ctx.registerTag(GLOWING)
+      ctx.registerSystem({
+        id: "glow",
+        slot: "schedule",
+        priority: 0,
+        run(runCtx) {
+          seen = runCtx.hasTag("a", GLOWING)
+        },
+      })
+    },
+  }
+  const battle = createBattle(spec({ modules: ["glow"], units: [ally("a", { tags: ["glowing"] })] }), [glow])
+  battle.step()
+  expect(seen).toBe(true)
+  expect(battle.snapshot().units[0]?.tags).toEqual(["glowing"])
 })
 
 test("未知部署策略被拒绝", () => {
