@@ -1,6 +1,6 @@
 import { expect, test } from "vitest"
 import { costModule, createBattle, redeployModule, type MissionModule } from "arknights-mission-core"
-import { ally, spec } from "../fixture.js"
+import { ally, spec } from "#test/fixture.js"
 
 test("系统按阶段槽和优先级运行", () => {
   const probe: MissionModule = {

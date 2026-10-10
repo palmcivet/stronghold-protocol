@@ -9,6 +9,7 @@ import type { UnitState } from "#battle/unit/index.js"
 import { emit, requireUnit, type BattleState } from "#battle/state.js"
 import { attractPoints, fearReachableTiles, planFearMove } from "#battle/behavior/shift.js"
 import { MOVE_SCALE } from "#battle/space/grid/route.js"
+import { hypot } from "#kernel/math/hypot.js"
 
 /** 推力距离。受力等级 ≤ −3 是 0，≥ 3 用 3 这一档。 */
 export const PUSH_TILES: Readonly<Record<number, number>> = Object.freeze({
@@ -90,7 +91,7 @@ export function advanceShift(_state: BattleState, registry: BattleRegistry, unit
     if (!point) break
     const dx = point.x - unit.x
     const dy = point.y - unit.y
-    const length = Math.hypot(dx, dy)
+    const length = hypot(dx, dy)
     if (length <= distance) {
       unit.x = point.x
       unit.y = point.y
@@ -140,7 +141,7 @@ function pushShift(): ShiftDefinition {
         uy = -uy
         const fromX = input.fromX ?? unit.x
         const fromY = input.fromY ?? unit.y
-        const gap = Math.hypot(unit.x - fromX, unit.y - fromY)
+        const gap = hypot(unit.x - fromX, unit.y - fromY)
         distance = Math.min(distance, Math.max(0, gap - PULL_STOP_RADIUS))
       }
       return slide(state.grid, unit, ux, uy, distance)
@@ -161,7 +162,7 @@ function pullShift(): ShiftDefinition {
       if (blockedByCenter(state, unit, centerX, centerY)) return null
       const dx = input.toX - unit.x
       const dy = input.toY - unit.y
-      const distance = Math.hypot(dx, dy)
+      const distance = hypot(dx, dy)
       if (!(distance > 1e-6)) return null
       const ux = dx / distance
       const uy = dy / distance
@@ -185,7 +186,7 @@ function fearShift(): ShiftDefinition {
       if (!unit || input.sourceX === undefined || input.sourceY === undefined) return null
       const sourceX = input.sourceX
       const sourceY = input.sourceY
-      const self = Math.hypot(unit.x - sourceX, unit.y - sourceY) <= 1e-9
+      const self = hypot(unit.x - sourceX, unit.y - sourceY) <= 1e-9
       const end = unit.route?.legs.find((leg) => leg.final)
       const goal = end ? { x: end.x, y: end.y } : null
       const tiles = [
@@ -223,7 +224,7 @@ function movable(state: BattleState, unitId: string): UnitState | null {
 }
 
 function writeLanding(state: BattleState, registry: BattleRegistry, ctx: ContentContext, unit: UnitState, x: number, y: number): void {
-  if (Math.hypot(unit.x - x, unit.y - y) <= 1e-8) return
+  if (hypot(unit.x - x, unit.y - y) <= 1e-8) return
   unit.x = x
   unit.y = y
   if (unit.route) unit.route.pts = null
@@ -252,7 +253,7 @@ function aimPush(
   const fromY = input.fromY ?? unit.y
   const vx = unit.x - fromX
   const vy = unit.y - fromY
-  const reach = Math.hypot(vx, vy)
+  const reach = hypot(vx, vy)
   const dir = unitVector(input.dirX, input.dirY)
   if (dir) {
     let ux = dir.x
@@ -275,7 +276,7 @@ function aimPush(
 }
 
 function slide(grid: FieldGrid, unit: UnitState, ux: number, uy: number, distance: number): ShiftPlan | null {
-  const length = Math.hypot(ux, uy)
+  const length = hypot(ux, uy)
   if (!(length > 0) || !(distance > 0)) return null
   const stepX = ux / length
   const stepY = uy / length
@@ -325,12 +326,12 @@ function blockedByCenter(state: BattleState, unit: UnitState, centerX: number, c
   if (!unit.blockedBy) return false
   const blocker = state.units.get(unit.blockedBy)
   if (!blocker) return false
-  return Math.hypot(blocker.x - centerX, blocker.y - centerY) <= 0.2
+  return hypot(blocker.x - centerX, blocker.y - centerY) <= 0.2
 }
 
 function vectorLength(x: number | undefined, y: number | undefined): number {
   if (x === undefined && y === undefined) return 0
-  return Math.hypot(x ?? 0, y ?? 0)
+  return hypot(x ?? 0, y ?? 0)
 }
 
 function unitVector(x: number | undefined, y: number | undefined): { x: number; y: number } | null {

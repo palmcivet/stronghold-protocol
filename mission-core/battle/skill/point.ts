@@ -4,7 +4,7 @@ import { readTimer, requireUnit, type BattleState } from "#battle/state.js"
 import { attributeOf } from "#battle/unit/attribute.js"
 import { type SkillInstance, type UnitState } from "#battle/unit/index.js"
 import { writeFlags } from "#battle/unit/status/flags.js"
-import { TICK } from "#tick/index.js"
+import { reached, TICK } from "#kernel/tick/index.js"
 import { AUTO_OP_COOLDOWN, isInstantBody, isTickRule, isTimedBody } from "#battle/skill/constants.js"
 import { attackWillHit } from "#battle/unit/attack.js"
 import { allyTriggerMet, shouldCast } from "#battle/skill/trigger.js"
@@ -324,11 +324,11 @@ function gain(unit: UnitState, skill: SkillInstance, amount: number, reason: str
   if (reason !== "init" && unit.flags.has("noSp")) return 0
   const cost = skill.spCost
   if (cost <= 0) return 0
-  if (skill.charges >= skill.maxCharges && skill.sp >= cost) return 0
+  if (skill.charges >= skill.maxCharges && reached(skill.sp, cost)) return 0
   skill.sp += amount
-  while (skill.sp >= cost && skill.charges < skill.maxCharges) {
+  while (reached(skill.sp, cost) && skill.charges < skill.maxCharges) {
     skill.charges += 1
-    if (skill.charges < skill.maxCharges) skill.sp -= cost
+    if (skill.charges < skill.maxCharges) skill.sp = Math.max(0, skill.sp - cost)
     else skill.sp = cost
   }
   if (skill.charges >= skill.maxCharges) skill.sp = cost
@@ -361,7 +361,7 @@ function canAct(unit: UnitState): boolean {
 }
 
 function cooling(skill: SkillInstance, time: number): boolean {
-  return skill.operation === "MANUAL" && time < skill.opReadyAt - 1e-9
+  return skill.operation === "MANUAL" && !reached(time, skill.opReadyAt)
 }
 
 function shown(unit: UnitState): SkillInstance | undefined {

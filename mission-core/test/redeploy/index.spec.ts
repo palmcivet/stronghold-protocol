@@ -1,6 +1,6 @@
 import { expect, test } from "vitest"
 import { createBattle, redeployModule, type MissionModule } from "arknights-mission-core"
-import { ally, spec } from "../fixture.js"
+import { ally, spec } from "#test/fixture.js"
 
 function hit(id: string): MissionModule {
   return {

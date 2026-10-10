@@ -6,7 +6,7 @@ import { refuseStatus, shortenControlled } from "#battle/unit/status/catalog.js"
 import { immuneTo, writeFlags } from "#battle/unit/status/flags.js"
 import { refreshOverlap } from "#battle/unit/status/overlap.js"
 import { cancelTimer, startTimer } from "#battle/unit/timer.js"
-import { TICK } from "#tick/index.js"
+import { TICK } from "#kernel/tick/index.js"
 import type { StatusInstance, UnitState } from "#battle/unit/index.js"
 
 export function registerStatusTimer(registry: BattleRegistry, state: BattleState): void {

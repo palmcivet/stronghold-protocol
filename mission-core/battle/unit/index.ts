@@ -91,7 +91,8 @@ export interface UnitState {
   readonly attackRange: readonly UnitSpec["attackRange"][number][]
   readonly tags: readonly string[]
   readonly deployPositions: readonly string[]
-  /** master 的 def.immune。冻结写成 frozen，恐惧和战栗写成 feared。 */
+  /** 免疫名单。冻结写成 frozen，恐惧和战栗写成 feared，其余与状态 id 相同。 */
+  // TRACE: source/immunity-names
   readonly immunity: ReadonlySet<string>
   readonly attackClip: AttackClip | null
   readonly attackShape: AttackShape | null

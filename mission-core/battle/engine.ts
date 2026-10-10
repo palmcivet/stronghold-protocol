@@ -7,7 +7,7 @@ import { clearAttackTargetThisTick } from "#battle/unit/clock.js"
 import { MOVE_SCALE, advanceRoute } from "#battle/space/grid/route.js"
 import { addUnit, emit, readTimer, requireUnit, type BattleState, type ScheduledCallback } from "#battle/state.js"
 import { advanceStartedTimers, advanceTimer, armListedTimers } from "#battle/unit/timer.js"
-import { TICK } from "#tick/index.js"
+import { TICK } from "#kernel/tick/index.js"
 
 export function registerEngineSystems(registry: BattleRegistry, state: BattleState): void {
   registry.registerSystem({

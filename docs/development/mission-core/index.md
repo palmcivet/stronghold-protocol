@@ -78,3 +78,5 @@ const result = battle.result()
 | [状态](./status.md) | 施加、叠层、内置状态 |
 | [选择器](./selector.md) | 筛选、排序、范围 |
 | [费用、阻挡与投射物](./field.md) | 费用池、再部署、阻挡、泄漏、投射物飞行 |
+| [确定性数学与整帧对齐](./kernel.md) | `kernel/math`、`kernel/tick` |
+| [黄金回放与源码扫描](./testing.md) | 回放摘要、确定性扫描、追溯扫描 |

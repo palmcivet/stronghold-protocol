@@ -1,6 +1,6 @@
 import { expect, test } from "vitest"
 import { createBattle, type MissionModule } from "arknights-mission-core"
-import { ally, spec } from "../fixture.js"
+import { ally, spec } from "#test/fixture.js"
 
 test("开战和击倒调用已注册的部署策略", () => {
   const calls: string[] = []

@@ -7,7 +7,7 @@ import { attributeOf } from "#battle/unit/attribute.js"
 import { interruptEnemyAttack } from "#battle/unit/status/palsy.js"
 import { consumeAttackTiming, peekAttackTargetThisTick, readAttackTiming } from "#battle/unit/timer.js"
 import type { UnitState } from "#battle/unit/index.js"
-import { TICK } from "#tick/index.js"
+import { countdown, reached, READY_EPSILON, TICK } from "#kernel/tick/index.js"
 
 /** 攻速下限。 */
 export const ASPD_MIN = 20
@@ -51,12 +51,12 @@ export function attackWillHit(
   const timing = attackTiming(unit, registry)
   if (!hasTarget(state, registry, ctx, unit)) return false
   if (text(timer, "phase") === "windup") {
-    if (number(timer, "lead") === 1) return number(timer, "elapsed") + TICK >= timing.wind - 1e-9
-    return number(timer, "cooldown") - TICK <= 1e-9
+    if (number(timer, "lead") === 1) return reached(number(timer, "elapsed") + TICK, timing.wind)
+    return countdown(number(timer, "cooldown"), TICK) === 0
   }
   if (text(timer, "phase") !== "idle" && text(timer, "phase") !== "recovery") return false
-  if (timing.wind > 1e-9 && number(timer, "cooldown") <= 1e-9) return false
-  return number(timer, "cooldown") - TICK <= 1e-9
+  if (timing.wind > READY_EPSILON && number(timer, "cooldown") <= READY_EPSILON) return false
+  return countdown(number(timer, "cooldown"), TICK) === 0
 }
 
 // MARK: clock
@@ -80,12 +80,12 @@ function advanceWindup(
   }
   if (number(timer, "lead") === 1) {
     timer.elapsed = number(timer, "elapsed") + TICK
-    if (number(timer, "elapsed") + 1e-9 < timing.wind) return
+    if (!reached(number(timer, "elapsed"), timing.wind)) return
     strike(state, registry, ctx, unit, timer, timing)
     return
   }
-  timer.cooldown = Math.max(0, number(timer, "cooldown") - TICK)
-  if (number(timer, "cooldown") > 1e-9) return
+  timer.cooldown = countdown(number(timer, "cooldown"), TICK)
+  if (number(timer, "cooldown") > 0) return
   strike(state, registry, ctx, unit, timer, timing)
 }
 
@@ -100,13 +100,13 @@ function advanceRecovery(
   held: boolean,
 ): void {
   const before = number(timer, "cooldown")
-  if (!stunned) timer.cooldown = Math.max(0, before - TICK)
+  if (!stunned) timer.cooldown = countdown(before, TICK)
   timer.elapsed = number(timer, "elapsed") + TICK
   if (!stunned && !held && readyToSwing(state, registry, ctx, unit, timer, timing)) {
     openSwing(state, registry, ctx, unit, timer, timing, before)
     return
   }
-  if (number(timer, "elapsed") + 1e-9 >= number(timer, "rest")) {
+  if (reached(number(timer, "elapsed"), number(timer, "rest"))) {
     timer.phase = "idle"
     timer.elapsed = 0
   }
@@ -123,7 +123,7 @@ function advanceIdle(
   held: boolean,
 ): void {
   const before = number(timer, "cooldown")
-  if (!stunned) timer.cooldown = Math.max(0, before - TICK)
+  if (!stunned) timer.cooldown = countdown(before, TICK)
   if (stunned || held || !readyToSwing(state, registry, ctx, unit, timer, timing)) return
   openSwing(state, registry, ctx, unit, timer, timing, before)
 }
@@ -137,7 +137,7 @@ function readyToSwing(
   timing: AttackTiming,
 ): boolean {
   if (targetDenied(unit) || !readAttackTiming(unit, registry).canAttack) return false
-  if (number(timer, "cooldown") > timing.wind + 1e-9) return false
+  if (!reached(timing.wind, number(timer, "cooldown"))) return false
   return hasTarget(state, registry, ctx, unit)
 }
 
@@ -150,17 +150,17 @@ function openSwing(
   timing: AttackTiming,
   before: number,
 ): void {
-  if (number(timer, "cooldown") <= 1e-9 && before > 1e-9) {
+  if (number(timer, "cooldown") <= READY_EPSILON && before > READY_EPSILON) {
     strike(state, registry, ctx, unit, timer, timing)
     return
   }
-  if (number(timer, "cooldown") > 1e-9) {
+  if (number(timer, "cooldown") > READY_EPSILON) {
     timer.phase = "windup"
     timer.lead = 0
     timer.elapsed = 0
     return
   }
-  if (timing.wind > 1e-9) {
+  if (timing.wind > READY_EPSILON) {
     timer.phase = "windup"
     timer.lead = 1
     timer.elapsed = 0

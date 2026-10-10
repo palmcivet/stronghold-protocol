@@ -1,14 +1,35 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["es2024", "dom"],
-    "types": [],
-    "customConditions": ["source"],
+    "lib": [
+      "es2024",
+      "dom"
+    ],
+    "types": [
+      "node"
+    ],
+    "customConditions": [
+      "source"
+    ],
     "outDir": "dist",
     "rootDir": ".",
     "tsBuildInfoFile": "dist/.tsbuildinfo"
   },
-  "include": ["**/*.ts"],
-  "exclude": ["dist", "dist-test", "node_modules", "test", "**/*.test.ts", "**/*.spec.ts", "vitest.config.ts"],
-  "references": [{ "path": "../../../assets-catalog" }]
+  "include": [
+    "**/*.ts"
+  ],
+  "exclude": [
+    "dist",
+    "dist-test",
+    "node_modules",
+    "test",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "vitest.config.ts"
+  ],
+  "references": [
+    {
+      "path": "../../../assets-catalog"
+    }
+  ]
 }

@@ -1,6 +1,6 @@
 import type { BattleEvent } from "#contract/event.js"
 import type { Battle } from "#battle/create-battle.js"
-import { TICK } from "#tick/index.js"
+import { TICK } from "#kernel/tick/index.js"
 
 /** 一帧里最多补这么多拍，剩下的时间留到下一帧。 */
 export const FRAME_CATCHUP = 150

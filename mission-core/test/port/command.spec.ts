@@ -7,7 +7,7 @@ import {
   deployModule,
   type MissionModule,
 } from "arknights-mission-core"
-import { ally, spec } from "../fixture.js"
+import { ally, spec } from "#test/fixture.js"
 
 test("停顿按汇总后的移速走，含 sluggish", () => {
   const route = { checkpoints: [], end: { x: 5, y: 0 } }

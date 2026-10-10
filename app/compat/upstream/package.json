@@ -17,15 +17,21 @@
     "#data/*.js": {
       "source": "./data/*.ts",
       "default": "./dist/data/*.js"
+    },
+    "#case-map/*.js": {
+      "source": "./case-map/*.ts",
+      "default": "./dist/case-map/*.js"
     }
   },
   "scripts": {
     "build": "tsc -b",
     "lint": "tsc --noEmit && tsc -p tsconfig.test.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "case-map": "node dist/case-map/cli.js"
   },
   "dependencies": {
-    "arknights-assets-catalog": "workspace:*"
+    "arknights-assets-catalog": "workspace:*",
+    "valibot": "^1.5.0"
   },
   "devDependencies": {
     "@types/node": "catalog:",

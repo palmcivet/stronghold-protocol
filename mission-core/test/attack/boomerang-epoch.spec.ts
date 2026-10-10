@@ -1,7 +1,7 @@
 import { expect, test } from "vitest"
 import { createBattle, redeployModule, type MissionModule } from "arknights-mission-core"
-import { sessionOf } from "../../battle/session.js"
-import { ally, spec } from "../fixture.js"
+import { sessionOf } from "#battle/session.js"
+import { ally, spec } from "#test/fixture.js"
 
 test("再部署清掉的回旋数，不会被还在飞的回程写回去", () => {
   const rig: MissionModule = {

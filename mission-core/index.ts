@@ -35,7 +35,7 @@ export type { BattleEvent } from "#contract/event.js"
 export type { BattleResult } from "#contract/result.js"
 export type { BattleSnapshot, UnitSnapshot } from "#contract/snapshot.js"
 
-export { TICK } from "#tick/index.js"
+export { TICK } from "#kernel/tick/index.js"
 export { AUTO_OP_COOLDOWN } from "#battle/skill/constants.js"
 
 export { createRandom, deriveSeed, type Random } from "#random/index.js"

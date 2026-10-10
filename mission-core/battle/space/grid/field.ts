@@ -1,4 +1,5 @@
 import { bresenhamClear, crossTiles, onSegment, segmentClear, type GridPoint } from "#battle/space/grid/sight.js"
+import { hypot } from "#kernel/math/hypot.js"
 
 /** 箱子的移动代价。 */
 export const OBSTACLE_COST = 1000
@@ -248,7 +249,7 @@ export function fieldLength(source: FieldSource, field: FlowField, key: number):
     if (to < 0) continue
     const start = source.point(from)
     const goal = source.point(to)
-    lengths[from] = (lengths[to] ?? 0) + Math.hypot(goal.y - start.y, goal.x - start.x)
+    lengths[from] = (lengths[to] ?? 0) + hypot(goal.y - start.y, goal.x - start.x)
   }
   return lengths[key] ?? Infinity
 }

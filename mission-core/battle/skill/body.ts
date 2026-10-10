@@ -1,6 +1,6 @@
 import type { SkillBodyDefinition, SkillRuntime } from "#port/content.js"
 import type { BattleRegistry } from "#battle/registry.js"
-import { TICK } from "#tick/index.js"
+import { countdown, TICK } from "#kernel/tick/index.js"
 
 export const BUILTIN_SKILL_BODIES = ["duration", "ammo", "instant", "charges", "passive", "toggle"] as const
 
@@ -22,9 +22,8 @@ function durationBody(): SkillBodyDefinition {
     },
     advance(skill) {
       if (!skill.active) return
-      skill.remaining -= TICK
-      if (skill.remaining <= 1e-9) {
-        skill.remaining = 0
+      skill.remaining = countdown(skill.remaining, TICK)
+      if (skill.remaining === 0) {
         skill.active = false
       }
     },
@@ -41,9 +40,8 @@ function ammoBody(): SkillBodyDefinition {
     },
     advance(skill) {
       if (!skill.active || !Number.isFinite(skill.remaining)) return
-      skill.remaining -= TICK
-      if (skill.remaining <= 1e-9) {
-        skill.remaining = 0
+      skill.remaining = countdown(skill.remaining, TICK)
+      if (skill.remaining === 0) {
         skill.active = false
       }
     },

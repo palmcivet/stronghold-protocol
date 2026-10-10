@@ -1,6 +1,6 @@
 import { expect, test } from "vitest"
 import { createBattle, type MissionModule } from "arknights-mission-core"
-import { ally, spec } from "../fixture.js"
+import { ally, spec } from "#test/fixture.js"
 
 test("技力和攻击动作各自前进", () => {
   const log: {

@@ -9,8 +9,8 @@ import {
   type MissionModule,
   type TileSpec,
 } from "arknights-mission-core"
-import { sessionOf } from "../../battle/session.js"
-import { ally, spec } from "../fixture.js"
+import { sessionOf } from "#battle/session.js"
+import { ally, spec } from "#test/fixture.js"
 
 const wide: readonly TileSpec[] = [0, 1, 2, 3, 4, 5, 6].flatMap((x) =>
   [0, 1].map((y) => ({ x, y, height: 0, deployable: true, walkableBy: ["ground"] })),

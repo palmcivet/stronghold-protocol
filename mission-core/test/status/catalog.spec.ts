@@ -1,6 +1,6 @@
 import { expect, test } from "vitest"
 import { createBattle, TICK, type ContentContext, type MissionModule, type UnitSpec } from "arknights-mission-core"
-import { ally, spec } from "../fixture.js"
+import { ally, spec } from "#test/fixture.js"
 
 function open(units: UnitSpec[], run: (ctx: ContentContext) => void, prepare?: MissionModule["install"]) {
   const module: MissionModule = {

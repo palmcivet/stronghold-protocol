@@ -1,6 +1,6 @@
 import { expect, test } from "vitest"
 import { createBattle, leakModule, type MissionModule, type TileSpec } from "arknights-mission-core"
-import { ally, spec } from "../fixture.js"
+import { ally, spec } from "#test/fixture.js"
 
 function ground(x: number, objective = false): TileSpec {
   return { x, y: 0, height: 0, deployable: true, walkableBy: ["ground"], ...(objective ? { objective: true } : {}) }

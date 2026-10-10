@@ -13,7 +13,7 @@ description: 技力、充能和触发在 skill-point 上走，技能体在 skill
 
 `spType` 是 `time`、`attack`、`hurt`、`none`，缺省 `time`。`operation` 是 `MANUAL` 或 `AUTO`，缺省 `MANUAL`。`charges` 缺省 1。
 
-`time` 在 `spRecovery` 大于 0 时，每个技力拍加上 `spRecovery × TICK`。`attack` 在 `attack-hit` 时加 1。`hurt` 在 `damaged` 时加 1。下面这些时候不加：
+`time` 在 `spRecovery` 大于 0 时，每个技力拍加上 `spRecovery × TICK`，技力与消耗的差距在 `READY_EPSILON` 以内算够（见[确定性数学与整帧对齐](./kernel.md)）。`attack` 在 `attack-hit` 时加 1。`hurt` 在 `damaged` 时加 1。下面这些时候不加：
 
 - 技能体是 `passive`
 - 正在持续的 `duration`、`ammo`、`toggle`

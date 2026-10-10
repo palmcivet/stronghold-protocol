@@ -8,7 +8,7 @@ import {
   type SkillSpec,
   type UnitSpec,
 } from "arknights-mission-core"
-import { ally, spec } from "../fixture.js"
+import { ally, spec } from "#test/fixture.js"
 
 const cooldownTicks = Math.round(AUTO_OP_COOLDOWN / TICK)
 
