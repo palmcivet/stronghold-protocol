@@ -36,9 +36,9 @@ export type { BattleResult } from "#contract/result.js"
 export type { BattleSnapshot, UnitSnapshot } from "#contract/snapshot.js"
 
 export { TICK } from "#kernel/tick/index.js"
-export { AUTO_OP_COOLDOWN } from "#battle/skill/constants.js"
+export { AUTO_OP_COOLDOWN } from "#ability/skill/constants.js"
 
-export { createRandom, deriveSeed, type Random } from "#random/index.js"
+export { createRandom, deriveSeed, type Random } from "#kernel/random/index.js"
 export {
   attackRangeGrid,
   composeStats,
@@ -50,7 +50,7 @@ export {
 } from "#port/loadout.js"
 export type { LoadoutRequest, ResolvedRecordLoadout } from "#port/loadout.js"
 
-export { UnknownRegistrationError } from "#port/unknown-registration.js"
+export { UnknownRegistrationError } from "#kernel/registry/error.js"
 export { MODIFIER_OPS, type ModifierOp } from "#port/content.js"
 export type {
   AttributeModifier,
@@ -85,11 +85,11 @@ export type {
   UnitView,
 } from "#port/content.js"
 
-export { frontTile, offsetTile, oppositeDirection, rotateOffset } from "#battle/space/direction/index.js"
-export { bodyDist, bodyInKeys, bodyInRadius, bodyKeys, bodyOnTile, bodyRect } from "#battle/space/body/index.js"
-export { createGrid } from "#battle/space/grid/index.js"
-export type { FieldGrid, GridPoint } from "#battle/space/grid/index.js"
-export { attractPoints, fearReachableTiles, fearSteps, planFearMove } from "#battle/behavior/shift.js"
+export { frontTile, offsetTile, oppositeDirection, rotateOffset } from "#field/direction/index.js"
+export { bodyDist, bodyInKeys, bodyInRadius, bodyKeys, bodyOnTile, bodyRect } from "#field/body/index.js"
+export { createGrid } from "#field/grid/index.js"
+export type { FieldGrid, GridPoint } from "#field/grid/index.js"
+export { attractPoints, fearReachableTiles, fearSteps, planFearMove } from "#field/motion/fear.js"
 export {
   PULL_CRAWL,
   PULL_ORIGIN,
@@ -102,8 +102,8 @@ export {
   SHIFT_FEAR,
   SHIFT_PULL,
   SHIFT_PUSH,
-} from "#battle/behavior/action.js"
-export { BUILTIN_SKILL_BODIES } from "#battle/skill/body.js"
+} from "#field/motion/index.js"
+export { BUILTIN_SKILL_BODIES } from "#ability/skill/body.js"
 export {
   BLOCK_FLY_TAG,
   BLOCK_RADIUS,
@@ -115,10 +115,10 @@ export {
   DEVICE_TAG,
   STEALTH_RESTORE,
   blockModule,
-} from "#battle/block.js"
-export { costModule } from "#battle/cost.js"
-export { DEFER_DEPLOY_TAG, DEPLOY_STRATEGY, TOKEN_TAG, deployModule } from "#battle/deploy/board.js"
-export { leakModule } from "#battle/leak.js"
+} from "#unit/block/index.js"
+export { costModule } from "#economy/index.js"
+export { DEFER_DEPLOY_TAG, DEPLOY_STRATEGY, TOKEN_TAG, deployModule } from "#unit/deploy/index.js"
+export { leakModule } from "#unit/leak/index.js"
 export {
   BOOMERANG_RETURN_SPEED,
   CHAIN_HEAL_RADIUS,
@@ -128,9 +128,9 @@ export {
   registerAttackResolver,
   type AttackImpact,
   type AttackResolver,
-} from "#battle/attack/shape.js"
-export { PROJECTILE_MAX_AGE, PROJECTILE_SPEED } from "#battle/projectile/index.js"
-export { REDEPLOY_MUL_ATTRIBUTE, redeployModule } from "#battle/redeploy.js"
+} from "#combat/attack/shape.js"
+export { PROJECTILE_MAX_AGE, PROJECTILE_SPEED } from "#combat/projectile/index.js"
+export { REDEPLOY_MUL_ATTRIBUTE, redeployModule } from "#unit/deploy/redeploy.js"
 export {
   AMMO_CAP,
   AMMO_CAP_ATTRIBUTE,
@@ -149,8 +149,8 @@ export {
   readAttackTiming,
   setAttackTargetThisTick,
   type AttackTiming,
-} from "#battle/unit/timer.js"
-export { createBattle, type Battle } from "#battle/create-battle.js"
+} from "#kernel/timer/index.js"
+export { createBattle, type Battle } from "#battle/create.js"
 
-export { runSteps } from "#runner/headless.js"
-export { FRAME_CATCHUP, createFrameClock, type FrameClock } from "#runner/frame.js"
+export { runSteps } from "#battle/headless.js"
+export { FRAME_CATCHUP, createFrameClock, type FrameClock } from "#battle/frame.js"

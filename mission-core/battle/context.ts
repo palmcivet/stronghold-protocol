@@ -12,29 +12,29 @@ import type {
   TimerView,
   UnitView,
 } from "#port/content.js"
-import type { BattleRegistry } from "#battle/registry.js"
-import { applyShift } from "#battle/behavior/action.js"
-import { healUnit, loseLife, runDamage } from "#battle/damage/index.js"
-import { addCost, costOf, spendCost } from "#battle/cost.js"
-import { launchProjectile as storeProjectile, projectileViews } from "#battle/projectile/index.js"
+import type { BattleRegistry } from "#kernel/registry/index.js"
+import { applyShift } from "#field/motion/index.js"
+import { healUnit, loseLife, runDamage } from "#combat/damage/index.js"
+import { addCost, costOf, spendCost } from "#economy/index.js"
+import { launchProjectile as storeProjectile, projectileViews } from "#combat/projectile/index.js"
 import { bindSession } from "#battle/session.js"
 import { addUnit, emit as publish, requireUnit, type BattleState } from "#battle/state.js"
-import { activateSkill, configureSkill as writeSkill, gainSkillSp, readySkill as fillSkill } from "#battle/skill/point.js"
-import { shouldCast as askTrigger } from "#battle/skill/trigger.js"
-import { bodyRect, normHitArea } from "#battle/space/body/index.js"
+import { activateSkill, configureSkill as writeSkill, gainSkillSp, readySkill as fillSkill } from "#ability/skill/point.js"
+import { shouldCast as askTrigger } from "#ability/skill/trigger.js"
+import { bodyRect, normHitArea } from "#field/body/index.js"
 import { TICK } from "#kernel/tick/index.js"
-import { attributeOf, maxHpOf } from "#battle/unit/attribute.js"
-import type { FieldGrid } from "#battle/space/grid/index.js"
-import { selectUnits, unitsInRange as rangeUnits } from "#battle/target/selector.js"
-import { addElement as chargeElement } from "#battle/unit/element.js"
-import { applyStatus as giveStatus } from "#battle/unit/status/index.js"
+import { attributeOf, maxHpOf } from "#ability/effect/attribute.js"
+import type { FieldGrid } from "#field/grid/index.js"
+import { selectUnits, unitsInRange as rangeUnits } from "#combat/target/selector.js"
+import { addElement as chargeElement } from "#combat/element/index.js"
+import { applyStatus as giveStatus } from "#ability/effect/index.js"
 import {
   advanceStartedTimers as advanceSlotTimers,
   advanceTimer as stepTimer,
   armListedTimers,
   startTimer as beginTimer,
   timerView as readTimerView,
-} from "#battle/unit/timer.js"
+} from "#kernel/timer/index.js"
 
 export function createContext(state: BattleState, registry: BattleRegistry, tiles: FieldGrid): ContentContext {
   const ctx: ContentContext = {

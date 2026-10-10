@@ -1,5 +1,5 @@
 import type { ContentContext } from "#port/content.js"
-import type { BattleRegistry } from "#battle/registry.js"
+import type { BattleRegistry } from "#kernel/registry/index.js"
 import type { BattleState } from "#battle/state.js"
 
 interface BattleSession {

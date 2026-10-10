@@ -18,25 +18,37 @@
       "source": "./contract/*.ts",
       "default": "./dist/contract/*.js"
     },
-    "#kernel/*.js": {
-      "source": "./kernel/*.ts",
-      "default": "./dist/kernel/*.js"
-    },
-    "#random/*.js": {
-      "source": "./random/*.ts",
-      "default": "./dist/random/*.js"
-    },
     "#port/*.js": {
       "source": "./port/*.ts",
       "default": "./dist/port/*.js"
     },
-    "#runner/*.js": {
-      "source": "./runner/*.ts",
-      "default": "./dist/runner/*.js"
+    "#kernel/*.js": {
+      "source": "./kernel/*.ts",
+      "default": "./dist/kernel/*.js"
     },
     "#battle/*.js": {
       "source": "./battle/*.ts",
       "default": "./dist/battle/*.js"
+    },
+    "#unit/*.js": {
+      "source": "./unit/*.ts",
+      "default": "./dist/unit/*.js"
+    },
+    "#combat/*.js": {
+      "source": "./combat/*.ts",
+      "default": "./dist/combat/*.js"
+    },
+    "#ability/*.js": {
+      "source": "./ability/*.ts",
+      "default": "./dist/ability/*.js"
+    },
+    "#field/*.js": {
+      "source": "./field/*.ts",
+      "default": "./dist/field/*.js"
+    },
+    "#economy/*.js": {
+      "source": "./economy/*.ts",
+      "default": "./dist/economy/*.js"
     },
     "#test/*.js": "./test/*.ts"
   },
