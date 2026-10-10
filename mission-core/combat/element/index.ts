@@ -1,10 +1,13 @@
-import type { ContentContext } from "#port/content.js"
-import type { BattleRegistry } from "#kernel/registry/index.js"
+import type { ContentContext } from "#port/context.js"
+import type { BattleRegistry } from "#port/definition.js"
 import { drainSkillSp } from "#ability/skill/point.js"
-import { emit, requireUnit, type BattleState } from "#battle/state.js"
+import { emit } from "#kernel/event/index.js"
+import { requireUnit, type BattleWorld } from "#unit/record/index.js"
 import { ELEMENT, ELEMENT_GAUGE_MAX } from "#combat/damage/constants.js"
 import { TICK } from "#kernel/tick/index.js"
 import type { UnitState } from "#unit/record/index.js"
+import { hasTag } from "#kernel/world/tag.js"
+import { BURST_LOCK, NO_SP, SILENCE, STUN } from "#port/tag.js"
 
 export function hasHp(unit: UnitState): boolean {
   return !unit.downed && (unit.attributes.hp ?? 0) > 0
@@ -22,7 +25,7 @@ export type Charge = "burst" | "filled" | "refused"
 
 /** 把已经算好的损伤加进槽。返回值表示有没有蓄满。 */
 export function chargeElement(
-  state: BattleState,
+  state: BattleWorld,
   registry: BattleRegistry,
   unitId: string,
   elementId: string,
@@ -30,7 +33,7 @@ export function chargeElement(
 ): Charge {
   const definition = registry.requireElement(elementId)
   const unit = requireUnit(state, unitId)
-  if (!hasHp(unit) || unit.bursting || unit.flags.has("burstLock")) return "refused"
+  if (!hasHp(unit) || unit.bursting || hasTag(unit, BURST_LOCK)) return "refused"
   if (!(amount > 0) || !Number.isFinite(amount)) return "refused"
   const cap = gaugeCap(unit, definition.cap)
   const existing = unit.elements.get(elementId)
@@ -46,7 +49,7 @@ export function chargeElement(
 
 /** 蓄满后的爆发。爆发自己的伤害不再次进槽。 */
 export function burstElement(
-  state: BattleState,
+  state: BattleWorld,
   registry: BattleRegistry,
   ctx: ContentContext,
   unitId: string,
@@ -55,7 +58,7 @@ export function burstElement(
 ): void {
   const definition = registry.requireElement(elementId)
   const unit = requireUnit(state, unitId)
-  if (unit.bursting || unit.flags.has("burstLock")) return
+  if (unit.bursting || hasTag(unit, BURST_LOCK)) return
   unit.elementCredit = sourceId
   unit.bursting = true
   try {
@@ -67,7 +70,7 @@ export function burstElement(
 }
 
 export function addElement(
-  state: BattleState,
+  state: BattleWorld,
   registry: BattleRegistry,
   ctx: ContentContext,
   unitId: string,
@@ -79,7 +82,7 @@ export function addElement(
   if (charged === "burst") burstElement(state, registry, ctx, unitId, elementId, sourceId)
 }
 
-export function registerBuiltinElements(state: BattleState, registry: BattleRegistry): void {
+export function registerBuiltinElements(state: BattleWorld, registry: BattleRegistry): void {
   const second = secondsToTicks(1)
   const strike = (
     ctx: ContentContext,
@@ -112,7 +115,7 @@ export function registerBuiltinElements(state: BattleState, registry: BattleRegi
   // MARK: burn
   registry.registerStatus({
     id: "element:burn-burst",
-    flags: ["burstLock"],
+    tags: [BURST_LOCK],
     modifiers: [{ attribute: "res", op: "add", value: -ELEMENT.burn.ally.resDown }],
     immunity: [],
     stackCap: 1,
@@ -137,7 +140,7 @@ export function registerBuiltinElements(state: BattleState, registry: BattleRegi
   // MARK: neural
   registry.registerStatus({
     id: "element:neural-ally",
-    flags: ["burstLock", "stun"],
+    tags: [BURST_LOCK, STUN],
     modifiers: [],
     immunity: [],
     stackCap: 1,
@@ -146,7 +149,7 @@ export function registerBuiltinElements(state: BattleState, registry: BattleRegi
   })
   registry.registerStatus({
     id: "element:neural-enemy",
-    flags: ["burstLock"],
+    tags: [BURST_LOCK],
     modifiers: [],
     immunity: [],
     stackCap: 1,
@@ -178,7 +181,7 @@ export function registerBuiltinElements(state: BattleState, registry: BattleRegi
   // MARK: apoptosis
   registry.registerStatus({
     id: "element:apoptosis-ally",
-    flags: ["burstLock", "silence", "noSp"],
+    tags: [BURST_LOCK, SILENCE, NO_SP],
     modifiers: [],
     immunity: [],
     stackCap: 1,
@@ -196,7 +199,7 @@ export function registerBuiltinElements(state: BattleState, registry: BattleRegi
   })
   registry.registerStatus({
     id: "element:apoptosis-enemy",
-    flags: ["burstLock"],
+    tags: [BURST_LOCK],
     modifiers: [],
     immunity: [],
     stackCap: 1,
@@ -236,7 +239,7 @@ export function registerBuiltinElements(state: BattleState, registry: BattleRegi
   // MARK: erosion
   registry.registerStatus({
     id: "element:erosion-burst",
-    flags: ["burstLock"],
+    tags: [BURST_LOCK],
     modifiers: [],
     immunity: [],
     stackCap: 1,
@@ -245,7 +248,7 @@ export function registerBuiltinElements(state: BattleState, registry: BattleRegi
   })
   registry.registerStatus({
     id: "element:erosion-down",
-    flags: [],
+    tags: [],
     modifiers: [],
     immunity: [],
     stackCap: 1_000_000,
@@ -273,7 +276,7 @@ export function registerBuiltinElements(state: BattleState, registry: BattleRegi
   // MARK: necrosis
   registry.registerStatus({
     id: "element:necrosis-burst",
-    flags: ["burstLock"],
+    tags: [BURST_LOCK],
     modifiers: [{ attribute: "atk", op: "mul", value: 1 - ELEMENT.necrosis.atkDownPct }],
     immunity: [],
     stackCap: 1,

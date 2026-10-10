@@ -9,7 +9,7 @@ import {
   type MissionModule,
   type TileSpec,
 } from "arknights-mission-core"
-import { sessionOf } from "#battle/session.js"
+import { engineOf } from "#unit/record/index.js"
 import { ally, spec } from "#test/fixture.js"
 
 const wide: readonly TileSpec[] = [0, 1, 2, 3, 4, 5, 6].flatMap((x) =>
@@ -66,6 +66,41 @@ test("溅射打中半径内的人，圈外不动", () => {
   expect(hpOf(battle, "e")).toBe(160)
   expect(hpOf(battle, "near")).toBe(160)
   expect(hpOf(battle, "far")).toBe(200)
+})
+
+test("溅射跳过没破隐的隐匿敌人，显形之后打得到", () => {
+  const open = (statuses: readonly string[]) =>
+    createBattle(
+      spec({
+        modules: ["case"],
+        tiles: wide,
+        units: [
+          ally("a", { attributes: { hp: 100, atk: 40, def: 0 }, attackShape: { damage: "arts", splash: { radius: 1.1 } } }),
+          ally("e", { side: "enemy", x: 1, y: 0, attributes: { hp: 200, maxHp: 200, def: 0, res: 0 } }),
+          ally("near", { side: "enemy", x: 1, y: 1, attributes: { hp: 200, maxHp: 200, def: 0, res: 0 } }),
+        ],
+      }),
+      [
+        arm((ctx) =>
+          ctx.registerSystem({
+            id: "veil",
+            slot: "schedule",
+            priority: 0,
+            run(runCtx) {
+              if (runCtx.tick() === 0) for (const status of statuses) runCtx.applyStatus("near", status)
+            },
+          }),
+        ),
+      ],
+    )
+  const hidden = open(["stealth"])
+  hidden.step()
+  expect(hpOf(hidden, "e")).toBe(160)
+  expect(hpOf(hidden, "near")).toBe(200)
+  const revealed = open(["stealth", "reveal"])
+  revealed.step()
+  expect(hpOf(revealed, "e")).toBe(160)
+  expect(hpOf(revealed, "near")).toBe(160)
 })
 
 test("只打旁人时主目标吃全额，其他人吃倍率", () => {
@@ -139,7 +174,7 @@ test("弹射按距离跳，并给停顿", () => {
           priority: 10,
           run(runCtx) {
             if (runCtx.tick() !== 0) return
-            const unit = sessionOf(runCtx).state.units.get("e2")
+            const unit = engineOf(runCtx).world.units.get("e2")
             pause = unit?.statuses.find((status) => status.id === "sluggish")?.remaining ?? 0
           },
         })

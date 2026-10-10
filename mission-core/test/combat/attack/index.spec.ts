@@ -1,4 +1,5 @@
 import { expect, test } from "vitest"
+import { NO_SP } from "#port/tag.js"
 import {
   TICK,
   createBattle,
@@ -258,7 +259,7 @@ test("阻回不取消攻击，敌人在敌人行动槽里打出伤害", () => {
       attackModule((ctx) => {
         ctx.registerStatus({
           id: "stop-sp",
-          flags: ["noSp"],
+          tags: [NO_SP],
           modifiers: [],
           immunity: [],
           stackCap: 1,

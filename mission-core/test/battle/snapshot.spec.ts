@@ -1,10 +1,11 @@
 import { expect, test } from "vitest"
+import { STEALTH } from "#port/tag.js"
 import { createBattle, type MissionModule, type StatusDefinition } from "arknights-mission-core"
 import { ally, spec } from "#test/fixture.js"
 
 const stealth: StatusDefinition = {
   id: "stealth",
-  flags: ["stealth"],
+  tags: [STEALTH],
   modifiers: [],
   immunity: [],
   stackCap: 1,

@@ -39,7 +39,7 @@ description: 攻击是单位身上的 attack 计时器。出手时按 attackShap
 
 状态定义的 `cancels` 含有 `attack` 时，施加会把阶段回到 `idle`，`elapsed` 和前摇进度归零，冷却保留。这类状态还在身上时，不再进入新的出手。眩晕和睡眠还会停住冷却。
 
-内置会取消攻击的状态：`stun`、`freeze`、`sleep`、`silence`、`fear`、`disarm`、`levitate`，以及 `element:neural-ally`。`noSp` 只停技力，不取消攻击。
+内置会取消攻击的状态：`stun`、`freeze`、`sleep`、`silence`、`fear`、`disarm`、`levitate`，以及 `element:neural-ally`。带 `noSp` 标签只停技力，不取消攻击。
 
 `tremble` 不取消攻击计时器。`blockedBy` 有值的这一拍停在当前阶段、不出手，冷却仍减少。没有阻挡者时照常出手。
 

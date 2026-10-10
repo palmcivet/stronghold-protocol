@@ -64,13 +64,33 @@ const result = battle.result()
 
 `TICK` 是 `1 / 30`，一拍的游戏秒数。`snapshot().tick` 在第一次 `step` 之前是 0。每一拍先走完阶段槽，再把拍数加 1。
 
+## 目录
+
+顶层目录分三类：边界、运行时、领域组。每个顶层目录有一个路径别名，包内用别名引用，不写相对路径。
+
+| 目录 | 别名 | 内容 |
+| --- | --- | --- |
+| `contract/` | `#contract/*.js` | 对外的纯数据：规格、事件、快照、结果、阶段槽 |
+| `port/` | `#port/*.js` | 内容端口：`module.ts`（`MissionModule`、`Registration`）、`definition.ts`（各类定义与 `BattleRegistry`）、`context.ts`（`ContentContext`）、`tag.ts`（核心标签），练度与装备的数值合成 |
+| `test/` | `#test/*.js` | 黄金回放、源码扫描、测试夹具，与按组分目录的用例 `test/<组>/<领域>/` |
+| `kernel/` | `#kernel/*.js` | 运行时内核，只引用 `contract/`：`math/`、`tick/`、`random/`、`timer/`（通用计时）、`registry/`（通用注册表）、`schedule/`（阶段槽排序）、`event/`、`world/`（世界、组件、资源、标签） |
+| `battle/` | `#battle/*.js` | 组装与推进：建战斗、组装 `BattleRegistry`、每拍的系统、上下文、快照、帧时钟、无头推进 |
+| `unit/` | `#unit/*.js` | 单位与生命周期：`record/`、`deploy/`、`block/`、`leak/` |
+| `combat/` | `#combat/*.js` | 战斗：`attack/`、`target/`、`damage/`、`projectile/`、`element/` |
+| `ability/` | `#ability/*.js` | 技能与状态：`skill/`、`effect/` |
+| `field/` | `#field/*.js` | 场地与移动：`direction/`、`grid/`、`body/`、`motion/` |
+| `economy/` | `#economy/*.js` | 费用 |
+
+例如 `#kernel/tick/index.js`、`#combat/damage/formula.js`。包只有根导出 `arknights-mission-core`。
+
 ## 文档
 
 | 页 | 内容 |
 | --- | --- |
 | [规格](./spec.md) | `BattleSpec`、单位、地块、技能、刷出 |
 | [战斗](./battle.md) | `createBattle`、`step`、阶段槽、快照、事件、结果 |
-| [模块](./module.md) | `MissionModule`、八类注册、部署策略、`ContentContext` |
+| [模块](./module.md) | `MissionModule`、各类注册、部署策略、`ContentContext` |
+| [世界、组件、资源与标签](./world.md) | `World`、`defineComponent`、`defineResource`、`defineTag`、核心标签 |
 | [伤害](./damage.md) | 伤害步骤、治疗、流失、元素槽 |
 | [技能](./skill.md) | 技力、充能、触发、技能体 |
 | [攻击](./attack.md) | 攻击计时、片段、出手 |

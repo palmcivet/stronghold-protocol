@@ -1,12 +1,19 @@
 import { projectileKindSpeed, resolveAttackImpact, retainOnMiss, returnSpeedOf } from "#combat/attack/shape.js"
-import type { ContentContext, TimerState } from "#port/content.js"
-import type { BattleRegistry } from "#kernel/registry/index.js"
-import { requireUnit, type BattleState } from "#battle/state.js"
+import type { ContentContext } from "#port/context.js"
+import type { BattleRegistry, TimerDefinition } from "#port/definition.js"
+import { CANNOT_ACT, TREMBLE } from "#port/tag.js"
+import { timerNumber, timerText, type TimerState } from "#kernel/timer/index.js"
+import { hasTag } from "#kernel/world/tag.js"
+import { requireUnit, type BattleWorld, type UnitState } from "#unit/record/index.js"
 import { attackTargetIds } from "#combat/target/aim.js"
 import { attributeOf } from "#ability/effect/attribute.js"
 import { interruptEnemyAttack } from "#ability/effect/palsy.js"
-import { consumeAttackTiming, peekAttackTargetThisTick, readAttackTiming } from "#kernel/timer/index.js"
-import type { UnitState } from "#unit/record/index.js"
+import {
+  consumeAttackTiming,
+  peekAttackTargetThisTick,
+  readAttackTiming,
+  registerIndependentTimers,
+} from "#combat/attack/timing.js"
 import { countdown, reached, READY_EPSILON, TICK } from "#kernel/tick/index.js"
 
 /** 攻速下限。 */
@@ -16,8 +23,33 @@ export const ASPD_MAX = 600
 /** 没有攻击片段时，命中之后停住的秒数。 */
 export const ATTACK_PAUSE = 0.35
 
+/** 普攻计时器与充能、弹药、回旋物的计时器。 */
+export function registerAttackTimers(registry: BattleRegistry, state: BattleWorld): void {
+  registry.registerTimer(attackTimer(state, registry))
+  registerIndependentTimers(registry, state)
+}
+
+function attackTimer(state: BattleWorld, registry: BattleRegistry): TimerDefinition {
+  return {
+    id: "attack",
+    slot: "ally",
+    create: () => ({ phase: "idle", elapsed: 0, cooldown: 0, rest: 0, lead: 0 }),
+    advance(timer, unitId, ctx) {
+      advanceAttack(state, registry, ctx, unitId, timer)
+    },
+    cancel(timer) {
+      timer.phase = "idle"
+      timer.elapsed = 0
+      timer.lead = 0
+    },
+    view(timer) {
+      return { phase: timerText(timer, "phase", "idle"), elapsed: timerNumber(timer, "elapsed") }
+    },
+  }
+}
+
 export function advanceAttack(
-  state: BattleState,
+  state: BattleWorld,
   registry: BattleRegistry,
   ctx: ContentContext,
   unitId: string,
@@ -40,7 +72,7 @@ export function advanceAttack(
 
 /** 这一拍的攻击推进会不会打出命中。技力用它决定要不要在命中前释放。 */
 export function attackWillHit(
-  state: BattleState,
+  state: BattleWorld,
   registry: BattleRegistry,
   ctx: ContentContext,
   unit: UnitState,
@@ -62,7 +94,7 @@ export function attackWillHit(
 // MARK: clock
 
 function advanceWindup(
-  state: BattleState,
+  state: BattleWorld,
   registry: BattleRegistry,
   ctx: ContentContext,
   unit: UnitState,
@@ -90,7 +122,7 @@ function advanceWindup(
 }
 
 function advanceRecovery(
-  state: BattleState,
+  state: BattleWorld,
   registry: BattleRegistry,
   ctx: ContentContext,
   unit: UnitState,
@@ -113,7 +145,7 @@ function advanceRecovery(
 }
 
 function advanceIdle(
-  state: BattleState,
+  state: BattleWorld,
   registry: BattleRegistry,
   ctx: ContentContext,
   unit: UnitState,
@@ -129,7 +161,7 @@ function advanceIdle(
 }
 
 function readyToSwing(
-  state: BattleState,
+  state: BattleWorld,
   registry: BattleRegistry,
   ctx: ContentContext,
   unit: UnitState,
@@ -142,7 +174,7 @@ function readyToSwing(
 }
 
 function openSwing(
-  state: BattleState,
+  state: BattleWorld,
   registry: BattleRegistry,
   ctx: ContentContext,
   unit: UnitState,
@@ -170,7 +202,7 @@ function openSwing(
 }
 
 function strike(
-  state: BattleState,
+  state: BattleWorld,
   registry: BattleRegistry,
   ctx: ContentContext,
   unit: UnitState,
@@ -264,7 +296,7 @@ function clamp(value: number, min: number, max: number): number {
 
 // MARK: target
 
-function hasTarget(state: BattleState, registry: BattleRegistry, ctx: ContentContext, unit: UnitState): boolean {
+function hasTarget(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext, unit: UnitState): boolean {
   return attackTargetIds(state, registry, ctx, unit).length > 0
 }
 
@@ -272,8 +304,8 @@ function targetDenied(unit: UnitState): boolean {
   return peekAttackTargetThisTick(unit) === false
 }
 
-function attackHeld(_state: BattleState, registry: BattleRegistry, unit: UnitState): boolean {
-  if (unit.flags.has("tremble") && unit.blockedBy) return true
+function attackHeld(_state: BattleWorld, registry: BattleRegistry, unit: UnitState): boolean {
+  if (hasTag(unit, TREMBLE) && unit.blockedBy) return true
   for (const status of unit.statuses) {
     if (status.dropped) continue
     if (registry.requireStatus(status.id).cancels.includes("attack")) return true
@@ -283,11 +315,11 @@ function attackHeld(_state: BattleState, registry: BattleRegistry, unit: UnitSta
 
 function clockStopped(unit: UnitState): boolean {
   if (!unit.fielded || unit.downed || unit.routeHidden || (unit.attributes.hp ?? 0) <= 0) return true
-  return unit.flags.has("stun") || unit.flags.has("sleep")
+  return hasTag(unit, CANNOT_ACT)
 }
 
 function deliver(
-  state: BattleState,
+  state: BattleWorld,
   registry: BattleRegistry,
   ctx: ContentContext,
   attacker: UnitState,

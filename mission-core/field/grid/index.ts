@@ -1,4 +1,5 @@
-import type { TileSpec } from "#contract/spec.js"
+import type { BattleSpec, TileSpec } from "#contract/spec.js"
+import { defineResource, type ResourceStore } from "#kernel/world/resource.js"
 import { OB_BLOCK, OB_CRATE, buildField, fieldLength, type FieldSource, type FlowField } from "#field/grid/field.js"
 import { allowsFly, allowsGround } from "#field/grid/pass.js"
 import { bresenhamTiles, straightClear, type GridPoint } from "#field/grid/sight.js"
@@ -223,4 +224,18 @@ export function createGrid(tiles: readonly TileSpec[], span: readonly GridPoint[
     },
   }
   return grid
+}
+
+/** 本场的格子。范围包住所有地块与单位、刷怪的初始位置。 */
+export const GRID = defineResource<FieldGrid>("field:grid", (spec) => createGrid(spec.tiles, spanPoints(spec)))
+
+export function gridOf(world: { readonly resources: ResourceStore }): FieldGrid {
+  return world.resources.access(GRID).ensure()
+}
+
+function spanPoints(spec: BattleSpec): GridPoint[] {
+  const points: GridPoint[] = []
+  for (const unit of spec.units) points.push({ x: unit.x, y: unit.y })
+  for (const spawn of spec.spawns) points.push({ x: spawn.unit.x, y: spawn.unit.y })
+  return points
 }

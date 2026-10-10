@@ -1,6 +1,6 @@
 import { expect, test } from "vitest"
 import { createBattle, redeployModule, type MissionModule } from "arknights-mission-core"
-import { sessionOf } from "#battle/session.js"
+import { engineOf } from "#unit/record/index.js"
 import { ally, spec } from "#test/fixture.js"
 
 test("再部署清掉的回旋数，不会被还在飞的回程写回去", () => {
@@ -31,7 +31,7 @@ test("再部署清掉的回旋数，不会被还在飞的回程写回去", () =>
         priority: 1,
         run(runCtx) {
           if (runCtx.tick() !== 1) return
-          const unit = sessionOf(runCtx).state.units.get("a")
+          const unit = engineOf(runCtx).world.units.get("a")
           if (!unit) return
           unit.boomerangsOut = 4
           unit.attributes.boomerangsOut = 4

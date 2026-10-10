@@ -14,7 +14,7 @@ import {
   type MissionModule,
   type TimerView,
 } from "arknights-mission-core"
-import { sessionOf } from "#battle/session.js"
+import { engineOf } from "#unit/record/index.js"
 import type { UnitState } from "#unit/record/index.js"
 import { ally, spec } from "#test/fixture.js"
 
@@ -35,7 +35,7 @@ function watch(ids: readonly string[]): { module: MissionModule; view: (id: stri
         slot: "ally",
         priority: 10,
         run(runCtx) {
-          current = sessionOf(runCtx).state.units.get("a")
+          current = engineOf(runCtx).world.units.get("a")
           for (const id of ids) seen.set(id, runCtx.timerView("a", id))
         },
       })
@@ -95,7 +95,7 @@ test("范围内有目标时不积蓄，这一拍写成没有目标时照样积�
         slot: "schedule",
         priority: 0,
         run(runCtx) {
-          const unit = sessionOf(runCtx).state.units.get("a")
+          const unit = engineOf(runCtx).world.units.get("a")
           if (unit) setAttackTargetThisTick(unit, false)
         },
       })
@@ -122,7 +122,7 @@ test("这一拍写成有目标时，范围内没人也不积蓄", () => {
         slot: "schedule",
         priority: 0,
         run(runCtx) {
-          const unit = sessionOf(runCtx).state.units.get("a")
+          const unit = engineOf(runCtx).world.units.get("a")
           if (unit) setAttackTargetThisTick(unit, true)
         },
       })
@@ -186,7 +186,7 @@ test("timerRate 和状态修饰加快同一条充能，不按种类分叉", () =
     install(ctx) {
       ctx.registerStatus({
         id: "haste",
-        flags: [],
+        tags: [],
         modifiers: [{ attribute: "timerRate", op: "mul", value: 2 }],
         immunity: [],
         stackCap: 1,
@@ -259,7 +259,7 @@ test("出手后清掉充能并消耗一发", () => {
         priority: 10,
         run(runCtx) {
           if (runCtx.tick() !== 30) return
-          const unit = sessionOf(runCtx).state.units.get("a")
+          const unit = engineOf(runCtx).world.units.get("a")
           if (!unit) return
           const before = readAttackTiming(unit)
           scale = before.damageScale
@@ -293,7 +293,7 @@ test("弹药打空后不能攻击，倍率回到 1，再过 1 秒开始装填", 
         slot: "schedule",
         priority: 0,
         run(runCtx) {
-          const unit = sessionOf(runCtx).state.units.get("a")
+          const unit = engineOf(runCtx).world.units.get("a")
           if (!unit || runCtx.tick() >= 2) return
           consumeAttackTiming(unit)
         },
@@ -326,7 +326,7 @@ test("timerRate 加快装填，不缩短离上次攻击的 1 秒", () => {
         priority: 0,
         run(runCtx) {
           if (runCtx.tick() !== 0) return
-          const unit = sessionOf(runCtx).state.units.get("a")
+          const unit = engineOf(runCtx).world.units.get("a")
           if (unit) consumeAttackTiming(unit)
         },
       })
@@ -357,7 +357,7 @@ test("回旋数量大于 0 时不能攻击，再部署后清零并补满弹药",
         priority: 0,
         run(runCtx) {
           if (runCtx.tick() !== 0) return
-          const unit = sessionOf(runCtx).state.units.get("a")
+          const unit = engineOf(runCtx).world.units.get("a")
           if (!unit) return
           unit.boomerangsOut = 2
           unit.attributes.boomerangsOut = 2
@@ -401,7 +401,7 @@ test("新登记的计时器在友方槽按 timerRate 推进", () => {
         slot: "ally",
         create: () => ({ elapsed: 0 }),
         advance(timer, unitId, runCtx) {
-          const { state, registry } = sessionOf(runCtx)
+          const { world: state, registry } = engineOf(runCtx)
           const unit = state.units.get(unitId)
           if (!unit) return
           const elapsed = typeof timer.elapsed === "number" ? timer.elapsed : 0

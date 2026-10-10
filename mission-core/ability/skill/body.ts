@@ -1,5 +1,5 @@
-import type { SkillBodyDefinition, SkillRuntime } from "#port/content.js"
-import type { BattleRegistry } from "#kernel/registry/index.js"
+import type { SkillBodyDefinition, SkillRuntime } from "#port/definition.js"
+import type { BattleRegistry } from "#port/definition.js"
 import { countdown, TICK } from "#kernel/tick/index.js"
 
 export const BUILTIN_SKILL_BODIES = ["duration", "ammo", "instant", "charges", "passive", "toggle"] as const

@@ -1,12 +1,14 @@
-import type { ContentContext, ShiftDefinition, ShiftInput, ShiftPlan } from "#port/content.js"
-import type { BattleRegistry } from "#kernel/registry/index.js"
+import type { ContentContext } from "#port/context.js"
+import type { ShiftDefinition, ShiftInput, ShiftPlan } from "#port/definition.js"
+import type { BattleRegistry } from "#port/definition.js"
 import { releaseBlock } from "#unit/block/index.js"
-import { sessionOf } from "#battle/session.js"
-import type { FieldGrid } from "#field/grid/index.js"
+import { gridOf, type FieldGrid } from "#field/grid/index.js"
+import { hasTag } from "#kernel/world/tag.js"
+import { NO_DISPLACE, STATIC_BODY } from "#port/tag.js"
 import { directionVector } from "#field/direction/index.js"
 import { attributeOf } from "#ability/effect/attribute.js"
-import type { UnitState } from "#unit/record/index.js"
-import { emit, requireUnit, type BattleState } from "#battle/state.js"
+import { emit } from "#kernel/event/index.js"
+import { engineOf, requireUnit, type BattleWorld, type UnitState } from "#unit/record/index.js"
 import { attractPoints, fearReachableTiles, planFearMove } from "#field/motion/fear.js"
 import { MOVE_SCALE } from "#field/grid/route.js"
 import { hypot } from "#kernel/math/hypot.js"
@@ -53,7 +55,7 @@ export function registerBuiltinShifts(registry: BattleRegistry): void {
 
 /** 按标识执行一段位移。立刻完成的写下落点；还在走的记在单位上，倒地时先落到终点。 */
 export function applyShift(
-  state: BattleState,
+  state: BattleWorld,
   registry: BattleRegistry,
   ctx: ContentContext,
   actionId: string,
@@ -80,7 +82,7 @@ export function applyShift(
 }
 
 /** 恐惧和诱导还没走完时，先沿这段动作走，本拍不再沿路线。 */
-export function advanceShift(_state: BattleState, registry: BattleRegistry, unit: UnitState, dt: number): boolean {
+export function advanceShift(_state: BattleWorld, registry: BattleRegistry, unit: UnitState, dt: number): boolean {
   const run = unit.shiftRun
   if (!run) return false
   const speed = Math.max(0, attributeOf(unit, registry, "moveSpeed")) * MOVE_SCALE
@@ -126,7 +128,7 @@ function pushShift(): ShiftDefinition {
     id: SHIFT_PUSH,
     instant: true,
     plan(unitId, input, ctx) {
-      const { state, registry } = sessionOf(ctx)
+      const { world: state, registry } = engineOf(ctx)
       const unit = movable(state, unitId)
       if (!unit) return null
       const level = forceLevel(unit, registry, input.force ?? 0)
@@ -144,7 +146,7 @@ function pushShift(): ShiftDefinition {
         const gap = hypot(unit.x - fromX, unit.y - fromY)
         distance = Math.min(distance, Math.max(0, gap - PULL_STOP_RADIUS))
       }
-      return slide(state.grid, unit, ux, uy, distance)
+      return slide(gridOf(state), unit, ux, uy, distance)
     },
   }
 }
@@ -154,7 +156,7 @@ function pullShift(): ShiftDefinition {
     id: SHIFT_PULL,
     instant: true,
     plan(unitId, input, ctx) {
-      const { state, registry } = sessionOf(ctx)
+      const { world: state, registry } = engineOf(ctx)
       const unit = movable(state, unitId)
       if (!unit || input.toX === undefined || input.toY === undefined) return null
       const centerX = input.centerX ?? input.toX
@@ -171,7 +173,7 @@ function pullShift(): ShiftDefinition {
       const travel =
         level >= 0 ? full : level === -1 ? Math.min(full, PULL_WEAK_SHARE * distance) : level === -2 ? Math.min(full, PULL_CRAWL) : 0
       if (!(travel > 1e-6)) return null
-      return slide(state.grid, unit, ux, uy, travel)
+      return slide(gridOf(state), unit, ux, uy, travel)
     },
   }
 }
@@ -181,7 +183,7 @@ function fearShift(): ShiftDefinition {
     id: SHIFT_FEAR,
     instant: false,
     plan(unitId, input, ctx) {
-      const { state } = sessionOf(ctx)
+      const { world: state } = engineOf(ctx)
       const unit = movable(state, unitId)
       if (!unit || input.sourceX === undefined || input.sourceY === undefined) return null
       const sourceX = input.sourceX
@@ -190,9 +192,9 @@ function fearShift(): ShiftDefinition {
       const end = unit.route?.legs.find((leg) => leg.final)
       const goal = end ? { x: end.x, y: end.y } : null
       const tiles = [
-        ...fearReachableTiles(state.grid, unit.motion, unit.x, unit.y, sourceX, sourceY, self, goal),
+        ...fearReachableTiles(gridOf(state), unit.motion, unit.x, unit.y, sourceX, sourceY, self, goal),
       ]
-      const move = planFearMove(state.grid, unit.motion, unit.x, unit.y, tiles, state.random)
+      const move = planFearMove(gridOf(state), unit.motion, unit.x, unit.y, tiles, state.random)
       return { x: move.goal.x, y: move.goal.y, points: move.points }
     },
   }
@@ -203,10 +205,10 @@ function attractShift(): ShiftDefinition {
     id: SHIFT_ATTRACT,
     instant: false,
     plan(unitId, input, ctx) {
-      const { state } = sessionOf(ctx)
+      const { world: state } = engineOf(ctx)
       const unit = movable(state, unitId)
       if (!unit || input.toX === undefined || input.toY === undefined) return null
-      const points = attractPoints(state.grid, unit.motion, unit.x, unit.y, input.toX, input.toY)
+      const points = attractPoints(gridOf(state), unit.motion, unit.x, unit.y, input.toX, input.toY)
       const last = points[points.length - 1]
       if (!last) return null
       return { x: last.x, y: last.y, points }
@@ -216,14 +218,14 @@ function attractShift(): ShiftDefinition {
 
 // MARK: motion
 
-function movable(state: BattleState, unitId: string): UnitState | null {
+function movable(state: BattleWorld, unitId: string): UnitState | null {
   const unit = state.units.get(unitId)
   if (!unit || unit.side !== "enemy" || !unit.fielded || unit.downed) return null
-  if (unit.flags.has("noDisplace") || unit.tags.includes("staticBody")) return null
+  if (hasTag(unit, NO_DISPLACE) || hasTag(unit, STATIC_BODY)) return null
   return unit
 }
 
-function writeLanding(state: BattleState, registry: BattleRegistry, ctx: ContentContext, unit: UnitState, x: number, y: number): void {
+function writeLanding(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext, unit: UnitState, x: number, y: number): void {
   if (hypot(unit.x - x, unit.y - y) <= 1e-8) return
   unit.x = x
   unit.y = y
@@ -322,7 +324,7 @@ function stopDistance(
   return full
 }
 
-function blockedByCenter(state: BattleState, unit: UnitState, centerX: number, centerY: number): boolean {
+function blockedByCenter(state: BattleWorld, unit: UnitState, centerX: number, centerY: number): boolean {
   if (!unit.blockedBy) return false
   const blocker = state.units.get(unit.blockedBy)
   if (!blocker) return false

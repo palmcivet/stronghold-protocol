@@ -4,6 +4,7 @@ import {
   createBattle,
   createGrid,
   createRandom,
+  defineTag,
   fearReachableTiles,
   fearSteps,
   planFearMove,
@@ -124,12 +125,14 @@ test("消失后再出现会改站位", () => {
 })
 
 test("路线消失在状态刷新之后仍留在快照里", () => {
+  const MARKED = defineTag("marked", { meaning: "marked by the test module" })
   const module: MissionModule = {
     id: "mark",
     install(ctx) {
+      ctx.registerTag(MARKED)
       ctx.registerStatus({
         id: "marked",
-        flags: ["marked"],
+        tags: [MARKED],
         modifiers: [],
         immunity: [],
         stackCap: 1,

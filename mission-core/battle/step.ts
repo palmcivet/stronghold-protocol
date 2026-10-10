@@ -1,26 +1,44 @@
-import type { BattleRegistry } from "#kernel/registry/index.js"
+import type { ContentContext } from "#port/context.js"
+import type { BattleRegistry } from "#port/definition.js"
 import { advanceShift } from "#field/motion/index.js"
 import { advanceProjectiles } from "#combat/projectile/index.js"
 import { armUnit } from "#ability/skill/point.js"
 import { attributeOf } from "#ability/effect/attribute.js"
 import { clearAttackTargetThisTick } from "#combat/attack/timing.js"
 import { MOVE_SCALE, advanceRoute } from "#field/grid/route.js"
-import { addUnit, emit, readTimer, requireUnit, type BattleState, type ScheduledCallback } from "#battle/state.js"
-import { advanceStartedTimers, advanceTimer, armListedTimers } from "#kernel/timer/index.js"
+import { gridOf } from "#field/grid/index.js"
+import { placeUnit, type BattleWorld } from "#unit/record/index.js"
+import { advanceStartedTimers, advanceTimer, armListedTimers } from "#unit/record/timer.js"
+import { emit } from "#kernel/event/index.js"
+import { readTimer } from "#kernel/timer/index.js"
+import { defineResource } from "#kernel/world/resource.js"
 import { TICK } from "#kernel/tick/index.js"
 
-export function registerEngineSystems(registry: BattleRegistry, state: BattleState): void {
+export interface ScheduledCallback {
+  tick: number
+  run: (ctx: ContentContext) => void
+}
+
+/** 内容排下的回调，按排入顺序。 */
+export const SCHEDULE = defineResource<ScheduledCallback[]>("battle:schedule", () => [])
+
+/** 已经出场的规格出场项下标。 */
+export const SPAWNED = defineResource<Set<number>>("battle:spawned", () => new Set())
+
+export function registerEngineSystems(registry: BattleRegistry, state: BattleWorld): void {
+  const scheduled = state.resources.access(SCHEDULE).ensure()
+  const spawned = state.resources.access(SPAWNED).ensure()
   registry.registerSystem({
     id: "engine:schedule",
     slot: "schedule",
     priority: 0,
     run(runCtx) {
       const due: ScheduledCallback[] = []
-      for (let index = state.scheduled.length - 1; index >= 0; index -= 1) {
-        const callback = state.scheduled[index]
+      for (let index = scheduled.length - 1; index >= 0; index -= 1) {
+        const callback = scheduled[index]
         if (!callback || callback.tick !== state.tick) continue
         due.push(callback)
-        state.scheduled.splice(index, 1)
+        scheduled.splice(index, 1)
       }
       due.reverse()
       for (const callback of due) callback.run(runCtx)
@@ -32,12 +50,11 @@ export function registerEngineSystems(registry: BattleRegistry, state: BattleSta
     priority: 0,
     run(runCtx) {
       state.spec.spawns.forEach((spawn, index) => {
-        if (spawn.atTick !== state.tick || state.spawned.has(index)) return
-        state.spawned.add(index)
-        addUnit(state, spawn.unit, true)
-        const spawned = requireUnit(state, spawn.unit.id)
-        armUnit(state, registry, runCtx, spawned, false)
-        armListedTimers(state, registry, spawned)
+        if (spawn.atTick !== state.tick || spawned.has(index)) return
+        spawned.add(index)
+        const unit = placeUnit(state, registry, spawn.unit, true)
+        armUnit(state, registry, runCtx, unit, false)
+        armListedTimers(state, registry, unit)
         emit(state, "spawn", { unitId: spawn.unit.id })
       })
     },
@@ -50,7 +67,7 @@ export function registerEngineSystems(registry: BattleRegistry, state: BattleSta
       for (const unit of state.units.values()) {
         if (advanceShift(state, registry, unit, TICK)) continue
         const speed = Math.max(0, attributeOf(unit, registry, "moveSpeed")) * MOVE_SCALE
-        advanceRoute(state.grid, unit, TICK, speed)
+        advanceRoute(gridOf(state), unit, TICK, speed)
       }
     },
   })

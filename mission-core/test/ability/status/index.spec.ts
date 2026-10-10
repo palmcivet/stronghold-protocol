@@ -1,10 +1,11 @@
 import { expect, test } from "vitest"
+import { STUN } from "#port/tag.js"
 import { createBattle, type MissionModule, type StatusDefinition } from "arknights-mission-core"
 import { ally, spec } from "#test/fixture.js"
 
 const stun: StatusDefinition = {
   id: "stun",
-  flags: ["stun"],
+  tags: [STUN],
   modifiers: [],
   immunity: [],
   stackCap: 1,

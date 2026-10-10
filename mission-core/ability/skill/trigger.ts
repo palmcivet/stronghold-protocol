@@ -1,12 +1,15 @@
-import type { ContentContext } from "#port/content.js"
-import type { BattleRegistry } from "#kernel/registry/index.js"
+import type { ContentContext } from "#port/context.js"
+import type { BattleRegistry } from "#port/definition.js"
 import { rotateOffset } from "#field/direction/index.js"
 import { bodyInKeys, tileKey } from "#field/body/index.js"
-import { requireUnit, type BattleState } from "#battle/state.js"
+import { requireUnit, type BattleWorld } from "#unit/record/index.js"
 import { maxHpOf } from "#ability/effect/attribute.js"
+import { gridOf } from "#field/grid/index.js"
+import { hasTag } from "#kernel/world/tag.js"
+import { CAN_HIT_FLY, REVEAL, STEALTH, STEALTH_OFF, UNTARGETABLE } from "#port/tag.js"
 import { isFlying, type SkillInstance, type UnitState } from "#unit/record/index.js"
 
-export function registerBuiltinSkillTriggers(state: BattleState, registry: BattleRegistry): void {
+export function registerBuiltinSkillTriggers(state: BattleWorld, registry: BattleRegistry): void {
   registry.registerSkillTrigger({
     id: "DEFAULT",
     shouldCast: (unitId, skillId) => defaultCondition(state, registry, unitId, skillId),
@@ -42,7 +45,7 @@ export function registerBuiltinSkillTriggers(state: BattleState, registry: Battl
 }
 
 export function shouldCast(
-  state: BattleState,
+  state: BattleWorld,
   registry: BattleRegistry,
   ctx: ContentContext,
   unitId: string,
@@ -54,7 +57,7 @@ export function shouldCast(
 }
 
 /** DEFAULT 的友方附加条件：触发范围内有一名受伤友方，生命比例不超过 hpAtMost。 */
-export function allyTriggerMet(state: BattleState, registry: BattleRegistry, unitId: string, skillId: string): boolean {
+export function allyTriggerMet(state: BattleWorld, registry: BattleRegistry, unitId: string, skillId: string): boolean {
   const unit = requireUnit(state, unitId)
   const skill = skillOf(state, unitId, skillId)
   return injuredIn(state, registry, unit, allyKeys(state, unit, skill), skill.triggerHpAtMost)
@@ -62,7 +65,7 @@ export function allyTriggerMet(state: BattleState, registry: BattleRegistry, uni
 
 // MARK: rules
 
-function defaultCondition(state: BattleState, registry: BattleRegistry, unitId: string, skillId: string): boolean {
+function defaultCondition(state: BattleWorld, registry: BattleRegistry, unitId: string, skillId: string): boolean {
   const unit = requireUnit(state, unitId)
   const skill = skillOf(state, unitId, skillId)
   const keys = rotatedKeys(state, unit, unit.attackRange)
@@ -70,7 +73,7 @@ function defaultCondition(state: BattleState, registry: BattleRegistry, unitId: 
   return enemyIn(state, unit, keys, false, hitsFly(unit))
 }
 
-function skillRange(state: BattleState, registry: BattleRegistry, unitId: string, skillId: string): boolean {
+function skillRange(state: BattleWorld, registry: BattleRegistry, unitId: string, skillId: string): boolean {
   const unit = requireUnit(state, unitId)
   const skill = skillOf(state, unitId, skillId)
   if (skill.triggerAllies) return allyTriggerMet(state, registry, unitId, skillId)
@@ -78,14 +81,14 @@ function skillRange(state: BattleState, registry: BattleRegistry, unitId: string
   return enemyIn(state, unit, rotatedKeys(state, unit, skill.triggerRange), true, true)
 }
 
-function customRange(state: BattleState, registry: BattleRegistry, unitId: string, skillId: string): boolean {
+function customRange(state: BattleWorld, registry: BattleRegistry, unitId: string, skillId: string): boolean {
   const unit = requireUnit(state, unitId)
   const skill = skillOf(state, unitId, skillId)
   if (skill.triggerRange.length === 0) return defaultCondition(state, registry, unitId, skillId)
   return enemyIn(state, unit, rotatedKeys(state, unit, skill.triggerRange), false, true)
 }
 
-function fieldTarget(state: BattleState, registry: BattleRegistry, unitId: string, skillId: string): boolean {
+function fieldTarget(state: BattleWorld, registry: BattleRegistry, unitId: string, skillId: string): boolean {
   const unit = requireUnit(state, unitId)
   const skill = skillOf(state, unitId, skillId)
   if (skill.heal) return injuredIn(state, registry, unit, null, 1)
@@ -94,20 +97,20 @@ function fieldTarget(state: BattleState, registry: BattleRegistry, unitId: strin
 
 // MARK: query
 
-function skillOf(state: BattleState, unitId: string, skillId: string): SkillInstance {
+function skillOf(state: BattleWorld, unitId: string, skillId: string): SkillInstance {
   const unit = requireUnit(state, unitId)
   const skill = unit.skills.find((item) => item.id === skillId)
   if (!skill) throw new Error(`技能不存在: ${skillId}`)
   return skill
 }
 
-function allyKeys(state: BattleState, unit: UnitState, skill: SkillInstance): ReadonlySet<string> | null {
+function allyKeys(state: BattleWorld, unit: UnitState, skill: SkillInstance): ReadonlySet<string> | null {
   const cells = skill.triggerRange.length > 0 ? skill.triggerRange : unit.attackRange
   return rotatedKeys(state, unit, cells)
 }
 
 function rotatedKeys(
-  state: BattleState,
+  state: BattleWorld,
   unit: UnitState,
   cells: readonly { readonly x: number; readonly y: number }[],
 ): Set<string> {
@@ -120,14 +123,14 @@ function rotatedKeys(
     const [dRow, dCol] = rotateOffset(cell.y, cell.x, unit.facing)
     const x = originX + dCol
     const y = originY + dRow
-    if (!state.grid.inBounds(x, y)) continue
+    if (!gridOf(state).inBounds(x, y)) continue
     keys.add(tileKey(x, y))
   }
   return keys
 }
 
 function enemyIn(
-  state: BattleState,
+  state: BattleWorld,
   attacker: UnitState,
   keys: ReadonlySet<string> | null,
   ignoreUntargetable: boolean,
@@ -137,14 +140,14 @@ function enemyIn(
     if (unit.side !== "enemy" || unit.id === attacker.id || !alive(unit)) continue
     if (!ignoreUntargetable && !selectable(unit)) continue
     if (!fly && flyingBlocked(attacker, unit)) continue
-    if (keys && !bodyInKeys(unit, keys, state.grid.rect)) continue
+    if (keys && !bodyInKeys(unit, keys, gridOf(state).rect)) continue
     return true
   }
   return false
 }
 
 function injuredIn(
-  state: BattleState,
+  state: BattleWorld,
   registry: BattleRegistry,
   owner: UnitState,
   keys: ReadonlySet<string> | null,
@@ -152,7 +155,7 @@ function injuredIn(
 ): boolean {
   for (const unit of state.units.values()) {
     if (unit.id === owner.id || unit.side !== owner.side || !alive(unit)) continue
-    if (keys && !bodyInKeys(unit, keys, state.grid.rect)) continue
+    if (keys && !bodyInKeys(unit, keys, gridOf(state).rect)) continue
     const max = maxHpOf(unit, registry)
     const hp = unit.attributes.hp ?? 0
     if (!(hp < max - 1e-9)) continue
@@ -166,13 +169,13 @@ function alive(unit: UnitState): boolean {
 }
 
 function selectable(unit: UnitState): boolean {
-  if (unit.flags.has("untargetable")) return false
-  if (unit.flags.has("stealth") && !unit.flags.has("reveal") && !unit.flags.has("stealthOff")) return false
+  if (hasTag(unit, UNTARGETABLE)) return false
+  if (hasTag(unit, STEALTH) && !hasTag(unit, REVEAL) && !hasTag(unit, STEALTH_OFF)) return false
   return true
 }
 
 function hitsFly(unit: UnitState): boolean {
-  return unit.tags.includes("canHitFly") || (unit.attributes.canHitFly ?? 0) > 0
+  return hasTag(unit, CAN_HIT_FLY) || (unit.attributes.canHitFly ?? 0) > 0
 }
 
 function flyingBlocked(attacker: UnitState, target: UnitState): boolean {

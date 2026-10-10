@@ -1,6 +1,6 @@
 import { expect, test } from "vitest"
 import { costModule, createBattle, type MissionModule } from "arknights-mission-core"
-import { ally, spec } from "#test/fixture.js"
+import { spec } from "#test/fixture.js"
 
 function watch(onTick: (tick: number, allyPool: number, enemyPool: number) => void): MissionModule {
   return {

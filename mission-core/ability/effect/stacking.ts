@@ -1,4 +1,4 @@
-import type { StatusDefinition, StatusIncoming, StatusRecord } from "#port/content.js"
+import type { StatusDefinition, StatusIncoming, StatusRecord } from "#port/definition.js"
 
 /** 刷新时长，层数加到上限。缺省叠法。 */
 export function refreshOverlap(
