@@ -14,13 +14,15 @@ import { SCHEDULE } from "#battle/step.js"
 import {
   ENGINE,
   placeUnit,
+  removeUnit as retireUnit,
   requireUnit,
   type BattleWorld,
 } from "#unit/record/index.js"
-import { emit as publish, subscribe } from "#kernel/event/index.js"
+import { emit as publish, intercept as publishIntercept, subscribe } from "#kernel/event/index.js"
 import { defineResource } from "#kernel/world/resource.js"
 import { grantTag, hasTag, revokeTag, tagSources } from "#kernel/world/tag.js"
 import { gridOf } from "#field/grid/index.js"
+import { releaseBlock } from "#unit/block/index.js"
 import { replanRoute, routeHidden } from "#field/grid/route.js"
 import { setTargetPriority } from "#combat/target/priority.js"
 import { activateSkill, configureSkill as writeSkill, gainSkillSp, readySkill as fillSkill } from "#ability/skill/point.js"
@@ -97,13 +99,19 @@ export function createContext(state: BattleWorld, registry: BattleRegistry): Con
       armListedTimers(state, registry, placeUnit(state, registry, spec, true))
       publish(state, "spawn", { unitId: spec.id })
     },
+    removeUnit(unitId) {
+      const unit = requireUnit(state, unitId)
+      if (unit.removed) return
+      if (unit.side === "enemy") releaseBlock(state, unit, { registry, ctx })
+      retireUnit(state, unitId)
+    },
     displace(unitId, x, y) {
       if (!stands(state, registry, ctx, unitId, x, y)) return
       const unit = requireUnit(state, unitId)
       unit.x = x
       unit.y = y
       replanRoute(state, unitId)
-      publish(state, "displace", { unitId, x, y })
+      publish(state, "displace", { unitId, x, y, duration: 0, keepFacing: false })
     },
     shift(actionId, unitId, input) {
       return applyShift(state, registry, ctx, actionId, unitId, input)
@@ -130,6 +138,9 @@ export function createContext(state: BattleWorld, registry: BattleRegistry): Con
     },
     emit(type, data) {
       publish(state, type, data)
+    },
+    intercept(type, data) {
+      publishIntercept(state, type, data)
     },
     random: state.random,
     hitRect(unitId): HitShape {

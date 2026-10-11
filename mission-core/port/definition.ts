@@ -194,6 +194,8 @@ export interface ShiftInput {
   readonly effect?: boolean
   readonly fixed?: boolean
   readonly inward?: boolean
+  /** 立即完成的位移在画面上是否保持原朝向。缺省 true。 */
+  readonly keepFacing?: boolean
 }
 
 export interface ShiftPlan {
@@ -216,11 +218,21 @@ export interface DeployStrategyDefinition {
   canStand(unitId: string, tile: TileCoord, ctx: ContentContext): boolean
 }
 
+/** 系统执行顺序里的一项。 */
+export interface SystemOrderEntry {
+  readonly slot: PhaseSlot
+  readonly id: string
+}
+
 export interface PhaseSystem {
   readonly id: string
   readonly slot: PhaseSlot
   /** 同一阶段槽里的顺序。数字小的先执行，相同数字按注册先后。 */
   readonly priority: number
+  /** 排在这些同槽系统之前。在 priority 与注册先后之上再满足。 */
+  readonly before?: readonly string[]
+  /** 排在这些同槽系统之后。 */
+  readonly after?: readonly string[]
   run(ctx: ContentContext): void
 }
 
@@ -285,6 +297,8 @@ export interface BattleRegistry {
   requireShift(id: string): ShiftDefinition
   registerSystem(system: PhaseSystem): void
   systemsIn(slot: PhaseSlot): readonly PhaseSystem[]
+  /** 全部系统的执行顺序：按阶段槽，再按槽内顺序。 */
+  systemOrder(): readonly SystemOrderEntry[]
   registerTag(key: TagKey): void
   /** owner 写进未注册的报错，例如单位规格。 */
   requireTag(id: string, owner?: string): TagKey

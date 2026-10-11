@@ -3,6 +3,7 @@ import type { AttributeModifier, BattleRegistry, SkillRuntime } from "#port/defi
 import type { ContentContext } from "#port/context.js"
 import { AIRBORNE } from "#port/tag.js"
 import type { TimerState } from "#kernel/timer/index.js"
+import { emit } from "#kernel/event/index.js"
 import { requireEntity, type World } from "#kernel/world/index.js"
 import { defineResource } from "#kernel/world/resource.js"
 import { createTagGrants, grantTag, hasTag, heldTagIds, type TagGrants } from "#kernel/world/tag.js"
@@ -84,6 +85,8 @@ export interface UnitState {
   readonly id: string
   readonly side: UnitSpec["side"]
   readonly kind: UnitKind
+  /** 规格的 owner。账本按它分行。 */
+  readonly owner: string | null
   readonly attributes: Record<string, number>
   readonly skills: SkillInstance[]
   readonly attackRange: readonly UnitSpec["attackRange"][number][]
@@ -110,6 +113,8 @@ export interface UnitState {
   readonly base: Record<string, number>
   fielded: boolean
   downed: boolean
+  /** 离场且不再回来。记录留到战斗结束，快照里不再出现。 */
+  removed: boolean
   /** 每次部署加一。回旋物等按部署分代的记录读它。 */
   deployEpoch: number
 }
@@ -168,6 +173,7 @@ export function createUnit(spec: UnitSpec, fielded: boolean, order: number): Uni
     id: spec.id,
     side: spec.side,
     kind: spec.kind ?? (spec.side === "enemy" ? "enemy" : "operator"),
+    owner: spec.owner ?? null,
     attributes,
     skills,
     attackRange: spec.attackRange.map((cell) => ({ x: cell.x, y: cell.y })),
@@ -190,6 +196,7 @@ export function createUnit(spec: UnitSpec, fielded: boolean, order: number): Uni
     base,
     fielded,
     downed: false,
+    removed: false,
     deployEpoch: 0,
   }
 }
@@ -205,9 +212,13 @@ export interface Engine {
   readonly registry: BattleRegistry
 }
 
-export const ENGINE = defineResource<Engine>("core:engine", () => {
-  throw new Error("engine is set when the battle is created")
-})
+export const ENGINE = defineResource<Engine>(
+  "core:engine",
+  () => {
+    throw new Error("engine is set when the battle is created")
+  },
+  { transient: true },
+)
 
 export function engineOf(ctx: ContentContext): Engine {
   return ctx.resource(ENGINE).ensure()
@@ -242,6 +253,15 @@ export function addUnit(world: BattleWorld, spec: UnitSpec, fielded: boolean): U
   if (spec.immunity?.length) components.access(IMMUNITY).set(spec.id, new Set(spec.immunity))
   world.units.set(spec.id, unit)
   return unit
+}
+
+/** 单位离场且不再回来：不在场、不再部署，发 removed。已经移除的不再处理。 */
+export function removeUnit(world: BattleWorld, unitId: string): void {
+  const unit = requireUnit(world, unitId)
+  if (unit.removed) return
+  unit.fielded = false
+  unit.removed = true
+  emit(world, "removed", { unitId })
 }
 
 /** 单位上场：部署世代加一。 */

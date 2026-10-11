@@ -19,8 +19,18 @@ export interface FieldOptions {
   readonly ignoreObstacles?: boolean
 }
 
+/** 格子里会变的部分：障碍位与障碍改动的次数。 */
+export interface GridState {
+  readonly version: number
+  readonly obstacle: readonly number[]
+}
+
 export interface FieldGrid extends FieldSource {
   readonly rect: GridRect
+  /** 障碍位与改动次数的拷贝。 */
+  state(): GridState
+  /** 写回 state() 的结果。 */
+  restore(state: GridState): void
   flyPassable(x: number, y: number): boolean
   groundPassable(x: number, y: number, ignoreObstacles?: boolean): boolean
   at(x: number, y: number): TileSpec | null
@@ -222,12 +232,28 @@ export function createGrid(tiles: readonly TileSpec[], span: readonly GridPoint[
         4 * Math.max(cols, rows, 1),
       )
     },
+    state: () => ({ version, obstacle: [...obstacle] }),
+    restore(state) {
+      if (state.obstacle.length !== obstacle.length) throw new Error("grid state does not match the tiles")
+      obstacle.set(state.obstacle)
+      version = state.version
+      fields.clear()
+    },
   }
   return grid
 }
 
 /** 本场的格子。范围包住所有地块与单位、刷怪的初始位置。 */
-export const GRID = defineResource<FieldGrid>("field:grid", (spec) => createGrid(spec.tiles, spanPoints(spec)))
+export const GRID = defineResource<FieldGrid>("field:grid", (spec) => createGrid(spec.tiles, spanPoints(spec)), {
+  codec: {
+    encode: (grid) => grid.state(),
+    decode(data, spec) {
+      const grid = createGrid(spec.tiles, spanPoints(spec))
+      grid.restore(data as GridState)
+      return grid
+    },
+  },
+})
 
 export function gridOf(world: { readonly resources: ResourceStore }): FieldGrid {
   return world.resources.access(GRID).ensure()

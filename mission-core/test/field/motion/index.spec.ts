@@ -109,3 +109,47 @@ test("恐惧沿扇形走，倒地时先落到计划终点", () => {
   const downed = battle.drainEvents().find((event) => event.type === "downed")
   expect(downed?.data.x).not.toBe(2)
 })
+
+test("displace 带位移时长与是否保持朝向：推拉保持朝向，显式关掉或直接移动不保持", () => {
+  const battle = createBattle(
+    spec({
+      modules: [DEPLOY_STRATEGY, "move"],
+      deployStrategy: DEPLOY_STRATEGY,
+      tiles: lane,
+      units: [
+        ally("a"),
+        ally("e", { side: "enemy", attributes: { hp: 100, massLevel: 0, moveSpeed: 0 } }),
+        ally("f", { side: "enemy", x: 3, attributes: { hp: 100, massLevel: 0, moveSpeed: 0 } }),
+      ],
+    }),
+    [
+      deployModule,
+      {
+        id: "move",
+        install(ctx) {
+          ctx.registerSystem({
+            id: "move",
+            slot: "schedule",
+            priority: 0,
+            run(runCtx) {
+              if (runCtx.tick() !== 0) return
+              runCtx.shift(SHIFT_PUSH, "e", { force: 1, fromX: -1, fromY: 0 })
+              runCtx.shift(SHIFT_PUSH, "f", { force: 1, fromX: 2, fromY: 0, keepFacing: false })
+              runCtx.displace("a", 1, 0)
+            },
+          })
+        },
+      },
+    ],
+  )
+  battle.step()
+  const moves = battle
+    .drainEvents()
+    .filter((event) => event.type === "displace")
+    .map((event) => (event.type === "displace" ? [event.data.unitId, event.data.duration, event.data.keepFacing] : []))
+  expect(moves).toEqual([
+    ["e", 0, true],
+    ["f", 0, false],
+    ["a", 0, false],
+  ])
+})

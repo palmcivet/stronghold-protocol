@@ -50,6 +50,10 @@
       "source": "./economy/*.ts",
       "default": "./dist/economy/*.js"
     },
+    "#ledger/*.js": {
+      "source": "./ledger/*.ts",
+      "default": "./dist/ledger/*.js"
+    },
     "#test/*.js": "./test/*.ts"
   },
   "scripts": {

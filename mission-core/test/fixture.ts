@@ -39,5 +39,7 @@ export function ally(id: string, patch: Partial<UnitSpec> = {}): UnitSpec {
     ...(patch.hitLimit === true ? { hitLimit: true } : {}),
     ...(patch.immunity ? { immunity: patch.immunity } : {}),
     ...(patch.timers ? { timers: patch.timers } : {}),
+    ...(patch.owner !== undefined ? { owner: patch.owner } : {}),
+    ...(patch.kind ? { kind: patch.kind } : {}),
   }
 }

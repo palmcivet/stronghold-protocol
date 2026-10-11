@@ -23,7 +23,7 @@ export const redeployModule: MissionModule = {
       run(runCtx) {
         const { world: state, registry } = engineOf(runCtx)
         for (const unit of state.units.values()) {
-          if (!unit.downed) continue
+          if (!unit.downed || unit.removed) continue
           if (!countdownFinished(runCtx, unit)) continue
           if (!tileOpen(runCtx, unit)) continue
           if (!runCtx.spendCost(unit.side, stat(unit, "cost"))) continue

@@ -31,7 +31,7 @@ function frame(tick: number, x: number): BattleSnapshot {
 }
 
 function event(tick: number): BattleEvent {
-  return { tick, type: "attack", data: { unitId: "guard" } }
+  return { tick, type: "attack", data: { unitId: "guard", targetIds: [], cancel: false } }
 }
 
 describe("local feed", () => {

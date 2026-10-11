@@ -1,3 +1,4 @@
+import type { AttackEvent } from "#contract/event.js"
 import { projectileKindSpeed, resolveAttackImpact, retainOnMiss, returnSpeedOf } from "#combat/attack/shape.js"
 import type { ContentContext } from "#port/context.js"
 import type { BattleRegistry, TimerDefinition } from "#port/definition.js"
@@ -236,8 +237,8 @@ function strike(
     timer.rest = ATTACK_PAUSE
     return
   }
-  const notice: Record<string, unknown> = { unitId: unit.id, targetIds: targets, cancel: false }
-  ctx.emit("attack", notice)
+  const notice: AttackEvent = { unitId: unit.id, targetIds: targets, cancel: false }
+  ctx.intercept("attack", notice)
   if (notice.cancel === true) {
     timer.phase = "recovery"
     timer.elapsed = 0

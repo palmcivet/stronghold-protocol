@@ -1,18 +1,21 @@
 ---
 title: 战斗
-description: createBattle 创建一场战斗，step 按十个阶段槽推进，snapshot、drainEvents 和 result 读出这一场。
+description: createBattle 创建一场战斗，step 按十个阶段槽推进，snapshot、drainEvents、result、ledger 读出这一场，export 导出可继续推进的纯数据。
 ---
 
 # 战斗
 
 ```ts
-function createBattle(spec: BattleSpec, modules: readonly MissionModule[]): Battle
+function createBattle(spec: BattleSpec, modules: readonly MissionModule[], archive?: WorldArchive): Battle
 
 interface Battle {
   step(): void
   snapshot(): BattleSnapshot
   drainEvents(): readonly BattleEvent[]
   result(): BattleResult
+  ledger(): BattleLedger
+  systemOrder(): readonly SystemOrderEntry[]
+  export(): WorldArchive
 }
 
 function runSteps(battle: Battle, steps: number): BattleResult
@@ -22,13 +25,15 @@ function runSteps(battle: Battle, steps: number): BattleResult
 
 内置的技能体、触发、选择器、计时器、状态、元素和伤害步骤在模块之前登记。同一个 id 再登记会换掉原来的定义。技能规格在模块安装之后检查。`deployStrategy` 不是 `null` 时，这个策略必须已经登记，否则拒绝创建。`deployModule` 登记的策略 id 是 `deploy`。
 
+`step` 在推进中（系统或订阅者里）再被调用时抛出错误，这一拍照常走完。
+
 `runSteps` 连续调用 `step`，然后返回 `result`。`createFrameClock()` 按帧累积秒数。`advance(battle, frameSeconds, speed?)` 把 `frameSeconds × speed` 换成拍，`speed` 缺省 1。每走完一拍就把这一拍的事件放进单独的一组。不满一拍的余数留到下一次。一帧最多补 `FRAME_CATCHUP`（150）拍。
 
 创建战斗时，如果 `deployStrategy` 是 `null`，已经在场的单位会立即产生一次 `deploy` 事件；调用方应在第一次 `step` 前读取或丢弃这批初始事件。使用部署策略时，开场部署在战斗阶段槽中执行。
 
 ## 阶段槽
 
-`step` 按下面的顺序走完一拍，然后 `tick` 加 1。同一槽里 `priority` 小的先执行，相同则按注册先后。槽名是 `PhaseSlot`：
+`step` 按下面的顺序走完一拍，然后 `tick` 加 1。同一槽里 `priority` 小的先执行，相同则按注册先后；`before`、`after` 列出的同槽系统 id 在这之上调整顺序。系统 id 重复时创建失败（`RegistrationConflictError`），`before`、`after` 引用不在同一槽的 id 时创建失败（`UnknownRegistrationError`），成环时创建失败。`systemOrder()` 按执行顺序列出 `{ slot, id }`。槽名是 `PhaseSlot`：
 
 | 槽 | 这一拍 |
 | --- | --- |
@@ -42,6 +47,20 @@ function runSteps(battle: Battle, steps: number): BattleResult
 | `projectile` | 登记在这个槽上的系统 |
 | `redeploy` | 登记在这个槽上的系统 |
 | `finale` | 登记在这个槽上的系统 |
+
+装上 `block`、`cost`、`deploy`、`leak`、`redeploy` 时的执行顺序：
+
+| 槽 | 系统 |
+| --- | --- |
+| `schedule` | `engine:schedule` |
+| `spawn` | `engine:spawn` |
+| `cost` | `cost` |
+| `status` | `engine:status-timers` |
+| `enemy` | `block-before`、`engine:enemy-route`、`leak`、`block-after`、`engine:enemy-attack` |
+| `ally` | `engine:ally-timers` |
+| `projectile` | `engine:projectile` |
+| `redeploy` | `redeploy` |
+| `finale` | `engine:modifiers` |
 
 友方槽对每个这样的友方，按登记顺序推进已开始的技能体、技力、特性计数和攻击。规格列出的独立计时排在攻击之后。敌人移动见 [规格](./spec.md) 的路线。
 
@@ -102,38 +121,53 @@ interface SkillSnapshot {
 ## 事件
 
 ```ts
-interface BattleEvent {
-  tick: number
-  type: string
-  data: Readonly<Record<string, unknown>>
+type BattleEvent<K extends BattleEventType = BattleEventType> = {
+  [P in K]: { tick: number; type: P; data: EventData<P> }
+}[K]
+```
+
+`BattleEventMap` 是事件名到数据的表，模块经声明合并加入自己的事件。写成 `Intercept<数据>` 的事件可拦截：发出者用 `ctx.intercept`，订阅者按订阅顺序同步收到可写的 `data`，发出者在返回后读回改写。其余事件只读：用 `ctx.emit` 发出，`data` 是 `Readonly`；在分发中发出时排进队列，等最外层这一条分发完按先进先出分发，所以订阅者里再发事件不会压栈。
+
+```ts
+declare module "arknights-mission-core" {
+  interface BattleEventMap {
+    "doll-swap": { readonly unitId: string }
+    "doll-guard": Intercept<{ readonly unitId: string; cancel: boolean }>
+  }
 }
 ```
 
-`drainEvents` 取出缓冲并清空。事件在发生时已经交给 `subscribe` 的处理函数。一条事件的 `tick` 是送出时的拍数。
+`drainEvents` 取出缓冲并清空，没人取走时事件一直留着。一条事件的 `tick` 是送出时的拍数。`cue` 是给画面与音效的线索，`kind` 的种类在 `CueMap` 里声明合并。
 
 战斗自己送出的 `type`：
 
-| type | 何时 |
-| --- | --- |
-| `spawn` | 刷出槽放入单位，或 `spawnUnit` |
-| `deploy` | 部署策略让单位上场，或再部署回到场上 |
-| `downed` | 生命到 0。有部署策略时 `data` 带落点坐标和 `canStand` |
-| `attack-hit` | 攻击出手。`data.unitId` 是攻击者 |
-| `hit` | `dealDamage` 进入步骤之前。处理函数可以改 `amount`、`kind`、`cancel`、`mul` |
-| `elementHit` | 元素进槽之前。处理函数可以改数额、乘数、种类和取消 |
-| `damaged` | 生命已经写下 |
-| `fatal` | 这一下会把生命扣到 0。`data.prevented = true` 时生命留在 1 和最大生命里较小的那个 |
-| `loss` | `loseHp` 扣了生命 |
-| `heal` | 治疗写下生命或护盾 |
-| `displace` | `displace` 改了坐标 |
-| `projectile` | `launchProjectile` 发出一发，开始飞行 |
-| `cost` | 费用池的数字变了。`data.side` 是阵营，`data.value` 是新的数量 |
-| `leak` | 敌人站上保护目标后离场。`data.unitId` 是这名敌人 |
-| `blocked` | 新挡上一名敌人。`data.blockerId`、`data.enemyId` |
-| `unblocked` | 这名敌人不再被挡 |
-| `elementBurst` | 元素槽蓄满 |
+| type | 可拦截 | 何时 |
+| --- | --- | --- |
+| `spawn` | | 刷出槽放入单位，或 `spawnUnit` |
+| `deploy` | | 部署策略让单位上场，或再部署回到场上 |
+| `downed` | | 生命到 0。有部署策略时 `data` 带落点坐标和 `canStand`。`kind` 是 `device` 的单位倒下就是被摧毁，随后送出 `removed` |
+| `removed` | | 单位离场且不再回来：装置被摧毁、敌人漏出、`removeUnit`。从下一次快照起不再出现，账本仍记着它 |
+| `attack` | 是 | 普攻出手之前。`cancel` 改成真时这一下不打出去 |
+| `attack-hit` | | 攻击出手。`data.unitId` 是攻击者 |
+| `hit` | 是 | `dealDamage` 进入步骤之前。处理函数可以改 `amount`、`kind`、`cancel`、`mul` |
+| `element-hit` | 是 | 元素进槽之前。处理函数可以改数额、乘数、种类和取消 |
+| `fatal` | 是 | 这一下会把生命扣到 0。`data.prevented = true` 时生命留在 1 和最大生命里较小的那个 |
+| `damaged` | | 生命已经写下。`amount` 是这一下的数额，`applied` 是实际扣掉的生命（结算前减结算后，不含溢出），`hp` 是结算后的生命 |
+| `loss` | | `loseHp` 扣了生命 |
+| `heal` | | 治疗写下生命或护盾 |
+| `displace` | | 坐标被改了。`duration` 是位移秒数，`keepFacing` 为真时画面保持原朝向：推和拉缺省保持，`keepFacing: false` 或直接 `displace` 不保持 |
+| `projectile` | | `launchProjectile` 发出一发，开始飞行 |
+| `cost` | | 费用池的数字变了。`data.side` 是阵营，`data.value` 是新的数量 |
+| `leak` | | 敌人站上保护目标，随后 `removed`。`data.unitId` 是这名敌人 |
+| `blocked` | | 新挡上一名敌人。`data.blockerId`、`data.enemyId` |
+| `unblocked` | | 这名敌人不再被挡 |
+| `skill-start`、`skill-end` | | 技能开始、结束 |
+| `ammo-used` | | 弹药技能用掉一发 |
+| `status` | | 状态施加成功，`stacks` 是施加后的层数 |
+| `element-burst` | | 元素槽蓄满 |
+| `cue` | | 画面线索 |
 
-无来源的命中和伤害里，`sourceId` 是空字符串，`creditId` 仍是调用时给的来源。`emit` 可以送出别的 `type`。
+无来源的命中和伤害里，`sourceId` 是空字符串，`creditId` 仍是调用时给的来源。
 
 ## 结果
 
@@ -145,3 +179,29 @@ interface BattleResult {
 ```
 
 创建时 `finished` 是 false，`winner` 是 `null`。`ContentContext.finish(winner)` 把结果写成结束。
+
+## 账本
+
+```ts
+interface BattleLedger {
+  battle: LedgerRow
+  owners: Readonly<Record<string, LedgerRow>>
+}
+```
+
+账本只按单位规格的 `owner` 分行，核心不解释 `owner`，也没有玩家与房间；按玩家汇总在 app/server。`battle` 是全场合计，包括没有 `owner` 的单位。每行的字段：
+
+| 字段 | 记法 |
+| --- | --- |
+| `kills` | 敌方单位倒下，记给最后一次对它造成伤害的单位 |
+| `leaks` | 敌方单位漏出，记给漏出的单位 |
+| `damage` | `damaged` 的 `applied`，只记对另一方的伤害 |
+| `healing` | `heal` 实际回复的生命，记给来源 |
+| `deaths` | 友方单位倒下，记给倒下的单位 |
+| `total` | 计入总数的敌方单位：开场的敌方单位与没写 `inTotal: false` 的敌方出场项，开场时算好；运行中 `spawnUnit` 放出的不算 |
+| `killedInTotal`、`leakedInTotal` | 计入总数的敌方单位被击倒、漏出的次数 |
+| `resolved` | `min(total, killedInTotal + leakedInTotal)` |
+
+## 导出与导入
+
+`export()` 返回 `WorldArchive`：拍数、随机流状态、单位记录、组件表与资源，只有普通对象、数组与原始值，和世界不共享对象。用同样的规格与模块调用 `createBattle(spec, modules, archive)`，先照常建好，再把世界换成导出时的状态，待取走的事件清空；接着推进与不中断推进的事件、快照、结果和账本一致。快照的 `components` 视图、待取走的事件与订阅者不导出。导出时值不是纯数据会报出路径。组件与资源的编码见 [世界](./world.md#导出与导入)。

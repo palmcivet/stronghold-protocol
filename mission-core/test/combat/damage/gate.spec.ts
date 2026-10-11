@@ -45,7 +45,7 @@ test("无敌和沉睡挡在命中之前，流失仍然扣生命", () => {
     ctx.subscribe("damaged", (event) => {
       types.push(event.type)
     })
-    ctx.subscribe("elementHit", (event) => {
+    ctx.subscribe("element-hit", (event) => {
       types.push(event.type)
     })
     ctx.applyStatus("t", "invulnerable")

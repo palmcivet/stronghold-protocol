@@ -7,6 +7,8 @@ export interface Random {
   shuffle<T>(items: T[]): T[]
   weighted<T>(items: readonly T[], weight: (item: T) => number): T | undefined
   state(): number
+  /** 回到 state() 返回过的状态。 */
+  restore(state: number): void
 }
 
 /** mulberry32。种子 0 换成固定非零值，避免状态停在 0。 */
@@ -50,6 +52,9 @@ export function createRandom(seed: number = 1): Random {
     return items[items.length - 1]
   }
   random.state = (): number => state
+  random.restore = (next: number): void => {
+    state = next >>> 0
+  }
   return random
 }
 

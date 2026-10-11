@@ -9,10 +9,10 @@ import { peekGauges } from "#combat/element/gauge.js"
 import { blockerOf, blockingOf } from "#unit/block/hold.js"
 import { redeployDuration } from "#unit/deploy/redeploy.js"
 
-/** 抄出每个单位的核心字段、标签、属性、元素槽、阻挡、技能读数与再部署计时，再加上组件给画面的显示值。按单位 id 排序。 */
+/** 抄出每个没有移除的单位的核心字段、标签、属性、元素槽、阻挡、技能读数与再部署计时，再加上组件给画面的显示值。按单位 id 排序。 */
 export function readSnapshot(world: BattleWorld, registry: BattleRegistry): BattleSnapshot {
   const snapshots: UnitSnapshot[] = []
-  for (const unit of world.units.values()) snapshots.push(readUnit(world, registry, unit))
+  for (const unit of world.units.values()) if (!unit.removed) snapshots.push(readUnit(world, registry, unit))
   snapshots.sort((left, right) => (left.id < right.id ? -1 : left.id > right.id ? 1 : 0))
   return { tick: world.tick, units: snapshots }
 }

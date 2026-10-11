@@ -1,5 +1,6 @@
 import { createOrderedTable, createTable } from "#kernel/registry/index.js"
-import { byPriority, requireSlot, slotIndex } from "#kernel/schedule/index.js"
+import { PHASE_SLOTS } from "#contract/phase.js"
+import { arrangeConstrained, byPriority, requireSlot, slotIndex } from "#kernel/schedule/index.js"
 import { createTagCatalog } from "#kernel/world/tag.js"
 import type {
   BattleRegistry,
@@ -24,11 +25,11 @@ export function createRegistry(): BattleRegistry {
   const timers = createOrderedTable<TimerDefinition>("timer")
   const strategies = createTable<DeployStrategyDefinition>("deploy")
   const shifts = createTable<ShiftDefinition>("shift")
-  const steps = createOrderedTable<DamageStepDefinition>("damage-step", byPriority)
-  const systems = createOrderedTable<PhaseSystem>("system", byPriority)
+  const steps = createOrderedTable<DamageStepDefinition>("damage-step", { compare: byPriority })
+  const systems = createOrderedTable<PhaseSystem>("system", { compare: byPriority, unique: true })
   const tags = createTagCatalog()
   const timersIn = slotIndex(timers)
-  const systemsIn = slotIndex(systems)
+  const systemsIn = slotIndex(systems, (items) => arrangeConstrained(items, "system"))
 
   return {
     registerStatus: (definition) => statuses.register(definition),
@@ -60,6 +61,7 @@ export function createRegistry(): BattleRegistry {
       systems.register(system)
     },
     systemsIn,
+    systemOrder: () => PHASE_SLOTS.flatMap((slot) => systemsIn(slot).map((system) => ({ slot, id: system.id }))),
     registerTag: (key) => tags.register(key),
     requireTag: (id, owner) => tags.require(id, owner),
   }

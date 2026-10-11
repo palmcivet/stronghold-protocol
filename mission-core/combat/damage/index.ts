@@ -1,10 +1,11 @@
+import type { ElementHitEvent, FatalEvent, HitEvent } from "#contract/event.js"
 import type { ContentContext, HealOptions } from "#port/context.js"
 import type { DamageInfo, DamagePreview } from "#port/definition.js"
 import type { BattleRegistry } from "#port/definition.js"
 import { BOSS_HIT_LIMIT, MIN_DAMAGE_RATIO } from "#combat/damage/constants.js"
 import { canonicalKind, clamp01, mitigate, type Penetration } from "#combat/damage/formula.js"
 import { knockDown } from "#unit/deploy/strategy.js"
-import { emit } from "#kernel/event/index.js"
+import { emit, intercept } from "#kernel/event/index.js"
 import { requireUnit, type BattleWorld } from "#unit/record/index.js"
 import { attributeOf, carriesAttribute, maxHpOf } from "#ability/effect/attribute.js"
 import { burstElement, chargeElement, hasHp } from "#combat/element/index.js"
@@ -258,7 +259,7 @@ function applyLife(
   const before = unit.attributes.hp ?? 0
   if (before - amount <= 0) {
     unit.attributes.hp = 0
-    const fatal: Record<string, unknown> = {
+    const fatal: FatalEvent = {
       sourceId: sourceless ? "" : credit,
       creditId: credit,
       targetId: unit.id,
@@ -267,7 +268,7 @@ function applyLife(
       prevented: false,
       sourceless,
     }
-    emit(state, "fatal", fatal)
+    intercept(state, "fatal", fatal)
     if (fatal.prevented === true) unit.attributes.hp = Math.min(1, maxHpOf(unit, registry))
   } else {
     unit.attributes.hp = before - amount
@@ -279,6 +280,7 @@ function applyLife(
       creditId: credit,
       targetId: unit.id,
       amount,
+      applied: Math.max(0, before - hp),
       kind,
       hp,
       sourceless,
@@ -362,7 +364,7 @@ function viewed(info: DamageInfo, steps: readonly string[]): DamagePreview {
 }
 
 function publishElementHit(state: BattleWorld, info: DamageInfo): boolean {
-  const hit: Record<string, unknown> = {
+  const hit: ElementHitEvent = {
     sourceId: info.sourceless === true ? "" : info.sourceId,
     creditId: info.sourceId,
     targetId: info.targetId,
@@ -371,9 +373,9 @@ function publishElementHit(state: BattleWorld, info: DamageInfo): boolean {
     kind: info.kind,
     cancel: false,
     sourceless: info.sourceless === true,
+    ...(info.element !== undefined ? { element: info.element } : {}),
   }
-  if (info.element !== undefined) hit.element = info.element
-  emit(state, "elementHit", hit)
+  intercept(state, "element-hit", hit)
   if (typeof hit.amount === "number" && Number.isFinite(hit.amount)) info.amount = hit.amount
   if (typeof hit.mul === "number" && Number.isFinite(hit.mul)) info.mul = hit.mul
   if (typeof hit.kind === "string") info.kind = canonicalKind(hit.kind)
@@ -383,7 +385,7 @@ function publishElementHit(state: BattleWorld, info: DamageInfo): boolean {
 }
 
 function publishHit(state: BattleWorld, info: DamageInfo): void {
-  const hit: Record<string, unknown> = {
+  const hit: HitEvent = {
     sourceId: info.sourceless === true ? "" : info.sourceId,
     creditId: info.sourceId,
     targetId: info.targetId,
@@ -391,9 +393,9 @@ function publishHit(state: BattleWorld, info: DamageInfo): void {
     kind: info.kind,
     cancel: false,
     sourceless: info.sourceless === true,
+    ...(info.element !== undefined ? { element: info.element } : {}),
   }
-  if (info.element !== undefined) hit.element = info.element
-  emit(state, "hit", hit)
+  intercept(state, "hit", hit)
   if (typeof hit.amount === "number" && Number.isFinite(hit.amount)) info.amount = hit.amount
   if (typeof hit.kind === "string") info.kind = canonicalKind(hit.kind)
   if (hit.cancel === true) info.cancel = true

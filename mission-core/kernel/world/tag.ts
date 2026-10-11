@@ -136,6 +136,24 @@ export function heldTags(holder: TagHolder, from: (sourceId: string) => boolean 
   return keys
 }
 
+/** 导出的持有标签：[标签 id, [来源 id, 次数][]]，按第一次授予的顺序。 */
+export type TagGrantData = readonly (readonly [string, readonly (readonly [string, number])[]])[]
+
+export function exportTagGrants(grants: TagGrants): TagGrantData {
+  return [...grants.held.values()].map((entry) => [entry.key.id, [...entry.sources.entries()]] as const)
+}
+
+/** 按导出的数据重建持有标签。resolve 按 id 找回标签键。 */
+export function importTagGrants(data: TagGrantData, resolve: (id: string) => TagKey): TagGrants {
+  const grants = createTagGrants()
+  for (const [id, sources] of data) {
+    const key = resolve(id)
+    grants.held.set(id, { key, sources: new Map(sources) })
+    addImplied(grants, key)
+  }
+  return grants
+}
+
 /** 本场注册过的标签。规格里的标签字符串按 id 在这里找到键。 */
 export interface TagCatalog {
   register(key: TagKey): void

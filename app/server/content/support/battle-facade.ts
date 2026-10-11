@@ -7,6 +7,7 @@ import {
   defineTag,
   type AttributeModifier,
   type BattleEvent,
+  type BattleEventType,
   type ContentContext,
   type ModifierOp,
   type TagKey,
@@ -18,7 +19,14 @@ import { COLS } from "#server/content/support/constants.js"
 
 export { blockedBehaviors, noteBlocked } from "#server/content/support/blocked.js"
 
-const EVENT_MAP: Readonly<Record<string, string>> = {
+declare module "arknights-mission-core" {
+  /** fx 的种类由 master 内容脚本给出，附带数据放在 data 里，不会盖掉 kind。 */
+  interface CueMap {
+    [kind: string]: { readonly data: Readonly<Record<string, unknown>> }
+  }
+}
+
+const EVENT_MAP: Readonly<Record<string, BattleEventType>> = {
   hit: "hit",
   damaged: "damaged",
   heal: "heal",
@@ -30,7 +38,7 @@ const EVENT_MAP: Readonly<Record<string, string>> = {
   blocked: "blocked",
   enemyLeak: "leak",
   leak: "leak",
-  elementBurst: "elementBurst",
+  elementBurst: "element-burst",
   skillStart: "skill-start",
   skillEnd: "skill-end",
   ammoUsed: "ammo-used",
@@ -316,7 +324,7 @@ function createFacade(ctx: ContentContext, shared: FacadeStore) {
   }
 
   function facadeEvent(type: string, event: BattleEvent): Record<string, unknown> {
-    const data = event.data
+    const data: Readonly<Record<string, unknown>> = event.data
     const source = typeof data.sourceId === "string" ? unitProxy(data.sourceId) : null
     const targetId = typeof data.targetId === "string" ? data.targetId : typeof data.unitId === "string" ? data.unitId : ""
     const target = targetId ? unitProxy(targetId) : null
@@ -396,7 +404,6 @@ function createFacade(ctx: ContentContext, shared: FacadeStore) {
     on(type: string, fn: (payload: unknown) => void, opts: { priority?: number; owner?: unknown } = {}) {
       if (type === "tick" || type === "battleStart") ensureClock()
       else if (EVENT_MAP[type]) ensureMapped(type)
-      else noteBlocked(`battle.on:${type}`)
       const hook: Hook = { type, priority: opts.priority ?? 0, owner: opts.owner ?? null, fn }
       hooks.push(hook)
       return () => {
@@ -479,10 +486,10 @@ function createFacade(ctx: ContentContext, shared: FacadeStore) {
       buffs.get(unit.id)?.delete(key)
     },
     fx(kind: string, data: Record<string, unknown> = {}) {
-      ctx.emit("fx", { kind, ...data })
+      ctx.emit("cue", { kind, data })
     },
     emit(type: string, data: Record<string, unknown> = {}) {
-      ctx.emit(type, data)
+      dispatch(type, data)
     },
     addDp(pid: unknown, amount: number) {
       noteBlocked("battle.addDp.player")
@@ -544,13 +551,16 @@ function createFacade(ctx: ContentContext, shared: FacadeStore) {
       const player = facade.getPlayer(pid) as { bonds?: Record<string, { layers?: number }> } | null
       const bond = player?.bonds?.[bondId]
       if (!bond) return 0
-      bond.layers = (bond.layers ?? 0) + count
+      // 和 master 一样先交给 on("layerGain") 的钩子，钩子可以改 n；只在 facade 内分发，不进核心事件。
+      const gain = { playerId: pid, bondId, n: count }
+      dispatch("layerGain", gain)
+      if (!(gain.n > 0) || !Number.isFinite(gain.n)) return 0
+      bond.layers = (bond.layers ?? 0) + gain.n
       const gains = (shared.layerGains ??= {})
       const key = String(pid)
       const row = (gains[key] ??= {})
-      row[bondId] = (row[bondId] ?? 0) + count
-      ctx.emit("layerGain", { playerId: pid, bondId, count })
-      return count
+      row[bondId] = (row[bondId] ?? 0) + gain.n
+      return gain.n
     },
     kill(unit: { id?: string; hp?: number } | null) {
       if (!unit?.id) return

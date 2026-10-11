@@ -29,7 +29,7 @@ interface DamageInfo {
 
 目标不存在或已倒地时不进入步骤。进入之前，直接授予的 `invulnerable` 会挡下。沉睡会挡下，除非 `ignoreSleep`，或来源带有 `hit-sleep`。起飞会挡下来源是地面敌人的一击，除非 `ignoreSelect`、`sourceless`，或来源自己在飞行。起飞只在命中事件之前查一次。
 
-不是预览、且种类不是 `element` 时，先送出 `hit`。订阅者可以改 `amount`、`kind`、`cancel`、`mul`。`cancel` 为真则不再进入步骤。
+不是预览、且种类不是 `element` 时，先送出可拦截的 `hit`。订阅者可以改 `amount`、`kind`、`cancel`、`mul`。`cancel` 为真则不再进入步骤。
 
 ## 步骤
 
@@ -49,7 +49,7 @@ interface DamageInfo {
 
 ### 元素进槽
 
-没有 `element` 标识时数额变成 0。目标没有生命、正在爆发、带 `burst-lock`，或这个槽已锁定时，数额变成 0。不是预览时送出 `elementHit`。种类被改离 `element` 后会再送出 `hit`，后面的步骤按新种类继续。
+没有 `element` 标识时数额变成 0。目标没有生命、正在爆发、带 `burst-lock`，或这个槽已锁定时，数额变成 0。不是预览时送出可拦截的 `element-hit`。种类被改离 `element` 后会再送出 `hit`，后面的步骤按新种类继续。
 
 否则按抗性收成进槽的量。单位带了 `elementRes` 就用它，没有则用元素定义上的 `resistance`。抗性按 0 到 100 的百分数，系数是 `max(0.05, 1 - 抗性 / 100)`。进槽量是数额 × 乘数 × `elemTaken` × 这个系数。预览不进槽。蓄满则爆发。
 

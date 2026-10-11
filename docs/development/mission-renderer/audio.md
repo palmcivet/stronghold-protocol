@@ -59,8 +59,8 @@ interface MissionAudioCue {
 | `downed` | `downed` |
 | `deploy` | `deploy` |
 | `leak` | `leak` |
-| `elementHit` | `element` |
-| `elementBurst` | `element` |
+| `element-hit` | `element` |
+| `element-burst` | `element` |
 | `projectile` | `projectile` |
 | `status` | `status` |
 

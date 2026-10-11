@@ -269,8 +269,8 @@ test("预览不填槽，爆发冷却结束前不再填，结束后槽归零", ()
   expect(unitOf(battle, "t").attributes.hp).toBe(20000)
   const previewEvents = battle.drainEvents().map((event) => event.type)
   expect(previewEvents).not.toContain("damaged")
-  expect(previewEvents).not.toContain("elementHit")
-  expect(previewEvents).not.toContain("elementBurst")
+  expect(previewEvents).not.toContain("element-hit")
+  expect(previewEvents).not.toContain("element-burst")
   expect(previewEvents).not.toContain("hit")
   battle.step()
   expect(unitOf(battle, "t").attributes.hp).toBe(13000)
@@ -281,10 +281,10 @@ test("预览不填槽，爆发冷却结束前不再填，结束后槽归零", ()
   expect(unitOf(battle, "t").elements.burn).toBe(0)
 })
 
-test("填槽发 elementHit，不发 damaged；爆发发 elementBurst", () => {
+test("填槽发 element-hit，不发 damaged；爆发发 element-burst", () => {
   const quiet: string[] = []
   const filled = open([ally("t", { attributes: { hp: 500 } })], (ctx) => {
-    for (const type of ["elementHit", "elementBurst", "hit", "damaged"]) {
+    for (const type of ["element-hit", "element-burst", "hit", "damaged"] as const) {
       ctx.subscribe(type, () => {
         quiet.push(type)
       })
@@ -292,13 +292,13 @@ test("填槽发 elementHit，不发 damaged；爆发发 elementBurst", () => {
     ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 100, kind: "element", element: "burn" })
   })
   filled.step()
-  expect(quiet).toEqual(["elementHit"])
+  expect(quiet).toEqual(["element-hit"])
   expect(unitOf(filled, "t").elements.burn).toBe(100)
   expect(unitOf(filled, "t").attributes.hp).toBe(500)
 
   const burst: string[] = []
   const bursting = open([ally("t", { side: "enemy", attributes: { hp: 20000 } })], (ctx) => {
-    for (const type of ["elementHit", "elementBurst", "hit", "damaged"]) {
+    for (const type of ["element-hit", "element-burst", "hit", "damaged"] as const) {
       ctx.subscribe(type, () => {
         burst.push(type)
       })
@@ -306,14 +306,14 @@ test("填槽发 elementHit，不发 damaged；爆发发 elementBurst", () => {
     ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 1000, kind: "element", element: "burn" })
   })
   bursting.step()
-  expect(burst).toEqual(["elementHit", "elementBurst", "hit", "damaged"])
+  expect(burst).toEqual(["element-hit", "element-burst", "hit", "damaged"])
   expect(unitOf(bursting, "t").elements.burn).toBe(1000)
   expect(unitOf(bursting, "t").attributes.hp).toBe(13000)
 })
 
-test("elementHit 可改损伤，或把 kind 改成生命伤害", () => {
+test("element-hit 可改损伤，或把 kind 改成生命伤害", () => {
   const scaled = open([ally("t", { attributes: { hp: 500 } })], (ctx) => {
-    ctx.subscribe("elementHit", (event) => {
+    ctx.subscribe("element-hit", (event) => {
       const data = event.data as { amount: number; mul: number }
       data.amount = 40
       data.mul = 2
@@ -327,11 +327,11 @@ test("elementHit 可改损伤，或把 kind 改成生命伤害", () => {
 
   const turned: string[] = []
   const life = open([ally("t", { attributes: { hp: 100 } })], (ctx) => {
-    ctx.subscribe("elementHit", (event) => {
+    ctx.subscribe("element-hit", (event) => {
       const data = event.data as { kind: string }
       data.kind = "true"
     })
-    for (const type of ["elementHit", "hit", "damaged", "elementBurst"]) {
+    for (const type of ["element-hit", "hit", "damaged", "element-burst"] as const) {
       ctx.subscribe(type, () => {
         turned.push(type)
       })
@@ -341,10 +341,10 @@ test("elementHit 可改损伤，或把 kind 改成生命伤害", () => {
   life.step()
   expect(unitOf(life, "t").attributes.hp).toBe(70)
   expect(unitOf(life, "t").elements).toEqual({})
-  expect(turned).toEqual(["elementHit", "hit", "damaged"])
+  expect(turned).toEqual(["element-hit", "hit", "damaged"])
 
   const stopped = open([ally("t", { attributes: { hp: 500 } })], (ctx) => {
-    ctx.subscribe("elementHit", (event) => {
+    ctx.subscribe("element-hit", (event) => {
       const data = event.data as { cancel: boolean }
       data.cancel = true
     })
@@ -354,7 +354,7 @@ test("elementHit 可改损伤，或把 kind 改成生命伤害", () => {
   expect(unitOf(stopped, "t").elements).toEqual({})
   expect(unitOf(stopped, "t").attributes.hp).toBe(500)
   const stoppedEvents = stopped.drainEvents().map((event) => event.type)
-  expect(stoppedEvents).toContain("elementHit")
+  expect(stoppedEvents).toContain("element-hit")
   expect(stoppedEvents).not.toContain("damaged")
   expect(stoppedEvents).not.toContain("hit")
 })
