@@ -33,32 +33,29 @@
     - [注释中的旧路径](#注释中的旧路径)
 - [6. 作战核心 mission-core（P1）](#6-作战核心-mission-corep1)
 - [7. 作战画面 mission-renderer（P1）](#7-作战画面-mission-rendererp1)
-    - [目录设计](#目录设计)
-    - [未迁移：单位](#未迁移单位)
-    - [未迁移：替身、设备、特效](#未迁移替身设备特效)
     - [未迁移：三维地面（board3d）](#未迁移三维地面board3d)
-    - [已迁移部分的缺陷](#已迁移部分的缺陷)
-    - [契约与宿主接口](#契约与宿主接口)
     - [有意与 master 不同（待确认）](#有意与-master-不同待确认)
-    - [目录、命名与依赖](#目录命名与依赖)
-- [8. 资源 assets-catalog 与 app/data（P2）](#8-资源-assets-catalog-与-appdatap2)
+- [8. 资源 assets-catalog、assets-extractor 与 app/data（P2）](#8-资源-assets-catalogassets-extractor-与-appdatap2)
+    - [遗留](#遗留)
+    - [本机客户端来源](#本机客户端来源)
+    - [探索](#探索)
 - [9. 部署 deployment（P2）](#9-部署-deploymentp2)
 - [10. 待确认的决定](#10-待确认的决定)
 
-本文合并原来的作战核心、作战画面、app/server、资源四份剩余清单，并记录 2026-10-08 对照 master 0.2.1（`../legacy`）的服务端接口核对结果，以及此后确定的连接 upstream 后端的路线。app/client 的迁移见 [MIGRATE.md](MIGRATE.md)，其他各域的目录设计在本文对应章节；需求见 [FEATURE.md](FEATURE.md)，架构方向见 [ARCH.md](ARCH.md)。本文只记录还没完成的工作。资源相关的现状、计划与遗留统一在 [ASSETS.md](ASSETS.md)，本文只留简述与链接。
+本文合并原来的作战核心、作战画面、app/server、资源四份剩余清单，并记录 2026-10-08 对照 master 0.2.1 的服务端接口核对结果（master 参考副本放在 `app/compat/upstream/repo/`，不入库，由用户放入），以及此后确定的连接 upstream 后端的路线。app/client 的迁移见 [MIGRATE.md](MIGRATE.md)，其他各域的目录设计在本文对应章节；需求见 [FEATURE.md](FEATURE.md)，架构方向见 [ARCH.md](ARCH.md)。本文只记录还没完成的工作。作战核心与作战画面的 ECS 化、master 0.2.2 与 0.2.3 新逻辑的接入见 [ECS.md](ECS.md)。资源的现状见 [资源从哪里来](../docs/alliance/data/03-resource.md)，资源的剩余工作在第 8 节，资源发布在第 9 节。
 
 ## 状态概览
 
 | 域 | 状态 | 优先级 |
 |---|---|---|
 | 服务端接口与 master 0.2.1 | 不兼容，见第 1 节 | P0 |
-| 兼容层 `app/compat/upstream` | 路线已定，未实现，见第 2 节 | P0 |
+| 兼容层 `app/compat/upstream` | 资源映射 `data/asset/` 已完成；数据视图、`battle/`、`result/`、`wire/` 未实现，见第 2 节 | P0 |
 | 版本标记与数据来源 | 判定与回落规则已定，未实现，见第 3 节 | P0 |
 | app/client | 未迁移，见 [MIGRATE.md](MIGRATE.md) | P1 |
 | app/server | 已接入新契约；内容端口、事件契约、设备单位未收口 | P1 |
-| 作战核心 mission-core | 机制已有测试；未与服务端事件契约对齐 | P1 |
-| 作战画面 mission-renderer | 三维地面完成；单位、特效、Spine 未重做 | P1 |
-| 资源 assets-catalog 与 app/data | 计划与遗留见 [ASSETS.md](ASSETS.md) | P2 |
+| 作战核心 mission-core | 机制已有测试；ECS 化、事件与结果契约见 [ECS.md](ECS.md) | P1 |
+| 作战画面 mission-renderer | 三维地面完成；单位、特效、Spine 见 [ECS.md](ECS.md) | P1 |
+| 资源 assets-catalog、assets-extractor 与 app/data | 流水线与客户端加载已完成；赛季媒体接线、本机客户端来源与探索项见第 8 节 | P2 |
 | 部署 deployment | 静态站点、镜像、整合包未完成 | P2 |
 
 ## 1. 服务端接口兼容性（P0）
@@ -83,16 +80,16 @@
 
 ### 数据包
 
-next 的数据包在 `app/data/product/season/act2autochess`，与 `legacy/data` 逐文件比较：
+next 的数据包在 `app/data/product/season/act2autochess`，与 master 的 `data/` 逐文件比较：
 
 | 文件 | 差异 | 影响 |
 |---|---|---|
 | `backups.json` | next 缺失。master 含 `units`、`tokens`、`diy.slots` | 补位与自选编队没有数据来源 |
 | `stages.json` | master 含 `act1autochess_escaped_single`、`act1autochess_escaped_multi`（`kind: unite`、`helpers`、`rows`），next 没有 | `mode.unite.templates`、`waves.json`、`config.json` 仍引用这两条 |
-| `enemies.json` | master 多 `attackAnim`、`modelScaleY`、`mirrorX` | `attackAnim` 先写显式默认值，见 [ASSETS.md「攻击时序」](ASSETS.md#攻击时序)；`modelScaleY`、`mirrorX` 未迁 |
+| `enemies.json` | master 多 `modelScaleY`、`mirrorX`；`attackAnim` 两边都有，next 写显式默认值 `null` | `attackAnim` 的官方来源见第 8 节「探索」；`modelScaleY`、`mirrorX` 见 [ECS.md](ECS.md) |
 | `chess.json` | master 多 `backup` 字段 | 补位替身的数据缺失 |
 | `config.json` | master 有 `perPlayer`，next 有 `soloAssumed` | 两个字段的含义需要确认 |
-| `assets.json`、`resources.json` | 资源清单，不属于规则数据 | 见 [ASSETS.md](ASSETS.md)「各域的资源遗留」 |
+| `assets.json`、`resources.json` | master 有，next 不生成 | next 的资源在基础包与赛季包清单中，见 [资源从哪里来](../docs/alliance/data/03-resource.md)；连接 master 时由兼容层读取 master 的 `assets.json` |
 | `bonds.json`、`choices.json`、`tokens.json`、`chess.json` | 内容有差异（文件大小不同） | 未逐条核对 |
 | `bands.json`、`bosses.json`、`effects.json`、`emotes.json`、`factions.json`、`garrisons.json`、`items.json`、`tuning.json`、`waves.json` | 与 master 字节一致 | 无 |
 
@@ -106,12 +103,12 @@ next 的数据包在 `app/data/product/season/act2autochess`，与 `legacy/data`
 ### 已决定
 
 1. 补位与自选编队在 next 实现：补契约、分发、`backups.json` 数据包，并在开局时取值。
-2. 数据包用新的编译输入重新生成，再与 `legacy/data` 逐项核对，不直接复制 `legacy/data`。
+2. 数据包用新的编译输入重新生成，再与 master 的 `data/` 逐项核对，不直接复制。
 3. 联防按 0.2.1 的规则实现：在本回合战场上进行，两名支援者分站左右半场。
 4. `PROTOCOL_VERSION` 保持 1，与 master 一致。
 5. 连接 upstream 后端时，战斗由 next 引擎演算，输入与输出经兼容层转换。master 服务端默认只做语义边界检查（`SP_VERIFY=off`），不复算，因此 next 引擎与 master 的局部不一致会被接受。一致性作为质量指标，不作为连接的前提。
-6. 连接 upstream 后端时，数据由兼容层从 master 的 `/data/<file>.json` 读取，地址由后端基址拼出。资源（master 的 `assets.json`）见 [ASSETS.md「连接 master 后端」](ASSETS.md#连接-master-后端)。
-7. `backups.json`、`attackAnim`（暂用显式默认值，见 ASSETS.md）等规则数据是后续迁移项，但属于兼容前置：不影响连接，会让演算结果与 master 分歧。它们按第 2 节的分类归入迁移，不放进兼容层。
+6. 连接 upstream 后端时，数据由兼容层从 master 的 `/data/<file>.json` 读取，地址由后端基址拼出。资源（master 的 `assets.json`）见 [连接 master 后端](../docs/alliance/compat/index.md)。
+7. `backups.json`、`attackAnim`（next 写显式默认值 `null`）等规则数据是后续迁移项，但属于兼容前置：不影响连接，会让演算结果与 master 分歧。它们按第 2 节的分类归入迁移，不放进兼容层。
 
 ## 2. 兼容层 app/compat/upstream（P0，专门章节）
 
@@ -121,7 +118,7 @@ next 的数据包在 `app/data/product/season/act2autochess`，与 `legacy/data`
 
 ```text
 app/compat/upstream/
-  data/             读取 master 的 /data/<file>.json，输出本仓库的数据视图；资源映射在 data/asset/（见 ASSETS.md）
+  data/             读取 master 的 /data/<file>.json，输出本仓库的数据视图；资源映射在 data/asset/（已实现）
   battle/           master 的 b.start spec → mission-core 的 BattleSpec
   result/           mission-core 的 BattleResult → master 的 b.result（perPlayer 形状）
   wire/             仅在线路字段不一致时存在（当前：g.watch.playerId）
@@ -130,13 +127,13 @@ app/compat/upstream/
 
 master 出新版或出现其他第三方 fork 时，在 `app/compat/` 下增加与 `upstream/` 同级的目录来适配。
 
-- `data/` 是唯一允许出现 master 地址解析（`/assets/...` 等）的位置。master 地址到资源键的映射与 upstream 清单见 [ASSETS.md「连接 master 后端」](ASSETS.md#连接-master-后端)；client、renderer、audio 的其他目录不得依赖地址解析。
+- `data/` 是唯一允许出现 master 地址解析（`/assets/...` 等）的位置。master 地址到资源键的映射与 upstream 清单见 [连接 master 后端](../docs/alliance/compat/index.md)；client、renderer、audio 的其他目录不得依赖地址解析。
 - `battle/` 需要的 `tiles`、`cost`、`modules` 不在 master 的 spec 里，要由 `data/` 的数据视图推导。所以 `data/` 是 `battle/` 的前提。
 - `result/` 生成的 `b.result` 必须先通过 `app/contract` 中的语义边界检查，才能发送。
 
 ### 边界检查放在哪里
 
-语义边界检查（对应 master 的 `validateClientResult`，`legacy/server/match/fields.js:748`）不放在兼容层，而是放在 `app/contract`。原因是 next 客户端发送前的预检与 next 服务端的校验都要使用同一套规则，兼容层只负责形状转换。
+语义边界检查（对应 master 的 `validateClientResult`，`server/match/fields.js:748`）不放在兼容层，而是放在 `app/contract`。原因是 next 客户端发送前的预检与 next 服务端的校验都要使用同一套规则，兼容层只负责形状转换。
 
 ### 依赖方向
 
@@ -147,7 +144,7 @@ master 出新版或出现其他第三方 fork 时，在 `app/compat/` 下增加�
 
 ### 转换链
 
-1. 数据链：master 的 `/data/<file>.json` → 数据视图（packet 视图）。URL 由后端基址拼出，例如 `<base>/data/<file>.json`。资源链（`assets.json` → upstream 清单）见 ASSETS.md。
+1. 数据链：master 的 `/data/<file>.json` → 数据视图（packet 视图）。URL 由后端基址拼出，例如 `<base>/data/<file>.json`。资源链（`assets.json` → upstream 清单）已实现，见 [连接 master 后端](../docs/alliance/compat/index.md)。
 2. 战斗输入链：`b.start` 中的 master spec → mission-core `BattleSpec`。
 3. 战斗输出链：mission-core `BattleResult` → `b.result`（master 的 `perPlayer` 形状），通过边界检查后发送。
 4. 线路链：只处理字段不一致的情况。当前只有 `g.watch.playerId`：app 的意图是“观看某一玩家”，线路上填入 `playerId`。
@@ -161,11 +158,11 @@ master 出新版或出现其他第三方 fork 时，在 `app/compat/` 下增加�
 
 | 项 | 类型 | 处理 | 说明 |
 |---|---|---|---|
-| master `assets.json` 与资源键 | 数据形式 | 兼容（`data/asset/`） | 见 ASSETS.md「连接 master 后端」 |
+| master `assets.json` 与资源键 | 数据形式 | 兼容（`data/asset/`，已实现） | 映射不到的地址进入问题列表，见 [连接 master 后端](../docs/alliance/compat/index.md#不映射的地址) |
 | `b.start` spec 与 mission-core `BattleSpec` | 形状 | 兼容（`battle/`） | `tiles`、`cost`、`modules` 从数据推导 |
 | `b.result` 与 `perPlayer` | 形状 | 兼容（`result/`） | 与 `BattleResult` 的边界仍需定，见第 5 节 |
 | `g.watch.playerId` | 线路 | 兼容（`wire/`） | 当前缺失，见第 1 节 |
-| `attackAnim`、`backups.json`、`stages.json` 中的联防地图与 `kind`、`helpers`、`chess.backup` | 规则数据 | 迁移（重新编译） | 会导致演算分歧，兼容前置；`attackAnim` 见 ASSETS.md「攻击时序」 |
+| `attackAnim`、`backups.json`、`stages.json` 中的联防地图与 `kind`、`helpers`、`chess.backup` | 规则数据 | 迁移（重新编译） | 会导致演算分歧，兼容前置；`attackAnim` 的官方来源见第 8 节「探索」 |
 | 满潜能、0.2.0 有意不同于官方的调整、0.2.1 的联防规则 | 规则 | 引擎或内容修复 | 不进兼容层 |
 | `room.ownership`、`room.diy` | 线路缺失 | next 服务端实现 | 见第 1 节 |
 
@@ -218,7 +215,7 @@ master 出新版或出现其他第三方 fork 时，在 `app/compat/` 下增加�
 - (a) 后端基址下的 `/data/<file>.json`，经兼容层读取。这是 upstream 后端的权威数据。
 - (b) 客户端配置的固定赛季包地址，指向 next 发布的 packet，不经兼容层。使用 (b) 时，规则数据可能与 upstream 后端不同，分歧要记入第 2 节的清单。
 
-两种来源下资源如何加载，见 [ASSETS.md「连接 master 后端」](ASSETS.md#连接-master-后端)。
+资源在 (a) 下由兼容层生成 upstream 清单（可选把 next 基础包放在其下作回退），在 (b) 下直接加载 next 的基础包与赛季包，见 [连接 master 后端](../docs/alliance/compat/index.md#图层顺序)。
 
 ### 能力标记
 
@@ -228,7 +225,7 @@ master 出新版或出现其他第三方 fork 时，在 `app/compat/` 下增加�
 
 ## 4. app/client（P1，未迁移）
 
-迁移指南见 [MIGRATE.md](MIGRATE.md)，包括 master 源码对照、0.2.x 功能清单、测试迁移与验收。客户端依赖的其他域工作见第 1、2、3、5、6、7、9 节；资源见 [ASSETS.md](ASSETS.md)。
+迁移指南见 [MIGRATE.md](MIGRATE.md)，包括 master 源码对照、0.2.x 功能清单、测试迁移与验收。客户端依赖的其他域工作见第 1、2、3、5、6、7、8、9 节；资源的加载见 [资源从哪里来](../docs/alliance/data/03-resource.md#客户端加载)。
 
 ## 5. app/server（P1）
 
@@ -257,8 +254,8 @@ app/
 
 - `contract` 是原来的 `shared`：两端都要遵守的消息和纯事实，没有连接，也没有画面依赖。当前实现在 `app/contract/src/{match,message}.ts`，`message/`、`match/` 子目录尚未拆分。
 - 某一局能放棋的格子由 `server/match/board` 按地图图例生成。近战能否站上远程位，看棋子模组记录的 `meleeOnHighGround`。
-- 对外帧在 [docs/app/server](../docs/app/server/index.md)。
-- `app/compat`、`app/season`、`app/scenario` 尚未创建。
+- 对外帧在 [docs/alliance/protocol](../docs/alliance/protocol/index.md)。
+- `app/season`、`app/scenario` 尚未创建。
 
 ### 赛季 app/season
 
@@ -293,9 +290,9 @@ act2autochess/
 
 - 两个赛季机制相同的干员套件留在 `server/content`，两边的数据包各写各的属性。只有这一季出现的盟约、装备、首领，脚本放在该赛季的 `content/`。同一个 id 在新赛季换了机制，新赛季在自己的 `content/` 里声明由它提供这个 id。一个赛季里同一个 id 只有一个提供者，加载器发现两个就拒绝这个赛季。
 - `manifest.ts` 列出本季启用的 `server/content` 条目。加载器为一局安装这些共用脚本，加上 `season/<id>/content`。数据包里没有的 id 不装进这一局。赛季加载失败时服务端不启动。
-- 封闭数据包不放在赛季源目录里。`app/data/compiler/packet` 按赛季各编译一次，产物是 `app/data/product/season/<id>/*.json`。索引是 `(seasonId, 文件, id)`。id 保持官方原名。干员和敌人在包里的是这一季的用法，立绘和骨架按资源键领取（ASSETS.md）。下半会抽到上半的某张地图时，编译把那张地图写入下半的包。服务端运行期间只读取启动时指定的这一季。
+- 封闭数据包不放在赛季源目录里。`app/data/compiler/packet` 按赛季各编译一次，产物是 `app/data/product/season/<id>/*.json`。索引是 `(seasonId, 文件, id)`。id 保持官方原名。干员和敌人在包里的是这一季的用法，立绘和骨架按资源键领取，数据包只写领域 id。下半会抽到上半的某张地图时，编译把那张地图写入下半的包。服务端运行期间只读取启动时指定的这一季。
 - 敌人覆写、商店池、禁用人、回合表和技能释放方式都在这包里。上半没有重装的受击释放行，下半才有；套件读定义上已经算好的触发方式。`match/mode` 读服务端启用的这一季。
-- `text/` 按语言一个文件。官方表里的名字和描述由编译器写入数据包，这里放数据包没有覆盖、这一季才用的句子。`media/` 只放赛季标志和入口图，它们如何进入赛季清单见 ASSETS.md「各域的资源遗留」；干员骨骼和地图模型按资源键领取。
+- `text/` 按语言一个文件。官方表里的名字和描述由编译器写入数据包，这里放数据包没有覆盖、这一季才用的句子。`media/` 只放赛季标志和入口图，进入赛季清单的接线见第 8 节「遗留」；干员骨骼和地图模型按资源键领取。
 
 ### 当前测试状态
 
@@ -314,7 +311,6 @@ choice 与 tier-5 的多数失败来自同一处：`content/support/battle-facad
 
 - 内容包身份（`seasonId`、`contentHash`、`protocolVersion`）尚未实现。`entry/packet.ts` 只按文件名加载，不校验版本。
 - 创建房间时固定 `seasonId + contentHash`。进行中的房间不能因为站点发布新内容而切换数据包。
-- 媒体与攻击时序：服务端不读媒体、数据包 `assets` 字段的移除、`attackAnim` 的显式默认值，见 [ASSETS.md](ASSETS.md)「各域的资源遗留」「攻击时序」。
 
 ### 对局字段和事件契约
 
@@ -346,82 +342,25 @@ choice 与 tier-5 的多数失败来自同一处：`content/support/battle-facad
 
 ## 6. 作战核心 mission-core（P1）
 
-- 接入服务端：统一 `spawn`、`damaged`、`heal`、`downed`、`leak`、`finish` 的事件字段；把击杀、漏怪、伤害、治疗、阵亡与 Boss 共享血池整理成服务端账本；明确核心 `BattleResult` 与服务端 `perPlayer` 结果的边界；再接官方地图、联防、Boss 与盟约层。在事件与结果契约确定前，不靠增加未声明字段或 `any` 修复类型错误。`BattleResult` 与 `perPlayer` 的边界同时决定兼容层 `result/` 的形状，两者要一起定。
-- 事件命名：`attack-hit`、`skill-start` 与 `elementHit`、`elementBurst`、`layerGain` 并存，违反 AGENTS.md 的命名规则，需要统一。`BattleEvent.type` 是 `string`，`stage/cue.ts` 按名查表，编译器发现不了遗漏。
-- 设备生成：`battle.spawnDevice` 未定义，见第 5 节。
-- 地图与属性兼容：内置部署只处理 `height`、`deployable`、`walkableBy` 和部署策略。高台、近战位、远程位由 app 的地图数据和内容策略解释，不向核心地块规格增加模式专用字段。核心使用 `taunt`，数据包中的 `tauntLevel` 或旧字段在 app 兼容层中转换，核心层不保留多个别名。
-- 工具边界：`tools/simrun.mjs`、`tools/record-battle.mjs` 属于 app/server 的仓库工具，暂不迁入本包。用棋子名、回合配置、官方波次和联防拼装 `BattleSpec` 也留在 app。干员、敌人、装备、盟约的内容用例留在 `app/server/content`，作战核心只验证通用机制。
+接入服务端的事件与账本、事件命名、设备生成、地图与属性兼容、工具边界已并入 [ECS.md](ECS.md)。
 
 ## 7. 作战画面 mission-renderer（P1）
 
 已完成：三维地面（`stage/ground/terrain`）的布局、材质、设备、灯光与图集加载；音效线索映射（`stage/cue.ts`）；本地逐帧喂数（`stage/feed.ts`）。图集或 WebGL 失败时地面隐藏，不退回二维地块，master 的 `render/tiles.js` 等二维棋盘不保留。
 
-### 目录设计
-
-包根同级的是对外表面和舞台这个聚合。`stage/` 内部四块同级，装进同一个三维舞台。画面不使用 Pixi，也不保留二维棋盘。Spine 用 spine 运行时，不经过 pixi-spine。
-
-```text
-stage/
-  ground/         棋盘表面
-    terrain/      三维地面（master board3d/：场景、材质、模型、图集）
-  actor/          场上单位（master units.js、interp.js、spine.js）
-  effect/         飘字与特效（master fx.js）
-  pointer/        按下的格子上是谁（master pick.js）
-```
-
-- `contract/` 的命令是：设置地图、推入快照、推入事件、高亮格子、开关本地逐帧喂数。拾取事件是指针下的单位或格子。来源是 master `public/js/render/app.js` 头注释里的视图 API，去掉其中的休整参数。
-- `stage/` 的入口来自 `render/app.js` 里创建舞台、切换相机、处理缩放的部分，加上 `render/projection.js`。相机种类由调用方传入矩形和边距。联防半场、首领半场这些卫戍机位由主应用计算好再传进来。地面、演员、特效和拾取是舞台的内部，不和 `contract/` 排成一排。
-- `ground/` 只有 `terrain`。没有 GPU 视图、图集加载失败或 WebGL 上下文丢失时，地面隐藏，恢复后重建，不另画一套棋盘。`board3d` 是实现技术的名字，目录用 `terrain`。
-- `actor/` 用这个名字，是为了和 `mission-core` 里的单位模型分开：这里是插值、骨骼和形态切换。`effect/` 和 `pointer/` 同时用到地面和演员，所以与 `ground/`、`actor/` 同级，不收进演员目录。
-- `port/` 按调用方给的资源键（`AssetKey`）向资源目录申请句柄，并向外抛出攻击、死亡这类音效线索。键由卫戍协议算好再传进来。画面不打开 `chess.json`，也不认识棋子、羁绊和商店。播不播、音量多少由主应用的音频决定。端口的资源细节（Spine 缓存、重试、`render/textures.js` 的缓存、种类）见 ASSETS.md「各域的资源遗留」。
-- 休整棋盘（`render/drag.js`、`prepfield.js`、`pen.js`、`promote.js`、`ui/facing*.js`）属于 `app/client/preparation`，见 MIGRATE.md。
-- `test/` 接收 master `test/render/` 里只喂快照和事件的用例。依赖商店、手牌和拖放的用例归 `app/client/test`。
-
-### 未迁移：单位
-
-- 快照字段不足：`UnitSnapshot` 缺 sp、护盾、boss、精英或阶级、朝向、高度、倒下与重部署计时。
-- 死亡单位：`state.units` 只增不删，`readSnapshot` 把全部单位写入快照。需决定由 mission-core 过滤，还是渲染器淡出。
-- 状态图标（冻结、眩晕、沉睡、无敌、隐身）、SP 条与就绪光、护盾条、残影血条、boss 与精英框、受击抖动。
-- 朝向（部署朝向、镜像、按速度翻面、正背面模型）、形态（FORMS）、攻击前摇、技能 clip、倒下姿态、重部署圆环、高度与遮挡、视口剔除与 LOD、`modelScale`。
-- Spine：演员如何使用动画角色表在这里；角色表的产出、Spine 缓存与端口重试见 ASSETS.md「各域的资源遗留」（步骤 4、6）。
-- 备用模型与别名染色（master `ALIAS_TINT`）部分属于 app/client，接入时划分。
-
-### 未迁移：替身、设备、特效
-
-- 替身图集（master `impostor.js` 的共享 RenderTexture、分页、货架分配、clip 页）未迁。
-- 炮台开火闪光、后坐与倒下碎裂；箱子碎裂。
-- 设备词表缺 mound、turret、bush、waterPlatform、sealedFloor，三维地面没有对应绘制。
-- `fx` 事件完全未接入。`content/support/battle-facade.ts` 的 `fx()` 发出 `fx` 事件，静态统计约 340 处调用、约 140 种 kind（不含测试）。弹道、命中火花、伤害数字、死亡溶解、部署环、持续光环、范围预警、光束与链都没有画面。
-- 音效线索：`fx` 中的击中音、`layer` 增益、`spawn` 没有线索。
+目录设计、单位、替身、设备与特效画面、音效线索、指针、契约与宿主接口、目录命名与依赖的剩余工作见 [ECS.md](ECS.md)。本节只留三维地面与待确认的差异。
 
 ### 未迁移：三维地面（board3d）
 
 - 战斗中的箱子句柄未迁。
+- 设备词表缺 mound、turret、bush、waterPlatform、sealedFloor，三维地面没有对应绘制。
 - 雾与清屏色未迁，远景没有渐隐。
 - 区域裁剪（normal、unite、boss）未迁，目前总是建整张地图。
 - 画质开关（低画质关阴影）与 WebGL2、软件 GL 的门控未迁。
 - 平台没有检查 `drawn`。
 - 测试：`scene.test.ts`、`layout.test.ts` 多为存在性断言，阴影路径、材质着色器、释放路径没有有效断言。
-
-### 已迁移部分的缺陷
-
-- 拾取取第一个命中：`stage/pointer.ts` 的 `pickBoard` 按单位数组顺序返回首个在 0.4 格内的单位，不取最近或最上层。
 - 三维资源不释放：`terrain/scene.ts` 的 `dashTexture()`、`environmentTexture()` 不进入 `owned`，每次 `setMap` 重建时 PMREM 目标与虚线纹理泄漏。外部加载的贴图在 scene 与 stage 中都没有 dispose。
 - `terrain.pixelRatio` 缺省为 1，示例没有设置。
-- `set-highlights` 与 `reset` 只改 `highlightedTiles`，三维地面不绘制高亮。
-- `set-update-mode` 每次新建 feed，缓冲帧与待放事件被丢弃；没有调速命令。
-- 贴图颜色空间、各向异性与 mipmap：按资源种类决定，见 ASSETS.md「各域的资源遗留」。
-
-### 契约与宿主接口
-
-- `TileSpec` 不声明 glyph、surface、device；三维地面在 `stage/ground/terrain/cells.ts` 把格子读成 `BoardTile`。
-- `UnitSnapshot` 与 `BattleSnapshot` 缺少单位画面所需的倒下、计时信息，见上文。
-- 指针只有同步的 `pick(screenX, screenY)`，没有事件流；坐标相对视口。
-- `calculateBoardTransform` 未导出，HTML 覆盖层无法定位格子或单位。
-- 资源注入：`TerrainPackPort` 并入 `RendererResourcePort`，见 ASSETS.md 步骤 6。
-- 音效：`MissionAudioCue` 定义在 `contract/event.ts`，映射在 `stage/cue.ts`；「目录设计」要求音效线索属于 `port/`，映射文件放在哪里待定。renderer 不加载音频，音频资源的做法见 ASSETS.md「各域的资源遗留」。
-- 公开导出：`index.ts` 导出 `createLocalFeed`、`createTerrainStage`、`audioCueFor`、`effectCueFor`；`MissionBoard.terrain` 暴露 `setAvailable`、`flashObjective`、`canvas`。
-- 生产侧兼容：`app/server` 没有引用 renderer，仓库中没有把 mission-core 快照与事件转为 renderer 输入的兼容层。唯一消费者是 `examples/apps`，它手写了模拟战斗。
 
 ### 有意与 master 不同（待确认）
 
@@ -433,20 +372,40 @@ stage/
 - 三维地面的格子随机用 `hash2(x, y)`，master 用 `hash2(r, c)`，同一格的图案不同。
 - 活性源石去掉了边缘淡出，改为硬边并加入颗粒与高光。
 
-### 目录、命名与依赖
+## 8. 资源 assets-catalog、assets-extractor 与 app/data（P2）
 
-- 目录与「目录设计」不符：`stage/actor/`、`stage/effect/`、`stage/pointer/` 未建，现为扁平文件，只有 `ground/` 是目录。单位与特效重做时按「目录设计」建目录，或修改该设计。
-- 两个同名 `stage.ts`（`stage/stage.ts`、`ground/terrain/stage.ts`），需要按域入口命名。
-- 重复定义：`stringValue` 在 `cue.ts` 出现；`TILE_SIZE = 64` 在 `stage/stage.ts`，`TILE_HEIGHT` 在地形中。
-- 公开常量 `TERRAIN_IMAGE_SLOTS` 导出了 `D`、`N`、`R`、`E`、`BG`、`commonE`、`waterN` 等缩写；前缀 `Mission*`、`Renderer*`、`Terrain*` 不统一。
-- 注释写了 master 的文件路径（`pack.ts`、`layout.ts`、`palette.ts`、`materials.ts`），按 AGENTS.md 应只写当前代码在做什么。`materials.ts` 的 JSDoc 为中文，其余为英文。
-- 测试：`pointer.test.ts`、`cue.test.ts` 与喂数、投影、地形测试在代码边上；`createMissionStage` 的 `dispatch` 与 `update` 没有测试。
-- 依赖：`three` 在 `terrain/scene.ts`、`terrain/materials.ts` 中运行时引入，但 `package.json` 只在 `peerDependencies` 中声明，需补到 `dependencies`。`@types/three` 放在 `optionalDependencies` 不合理。`vite` 是 devDependency，包内没有直接引用，需核对根配置。
-- 产物：`dist/`、`dist-test/` 可能残留已删源码的产物；`tsconfig.json` 的 `include` 为 `**/*.ts`，只排除 `test/`，同目录的 `.test.ts` 会被编进 `dist/`。
+需求、提取、派生、打包、客户端叠加与连接 master 的资源兼容已经完成，现状见 [资源从哪里来](../docs/alliance/data/03-resource.md)、[资源目录](../docs/assets-catalog/index.md)、[资源提取](../docs/assets-extractor/index.md)、[编译](../docs/alliance/data/02-compiler.md) 与 [连接 master 后端](../docs/alliance/compat/index.md)。资源的静态发布在第 9 节。
 
-## 8. 资源 assets-catalog 与 app/data（P2）
+### 遗留
 
-资源的已完成项、测试状态、遗留事项、实施步骤与待决事项全部在 [ASSETS.md](ASSETS.md)。原本节内容（产物与测试记录、资源层现状、地址解析规则、`summons.spec.ts` 的音效依赖、后续位置表、`local-enemy-spines.json` 与棋盘裁图）已并入该文档的「现状问题」。
+- 赛季媒体接线：非官方的赛季标志与入口图放在 `app/season/<seasonId>/media/`（第 5 节），键为 `image:season/<seasonId>/<name>`，`<seasonId>` 后只有一段；带 `loading/`、`entry/`、`trap/` 分组的键来自提取器的路径表，不受影响。`app/data` 打包时把这些文件登记进赛季清单，原始目录条目的 `source.id` 为 `app-season`（派生文件现在用 `app-data`）。目录与代码都未建。
+- 渲染器按种类的贴图设置：见 [ECS.md](ECS.md)。
+- 测试与冒烟：`app/server` 的 `pnpm test` 仍有 37 个文件、950 个用例失败，错误集中在技能下标选择与飞行目标规则，与资源字段无直接关系，原因与基线未确认。开发服务器按键加载头像、Spine、音频、字体与棋盘的人工冒烟未逐项做。服务端的资源验收：删除提取缓存后，启动、建房与演算不受影响（服务端只读数据包，`DATA_FILES` 不含 `assets`）。
+- `--full` 的皮肤：`compile:needs --full` 的皮肤部分读 `json:gamedata/excel/skin_table`。表提取之前这部分为空（全量基础需求 14464 条，默认 3999 条）；`extract:media` 之后再运行一次 `compile:needs --full`，皮肤的 `spine:skin/*` 与 `spine:token/<id>/<皮肤>` 才进入需求。
+- 未解释的缺失（`report.json` 的 `needs.unexplained`，共 4 个）：
+  - `texture:map/autochess/TX_autochessi_D`、`TX_autochessi_common_D`、`TX_autochessi_BG`：只有本机客户端能提供。给赛季需求的这三个键写上 `absent` 原因（本机客户端独有），使它们归入 `absentUpstream`；`compiler/input/base/absent.json` 目前只覆盖基础需求。
+  - `audio:sfx/battle/p_atk_arrow_n`：`voice` 分支中同名多候选，按名反查视为未命中。在 `assets-extractor/source/voice/paths.json` 登记确定的路径。
+
+### 本机客户端来源
+
+`assets-extractor/source/local-client/python/extract.py`（UnityPy，由 master 的 `tools/local-extract/` 改写）只能由 `pnpm extract:local` 单独运行，不接入 `pnpm extract`。棋盘贴图（含派生的法线与粗糙度）、`json:material/*`、`model:mesh/*`、`json:prefab/*`、社区缺失的敌人与召唤物 Spine 只有它能提供；没有它时棋盘 tiles 不生成，渲染器隐藏三维地形。接入需要本机游戏客户端验证：
+
+- TS 适配器 `source/local-client/`：只在传入 `--game <dir>` 时启用，排在同命名空间的最前面；`--python <path>` 指定解释器，默认 `python3`；没有 `--game` 时不探测、不报错。`prepare` 运行 `extract.py --print-jobs` 声明 `covers`；有命中时运行 `extract.py --game <dir> --out <cache>/sources/local-client/files --manifest <cache>/sources/local-client/manifest.json`，只跑需要的 `--only` 组。
+- 输出路径到键的映射表（TS 数据，带测试）：`spine/enemy/<id>/` → `spine:enemy/<id>`；`spine/token/<id>/` → `spine:token/<id>/front`；`map/<theme>/<name>.png` → `texture:map/<theme>/<name>`（webp 副本是同一条目的另一格式，派生图 `_rgb`、`_rough` 是独立的键）；`map/<theme>/materials.json` → `json:material/<theme>`；`mesh/<bundle>/<mesh>.obj` → `model:mesh/<bundle>/<mesh>`；`mesh/<bundle>/prefab.json` → `json:prefab/<bundle>`；界面、表情、引导 Sprite → 对应的 `image:` 键。之后与其他来源共用哈希、`files/`、`SpineMeta` 与原始目录，`source.id` 为 `local-client`，`source.revision` 为客户端资源版本。
+- 从 master 恢复：`TOKEN_SPINES` 与 `export_token_spines`（社区缺失的召唤物 Spine，取 Front 渲染器）；清单写盘（`--manifest`，`--only` 时按组合并）；`enemy_model_offsets.py`。它与 `enemy_scales.py` 作为诊断命令 `extract:local-report scales|offsets`，结果写进 `report.json`，不进原始目录。
+- 测试：`assets-extractor/test/extract.spec.ts` 中依赖脚本清单的 5 个用例（清单、网格组、webp 副本、棋盘材质）现在跳过，清单写盘恢复后改读清单；没有 Python 时跳过，断言不放宽。接入后与 master 的输出逐项对照一次。
+- Python 环境（虚拟环境、安装 `requirements.txt` 中的 UnityPy、lz4、Pillow）由用户自理，暂不管理。其他包、默认提取流程与 `pnpm test` 不依赖 Python。
+
+### 探索
+
+1. 本机提取的替代方案：TS 读取 Unity AssetBundle、ArkUnpacker（同为 Python 栈）及其他工具。评估 macOS、Linux、Windows 与 iOS 客户端（ASTC 图集页）的可用性，LZ4AK 解码，网格、材质参数与 prefab 变换的导出，以及维护成本。替换后只换 `local-client` 的实现，原始目录、需求清单与包清单不变。
+2. 攻击时序的官方来源：在官方 prefab、动画控制器或 gamedata 中找攻击判定时间，替换 `DEFAULT_ATTACK_ANIM`（`null`，`mission-core` 无动画片段时停顿 0.35 秒）。不从 Spine 的 Attack 时长与 OnAttack 事件推导。写入数据包会改变 `contentHash` 与演算结果，按第 2 节的迁移处理。
+3. 敌人模型缩放与偏移的自动化：见 [ECS.md](ECS.md)。
+4. fexli 的 `build` 姿势：`spine:char/<charId>/build` 是登记过的姿势，`fexli` 适配器没有对应规则。
+5. 快照更新：`app/data/compiler/input/research/07-assets.json`（2026-09-27 由工具从上游 git 树生成，生成脚本不在仓库中，之后只手工编辑）与 `arknights-assets`、`voice` 适配器的 `paths.json` 都是固定快照，官方新增的干员、道具、羁绊、界面与音效不会被自动发现。等 07 的更新方案确定后再处理。
+6. `refs` 的 JSON Patch：ARCH「数据、文案与资源层」允许模组用 JSON Patch 修改 `refs`；当前清单格式没有对应字段，解析器只按 JSON 路径合并。
+7. 模组包的加载、Service Worker 完整性校验与权限（ARCH「探索项」第 2 项），PWA 与离线包。模组清单与基础、赛季清单同格式，`loadResourceStore` 的 `mods` 按顺序叠在赛季之上。
+8. 多语言文案目录。
 
 ## 9. 部署 deployment（P2）
 
@@ -464,7 +423,7 @@ master 来源：`server/index.js` 的静态文件、gzip、ETag、Range 归入 `
 `deployment/client` 负责：
 
 - 前端构建产物与 vendor；
-- 赛季 JSON、资源清单与媒体文件的静态发布，包括 gzip、ETag、Range、缓存策略与空本地清单，资源路径格式统一、不保留 `/media/` 音频路由：发布布局见 [ASSETS.md「地址布局」](ASSETS.md#地址布局)。
+- 赛季 JSON、资源清单与媒体文件的静态发布，见下「资源发布」。
 
 赛季与协商：
 
@@ -472,21 +431,38 @@ master 来源：`server/index.js` 的静态文件、gzip、ETag、Range 归入 `
 - 赛季包的静态地址可以独立于后端。后端是赛季版本的权威方：连接协商时返回 `seasonId`、`contentHash`、协议版本，以及赛季包和资源清单的地址。前端从后端指定的地址下载并校验，不自行选择赛季。判定与回落规则见第 3 节。
 - 新内容发布不改变已创建房间的 `contentHash`。静态站点更新页面和资源时，不需要重启对局进程。
 
-0.2.x 的发行形态：暂不迁移，见 ASSETS.md「不在范围内」。
+资源发布：
+
+地址由 `assets-catalog` 的地址模块计算（[地址](../docs/assets-catalog/03-address.md)），所有种类同一格式，不保留 master 的 `/media/` 无扩展名音频路由。开发服务器（`app/client/vite-plugins.ts`）已按这套布局提供文件；生产发布未实现。
+
+```text
+/                                     前端应用，Vite 构建产物（脚本在 /assets/）
+/res/files/<address>?v=<hash 前 12 位>
+/res/packs/base/<version>/manifest.json 与 fonts.css
+/res/packs/season/<seasonId>/<contentHash>/manifest.json 与数据包 *.json
+/res/packs/mod/<modId>/<version>/manifest.json
+/res/local/manifest.json              本地覆盖清单
+```
+
+- 发布脚本：`app/data/.cache/derived/` 与 `app/data/.cache/assets/files/`（同一地址时派生文件优先）复制到 `/res/files/`，只复制清单引用到的文件；`app/data/product/base/` 复制到 `/res/packs/base/<version>/`，`product/season/<id>/` 复制到 `/res/packs/season/<id>/<contentHash>/`。清单的 `fileRoot` 相对清单地址，所以 `/res/` 可以整体放到另一个域名。
+- 生产静态服务：gzip、ETag、Range 与缓存头按 `deployment/client/config/static-policy.ts`（策略函数已有，尚无服务器使用它）：`/res/` 下带 `?v=` 的文件 `immutable`，`/res/files/` 其余文件长缓存，`/res/packs/` 的清单短缓存加 ETag，`/res/local/` 与页面不缓存。`/res/local/manifest.json` 缺失时返回 `emptyLocalManifest()` 的空清单。
+- 握手返回清单地址：见上「赛季与协商」；客户端 `loadResourceStore` 现在由调用方给出基础包与赛季包地址。
+- vendor 与前端构建产物的发布。
+- 镜像与工具：Docker 镜像（`client/image`、`server/image`），根目录初始化脚本与 `deployment/tool` 的统一命令（初始化、检查、资源总命令）。
+- CI：缓存整个提取缓存目录 `app/data/.cache/assets`（含 `repos/` 浅克隆、`files/`、`ledger.json`），再次运行由账本复用。
+
+0.2.x 的发行形态暂不迁移：master 有完整包、精简包（首次启动从公开镜像下载素材）、更新包（只含改动文件，依 `MANIFEST.json` 校验并删除旧文件）、`npm run doctor` 文件校验与 `npm run package`。以后尽量复用 master 的形式，基于原始目录与包清单的哈希实现。
 
 验收：
 
-- 资源相关验收（删除媒体文件或 `assets.json` 不影响服务端，服务端只读内容包）见 ASSETS.md 步骤 6；
+- 删除提取缓存与媒体文件后，服务端启动、建房与演算不受影响（服务端只读内容包）；
 - 浏览器能从静态站点读取资源，并通过 `/healthz`、`/ws` 连接对局进程；
 - 连接协商能返回当前启用的 `seasonId`、`contentHash`、协议版本与赛季包地址。
 
 ## 10. 待确认的决定
 
-- 死亡单位由 mission-core 过滤，还是由渲染器淡出（第 7 节）。
-- 目录布局：按第 7 节「目录设计」建目录，还是修改该设计承认当前的扁平文件。
+- 死亡单位的去留、renderer 目录布局、备用模型与别名染色、master 的 `theme` / `fx` 材质表：见 [ECS.md](ECS.md)「待决事项」。
 - 三维地面的雾、区域裁剪、画质开关是否保留为设计决定。
-- 备用模型与别名染色，以及 master 的 `theme` / `fx` 材质表（master 只加载、不使用，因此不迁）。
-- 0.2.x 的发行形态：已移到 ASSETS.md「不在范围内」。
 - 包版本号：next 为 0.1.3，master 为 0.2.1，版本关系与 next 的版本号策略需要确认。门槛版本号依赖这一项（第 3 节）。
 - 兼容层 `data/` 中，数据视图与 packet 视图是否共用一个类型，还是各自独立（第 2 节）。
 - 边界检查规则放在 `app/contract` 的哪个子目录，以及 next 服务端是否也强制执行（第 2 节）。

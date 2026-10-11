@@ -19,14 +19,14 @@
 - [测试迁移](#测试迁移)
 - [验收](#验收)
 
-本文是 `app/client` 从 master（`../legacy`，0.2.1）迁移的指南。架构方向见 [ARCH.md](ARCH.md)，需求见 [FEATURE.md](FEATURE.md)，其他域的剩余工作见 [remaining.md](REMAIN.md)。
+本文是 `app/client` 从 master（0.2.1；参考副本放在 `app/compat/upstream/repo/`，不入库，由用户放入）迁移的指南。架构方向见 [ARCH.md](ARCH.md)，需求见 [FEATURE.md](FEATURE.md)，其他域的剩余工作见 [remaining.md](REMAIN.md)。
 
 ## 范围与原则
 
 - 迁移对象是 master 的浏览器客户端：`public/js/`、`public/css/`、`public/i18n/`、`public/index.html`、`public/dev/`，以及客户端用到的 `shared/` 模块。
 - master 只作为行为参照，按 [ARCH.md](ARCH.md) 重写，不保留 Preact、htm 与全局 store 的结构。
 - 客户端只使用 `app/contract` 的形状。连接 upstream 后端时，数据与战斗经 `app/compat/upstream` 转换（[remaining.md](REMAIN.md) 第 2、3 节），其他目录不出现 master 格式。
-- 资源只经资源键（`AssetKey`）与 `resource/` 申请，不解析地址。规则与客户端侧的资源工作见 [ASSETS.md](ASSETS.md)（步骤 6、7）。
+- 资源只经资源键（`AssetKey`）与 `resource/` 申请，不解析地址。`app/client/resource` 的叠加、缓存与兼容模式见 [资源从哪里来](../docs/alliance/data/03-resource.md#客户端加载)。
 - 目录与文件用名词、kebab-case：`preparation` 不写成 `prepare` 或 `prep`，`panel` 不写成 `hud`，`observation` 不写成 `observe`。
 - 浏览器里的卫戍界面从 `shell/` 露出全局 API，供 `deployment` 的页面脚本和社区外壳调用：加入房间、提交意图、读取当前视图。外壳由社区实现。
 
@@ -58,7 +58,7 @@ app/client/
 
 ## master 源码对照
 
-路径相对 `legacy/`。
+路径相对 master 根目录。
 
 ### shell 与界面基底
 
@@ -120,7 +120,7 @@ app/client/
 - `ui/hud.js`、`ui/combatHud.js`、`ui/matchChrome.js`、`ui/matchStatus.js`、`ui/matchInfo.js`、`ui/ticker.js`
 - `ui/teamPanel.js`、`ui/detailPanel.js`、`ui/abilityLines.js`
 - `ui/bondStrip.js`、`ui/gameLogic/bonds.js`、`ui/effectsList.js`、`ui/enemyDrawer.js`、`ui/gameLogic/enemies.js`
-- `ui/emotes.js`：表情轮盘。36 条表情已在资源编译中，线路白名单已在 `app/contract`；表情图改为资源键（ASSETS.md 步骤 6）。
+- `ui/emotes.js`：表情轮盘。36 条表情已在资源编译中，线路白名单已在 `app/contract`；表情图是资源键 `image:ui/emoticon/<dir>/<picId>`（`emoteArtKey`）。
 - `ui/guide.js`、`ui/gameLogic/panel.js`、`ui/gameLogic/phases.js`（改为 `store/` 选择器）、`ui/gameLogic/format.js`（数值格式化，改由 `text/` 提供）、`ui/gameLogic/shared.js`
 - `ui/gameLogic/shortcuts.js`：快捷键表，进入 `intent/` 的按键映射。
 
@@ -139,8 +139,8 @@ app/client/
 
 ### audio 与 resource
 
-- `audio/` 是 `public/js/audio.js` 的混音与界面音效，只接收资源句柄与音效线索。音效线索到 `audio:` 键的映射见 [ASSETS.md「各域的资源遗留」](ASSETS.md#各域的资源遗留)（步骤 6）；`public/js/media.js` 的 `/media/` 无扩展名地址策略不保留，音频与其他资源用同一路径格式。
-- `resource/` 接收 `public/js/assets.js` 的资源生命周期；现状与要做的事见 [ASSETS.md「各域的资源遗留」](ASSETS.md#各域的资源遗留)（步骤 6）。
+- `audio/` 是 `public/js/audio.js` 的混音与界面音效，只接收资源句柄与音效线索。音效线索按清单 `refs`（`sfx`、`voice`、`bgm`）映射到 `audio:` 键，经 `assets-catalog` 的音频缓存加载（[缓存](../docs/assets-catalog/05-cache.md#音频)）；`public/js/media.js` 的 `/media/` 无扩展名地址策略不保留，音频与其他资源用同一路径格式。
+- `resource/` 接收了 `public/js/assets.js` 的资源生命周期：清单叠加与重试、图片缓存、预加载组、句柄释放与本地覆盖清单，见 [资源从哪里来](../docs/alliance/data/03-resource.md#客户端加载)。哪个屏幕何时预加载哪一组由界面迁移决定；清单的 `preloadGroup` 现在都为 `null`。
 - `public/js/data.js` 的数据懒加载改为按握手下发的 `seasonId` 与数据地址读取赛季包与文案（房间视图带赛季 id）；本地化的游戏数据由 `text/` 的 `data:` 键提供。
 
 ### text
@@ -156,7 +156,7 @@ app/client/
 | `shared/protocol.js`、`shared/constants.js` | 已在 `app/contract` |
 | `shared/highGround.js` | 已在 `app/contract`（`meleeOnHighGround`） |
 | `shared/standIn.js`、`shared/diy.js`、`shared/loadoutRecord.js`、`shared/bandBonds.js` | 两端共用的纯逻辑，放进 `app/contract`；服务端已有的实现一并收拢 |
-| `shared/media.js` | 不迁移：next 的资源路径格式统一，不保留 `/media/` 无扩展名音频路由；master 的 `/media/` 只在连接 master 时由兼容层使用，见 [ASSETS.md「地址布局」](ASSETS.md#地址布局) |
+| `shared/media.js` | 不迁移：next 的资源路径格式统一，不保留 `/media/` 无扩展名音频路由；master 的 `/media/` 只在连接 master 时由兼容层使用，见 [地址](../docs/assets-catalog/03-address.md) |
 
 ### 开发工具
 
@@ -173,17 +173,17 @@ app/client/
 - 部件：每个界面组件按 id 注册，通过 `<Part id>` 渲染，带错误边界与安全模式（[表现层](ARCH.md#表现层)、[服务端下发界面](ARCH.md#服务端下发界面)）。
 - 样式：设计令牌编译为 CSS 自定义属性，`@layer reset, tokens, base, components, mods, overrides`，普通 CSS 或 CSS Modules。
 - 多语言：命名空间键与预编译 ICU（[多语言](ARCH.md#多语言)）。
-- 资源：资源键（`AssetKey`）与 `resource/`，见 [ASSETS.md](ASSETS.md)。
+- 资源：资源键（`AssetKey`）与 `resource/`，见 [资源从哪里来](../docs/alliance/data/03-resource.md)。
 - 模组：`mod/` 实现客户端 `ModContext`、Service Worker 完整性校验、进入时确认与按服务端划分的存储。
 - 握手：`hello` 发送 `ext`，按 `welcome` 的 `ext` 决定模组集合与兼容模式（[清单与握手](ARCH.md#清单与握手)）。
 
 ## 不迁移
 
 - `public/js/ui/compat.js` 的旧浏览器补丁：浏览器基线由 browserslist 处理（[前端](ARCH.md#前端)）。
-- `public/js/ui/assetUrls.js`：由 `assets-catalog` 的 resolver 取代（ASSETS.md 步骤 2、6）。
+- `public/js/ui/assetUrls.js`：由 `assets-catalog` 的解析器取代（[解析](../docs/assets-catalog/04-resolver.md)）。
 - `public/js/render/app/pixi.js` 与所有 Pixi 依赖。
 - `public/js/render/tiles.js` 等二维棋盘。
-- `public/js/render/boardArt.js`：棋盘图集由 `app/data` 派生（ASSETS.md 步骤 4）。
+- `public/js/render/boardArt.js`：棋盘图集由 `app/data` 的 `compile:derive` 派生为 `json:board/<theme>/tiles`（[编译](../docs/alliance/data/02-compiler.md#派生文件)）。
 - master 的 `theme` / `fx` 材质表：master 只加载、不使用。
 - 备用模型与别名染色（master `ALIAS_TINT`）：是否保留见 [remaining.md](REMAIN.md) 第 10 节。
 
@@ -205,8 +205,8 @@ app/client/
 - 后端判定、赛季与数据地址、能力标记：第 3 节。
 - `welcome` 的 `seasonId`、`contentHash` 与 `ext`、对局事件契约：第 5 节与 [清单与握手](ARCH.md#清单与握手)。
 - 事件命名统一：第 6 节。
-- renderer 的单位、特效、Spine 画面，以及宿主接口（`calculateBoardTransform` 导出、指针事件流、快照到 renderer 输入的转换）：第 7 节；renderer 资源端口与音频资源：[ASSETS.md](ASSETS.md) 步骤 6。
-- 资源生命周期、Spine 依赖展开、资源的静态发布：[ASSETS.md](ASSETS.md) 步骤 6。
+- renderer 的单位、特效、Spine 画面，以及宿主接口（`calculateBoardTransform` 导出、指针事件流、快照到 renderer 输入的转换）：第 7 节；renderer 资源端口见 [资源端口](../docs/mission-renderer/05-port.md)。
+- 资源的静态发布：[REMAIN.md](REMAIN.md) 第 9 节「资源发布」；资源的其余遗留：第 8 节。
 - 静态站点与 vendor：第 9 节。
 
 ## 测试迁移
@@ -215,7 +215,7 @@ app/client/
 - 拉起整页的用例进 `app/scenario`，用 `.e2e.ts`。来源是 `test/ui/*.e2e.test.js` 与 `test/e2e/`。
 - `test/render/` 中依赖商店、手牌与拖放的用例（如 `drag.test.js`、`pen.test.js`、`playtest6-promote.test.js`）进 `app/client/test`；只喂快照与事件的用例属于 renderer。
 - 音频：`test/ui/audio.test.js`、`test/ui/feedback3-audio-mix.test.js` 依赖 `AudioManager` 与 `unitGain`，随 `audio/` 重写。解码缓冲已有 `createAudioBuffer`，这些用例按新的混音接口改写。
-- 资源生命周期：`test/render/assets.test.js` 中 `createAssets store` 的一组随 `resource/` 改写，列在 ASSETS.md 步骤 6 的验收中。
+- 资源生命周期：`test/render/assets.test.js` 中 `createAssets store` 的一组已改写为 `app/client/resource/store.test.ts`。
 - 表情：`test/ui/emotes.test.js`、`test/ui/emotes.e2e.test.js`。
 - 依赖全局 `PIXI` 的 `unloadSpineData`、`loadImageElement`、`loadSpineData`，以及 `test/assets.test.js` 中依赖 `@pixi/core`、`@pixi-spine/base` 的「每个 Spine 按客户端加载」用例，不迁移。
 - `test/render/board3d-extract.test.js` 引用的 `public/js/render/board3d/load.js` 与 `tools/vendor.mjs` 已不在仓库中；棋盘场景在 `mission-renderer/stage/ground/terrain`，vendor 在 `deployment/client/vendor`。
@@ -225,7 +225,7 @@ app/client/
 
 - next 客户端能连接 next 服务端与 master 0.2.1 服务端，并完成标题、大厅、房间、简报、策略、配装、对局、结算的完整流程。
 - 所有屏幕与面板可用键盘与屏幕阅读器操作。
-- `app/client` 不引用 `legacy/` 路径、不依赖 Pixi、不解析资源地址（资源验收见 ASSETS.md 步骤 6）。
+- `app/client` 不引用 master 参考副本的路径、不依赖 Pixi、不解析资源地址；资源只经键与 `resource/` 申请。
 - 界面文本全部经命名空间键；中文与英文完整。
 - 每个界面组件都按 id 注册，替换与包装可用，出错时恢复默认组件。
 - 迁移后的用例与 `tsc --noEmit` 通过。
