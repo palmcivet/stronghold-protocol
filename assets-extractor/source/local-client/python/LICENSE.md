@@ -1,7 +1,3 @@
-tools/local-extract/aklz4.py implements the LZ4AK block decoding of isHarryh/Ark-Unpacker
-(https://github.com/isHarryh/Ark-Unpacker), as carried by MooncellWiki/UnityPy, and is distributed
-under the following licence (not under the GPL of the rest of this project):
-
 BSD 3-Clause License
 
 Copyright (c) 2022, Harry Huang

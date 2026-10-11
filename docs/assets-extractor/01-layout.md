@@ -16,7 +16,7 @@ assets-extractor/
     yuanyan/ fexli/ ark-models/ fonts/ gamedata/   各来源的 adapter.ts
     arknights-assets/     adapter.ts 与 paths.json（界面图路径表）
     voice/                adapter.ts 与 paths.json（BGM 与音效路径表）
-    local-client/python/  本机客户端提取脚本与依赖（Python）
+    local-client/python/  本机客户端提取脚本
   download/
     repo-cache.ts         浅克隆、稀疏检出、git 版本检查、重试与代理
     repo-index.ts         从树对象读出的文件列表与按名查找

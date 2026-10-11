@@ -1,2 +1,8 @@
 # downloaded sources, extraction ledgers and reports
 .cache/
+
+# python for local client extraction (source/local-client/python)
+.venv*/
+venv/
+__pycache__/
+*.py[cod]

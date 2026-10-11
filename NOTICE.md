@@ -1,66 +1,67 @@
-# 版权与使用声明（NOTICE）
+# 声明
 
-**卫戍协议：盟约 · Stronghold Protocol** 是《明日方舟》限时玩法「卫戍协议：盟约」的**非官方同人复刻**，与上海鹰角网络科技有限公司（Hypergryph）、Yostar 及其关联方**没有任何关联**，也未获得其授权或认可。
-
-## 1. 代码许可证：GPL-3.0-or-later
+本仓库是 [Stronghold-Protocol](https://github.com/sganggs/Stronghold-Protocol) 的修改版本，修改于 2026-10-11。
 
 Copyright (C) 2026 Stronghold-Protocol contributors
 
-本项目自己编写的源代码与文档文字（`server/`、`shared/`、`public/` 下的 JS / CSS / HTML、`tools/`、`scripts/`、`test/`、`docs/` 等）以 **GNU 通用公共许可证第 3 版或（由你选择）任何更新版本**（GPL-3.0-or-later）发布，全文见 [LICENSE](LICENSE)。你可以在该许可证的条件下使用、修改和再分发这些代码。
+Copyright (C) 2026 contributors of this repository
 
-例外：
+## 程序
 
-- `tools/local-extract/aklz4.py` 来自 [isHarryh/Ark-Unpacker](https://github.com/isHarryh/Ark-Unpacker)，保持 BSD-3-Clause 许可（见 `tools/local-extract/LICENSE-Ark-Unpacker.txt`）。
-- 通过 npm 安装的第三方库（PixiJS、pixi-spine、Preact、htm、three.js、ws 等）和字体各自保留原许可证，见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。
+本仓库中由上述版权人编写的程序与文档，只以 GNU 通用公共许可证第 3 版，或（由你选择）任何更新的版本发布（GPL-3.0-or-later）。全文见 [LICENSE.md](LICENSE.md)。
 
-**附加许可（GPL-3.0 第 7 条）** — Additional permission under GNU GPL version 3 section 7:
+## aklz4.py
 
-> If you modify this Program, or any covered work, by linking or combining it with the Spine Runtimes (as shipped in
-> pixi-spine, or a modified version of them), containing parts covered by the terms of the Spine Runtimes License
-> Agreement, the licensors of this Program grant you additional permission to convey the resulting work.
-> Corresponding Source for a non-source form of such a combination shall include the source code for the parts of
-> the Spine Runtimes used as well as that of the covered work.
+`assets-extractor/source/local-client/python/aklz4.py` 以 BSD-3-Clause 发布，不适用 GPL。全文见同目录的 [LICENSE.md](assets-extractor/source/local-client/python/LICENSE.md)。
 
-（大意：允许把本项目与 pixi-spine 中的 Spine Runtimes 组合后再分发；Spine Runtimes 本身仍受其自己的许可证约束。）
+Copyright (c) 2022, Harry Huang
 
-## 2. 不属于本项目、不受 GPL 约束的内容
+## Spine Runtimes
 
-《明日方舟》及「卫戍协议」相关的全部**名称、角色、美术、Spine 模型、界面图、音乐音效、文本与游戏数据**，版权归上海鹰角网络科技有限公司及其授权方（Yostar 等）所有。具体包括：
+`mission-renderer` 与 `assets-extractor` 依赖 `@pixi-spine/runtime-3.8`。调用位于：
 
-- Release 完整包中的 `assets-catalog/product/media/**`（含从官方客户端提取的 3D 棋盘模型与贴图）和 `assets-catalog/product/font/**`（字体归各自作者）；
-- 由官方数据表生成的 `data/*.json`，以及含有或派生自游戏数据的 `docs/research/*.json`、`test/fixtures/official-waves.json`、`public/dev/recordings/*.json`；
-- `docs/img/` 中的游戏截图；
-- `docs/` 中引用的 PRTS、BWIKI、NGA、巴哈姆特等社区页面的文字（仍按其来源的许可，维基文本为 CC BY-NC-SA）。
+- `mission-renderer/actor/skeleton/index.ts`
+- `assets-extractor/spine/skel.ts`
 
-这些内容**不在 GPL-3.0 授权范围内**，本项目也无权就它们向任何人授予任何权利。
+Spine Runtimes 适用下方的 Spine Runtimes License，不因本仓库的 GPL 而改变。再分发这些运行时或对其的接入时，须保留该许可证与版权声明。
 
-## 3. 仅限非商业用途
+```text
+Spine Runtimes License Agreement
+Last updated April 5, 2025. Replaces all prior versions.
 
-- 本项目仅供**学习、研究和个人非商业娱乐**。
-- 游戏素材与数据的权利人没有授权本项目或其使用者进行任何商业使用，因此包含或依赖这些素材的一切内容——Release 完整包、架设的服务器、截图、录像与直播等——都**不得用于任何形式的盈利**。包括但不限于：
-  - 出售或付费分发；
-  - 收费开服、付费房间或会员；
-  - 植入广告；
-  - 与本项目挂钩的打赏、赞助或众筹；
-  - 打包进任何收费产品或服务。
-- 再分发完整包时，请保留本声明、[LICENSE](LICENSE) 和 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)，并同样注明非官方、非商业。
-- GPL 本身允许商业使用**代码**，上述限制针对的是不属于本项目的游戏素材与数据。
+Copyright (c) 2013-2025, Esoteric Software LLC
 
-## 4. 权利人通知与删除
+Integration of the Spine Runtimes into software or otherwise creating
+derivative works of the Spine Runtimes is permitted under the terms and
+conditions of Section 2 of the Spine Editor License Agreement:
+http://esotericsoftware.com/spine-editor-license
 
-如果你是相关权利人，认为本项目的任何内容不妥，请在本仓库提交 Issue（或通过 GitHub 联系仓库所有者），我们会尽快删除相关内容，或下架完整包乃至整个仓库。
+Otherwise, it is permitted to integrate the Spine Runtimes into software
+or otherwise create derivative works of the Spine Runtimes (collectively,
+"Products"), provided that each user of the Products must obtain their own
+Spine Editor license and redistribution of the Products in any form must
+include this license and copyright notice.
 
-## 5. 免责声明
+THE SPINE RUNTIMES ARE PROVIDED BY ESOTERIC SOFTWARE LLC "AS IS" AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL ESOTERIC SOFTWARE LLC BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES,
+BUSINESS INTERRUPTION, OR LOSS OF USE, DATA, OR PROFITS) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THE SPINE RUNTIMES, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+```
 
-- 本项目按「原样」提供，**不附带任何明示或暗示的担保**（见 LICENSE 第 15、16 条）。
-- 使用、架设或公开本项目的风险，包括网络安全、第三方联机工具与服务、当地法律法规，由使用者自行承担。
-- 本项目不需要也不会索取任何游戏账号；可选的本地提取只读取你本机已安装的客户端文件。
+## 其他依赖
 
----
+通过 npm 安装的库各自保留其许可证，随该包装在 `node_modules` 中。
 
-**English summary.** Unofficial, non-commercial fan remake; not affiliated with or endorsed by Hypergryph or Yostar.
-The project's own code is GPL-3.0-or-later (with the Spine Runtimes linking permission above). All Arknights names,
-art, models, audio and data — including everything under `public/assets/` in the release bundle — are © Hypergryph /
-Yostar and their licensors, are **not** covered by the GPL, and may be used for study and personal non-commercial
-purposes only: no selling, paid distribution, paid hosting, ads, donations or any other monetisation. Rights holders
-can request removal through a GitHub issue and the content will be taken down. No warranty of any kind.
+## 本仓库不许可的作品
+
+《明日方舟》及「卫戍协议」的名称、角色、美术、音乐、音效、文本与数据，版权归原权利人。本仓库不包含这些作品，也不就它们授予任何权利。
+
+## 担保
+
+程序按 GPL 第 15、16 条以现状提供，不提供任何担保。

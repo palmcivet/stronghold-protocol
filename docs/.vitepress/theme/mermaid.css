@@ -1,0 +1,5 @@
+.vp-doc .mermaid-container {
+  height: 80vh;
+  min-height: 24rem;
+  max-height: 80vh;
+}

@@ -2,24 +2,17 @@
 node_modules/
 .pnpm-store/
 
-# typescript project references and vite
+# build output and caches
 dist/
 dist-*/
 *.tsbuildinfo
 .vite/
 coverage/
-.cache/
+_website/
 
-# python, for local client extraction
-.venv*/
-venv/
-__pycache__/
-*.py[cod]
-
-# logs and per-machine config
+# logs and per-machine environment
 logs/
 *.log
-service.env.cmd
 .env
 .env.*
 

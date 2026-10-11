@@ -1,0 +1,2 @@
+# local-client extraction scripts run by python3: LF on every checkout
+*.py text eol=lf

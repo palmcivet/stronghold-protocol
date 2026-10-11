@@ -1,0 +1,19 @@
+{
+  "name": "wayshodaire-docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev .",
+    "build": "vitepress build .",
+    "preview": "vitepress preview .",
+    "format": "biome check --write"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "catalog:",
+    "mermaid": "^12.1.0",
+    "vitepress": "^1.6.4",
+    "vitepress-mermaid-renderer": "1.2.2",
+    "vitepress-sidebar": "^1.40.0",
+    "vue": "^3.5.43"
+  }
+}

@@ -1,3 +1,6 @@
 # third-party builds copied into the client image
 client/vendor/
 server/output/
+
+# per-machine service environment for the Windows launch script
+service.env.cmd
