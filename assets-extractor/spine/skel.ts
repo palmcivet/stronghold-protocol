@@ -1,149 +1,189 @@
 // 用 @pixi-spine/runtime-3.8 读 Spine 3.8 二进制骨架：版本、每个动画的时长与事件、包围盒。
 // 附件不加载贴图；给了 atlas 区域名时，对不上的附件路径记进 missingRegions。
 
-import { createRequire } from "node:module"
-import { join } from "node:path"
-import { fileURLToPath } from "node:url"
-import { extractorRootFrom } from "#package-root.js"
+import { createRequire } from 'node:module';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { extractorRootFrom } from '#package-root.js';
 
-const extractorRoot = extractorRootFrom(fileURLToPath(import.meta.url))
-const require = createRequire(join(extractorRoot, "package.json"))
+const extractorRoot = extractorRootFrom(fileURLToPath(import.meta.url));
+const require = createRequire(join(extractorRoot, 'package.json'));
 
 interface SpineEvent {
-  readonly data?: { readonly name?: unknown }
-  readonly time?: unknown
+  readonly data?: { readonly name?: unknown };
+  readonly time?: unknown;
 }
 
 interface SpineTimeline {
-  readonly events?: readonly SpineEvent[]
+  readonly events?: readonly SpineEvent[];
 }
 
 interface SpineAnimation {
-  readonly name: string
-  readonly duration: number
-  readonly timelines: readonly SpineTimeline[]
+  readonly name: string;
+  readonly duration: number;
+  readonly timelines: readonly SpineTimeline[];
 }
 
 interface SpineSkeletonData {
-  readonly version?: unknown
-  readonly animations: readonly SpineAnimation[]
-  readonly events: readonly { readonly name: string }[]
-  readonly width: number
-  readonly height: number
-  readonly x: number
-  readonly y: number
+  readonly version?: unknown;
+  readonly animations: readonly SpineAnimation[];
+  readonly events: readonly { readonly name: string }[];
+  readonly width: number;
+  readonly height: number;
+  readonly x: number;
+  readonly y: number;
 }
 
 interface AttachmentLoader {
-  newRegionAttachment(skin: unknown, name: string, path: string): unknown
-  newMeshAttachment(skin: unknown, name: string, path: string): unknown
-  newBoundingBoxAttachment(skin: unknown, name: string): unknown
-  newPathAttachment(skin: unknown, name: string): unknown
-  newPointAttachment(skin: unknown, name: string): unknown
-  newClippingAttachment(skin: unknown, name: string): unknown
+  newRegionAttachment(skin: unknown, name: string, path: string): unknown;
+  newMeshAttachment(skin: unknown, name: string, path: string): unknown;
+  newBoundingBoxAttachment(skin: unknown, name: string): unknown;
+  newPathAttachment(skin: unknown, name: string): unknown;
+  newPointAttachment(skin: unknown, name: string): unknown;
+  newClippingAttachment(skin: unknown, name: string): unknown;
 }
 
 interface SpineRuntime {
-  readonly RegionAttachment: new (name: string) => unknown
-  readonly MeshAttachment: new (name: string) => unknown
-  readonly BoundingBoxAttachment: new (name: string) => unknown
-  readonly PathAttachment: new (name: string) => unknown
-  readonly PointAttachment: new (name: string) => unknown
-  readonly ClippingAttachment: new (name: string) => unknown
-  readonly SkeletonBinary: new (loader: AttachmentLoader) => {
-    readSkeletonData(bytes: Uint8Array): SpineSkeletonData
-  }
+  readonly RegionAttachment: new (name: string) => unknown;
+  readonly MeshAttachment: new (name: string) => unknown;
+  readonly BoundingBoxAttachment: new (name: string) => unknown;
+  readonly PathAttachment: new (name: string) => unknown;
+  readonly PointAttachment: new (name: string) => unknown;
+  readonly ClippingAttachment: new (name: string) => unknown;
+  readonly SkeletonBinary: new (
+    loader: AttachmentLoader,
+  ) => {
+    readSkeletonData(bytes: Uint8Array): SpineSkeletonData;
+  };
 }
 
-let runtime: SpineRuntime | null = null
+let runtime: SpineRuntime | null = null;
 
 function loadRuntime(): SpineRuntime {
-  if (runtime) return runtime
-  runtime = require("@pixi-spine/runtime-3.8") as SpineRuntime
-  return runtime
+  if (runtime) {
+    return runtime;
+  }
+  runtime = require('@pixi-spine/runtime-3.8') as SpineRuntime;
+  return runtime;
 }
 
 export function skelParserAvailable(): boolean {
   try {
-    loadRuntime()
-    return true
+    loadRuntime();
+    return true;
   } catch {
-    return false
+    return false;
   }
 }
 
-function makeLoader(spine: SpineRuntime, regions: ReadonlySet<string> | undefined, missing: Set<string>): AttachmentLoader {
+function makeLoader(
+  spine: SpineRuntime,
+  regions: ReadonlySet<string> | undefined,
+  missing: Set<string>,
+): AttachmentLoader {
   const check = (path: string): void => {
-    if (regions && !regions.has(path)) missing.add(path)
-  }
+    if (regions && !regions.has(path)) {
+      missing.add(path);
+    }
+  };
   return {
     newRegionAttachment(_skin, name, path) {
-      check(path)
-      return new spine.RegionAttachment(name)
+      check(path);
+      return new spine.RegionAttachment(name);
     },
     newMeshAttachment(_skin, name, path) {
-      check(path)
-      return new spine.MeshAttachment(name)
+      check(path);
+      return new spine.MeshAttachment(name);
     },
     newBoundingBoxAttachment(_skin, name) {
-      return new spine.BoundingBoxAttachment(name)
+      return new spine.BoundingBoxAttachment(name);
     },
     newPathAttachment(_skin, name) {
-      return new spine.PathAttachment(name)
+      return new spine.PathAttachment(name);
     },
     newPointAttachment(_skin, name) {
-      return new spine.PointAttachment(name)
+      return new spine.PointAttachment(name);
     },
     newClippingAttachment(_skin, name) {
-      return new spine.ClippingAttachment(name)
+      return new spine.ClippingAttachment(name);
     },
-  }
+  };
 }
 
-const round3 = (value: number): number => Math.round(Number(value) * 1000) / 1000
+const round3 = (value: number): number =>
+  Math.round(Number(value) * 1000) / 1000;
 
 export interface SkelAnimation {
   /** Seconds, rounded to milliseconds. */
-  readonly duration: number
+  readonly duration: number;
   /** Every event key of the animation, sorted by time and name. */
-  readonly events: readonly { readonly name: string; readonly time: number }[]
+  readonly events: readonly { readonly name: string; readonly time: number }[];
 }
 
 export interface SkelFacts {
-  readonly version: string
-  readonly animations: Readonly<Record<string, SkelAnimation>>
-  readonly bounds: { readonly x: number; readonly y: number; readonly width: number; readonly height: number } | null
-  readonly missingRegions: readonly string[]
+  readonly version: string;
+  readonly animations: Readonly<Record<string, SkelAnimation>>;
+  readonly bounds: {
+    readonly x: number;
+    readonly y: number;
+    readonly width: number;
+    readonly height: number;
+  } | null;
+  readonly missingRegions: readonly string[];
 }
 
-export function parseSkel(bytes: Uint8Array, atlasRegions?: ReadonlySet<string>): SkelFacts {
-  const spine = loadRuntime()
-  const missing = new Set<string>()
-  const binary = new spine.SkeletonBinary(makeLoader(spine, atlasRegions, missing))
-  const data = binary.readSkeletonData(bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes))
-  const animations: Record<string, SkelAnimation> = {}
-  for (const animation of [...data.animations].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))) {
-    const events: { name: string; time: number }[] = []
+export function parseSkel(
+  bytes: Uint8Array,
+  atlasRegions?: ReadonlySet<string>,
+): SkelFacts {
+  const spine = loadRuntime();
+  const missing = new Set<string>();
+  const binary = new spine.SkeletonBinary(
+    makeLoader(spine, atlasRegions, missing),
+  );
+  const data = binary.readSkeletonData(
+    bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes),
+  );
+  const animations: Record<string, SkelAnimation> = {};
+  for (const animation of [...data.animations].sort((a, b) =>
+    a.name < b.name ? -1 : a.name > b.name ? 1 : 0,
+  )) {
+    const events: { name: string; time: number }[] = [];
     for (const timeline of animation.timelines) {
-      if (!timeline || !Array.isArray(timeline.events)) continue
+      if (!timeline || !Array.isArray(timeline.events)) {
+        continue;
+      }
       for (const event of timeline.events) {
-        const name = event?.data?.name
-        if (typeof name === "string" && name.length > 0) events.push({ name, time: round3(Number(event.time)) })
+        const name = event?.data?.name;
+        if (typeof name === 'string' && name.length > 0) {
+          events.push({ name, time: round3(Number(event.time)) });
+        }
       }
     }
-    events.sort((a, b) => a.time - b.time || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
-    animations[animation.name] = { duration: round3(animation.duration), events }
+    events.sort(
+      (a, b) =>
+        a.time - b.time || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0),
+    );
+    animations[animation.name] = {
+      duration: round3(animation.duration),
+      events,
+    };
   }
-  const width = Number(data.width)
-  const height = Number(data.height)
+  const width = Number(data.width);
+  const height = Number(data.height);
   const bounds =
     Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0
-      ? { x: round3(data.x), y: round3(data.y), width: round3(width), height: round3(height) }
-      : null
+      ? {
+          x: round3(data.x),
+          y: round3(data.y),
+          width: round3(width),
+          height: round3(height),
+        }
+      : null;
   return {
-    version: String(data.version ?? ""),
+    version: String(data.version ?? ''),
     animations,
     bounds,
     missingRegions: [...missing].sort(),
-  }
+  };
 }

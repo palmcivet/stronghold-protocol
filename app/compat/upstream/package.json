@@ -25,9 +25,9 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "lint": "tsc --noEmit && tsc -p tsconfig.test.json --noEmit",
-    "test": "vitest run",
-    "case-map": "node dist/case-map/cli.js"
+    "case-map": "node dist/case-map/cli.js",
+    "check": "tsc --noEmit && tsc -p tsconfig.test.json --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "arknights-assets-catalog": "workspace:*",

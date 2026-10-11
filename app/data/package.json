@@ -46,15 +46,16 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "format": "biome check --write",
-    "lint": "tsc --noEmit",
-    "test": "vitest run",
-    "compile:needs": "node dist/compiler/scripts/needs.js",
-    "extract:media": "node dist/compiler/scripts/extract.js",
+    "check": "tsc --noEmit",
     "compile:derive": "node dist/compiler/scripts/derive.js",
-    "compile:packs": "node dist/compiler/scripts/packs.js",
+    "compile:emotes": "node dist/compiler/scripts/emotes.js",
+    "compile:needs": "node dist/compiler/scripts/needs.js",
     "compile:packet": "node dist/compiler/scripts/packet.js",
-    "compile:emotes": "node dist/compiler/scripts/emotes.js"
+    "compile:packs": "node dist/compiler/scripts/packs.js",
+    "extract:media": "node dist/compiler/scripts/extract.js",
+    "format": "biome check --write",
+    "lint": "biome lint",
+    "test": "vitest run"
   },
   "dependencies": {
     "arknights-assets-catalog": "workspace:*",

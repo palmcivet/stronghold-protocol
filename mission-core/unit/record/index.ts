@@ -1,118 +1,151 @@
-import type { ConditionalEffectSpec, Direction, HitArea, Motion, SkillHooks, SkillModifier, UnitKind, UnitSpec } from "#contract/spec.js"
-import type { AttributeModifier, BattleRegistry, EffectRecord, SkillRuntime } from "#port/definition.js"
-import type { ContentContext } from "#port/context.js"
-import { AIRBORNE, GROUNDBIND, LEVITATE } from "#port/tag.js"
-import type { TimerState } from "#kernel/timer/index.js"
-import { emit } from "#kernel/event/index.js"
-import { requireEntity, type World } from "#kernel/world/index.js"
-import { defineResource } from "#kernel/world/resource.js"
-import { createTagGrants, grantTag, hasTag, heldTagIds, type TagGrants } from "#kernel/world/tag.js"
-import { copyModifiers } from "#ability/skill/modifier.js"
+import { IMMUNITY } from '#ability/effect/immunity.js';
 import {
   isSkillOperation,
   isSpType,
   normalizeTrigger,
   type SkillOperation,
   type SpType,
-} from "#ability/skill/constants.js"
-import { ROUTE, compileRoute } from "#field/grid/route.js"
-import { gridOf } from "#field/grid/index.js"
-import { ATTACK_PROFILE, profileFromSpec } from "#combat/attack/profile.js"
-import { BLOCK } from "#unit/block/hold.js"
-import { TARGET_PRIORITY } from "#combat/target/priority.js"
-import { HIT_LIMIT } from "#combat/damage/limit.js"
-import { IMMUNITY } from "#ability/effect/immunity.js"
+} from '#ability/skill/constants.js';
+import { copyModifiers } from '#ability/skill/modifier.js';
+import { ATTACK_PROFILE, profileFromSpec } from '#combat/attack/profile.js';
+import { HIT_LIMIT } from '#combat/damage/limit.js';
+import { TARGET_PRIORITY } from '#combat/target/priority.js';
+import type {
+  ConditionalEffectSpec,
+  Direction,
+  HitArea,
+  Motion,
+  SkillHooks,
+  SkillModifier,
+  UnitKind,
+  UnitSpec,
+} from '#contract/spec.js';
+import { gridOf } from '#field/grid/index.js';
+import { compileRoute, ROUTE } from '#field/grid/route.js';
+import { emit } from '#kernel/event/index.js';
+import type { TimerState } from '#kernel/timer/index.js';
+import { requireEntity, type World } from '#kernel/world/index.js';
+import { defineResource } from '#kernel/world/resource.js';
+import {
+  createTagGrants,
+  grantTag,
+  hasTag,
+  heldTagIds,
+  type TagGrants,
+} from '#kernel/world/tag.js';
+import type { ContentContext } from '#port/context.js';
+import type {
+  AttributeModifier,
+  BattleRegistry,
+  EffectRecord,
+  SkillRuntime,
+} from '#port/definition.js';
+import { AIRBORNE, GROUNDBIND, LEVITATE } from '#port/tag.js';
+import { BLOCK } from '#unit/block/hold.js';
 
-export type { EffectRecord } from "#port/definition.js"
+export type { EffectRecord } from '#port/definition.js';
 
 /** 空中单位：飞行，或敌人正浮空、近地悬浮。缚地的敌人算地面单位，浮空时仍算空中。移动与寻路只看 motion。 */
 export function isFlying(unit: UnitState): boolean {
-  if (unit.side !== "enemy") return unit.motion === "FLY"
-  if (hasTag(unit, LEVITATE)) return true
-  if (hasTag(unit, GROUNDBIND)) return false
-  return unit.motion === "FLY" || hasTag(unit, AIRBORNE)
+  if (unit.side !== 'enemy') {
+    return unit.motion === 'FLY';
+  }
+  if (hasTag(unit, LEVITATE)) {
+    return true;
+  }
+  if (hasTag(unit, GROUNDBIND)) {
+    return false;
+  }
+  return unit.motion === 'FLY' || hasTag(unit, AIRBORNE);
 }
 
 export interface SkillInstance extends SkillRuntime {
-  readonly id: string
-  readonly body: string
-  readonly trigger: string
-  readonly spCost: number
-  readonly duration: number
-  readonly ammoSpec: number
-  readonly spType: SpType
-  readonly operation: SkillOperation
-  readonly initSp: number
-  readonly maxCharges: number
-  readonly heal: boolean
-  readonly triggerAllies: boolean
-  readonly triggerHpAtMost: number
-  readonly triggerRange: readonly { x: number; y: number }[]
-  readonly mods: readonly SkillModifier[]
-  readonly skillFlags: readonly string[]
-  readonly activateOnDeploy: boolean
-  readonly hooks: SkillHooks
-  sp: number
-  charges: number
-  opReadyAt: number
-  pending: boolean
-  activations: number
-  effectsApplied: boolean
-  hurtPending: boolean
+  readonly id: string;
+  readonly body: string;
+  readonly trigger: string;
+  readonly spCost: number;
+  readonly duration: number;
+  readonly ammoSpec: number;
+  readonly spType: SpType;
+  readonly operation: SkillOperation;
+  readonly initSp: number;
+  readonly maxCharges: number;
+  readonly heal: boolean;
+  readonly triggerAllies: boolean;
+  readonly triggerHpAtMost: number;
+  readonly triggerRange: readonly { x: number; y: number }[];
+  readonly mods: readonly SkillModifier[];
+  readonly skillFlags: readonly string[];
+  readonly activateOnDeploy: boolean;
+  readonly hooks: SkillHooks;
+  sp: number;
+  charges: number;
+  opReadyAt: number;
+  pending: boolean;
+  activations: number;
+  effectsApplied: boolean;
+  hurtPending: boolean;
 }
 
 export interface UnitState {
-  readonly id: string
-  readonly side: UnitSpec["side"]
-  readonly kind: UnitKind
+  readonly id: string;
+  readonly side: UnitSpec['side'];
+  readonly kind: UnitKind;
   /** 规格的 owner。账本按它分行。 */
-  readonly owner: string | null
-  readonly attributes: Record<string, number>
-  readonly skills: SkillInstance[]
-  readonly attackRange: readonly UnitSpec["attackRange"][number][]
+  readonly owner: string | null;
+  readonly attributes: Record<string, number>;
+  readonly skills: SkillInstance[];
+  readonly attackRange: readonly UnitSpec['attackRange'][number][];
   /** 规格、效果、技能与模块按来源授予的标签。 */
-  readonly tags: TagGrants
-  readonly deployPositions: readonly string[]
+  readonly tags: TagGrants;
+  readonly deployPositions: readonly string[];
   /** 仇恨序：越大越是最晚部署。用部署策略时每次部署重新排到最后。 */
-  aggroSeq: number
-  readonly spawnSeq: number
+  aggroSeq: number;
+  readonly spawnSeq: number;
   /** 放入时的格子。之后的坐标可以离开这里。 */
-  readonly homeX: number
-  readonly homeY: number
-  x: number
-  y: number
-  facing: Direction
-  hitArea: HitArea | null
-  motion: Motion
+  readonly homeX: number;
+  readonly homeY: number;
+  x: number;
+  y: number;
+  facing: Direction;
+  hitArea: HitArea | null;
+  motion: Motion;
   /** 身上的效果，按挂上的先后。 */
-  readonly effects: EffectRecord[]
+  readonly effects: EffectRecord[];
   /** 规格写的条件效果。 */
-  readonly conditionalEffects: readonly ConditionalEffectSpec[]
-  readonly timers: Map<string, TimerState>
+  readonly conditionalEffects: readonly ConditionalEffectSpec[];
+  readonly timers: Map<string, TimerState>;
   /** 规格列出的独立计时器 id。 */
-  readonly listedTimers: readonly string[]
+  readonly listedTimers: readonly string[];
   /** 按 key 挂上的属性修饰。remaining 是还没走到的终局拍数，Infinity 一直留着。 */
-  readonly modifiers: Map<string, { modifiers: readonly AttributeModifier[]; remaining: number }>
-  readonly script: Readonly<Record<string, string | number | boolean>>
-  readonly base: Record<string, number>
-  fielded: boolean
-  downed: boolean
+  readonly modifiers: Map<
+    string,
+    { modifiers: readonly AttributeModifier[]; remaining: number }
+  >;
+  readonly script: Readonly<Record<string, string | number | boolean>>;
+  readonly base: Record<string, number>;
+  fielded: boolean;
+  downed: boolean;
   /** 离场且不再回来。记录留到战斗结束，快照里不再出现。 */
-  removed: boolean
+  removed: boolean;
   /** 每次部署加一。回旋物等按部署分代的记录读它。 */
-  deployEpoch: number
+  deployEpoch: number;
   /** 失衡到这一拍为止（不含）；没有失衡是 null。 */
-  unbalanceUntil: number | null
+  unbalanceUntil: number | null;
   /** 上一次结算到的最大生命，开始时是规格里的最大生命。最大生命变了时当前生命按比例跟着变。 */
-  maxHpSeen: number
+  maxHpSeen: number;
 }
 
-function createSkill(spec: UnitSpec["skills"][number]): SkillInstance {
-  const spType = spec.spType ?? "time"
-  if (!isSpType(spType)) throw new Error(`未知技力类型: ${spType}`)
-  const operation = spec.operation ?? "MANUAL"
-  if (!isSkillOperation(operation)) throw new Error(`未知技能操作: ${operation}`)
-  const limit = spec.triggerHpAtMost
+function createSkill(spec: UnitSpec['skills'][number]): SkillInstance {
+  const spType = spec.spType ?? 'time';
+  if (!isSpType(spType)) {
+    throw new Error(`未知技力类型: ${spType}`);
+  }
+  const operation = spec.operation ?? 'MANUAL';
+  if (!isSkillOperation(operation)) {
+    throw new Error(`未知技能操作: ${operation}`);
+  }
+  const limit = spec.triggerHpAtMost;
   return {
     id: spec.id,
     body: spec.body,
@@ -127,7 +160,10 @@ function createSkill(spec: UnitSpec["skills"][number]): SkillInstance {
     heal: spec.heal === true,
     triggerAllies: spec.triggerAllies === true,
     triggerHpAtMost: limit !== undefined && limit > 0 ? limit : 1,
-    triggerRange: (spec.triggerRange ?? []).map((cell) => ({ x: cell.x, y: cell.y })),
+    triggerRange: (spec.triggerRange ?? []).map((cell) => ({
+      x: cell.x,
+      y: cell.y,
+    })),
     mods: copyModifiers(spec.mods),
     skillFlags: spec.flags ? [...spec.flags] : [],
     activateOnDeploy: spec.activateOnDeploy === true,
@@ -143,21 +179,27 @@ function createSkill(spec: UnitSpec["skills"][number]): SkillInstance {
     activations: 0,
     effectsApplied: false,
     hurtPending: false,
-  }
+  };
 }
 
-export function createUnit(spec: UnitSpec, fielded: boolean, order: number): UnitState {
-  const attributes: Record<string, number> = {}
-  const base: Record<string, number> = {}
+export function createUnit(
+  spec: UnitSpec,
+  fielded: boolean,
+  order: number,
+): UnitState {
+  const attributes: Record<string, number> = {};
+  const base: Record<string, number> = {};
   for (const [key, value] of Object.entries(spec.attributes)) {
-    attributes[key] = value
-    base[key] = value
+    attributes[key] = value;
+    base[key] = value;
   }
-  const skills: SkillInstance[] = spec.skills.map((skill) => createSkill(skill))
+  const skills: SkillInstance[] = spec.skills.map((skill) =>
+    createSkill(skill),
+  );
   return {
     id: spec.id,
     side: spec.side,
-    kind: spec.kind ?? (spec.side === "enemy" ? "enemy" : "operator"),
+    kind: spec.kind ?? (spec.side === 'enemy' ? 'enemy' : 'operator'),
     owner: spec.owner ?? null,
     attributes,
     skills,
@@ -170,11 +212,14 @@ export function createUnit(spec: UnitSpec, fielded: boolean, order: number): Uni
     homeY: Math.round(spec.y),
     x: spec.x,
     y: spec.y,
-    facing: spec.facing ?? "RIGHT",
+    facing: spec.facing ?? 'RIGHT',
     hitArea: spec.hitArea ?? null,
-    motion: spec.motion ?? "WALK",
+    motion: spec.motion ?? 'WALK',
     effects: [],
-    conditionalEffects: (spec.conditionalEffects ?? []).map((entry) => ({ ...entry, ...(entry.params ? { params: { ...entry.params } } : {}) })),
+    conditionalEffects: (spec.conditionalEffects ?? []).map((entry) => ({
+      ...entry,
+      ...(entry.params ? { params: { ...entry.params } } : {}),
+    })),
     timers: new Map(),
     listedTimers: spec.timers ? [...spec.timers] : [],
     modifiers: new Map(),
@@ -186,130 +231,187 @@ export function createUnit(spec: UnitSpec, fielded: boolean, order: number): Uni
     deployEpoch: 0,
     unbalanceUntil: null,
     maxHpSeen: Math.max(1, base.maxHp ?? base.hp ?? 1),
-  }
+  };
 }
 
 // MARK: world
 
 /** 一场战斗的世界，核心记录是 UnitState。 */
-export type BattleWorld = World<UnitState>
+export type BattleWorld = World<UnitState>;
 
 /** 本场的世界与注册表。内置模块从内容上下文按这个资源取到它们。 */
 export interface Engine {
-  readonly world: BattleWorld
-  readonly registry: BattleRegistry
+  readonly world: BattleWorld;
+  readonly registry: BattleRegistry;
 }
 
 export const ENGINE = defineResource<Engine>(
-  "core:engine",
+  'core:engine',
   () => {
-    throw new Error("engine is set when the battle is created")
+    throw new Error('engine is set when the battle is created');
   },
   { transient: true },
-)
+);
 
 export function engineOf(ctx: ContentContext): Engine {
-  return ctx.resource(ENGINE).ensure()
+  return ctx.resource(ENGINE).ensure();
 }
 
 export function requireUnit(world: BattleWorld, unitId: string): UnitState {
-  return requireEntity(world, unitId)
+  return requireEntity(world, unitId);
 }
 
 /** 放入一个单位并授予规格里的标签。 */
-export function placeUnit(world: BattleWorld, registry: BattleRegistry, spec: UnitSpec, fielded: boolean): UnitState {
-  checkSpecTags(registry, spec)
-  const unit = addUnit(world, spec, fielded)
-  grantSpecTags(registry, unit, spec)
+export function placeUnit(
+  world: BattleWorld,
+  registry: BattleRegistry,
+  spec: UnitSpec,
+  fielded: boolean,
+): UnitState {
+  checkSpecTags(registry, spec);
+  const unit = addUnit(world, spec, fielded);
+  grantSpecTags(registry, unit, spec);
   // 战斗中放进来就在场的友方（召唤物）是最晚部署的
-  if (fielded && spec.aggroSeq === undefined && world.spec.deployStrategy !== null) markLatestDeployed(world, unit)
-  return unit
+  if (
+    fielded &&
+    spec.aggroSeq === undefined &&
+    world.spec.deployStrategy !== null
+  ) {
+    markLatestDeployed(world, unit);
+  }
+  return unit;
 }
 
 /** 放入一个单位，按规格建好路线、阻挡、攻击档案、索敌、限伤与免疫组件。规格的标签另由 grantSpecTags 授予。 */
-export function addUnit(world: BattleWorld, spec: UnitSpec, fielded: boolean): UnitState {
-  if (world.units.has(spec.id)) throw new Error(`单位重复: ${spec.id}`)
-  const unit = createUnit(spec, fielded, world.units.size + 1)
-  const components = world.components
-  const route = compileRoute(spec.route ?? null, gridOf(world).rect)
-  if (route) components.access(ROUTE).set(spec.id, { run: route, hidden: false })
-  if (spec.blocking?.length || spec.blockedBy) {
-    components.access(BLOCK).set(spec.id, { blocking: [...(spec.blocking ?? [])], blockedBy: spec.blockedBy ?? null })
+export function addUnit(
+  world: BattleWorld,
+  spec: UnitSpec,
+  fielded: boolean,
+): UnitState {
+  if (world.units.has(spec.id)) {
+    throw new Error(`单位重复: ${spec.id}`);
   }
-  const profile = profileFromSpec(spec)
-  if (profile) components.access(ATTACK_PROFILE).set(spec.id, profile)
-  if (spec.targetPriority) components.access(TARGET_PRIORITY).set(spec.id, spec.targetPriority)
-  if (spec.hitLimit === true) components.access(HIT_LIMIT).set(spec.id, true)
-  if (spec.immunity?.length) components.access(IMMUNITY).set(spec.id, new Set(spec.immunity))
-  world.units.set(spec.id, unit)
-  return unit
+  const unit = createUnit(spec, fielded, world.units.size + 1);
+  const components = world.components;
+  const route = compileRoute(spec.route ?? null, gridOf(world).rect);
+  if (route) {
+    components.access(ROUTE).set(spec.id, { run: route, hidden: false });
+  }
+  if (spec.blocking?.length || spec.blockedBy) {
+    components.access(BLOCK).set(spec.id, {
+      blocking: [...(spec.blocking ?? [])],
+      blockedBy: spec.blockedBy ?? null,
+    });
+  }
+  const profile = profileFromSpec(spec);
+  if (profile) {
+    components.access(ATTACK_PROFILE).set(spec.id, profile);
+  }
+  if (spec.targetPriority) {
+    components.access(TARGET_PRIORITY).set(spec.id, spec.targetPriority);
+  }
+  if (spec.hitLimit === true) {
+    components.access(HIT_LIMIT).set(spec.id, true);
+  }
+  if (spec.immunity?.length) {
+    components.access(IMMUNITY).set(spec.id, new Set(spec.immunity));
+  }
+  world.units.set(spec.id, unit);
+  return unit;
 }
 
 /** 单位离场且不再回来：不在场、不再部署，发 removed。已经移除的不再处理。 */
 export function removeUnit(world: BattleWorld, unitId: string): void {
-  const unit = requireUnit(world, unitId)
-  if (unit.removed) return
-  unit.fielded = false
-  unit.removed = true
-  emit(world, "removed", { unitId })
+  const unit = requireUnit(world, unitId);
+  if (unit.removed) {
+    return;
+  }
+  unit.fielded = false;
+  unit.removed = true;
+  emit(world, 'removed', { unitId });
 }
 
 /** 单位上场：部署世代加一。 */
 export function markDeployed(unit: UnitState): void {
-  unit.deployEpoch += 1
+  unit.deployEpoch += 1;
 }
 
 /** 把友方排成最晚部署的：仇恨序取当前所有单位里最大的加一。 */
 // TRACE: source/latest-deployed
 export function markLatestDeployed(world: BattleWorld, unit: UnitState): void {
-  if (unit.side !== "ally") return
-  let top = 0
-  for (const other of world.units.values()) if (other.id !== unit.id && other.aggroSeq > top) top = other.aggroSeq
-  unit.aggroSeq = top + 1
+  if (unit.side !== 'ally') {
+    return;
+  }
+  let top = 0;
+  for (const other of world.units.values()) {
+    if (other.id !== unit.id && other.aggroSeq > top) {
+      top = other.aggroSeq;
+    }
+  }
+  unit.aggroSeq = top + 1;
 }
 
 // MARK: tag
 
 /** 规格静态标签的来源。 */
-export const SPEC_SOURCE = "spec"
+export const SPEC_SOURCE = 'spec';
 
 /** 规格里的标签和技能标签都要已注册。未注册时报出标签与单位规格。 */
 export function checkSpecTags(registry: BattleRegistry, spec: UnitSpec): void {
-  for (const tag of spec.tags) registry.requireTag(tag, `unit spec ${spec.id}`)
+  for (const tag of spec.tags) {
+    registry.requireTag(tag, `unit spec ${spec.id}`);
+  }
   for (const skill of spec.skills) {
-    for (const tag of skill.flags ?? []) registry.requireTag(tag, `unit spec ${spec.id}, skill ${skill.id}`)
+    for (const tag of skill.flags ?? []) {
+      registry.requireTag(tag, `unit spec ${spec.id}, skill ${skill.id}`);
+    }
   }
 }
 
-export function grantSpecTags(registry: BattleRegistry, unit: UnitState, spec: UnitSpec): void {
-  for (const tag of spec.tags) grantTag(unit, registry.requireTag(tag, `unit spec ${spec.id}`), SPEC_SOURCE)
+export function grantSpecTags(
+  registry: BattleRegistry,
+  unit: UnitState,
+  spec: UnitSpec,
+): void {
+  for (const tag of spec.tags) {
+    grantTag(
+      unit,
+      registry.requireTag(tag, `unit spec ${spec.id}`),
+      SPEC_SOURCE,
+    );
+  }
 }
 
 interface TagIds {
-  readonly version: number
-  readonly sorted: readonly string[]
+  readonly version: number;
+  readonly sorted: readonly string[];
 }
 
-const tagIdCache = new WeakMap<TagGrants, TagIds>()
+const tagIdCache = new WeakMap<TagGrants, TagIds>();
 
 /** 持有列表没变时返回上次排好的 id。 */
 function tagIdsOf(unit: UnitState): TagIds {
-  const cached = tagIdCache.get(unit.tags)
-  if (cached && cached.version === unit.tags.version) return cached
+  const cached = tagIdCache.get(unit.tags);
+  if (cached && cached.version === unit.tags.version) {
+    return cached;
+  }
   const ids: TagIds = {
     version: unit.tags.version,
     sorted: Object.freeze(heldTagIds(unit, () => true).sort()),
-  }
-  tagIdCache.set(unit.tags, ids)
-  return ids
+  };
+  tagIdCache.set(unit.tags, ids);
+  return ids;
 }
 
 /** 单位持有的全部标签 id，不分来源，按 id 排序。 */
 export function sortedTagIds(unit: UnitState): readonly string[] {
-  return tagIdsOf(unit).sorted
+  return tagIdsOf(unit).sorted;
 }
 
 /** 这一拍还在失衡。 */
-export function unbalanced(state: { readonly tick: number }, unit: UnitState): boolean {
-  return unit.unbalanceUntil !== null && state.tick < unit.unbalanceUntil
+export function unbalanced(
+  state: { readonly tick: number },
+  unit: UnitState,
+): boolean {
+  return unit.unbalanceUntil !== null && state.tick < unit.unbalanceUntil;
 }

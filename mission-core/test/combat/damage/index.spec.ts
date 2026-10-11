@@ -1,538 +1,805 @@
-import { expect, test } from "vitest"
-import { NO_HEAL } from "#port/tag.js"
-import { createBattle, type ContentContext, type MissionModule, type UnitSpec } from "arknights-mission-core"
-import { ally, spec } from "#test/fixture.js"
+import {
+  type ContentContext,
+  createBattle,
+  type MissionModule,
+  type UnitSpec,
+} from 'arknights-mission-core';
+import { expect, test } from 'vitest';
+import { NO_HEAL } from '#port/tag.js';
+import { ally, spec } from '#test/fixture.js';
 
-declare module "arknights-mission-core" {
+declare module 'arknights-mission-core' {
   interface BattleEventMap {
-    preview: { readonly amount: number; readonly steps: string }
+    preview: { readonly amount: number; readonly steps: string };
   }
 }
 
 function steps(): MissionModule {
   return {
-    id: "steps",
+    id: 'steps',
     install(ctx) {
       ctx.registerDamageStep({
-        id: "half",
+        id: 'half',
         priority: 10,
         apply(info) {
-          info.amount *= 0.5
+          info.amount *= 0.5;
         },
-      })
+      });
       ctx.registerDamageStep({
-        id: "cut",
+        id: 'cut',
         priority: 0,
         apply(info) {
-          info.amount -= 2
+          info.amount -= 2;
         },
-      })
+      });
     },
-  }
+  };
 }
 
-test("减伤预览走已注册步骤且不写生命", () => {
+test('减伤预览走已注册步骤且不写生命', () => {
   const module: MissionModule = {
-    id: "preview",
-    dependsOn: ["steps"],
+    id: 'preview',
+    dependsOn: ['steps'],
     install(ctx) {
       ctx.registerSystem({
-        id: "preview",
-        slot: "schedule",
+        id: 'preview',
+        slot: 'schedule',
         priority: 1,
         run(runCtx) {
-          const preview = runCtx.previewDamage({ sourceId: "a", targetId: "a", amount: 10, kind: "physical" })
-          runCtx.emit("preview", { amount: preview.amount, steps: preview.steps.join(",") })
+          const preview = runCtx.previewDamage({
+            sourceId: 'a',
+            targetId: 'a',
+            amount: 10,
+            kind: 'physical',
+          });
+          runCtx.emit('preview', {
+            amount: preview.amount,
+            steps: preview.steps.join(','),
+          });
         },
-      })
+      });
     },
-  }
-  const battle = createBattle(spec({ modules: ["steps", "preview"], units: [ally("a")] }), [steps(), module])
-  battle.step()
-  expect(battle.snapshot().units[0]?.attributes.hp).toBe(100)
-  const events = battle.drainEvents()
-  expect(events.some((event) => event.type === "damaged")).toBe(false)
-  expect(events.find((event) => event.type === "preview")?.data).toEqual({
+  };
+  const battle = createBattle(
+    spec({ modules: ['steps', 'preview'], units: [ally('a')] }),
+    [steps(), module],
+  );
+  battle.step();
+  expect(battle.snapshot().units[0]?.attributes.hp).toBe(100);
+  const events = battle.drainEvents();
+  expect(events.some((event) => event.type === 'damaged')).toBe(false);
+  expect(events.find((event) => event.type === 'preview')?.data).toEqual({
     amount: 4,
-    steps: "cut,half,element,dodge,mitigate,multiplier,boss-limit,shield,hp",
-  })
-})
+    steps: 'cut,half,element,dodge,mitigate,multiplier,boss-limit,shield,hp',
+  });
+});
 
-test("正式结算按优先级调用步骤并写入生命", () => {
+test('正式结算按优先级调用步骤并写入生命', () => {
   const module: MissionModule = {
-    id: "commit",
-    dependsOn: ["steps"],
+    id: 'commit',
+    dependsOn: ['steps'],
     install(ctx) {
       ctx.registerSystem({
-        id: "commit",
-        slot: "schedule",
+        id: 'commit',
+        slot: 'schedule',
         priority: 1,
         run(runCtx) {
-          runCtx.dealDamage({ sourceId: "a", targetId: "a", amount: 10, kind: "physical" })
-          runCtx.loseHp("a", 1)
+          runCtx.dealDamage({
+            sourceId: 'a',
+            targetId: 'a',
+            amount: 10,
+            kind: 'physical',
+          });
+          runCtx.loseHp('a', 1);
         },
-      })
+      });
     },
-  }
-  const battle = createBattle(spec({ modules: ["steps", "commit"], units: [ally("a")] }), [steps(), module])
-  battle.step()
-  expect(battle.snapshot().units[0]?.attributes.hp).toBe(95)
-  const types = battle.drainEvents().map((event) => event.type)
-  expect(types).toContain("damaged")
-  expect(types).toContain("loss")
-  expect(types.indexOf("damaged")).toBeLessThan(types.indexOf("loss"))
-})
+  };
+  const battle = createBattle(
+    spec({ modules: ['steps', 'commit'], units: [ally('a')] }),
+    [steps(), module],
+  );
+  battle.step();
+  expect(battle.snapshot().units[0]?.attributes.hp).toBe(95);
+  const types = battle.drainEvents().map((event) => event.type);
+  expect(types).toContain('damaged');
+  expect(types).toContain('loss');
+  expect(types.indexOf('damaged')).toBeLessThan(types.indexOf('loss'));
+});
 
-function open(units: UnitSpec[], run: (ctx: ContentContext) => void, prepare?: MissionModule["install"]): ReturnType<typeof createBattle> {
+function open(
+  units: UnitSpec[],
+  run: (ctx: ContentContext) => void,
+  prepare?: MissionModule['install'],
+): ReturnType<typeof createBattle> {
   const module: MissionModule = {
-    id: "case",
+    id: 'case',
     install(ctx) {
-      prepare?.(ctx)
+      prepare?.(ctx);
       ctx.registerSystem({
-        id: "case",
-        slot: "schedule",
+        id: 'case',
+        slot: 'schedule',
         priority: 1,
         run(runCtx) {
-          if (runCtx.tick() !== 0) return
-          run(runCtx)
-        },
-      })
-    },
-  }
-  return createBattle(spec({ modules: ["case"], units }), [module])
-}
-
-function hpOf(battle: ReturnType<typeof createBattle>, id = "t"): number {
-  return battle.snapshot().units.find((unit) => unit.id === id)?.attributes.hp ?? Number.NaN
-}
-
-function shieldOf(battle: ReturnType<typeof createBattle>, id = "t"): number {
-  return battle.snapshot().units.find((unit) => unit.id === id)?.attributes.shield ?? 0
-}
-
-test("物理减伤含 5% 下限和忽略防御", () => {
-  const plain = open([ally("t", { attributes: { hp: 1000, def: 40 } })], (ctx) => {
-    ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 100, kind: "physical" })
-  })
-  plain.step()
-  expect(hpOf(plain)).toBe(940)
-
-  const floor = open([ally("t", { attributes: { hp: 1000, def: 1000 } })], (ctx) => {
-    ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 100, kind: "physical" })
-  })
-  floor.step()
-  expect(hpOf(floor)).toBe(995)
-
-  const ignorePct = open([ally("t", { attributes: { hp: 1000, def: 80 } })], (ctx) => {
-    ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 100, kind: "physical", defIgnorePct: 0.5 })
-  })
-  ignorePct.step()
-  expect(hpOf(ignorePct)).toBe(940)
-
-  const ignoreFlat = open([ally("t", { attributes: { hp: 1000, def: 80 } })], (ctx) => {
-    ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 100, kind: "physical", defIgnoreFlat: 50 })
-  })
-  ignoreFlat.step()
-  expect(hpOf(ignoreFlat)).toBe(930)
-
-  const ignoreAll = open([ally("t", { attributes: { hp: 1000, def: 100 } })], (ctx) => {
-    ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 200, kind: "physical", defIgnorePct: 1 })
-  })
-  ignoreAll.step()
-  expect(hpOf(ignoreAll)).toBe(800)
-})
-
-test("法术减伤含 5% 下限和忽略法抗", () => {
-  const plain = open([ally("t", { attributes: { hp: 1000, res: 50 } })], (ctx) => {
-    ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 200, kind: "arts" })
-  })
-  plain.step()
-  expect(hpOf(plain)).toBe(900)
-
-  const floor = open([ally("t", { attributes: { hp: 1000, res: 100 } })], (ctx) => {
-    ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 100, kind: "arts" })
-  })
-  floor.step()
-  expect(hpOf(floor)).toBe(995)
-
-  const ignorePct = open([ally("t", { attributes: { hp: 1000, res: 80 } })], (ctx) => {
-    ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 200, kind: "arts", resIgnorePct: 0.5 })
-  })
-  ignorePct.step()
-  expect(hpOf(ignorePct)).toBe(880)
-
-  const ignoreFlat = open([ally("t", { attributes: { hp: 1000, res: 30 } })], (ctx) => {
-    ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 200, kind: "arts", resIgnoreFlat: 30 })
-  })
-  ignoreFlat.step()
-  expect(hpOf(ignoreFlat)).toBe(800)
-})
-
-test("真实伤害不看法防", () => {
-  const battle = open([ally("t", { attributes: { hp: 1000, def: 500, res: 90 } })], (ctx) => {
-    ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 80, kind: "true" })
-  })
-  battle.step()
-  expect(hpOf(battle)).toBe(920)
-})
-
-test("元素伤害含 5% 下限，不吃通用脆弱，吃元素脆弱", () => {
-  const floor = open([ally("t", { attributes: { hp: 1000, elementalRes: 100, def: 500, res: 90 } })], (ctx) => {
-    ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 100, kind: "elemental" })
-  })
-  floor.step()
-  expect(hpOf(floor)).toBe(995)
-
-  const resisted = open([ally("t", { attributes: { hp: 1000, elementalRes: 20 } })], (ctx) => {
-    ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 100, kind: "elemental" })
-  })
-  resisted.step()
-  expect(hpOf(resisted)).toBe(920)
-
-  const battle = open(
-    [ally("t", { attributes: { hp: 1000 } })],
-    (ctx) => {
-      ctx.applyEffect("t", "double-taken")
-      ctx.applyEffect("t", "elemental-fragile")
-      ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 100, kind: "physical" })
-      ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 100, kind: "elemental" })
-    },
-    (ctx) => {
-      ctx.registerEffect({
-        id: "double-taken",
-        grantsTags: [],
-        modifiers: [{ attribute: "dmgTaken", op: "mul", value: 2 }],
-        immunity: [],
-        stackCap: 1,
-        cancels: [],
-        duration: 0,
-        instant: false,
-        period: 1,
-        stacking: "refresh",
-      })
-      ctx.registerEffect({
-        id: "elemental-fragile",
-        grantsTags: [],
-        modifiers: [{ attribute: "elementalTaken", op: "mul", value: 1.5 }],
-        immunity: [],
-        stackCap: 1,
-        cancels: [],
-        duration: 0,
-        instant: false,
-        period: 1,
-        stacking: "refresh",
-      })
-    },
-  )
-  battle.step()
-  expect(hpOf(battle)).toBe(650)
-})
-
-test("来源伤害乘算和伤害自带乘数", () => {
-  const battle = open(
-    [ally("s", { attributes: { hp: 100 } }), ally("t", { attributes: { hp: 1000 } })],
-    (ctx) => {
-      ctx.applyEffect("s", "dealt")
-      ctx.dealDamage({ sourceId: "s", targetId: "t", amount: 100, kind: "physical" })
-      ctx.dealDamage({ sourceId: "s", targetId: "t", amount: 100, kind: "elemental" })
-      ctx.dealDamage({ sourceId: "s", targetId: "t", amount: 40, kind: "true", mul: 2 })
-    },
-    (ctx) => {
-      ctx.registerEffect({
-        id: "dealt",
-        grantsTags: [],
-        modifiers: [{ attribute: "dmgDealt", op: "mul", value: 2 }],
-        immunity: [],
-        stackCap: 1,
-        cancels: [],
-        duration: 0,
-        instant: false,
-        period: 1,
-        stacking: "refresh",
-      })
-    },
-  )
-  battle.step()
-  expect(hpOf(battle)).toBe(440)
-})
-
-test("护盾先于生命，闪避不写生命也不扣护盾", () => {
-  const soaked = open([ally("t", { attributes: { hp: 200, shield: 20 } })], (ctx) => {
-    ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 50, kind: "physical" })
-  })
-  soaked.step()
-  expect(hpOf(soaked)).toBe(170)
-  expect(shieldOf(soaked)).toBe(0)
-
-  const dodged = open([ally("t", { attributes: { hp: 200, shield: 30, dodgePhys: 1 } })], (ctx) => {
-    ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 50, kind: "physical" })
-  })
-  dodged.step()
-  expect(hpOf(dodged)).toBe(200)
-  expect(shieldOf(dodged)).toBe(30)
-  expect(dodged.drainEvents().some((event) => event.type === "damaged")).toBe(false)
-})
-
-test("预览和正式结算在闪避概率为 0 时同一个数，预览不改生命、护盾和随机数", () => {
-  let preview = 0
-  let randomHeld = false
-  const module: MissionModule = {
-    id: "case",
-    install(ctx) {
-      ctx.registerSystem({
-        id: "case",
-        slot: "schedule",
-        priority: 1,
-        run(runCtx) {
-          const info = { sourceId: "t", targetId: "t", amount: 100, kind: "physical" }
-          if (runCtx.tick() === 0) {
-            const before = runCtx.random.state()
-            preview = runCtx.previewDamage(info).amount
-            randomHeld = runCtx.random.state() === before
-            return
+          if (runCtx.tick() !== 0) {
+            return;
           }
-          if (runCtx.tick() === 1) runCtx.dealDamage(info)
+          run(runCtx);
         },
-      })
+      });
     },
-  }
+  };
+  return createBattle(spec({ modules: ['case'], units }), [module]);
+}
+
+function hpOf(battle: ReturnType<typeof createBattle>, id = 't'): number {
+  return (
+    battle.snapshot().units.find((unit) => unit.id === id)?.attributes.hp ??
+    Number.NaN
+  );
+}
+
+function shieldOf(battle: ReturnType<typeof createBattle>, id = 't'): number {
+  return (
+    battle.snapshot().units.find((unit) => unit.id === id)?.attributes.shield ??
+    0
+  );
+}
+
+test('物理减伤含 5% 下限和忽略防御', () => {
+  const plain = open(
+    [ally('t', { attributes: { hp: 1000, def: 40 } })],
+    (ctx) => {
+      ctx.dealDamage({
+        sourceId: 't',
+        targetId: 't',
+        amount: 100,
+        kind: 'physical',
+      });
+    },
+  );
+  plain.step();
+  expect(hpOf(plain)).toBe(940);
+
+  const floor = open(
+    [ally('t', { attributes: { hp: 1000, def: 1000 } })],
+    (ctx) => {
+      ctx.dealDamage({
+        sourceId: 't',
+        targetId: 't',
+        amount: 100,
+        kind: 'physical',
+      });
+    },
+  );
+  floor.step();
+  expect(hpOf(floor)).toBe(995);
+
+  const ignorePct = open(
+    [ally('t', { attributes: { hp: 1000, def: 80 } })],
+    (ctx) => {
+      ctx.dealDamage({
+        sourceId: 't',
+        targetId: 't',
+        amount: 100,
+        kind: 'physical',
+        defIgnorePct: 0.5,
+      });
+    },
+  );
+  ignorePct.step();
+  expect(hpOf(ignorePct)).toBe(940);
+
+  const ignoreFlat = open(
+    [ally('t', { attributes: { hp: 1000, def: 80 } })],
+    (ctx) => {
+      ctx.dealDamage({
+        sourceId: 't',
+        targetId: 't',
+        amount: 100,
+        kind: 'physical',
+        defIgnoreFlat: 50,
+      });
+    },
+  );
+  ignoreFlat.step();
+  expect(hpOf(ignoreFlat)).toBe(930);
+
+  const ignoreAll = open(
+    [ally('t', { attributes: { hp: 1000, def: 100 } })],
+    (ctx) => {
+      ctx.dealDamage({
+        sourceId: 't',
+        targetId: 't',
+        amount: 200,
+        kind: 'physical',
+        defIgnorePct: 1,
+      });
+    },
+  );
+  ignoreAll.step();
+  expect(hpOf(ignoreAll)).toBe(800);
+});
+
+test('法术减伤含 5% 下限和忽略法抗', () => {
+  const plain = open(
+    [ally('t', { attributes: { hp: 1000, res: 50 } })],
+    (ctx) => {
+      ctx.dealDamage({
+        sourceId: 't',
+        targetId: 't',
+        amount: 200,
+        kind: 'arts',
+      });
+    },
+  );
+  plain.step();
+  expect(hpOf(plain)).toBe(900);
+
+  const floor = open(
+    [ally('t', { attributes: { hp: 1000, res: 100 } })],
+    (ctx) => {
+      ctx.dealDamage({
+        sourceId: 't',
+        targetId: 't',
+        amount: 100,
+        kind: 'arts',
+      });
+    },
+  );
+  floor.step();
+  expect(hpOf(floor)).toBe(995);
+
+  const ignorePct = open(
+    [ally('t', { attributes: { hp: 1000, res: 80 } })],
+    (ctx) => {
+      ctx.dealDamage({
+        sourceId: 't',
+        targetId: 't',
+        amount: 200,
+        kind: 'arts',
+        resIgnorePct: 0.5,
+      });
+    },
+  );
+  ignorePct.step();
+  expect(hpOf(ignorePct)).toBe(880);
+
+  const ignoreFlat = open(
+    [ally('t', { attributes: { hp: 1000, res: 30 } })],
+    (ctx) => {
+      ctx.dealDamage({
+        sourceId: 't',
+        targetId: 't',
+        amount: 200,
+        kind: 'arts',
+        resIgnoreFlat: 30,
+      });
+    },
+  );
+  ignoreFlat.step();
+  expect(hpOf(ignoreFlat)).toBe(800);
+});
+
+test('真实伤害不看法防', () => {
+  const battle = open(
+    [ally('t', { attributes: { hp: 1000, def: 500, res: 90 } })],
+    (ctx) => {
+      ctx.dealDamage({
+        sourceId: 't',
+        targetId: 't',
+        amount: 80,
+        kind: 'true',
+      });
+    },
+  );
+  battle.step();
+  expect(hpOf(battle)).toBe(920);
+});
+
+test('元素伤害含 5% 下限，不吃通用脆弱，吃元素脆弱', () => {
+  const floor = open(
+    [
+      ally('t', {
+        attributes: { hp: 1000, elementalRes: 100, def: 500, res: 90 },
+      }),
+    ],
+    (ctx) => {
+      ctx.dealDamage({
+        sourceId: 't',
+        targetId: 't',
+        amount: 100,
+        kind: 'elemental',
+      });
+    },
+  );
+  floor.step();
+  expect(hpOf(floor)).toBe(995);
+
+  const resisted = open(
+    [ally('t', { attributes: { hp: 1000, elementalRes: 20 } })],
+    (ctx) => {
+      ctx.dealDamage({
+        sourceId: 't',
+        targetId: 't',
+        amount: 100,
+        kind: 'elemental',
+      });
+    },
+  );
+  resisted.step();
+  expect(hpOf(resisted)).toBe(920);
+
+  const battle = open(
+    [ally('t', { attributes: { hp: 1000 } })],
+    (ctx) => {
+      ctx.applyEffect('t', 'double-taken');
+      ctx.applyEffect('t', 'elemental-fragile');
+      ctx.dealDamage({
+        sourceId: 't',
+        targetId: 't',
+        amount: 100,
+        kind: 'physical',
+      });
+      ctx.dealDamage({
+        sourceId: 't',
+        targetId: 't',
+        amount: 100,
+        kind: 'elemental',
+      });
+    },
+    (ctx) => {
+      ctx.registerEffect({
+        id: 'double-taken',
+        grantsTags: [],
+        modifiers: [{ attribute: 'dmgTaken', op: 'mul', value: 2 }],
+        immunity: [],
+        stackCap: 1,
+        cancels: [],
+        duration: 0,
+        instant: false,
+        period: 1,
+        stacking: 'refresh',
+      });
+      ctx.registerEffect({
+        id: 'elemental-fragile',
+        grantsTags: [],
+        modifiers: [{ attribute: 'elementalTaken', op: 'mul', value: 1.5 }],
+        immunity: [],
+        stackCap: 1,
+        cancels: [],
+        duration: 0,
+        instant: false,
+        period: 1,
+        stacking: 'refresh',
+      });
+    },
+  );
+  battle.step();
+  expect(hpOf(battle)).toBe(650);
+});
+
+test('来源伤害乘算和伤害自带乘数', () => {
+  const battle = open(
+    [
+      ally('s', { attributes: { hp: 100 } }),
+      ally('t', { attributes: { hp: 1000 } }),
+    ],
+    (ctx) => {
+      ctx.applyEffect('s', 'dealt');
+      ctx.dealDamage({
+        sourceId: 's',
+        targetId: 't',
+        amount: 100,
+        kind: 'physical',
+      });
+      ctx.dealDamage({
+        sourceId: 's',
+        targetId: 't',
+        amount: 100,
+        kind: 'elemental',
+      });
+      ctx.dealDamage({
+        sourceId: 's',
+        targetId: 't',
+        amount: 40,
+        kind: 'true',
+        mul: 2,
+      });
+    },
+    (ctx) => {
+      ctx.registerEffect({
+        id: 'dealt',
+        grantsTags: [],
+        modifiers: [{ attribute: 'dmgDealt', op: 'mul', value: 2 }],
+        immunity: [],
+        stackCap: 1,
+        cancels: [],
+        duration: 0,
+        instant: false,
+        period: 1,
+        stacking: 'refresh',
+      });
+    },
+  );
+  battle.step();
+  expect(hpOf(battle)).toBe(440);
+});
+
+test('护盾先于生命，闪避不写生命也不扣护盾', () => {
+  const soaked = open(
+    [ally('t', { attributes: { hp: 200, shield: 20 } })],
+    (ctx) => {
+      ctx.dealDamage({
+        sourceId: 't',
+        targetId: 't',
+        amount: 50,
+        kind: 'physical',
+      });
+    },
+  );
+  soaked.step();
+  expect(hpOf(soaked)).toBe(170);
+  expect(shieldOf(soaked)).toBe(0);
+
+  const dodged = open(
+    [ally('t', { attributes: { hp: 200, shield: 30, dodgePhys: 1 } })],
+    (ctx) => {
+      ctx.dealDamage({
+        sourceId: 't',
+        targetId: 't',
+        amount: 50,
+        kind: 'physical',
+      });
+    },
+  );
+  dodged.step();
+  expect(hpOf(dodged)).toBe(200);
+  expect(shieldOf(dodged)).toBe(30);
+  expect(dodged.drainEvents().some((event) => event.type === 'damaged')).toBe(
+    false,
+  );
+});
+
+test('预览和正式结算在闪避概率为 0 时同一个数，预览不改生命、护盾和随机数', () => {
+  let preview = 0;
+  let randomHeld = false;
+  const module: MissionModule = {
+    id: 'case',
+    install(ctx) {
+      ctx.registerSystem({
+        id: 'case',
+        slot: 'schedule',
+        priority: 1,
+        run(runCtx) {
+          const info = {
+            sourceId: 't',
+            targetId: 't',
+            amount: 100,
+            kind: 'physical',
+          };
+          if (runCtx.tick() === 0) {
+            const before = runCtx.random.state();
+            preview = runCtx.previewDamage(info).amount;
+            randomHeld = runCtx.random.state() === before;
+            return;
+          }
+          if (runCtx.tick() === 1) {
+            runCtx.dealDamage(info);
+          }
+        },
+      });
+    },
+  };
   const battle = createBattle(
     spec({
-      modules: ["case"],
-      units: [ally("t", { attributes: { hp: 200, def: 40, shield: 15, dodgePhys: 0 } })],
+      modules: ['case'],
+      units: [
+        ally('t', {
+          attributes: { hp: 200, def: 40, shield: 15, dodgePhys: 0 },
+        }),
+      ],
     }),
     [module],
-  )
-  battle.step()
-  expect(randomHeld).toBe(true)
-  expect(preview).toBe(45)
-  expect(hpOf(battle)).toBe(200)
-  expect(shieldOf(battle)).toBe(15)
-  const previewEvents = battle.drainEvents().map((event) => event.type)
-  expect(previewEvents).not.toContain("damaged")
-  expect(previewEvents).not.toContain("hit")
-  expect(previewEvents).not.toContain("element-hit")
-  expect(previewEvents).not.toContain("fatal")
-  battle.step()
-  expect(hpOf(battle)).toBe(155)
-  expect(shieldOf(battle)).toBe(0)
-  expect(200 - hpOf(battle)).toBe(preview)
-})
+  );
+  battle.step();
+  expect(randomHeld).toBe(true);
+  expect(preview).toBe(45);
+  expect(hpOf(battle)).toBe(200);
+  expect(shieldOf(battle)).toBe(15);
+  const previewEvents = battle.drainEvents().map((event) => event.type);
+  expect(previewEvents).not.toContain('damaged');
+  expect(previewEvents).not.toContain('hit');
+  expect(previewEvents).not.toContain('element-hit');
+  expect(previewEvents).not.toContain('fatal');
+  battle.step();
+  expect(hpOf(battle)).toBe(155);
+  expect(shieldOf(battle)).toBe(0);
+  expect(200 - hpOf(battle)).toBe(preview);
+});
 
-test("预览不掷闪避，正式结算仍用本场随机数", () => {
-  const attributes = { hp: 200, def: 40, shield: 15, dodgePhys: 0.5 }
-  const info = { sourceId: "t", targetId: "t", amount: 100, kind: "physical" }
-  let preview = 0
-  let randomHeld = false
+test('预览不掷闪避，正式结算仍用本场随机数', () => {
+  const attributes = { hp: 200, def: 40, shield: 15, dodgePhys: 0.5 };
+  const info = { sourceId: 't', targetId: 't', amount: 100, kind: 'physical' };
+  let preview = 0;
+  let randomHeld = false;
   const previewFirst: MissionModule = {
-    id: "case",
+    id: 'case',
     install(ctx) {
       ctx.registerSystem({
-        id: "case",
-        slot: "schedule",
+        id: 'case',
+        slot: 'schedule',
         priority: 1,
         run(runCtx) {
           if (runCtx.tick() === 0) {
-            const before = runCtx.random.state()
-            preview = runCtx.previewDamage(info).amount
-            randomHeld = runCtx.random.state() === before
-            return
+            const before = runCtx.random.state();
+            preview = runCtx.previewDamage(info).amount;
+            randomHeld = runCtx.random.state() === before;
+            return;
           }
-          if (runCtx.tick() === 1) runCtx.dealDamage(info)
+          if (runCtx.tick() === 1) {
+            runCtx.dealDamage(info);
+          }
         },
-      })
+      });
     },
-  }
+  };
   const direct: MissionModule = {
-    id: "case",
+    id: 'case',
     install(ctx) {
       ctx.registerSystem({
-        id: "case",
-        slot: "schedule",
+        id: 'case',
+        slot: 'schedule',
         priority: 1,
         run(runCtx) {
-          if (runCtx.tick() === 0) runCtx.dealDamage(info)
+          if (runCtx.tick() === 0) {
+            runCtx.dealDamage(info);
+          }
         },
-      })
+      });
     },
-  }
-  const seeded = { seed: 7, modules: ["case"], units: [ally("t", { attributes })] }
-  const withPreview = createBattle(spec(seeded), [previewFirst])
-  withPreview.step()
-  expect(preview).toBe(45)
-  expect(randomHeld).toBe(true)
-  expect(hpOf(withPreview)).toBe(200)
-  expect(shieldOf(withPreview)).toBe(15)
-  const previewEvents = withPreview.drainEvents().map((event) => event.type)
-  expect(previewEvents).not.toContain("hit")
-  expect(previewEvents).not.toContain("damaged")
-  expect(previewEvents).not.toContain("element-hit")
-  withPreview.step()
-  const straight = createBattle(spec(seeded), [direct])
-  straight.step()
-  expect(hpOf(withPreview)).toBe(hpOf(straight))
-  expect(shieldOf(withPreview)).toBe(shieldOf(straight))
-})
+  };
+  const seeded = {
+    seed: 7,
+    modules: ['case'],
+    units: [ally('t', { attributes })],
+  };
+  const withPreview = createBattle(spec(seeded), [previewFirst]);
+  withPreview.step();
+  expect(preview).toBe(45);
+  expect(randomHeld).toBe(true);
+  expect(hpOf(withPreview)).toBe(200);
+  expect(shieldOf(withPreview)).toBe(15);
+  const previewEvents = withPreview.drainEvents().map((event) => event.type);
+  expect(previewEvents).not.toContain('hit');
+  expect(previewEvents).not.toContain('damaged');
+  expect(previewEvents).not.toContain('element-hit');
+  withPreview.step();
+  const straight = createBattle(spec(seeded), [direct]);
+  straight.step();
+  expect(hpOf(withPreview)).toBe(hpOf(straight));
+  expect(shieldOf(withPreview)).toBe(shieldOf(straight));
+});
 
-test("闪避在减伤和首领限伤之前，成功则不写生命也不扣护盾", () => {
-  let seen = -1
-  let rolled = false
+test('闪避在减伤和首领限伤之前，成功则不写生命也不扣护盾', () => {
+  let seen = -1;
+  let rolled = false;
   const battle = open(
-    [ally("t", { attributes: { hp: 400000, def: 80, shield: 40, dodgePhys: 1 }, hitLimit: true })],
+    [
+      ally('t', {
+        attributes: { hp: 400000, def: 80, shield: 40, dodgePhys: 1 },
+        hitLimit: true,
+      }),
+    ],
     (ctx) => {
-      const before = ctx.random.state()
-      ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 300000, kind: "physical" })
-      rolled = ctx.random.state() !== before
+      const before = ctx.random.state();
+      ctx.dealDamage({
+        sourceId: 't',
+        targetId: 't',
+        amount: 300000,
+        kind: 'physical',
+      });
+      rolled = ctx.random.state() !== before;
     },
     (ctx) => {
       ctx.registerDamageStep({
-        id: "between",
+        id: 'between',
         priority: 175,
         apply(info) {
-          seen = info.amount
+          seen = info.amount;
         },
-      })
+      });
     },
-  )
-  battle.step()
-  expect(rolled).toBe(true)
-  expect(seen).toBe(0)
-  expect(hpOf(battle)).toBe(400000)
-  expect(shieldOf(battle)).toBe(40)
-  expect(battle.drainEvents().some((event) => event.type === "damaged")).toBe(false)
-})
+  );
+  battle.step();
+  expect(rolled).toBe(true);
+  expect(seen).toBe(0);
+  expect(hpOf(battle)).toBe(400000);
+  expect(shieldOf(battle)).toBe(40);
+  expect(battle.drainEvents().some((event) => event.type === 'damaged')).toBe(
+    false,
+  );
+});
 
-test("流失不减防御和法抗，不发 damaged", () => {
-  const plain = open([ally("t", { attributes: { hp: 200, def: 40, res: 90, shield: 100, dodgePhys: 1 } })], (ctx) => {
-    ctx.loseHp("t", 100)
-  })
-  plain.step()
-  expect(hpOf(plain)).toBe(100)
-  expect(shieldOf(plain)).toBe(100)
-  const plainEvents = plain.drainEvents().map((event) => event.type)
-  expect(plainEvents).not.toContain("damaged")
-  expect(plainEvents).toContain("loss")
+test('流失不减防御和法抗，不发 damaged', () => {
+  const plain = open(
+    [
+      ally('t', {
+        attributes: { hp: 200, def: 40, res: 90, shield: 100, dodgePhys: 1 },
+      }),
+    ],
+    (ctx) => {
+      ctx.loseHp('t', 100);
+    },
+  );
+  plain.step();
+  expect(hpOf(plain)).toBe(100);
+  expect(shieldOf(plain)).toBe(100);
+  const plainEvents = plain.drainEvents().map((event) => event.type);
+  expect(plainEvents).not.toContain('damaged');
+  expect(plainEvents).toContain('loss');
 
-  const heavy = open([ally("t", { attributes: { hp: 400000, def: 1000, res: 90 } })], (ctx) => {
-    ctx.loseHp("t", 300000)
-  })
-  heavy.step()
-  expect(hpOf(heavy)).toBe(100000)
-  const heavyEvents = heavy.drainEvents().map((event) => event.type)
-  expect(heavyEvents).not.toContain("damaged")
-  expect(heavyEvents).toContain("loss")
+  const heavy = open(
+    [ally('t', { attributes: { hp: 400000, def: 1000, res: 90 } })],
+    (ctx) => {
+      ctx.loseHp('t', 300000);
+    },
+  );
+  heavy.step();
+  expect(hpOf(heavy)).toBe(100000);
+  const heavyEvents = heavy.drainEvents().map((event) => event.type);
+  expect(heavyEvents).not.toContain('damaged');
+  expect(heavyEvents).toContain('loss');
 
   const blocked = open(
-    [ally("t", { attributes: { hp: 400000, def: 0, shield: 80 }, hitLimit: true })],
+    [
+      ally('t', {
+        attributes: { hp: 400000, def: 0, shield: 80 },
+        hitLimit: true,
+      }),
+    ],
     (ctx) => {
-      ctx.loseHp("t", 300000)
+      ctx.loseHp('t', 300000);
     },
-  )
-  blocked.step()
-  expect(hpOf(blocked)).toBe(400000)
-  expect(shieldOf(blocked)).toBe(80)
-  const blockedEvents = blocked.drainEvents().map((event) => event.type)
-  expect(blockedEvents).not.toContain("damaged")
-  expect(blockedEvents).not.toContain("loss")
+  );
+  blocked.step();
+  expect(hpOf(blocked)).toBe(400000);
+  expect(shieldOf(blocked)).toBe(80);
+  const blockedEvents = blocked.drainEvents().map((event) => event.type);
+  expect(blockedEvents).not.toContain('damaged');
+  expect(blockedEvents).not.toContain('loss');
 
   const under = open(
-    [ally("t", { attributes: { hp: 400000, def: 500, res: 90 }, hitLimit: true })],
+    [
+      ally('t', {
+        attributes: { hp: 400000, def: 500, res: 90 },
+        hitLimit: true,
+      }),
+    ],
     (ctx) => {
-      ctx.loseHp("t", 299999)
+      ctx.loseHp('t', 299999);
     },
-  )
-  under.step()
-  expect(hpOf(under)).toBe(100001)
-  const underEvents = under.drainEvents().map((event) => event.type)
-  expect(underEvents).not.toContain("damaged")
-  expect(underEvents).toContain("loss")
-})
+  );
+  under.step();
+  expect(hpOf(under)).toBe(100001);
+  const underEvents = under.drainEvents().map((event) => event.type);
+  expect(underEvents).not.toContain('damaged');
+  expect(underEvents).toContain('loss');
+});
 
-test("首领限伤打开时超过阈值不扣生命，没打开时照常扣", () => {
+test('首领限伤打开时超过阈值不扣生命，没打开时照常扣', () => {
   const blocked = open(
-    [ally("t", { attributes: { hp: 400000, shield: 50 }, hitLimit: true })],
+    [ally('t', { attributes: { hp: 400000, shield: 50 }, hitLimit: true })],
     (ctx) => {
-      ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 300000, kind: "true" })
+      ctx.dealDamage({
+        sourceId: 't',
+        targetId: 't',
+        amount: 300000,
+        kind: 'true',
+      });
     },
-  )
-  blocked.step()
-  expect(hpOf(blocked)).toBe(400000)
-  expect(shieldOf(blocked)).toBe(50)
-  expect(blocked.drainEvents().some((event) => event.type === "damaged")).toBe(false)
+  );
+  blocked.step();
+  expect(hpOf(blocked)).toBe(400000);
+  expect(shieldOf(blocked)).toBe(50);
+  expect(blocked.drainEvents().some((event) => event.type === 'damaged')).toBe(
+    false,
+  );
 
   const under = open(
-    [ally("t", { attributes: { hp: 400000 }, hitLimit: true })],
+    [ally('t', { attributes: { hp: 400000 }, hitLimit: true })],
     (ctx) => {
-      ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 299999, kind: "true" })
+      ctx.dealDamage({
+        sourceId: 't',
+        targetId: 't',
+        amount: 299999,
+        kind: 'true',
+      });
     },
-  )
-  under.step()
-  expect(hpOf(under)).toBe(100001)
+  );
+  under.step();
+  expect(hpOf(under)).toBe(100001);
 
-  const openLimit = open([ally("t", { attributes: { hp: 400000 } })], (ctx) => {
-    ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 300000, kind: "true" })
-  })
-  openLimit.step()
-  expect(hpOf(openLimit)).toBe(100000)
-})
+  const openLimit = open([ally('t', { attributes: { hp: 400000 } })], (ctx) => {
+    ctx.dealDamage({
+      sourceId: 't',
+      targetId: 't',
+      amount: 300000,
+      kind: 'true',
+    });
+  });
+  openLimit.step();
+  expect(hpOf(openLimit)).toBe(100000);
+});
 
-test("hit 阶段的伤害修饰在减伤前改伤害，hit 事件带改后的数额；fatal 可以把生命留在 1", () => {
-  const seen: number[] = []
-  const hit = open([ally("t", { attributes: { hp: 100, def: 0 } })], (ctx) => {
+test('hit 阶段的伤害修饰在减伤前改伤害，hit 事件带改后的数额；fatal 可以把生命留在 1', () => {
+  const seen: number[] = [];
+  const hit = open([ally('t', { attributes: { hp: 100, def: 0 } })], (ctx) => {
     ctx.registerDamageModifier({
-      id: "halve",
-      stage: "hit",
+      id: 'halve',
+      stage: 'hit',
       priority: 0,
       modify(change) {
-        change.amount = 50
+        change.amount = 50;
       },
-    })
-    ctx.subscribe("hit", (event) => {
-      seen.push(event.data.amount)
-    })
-    ctx.subscribe("fatal", (event) => {
-      event.data.prevented = true
-    })
-    ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 100, kind: "physical" })
-  })
-  hit.step()
-  expect(hpOf(hit)).toBe(50)
-  expect(seen).toEqual([50])
+    });
+    ctx.subscribe('hit', (event) => {
+      seen.push(event.data.amount);
+    });
+    ctx.subscribe('fatal', (event) => {
+      event.data.prevented = true;
+    });
+    ctx.dealDamage({
+      sourceId: 't',
+      targetId: 't',
+      amount: 100,
+      kind: 'physical',
+    });
+  });
+  hit.step();
+  expect(hpOf(hit)).toBe(50);
+  expect(seen).toEqual([50]);
 
-  const saved = open([ally("t", { attributes: { hp: 30 } })], (ctx) => {
-    ctx.subscribe("fatal", (event) => {
-      event.data.prevented = true
-    })
-    ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 100, kind: "true" })
-  })
-  saved.step()
-  expect(hpOf(saved)).toBe(1)
-})
+  const saved = open([ally('t', { attributes: { hp: 30 } })], (ctx) => {
+    ctx.subscribe('fatal', (event) => {
+      event.data.prevented = true;
+    });
+    ctx.dealDamage({ sourceId: 't', targetId: 't', amount: 100, kind: 'true' });
+  });
+  saved.step();
+  expect(hpOf(saved)).toBe(1);
+});
 
-test("治疗受乘算、禁疗和最大生命限制，溢出按 overheal 进护盾", () => {
-  const capped = open([ally("t", { attributes: { hp: 40, maxHp: 100 } })], (ctx) => {
-    ctx.heal("t", 50)
-  })
-  capped.step()
-  expect(hpOf(capped)).toBe(90)
+test('治疗受乘算、禁疗和最大生命限制，溢出按 overheal 进护盾', () => {
+  const capped = open(
+    [ally('t', { attributes: { hp: 40, maxHp: 100 } })],
+    (ctx) => {
+      ctx.heal('t', 50);
+    },
+  );
+  capped.step();
+  expect(hpOf(capped)).toBe(90);
 
-  const over = open([ally("t", { attributes: { hp: 40, maxHp: 100 } })], (ctx) => {
-    ctx.heal("t", 80, { overheal: true })
-  })
-  over.step()
-  expect(hpOf(over)).toBe(100)
-  expect(shieldOf(over)).toBe(20)
+  const over = open(
+    [ally('t', { attributes: { hp: 40, maxHp: 100 } })],
+    (ctx) => {
+      ctx.heal('t', 80, { overheal: true });
+    },
+  );
+  over.step();
+  expect(hpOf(over)).toBe(100);
+  expect(shieldOf(over)).toBe(20);
 
   const blocked = open(
-    [ally("t", { attributes: { hp: 40, maxHp: 100 } })],
+    [ally('t', { attributes: { hp: 40, maxHp: 100 } })],
     (ctx) => {
-      ctx.applyEffect("t", "noHeal")
-      ctx.heal("t", 10)
-      ctx.heal("t", 10, { self: true })
+      ctx.applyEffect('t', 'noHeal');
+      ctx.heal('t', 10);
+      ctx.heal('t', 10, { self: true });
     },
     (ctx) => {
       ctx.registerEffect({
-        id: "noHeal",
+        id: 'noHeal',
         grantsTags: [NO_HEAL],
         modifiers: [],
         immunity: [],
@@ -541,88 +808,112 @@ test("治疗受乘算、禁疗和最大生命限制，溢出按 overheal 进护�
         duration: 0,
         instant: false,
         period: 1,
-        stacking: "refresh",
-      })
+        stacking: 'refresh',
+      });
     },
-  )
-  blocked.step()
-  expect(hpOf(blocked)).toBe(50)
-  expect(blocked.drainEvents().filter((event) => event.type === "heal")).toHaveLength(1)
+  );
+  blocked.step();
+  expect(hpOf(blocked)).toBe(50);
+  expect(
+    blocked.drainEvents().filter((event) => event.type === 'heal'),
+  ).toHaveLength(1);
 
   const taken = open(
-    [ally("s", { attributes: { hp: 100 } }), ally("t", { attributes: { hp: 40, maxHp: 100 } })],
+    [
+      ally('s', { attributes: { hp: 100 } }),
+      ally('t', { attributes: { hp: 40, maxHp: 100 } }),
+    ],
     (ctx) => {
-      ctx.applyEffect("s", "heal-dealt")
-      ctx.applyEffect("t", "heal-taken")
-      ctx.heal("t", 10, { sourceId: "s" })
+      ctx.applyEffect('s', 'heal-dealt');
+      ctx.applyEffect('t', 'heal-taken');
+      ctx.heal('t', 10, { sourceId: 's' });
     },
     (ctx) => {
       ctx.registerEffect({
-        id: "heal-dealt",
+        id: 'heal-dealt',
         grantsTags: [],
-        modifiers: [{ attribute: "healingDealt", op: "mul", value: 2 }],
+        modifiers: [{ attribute: 'healingDealt', op: 'mul', value: 2 }],
         immunity: [],
         stackCap: 1,
         cancels: [],
         duration: 0,
         instant: false,
         period: 1,
-        stacking: "refresh",
-      })
+        stacking: 'refresh',
+      });
       ctx.registerEffect({
-        id: "heal-taken",
+        id: 'heal-taken',
         grantsTags: [],
-        modifiers: [{ attribute: "healingTaken", op: "mul", value: 2 }],
+        modifiers: [{ attribute: 'healingTaken', op: 'mul', value: 2 }],
         immunity: [],
         stackCap: 1,
         cancels: [],
         duration: 0,
         instant: false,
         period: 1,
-        stacking: "refresh",
-      })
+        stacking: 'refresh',
+      });
     },
-  )
-  taken.step()
-  expect(hpOf(taken)).toBe(80)
-})
+  );
+  taken.step();
+  expect(hpOf(taken)).toBe(80);
+});
 
-test("闪避用本场的种子随机数：同一种子同样的命中数，五成闪避约一半命中；canDodge 为假时必中", () => {
+test('闪避用本场的种子随机数：同一种子同样的命中数，五成闪避约一半命中；canDodge 为假时必中', () => {
   const run = (seed: number): { hits: number; forced: number } => {
-    let hits = 0
-    let forced = 0
+    let hits = 0;
+    let forced = 0;
     const module: MissionModule = {
-      id: "case",
+      id: 'case',
       install(ctx) {
         ctx.registerSystem({
-          id: "case",
-          slot: "schedule",
+          id: 'case',
+          slot: 'schedule',
           priority: 1,
           run(runCtx) {
-            if (runCtx.tick() !== 0) return
-            const read = () => runCtx.unit("t")?.hp ?? 0
-            for (let index = 0; index < 400; index += 1) {
-              const before = read()
-              runCtx.dealDamage({ sourceId: "t", targetId: "t", amount: 100, kind: "physical" })
-              if (read() < before) hits += 1
+            if (runCtx.tick() !== 0) {
+              return;
             }
-            const before = read()
-            runCtx.dealDamage({ sourceId: "t", targetId: "t", amount: 100, kind: "physical", canDodge: false })
-            forced = before - read()
+            const read = () => runCtx.unit('t')?.hp ?? 0;
+            for (let index = 0; index < 400; index += 1) {
+              const before = read();
+              runCtx.dealDamage({
+                sourceId: 't',
+                targetId: 't',
+                amount: 100,
+                kind: 'physical',
+              });
+              if (read() < before) {
+                hits += 1;
+              }
+            }
+            const before = read();
+            runCtx.dealDamage({
+              sourceId: 't',
+              targetId: 't',
+              amount: 100,
+              kind: 'physical',
+              canDodge: false,
+            });
+            forced = before - read();
           },
-        })
+        });
       },
-    }
+    };
     const battle = createBattle(
-      spec({ seed, modules: ["case"], units: [ally("t", { attributes: { hp: 1e7, def: 0, dodgePhys: 0.5 } })] }),
+      spec({
+        seed,
+        modules: ['case'],
+        units: [ally('t', { attributes: { hp: 1e7, def: 0, dodgePhys: 0.5 } })],
+      }),
       [module],
-    )
-    battle.step()
-    return { hits, forced }
-  }
-  const first = run(9)
-  expect(run(9)).toEqual(first)
-  expect(first.hits).toBeGreaterThan(150)
-  expect(first.hits).toBeLessThan(250)
-  expect(first.forced).toBe(100)
-})
+    );
+    battle.step();
+    return { hits, forced };
+  };
+  const first = run(9);
+  expect(run(9)).toEqual(first);
+  expect(first.hits).toBeGreaterThan(150);
+  expect(first.hits).toBeLessThan(250);
+  expect(first.forced).toBe(100);
+});

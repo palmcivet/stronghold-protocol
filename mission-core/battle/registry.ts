@@ -1,14 +1,28 @@
-import { createOrderedTable, createTable, type OrderedTable, type Table } from "#kernel/registry/index.js"
-import { createExtensibleCatalog, type ExtensibleKey } from "#kernel/registry/extensible.js"
-import { ExtensionRefusedError } from "#kernel/registry/error.js"
-import { PHASE_SLOTS } from "#contract/phase.js"
-import { arrangeConstrained, byPriority, requireSlot, slotIndex } from "#kernel/schedule/index.js"
-import { createTagCatalog } from "#kernel/world/tag.js"
+import { PHASE_SLOTS } from '#contract/phase.js';
+import { ExtensionRefusedError } from '#kernel/registry/error.js';
 import {
-  DAMAGE_STAGES,
+  createExtensibleCatalog,
+  type ExtensibleKey,
+} from '#kernel/registry/extensible.js';
+import {
+  createOrderedTable,
+  createTable,
+  type OrderedTable,
+  type Table,
+} from '#kernel/registry/index.js';
+import {
+  arrangeConstrained,
+  byPriority,
+  requireSlot,
+  slotIndex,
+} from '#kernel/schedule/index.js';
+import { createTagCatalog } from '#kernel/world/tag.js';
+import {
   type AttributeDefinition,
   type BattleRegistry,
   type ConditionDefinition,
+  type ContentTimerDefinition,
+  DAMAGE_STAGES,
   type DamageModifierDefinition,
   type DamageStage,
   type DamageStepDefinition,
@@ -24,54 +38,75 @@ import {
   type SkillHookDefinition,
   type SkillTriggerDefinition,
   type StackingDefinition,
-  type ContentTimerDefinition,
-} from "#port/definition.js"
+} from '#port/definition.js';
 
 /** 引擎自己做的替换记在这个名下。 */
-const CORE = "core"
+const CORE = 'core';
 
 export function createRegistry(): BattleRegistry {
-  const attributes = createTable<AttributeDefinition>("attribute")
-  const effects = createTable<EffectDefinition>("effect")
-  const stackings = createTable<StackingDefinition>("stacking")
-  const conditions = createTable<ConditionDefinition>("condition")
-  const hooks = createTable<SkillHookDefinition>("skill-hook")
-  const elements = createTable<ElementDefinition>("element")
-  const selectors = createTable<SelectorDefinition>("selector")
-  const triggers = createTable<SkillTriggerDefinition>("skill-trigger")
-  const bodies = createTable<SkillBodyDefinition>("skill-body")
-  const timers = createOrderedTable<ContentTimerDefinition>("timer")
-  const strategies = createTable<DeployStrategyDefinition>("deploy")
-  const shifts = createTable<ShiftDefinition>("shift")
-  const steps = createOrderedTable<DamageStepDefinition>("damage-step", { compare: byPriority })
-  const modifiers = createOrderedTable<DamageModifierDefinition>("damage-modifier", { compare: byPriority })
-  const systems = createOrderedTable<PhaseSystem>("system", { compare: byPriority })
-  const tags = createTagCatalog()
-  const timersIn = slotIndex(timers)
-  const systemsIn = slotIndex(systems, (items) => arrangeConstrained(items, "system"))
-  const modifiersIn = stageIndex(modifiers)
-  const extensible = createExtensibleCatalog()
-  let installer = CORE
+  const attributes = createTable<AttributeDefinition>('attribute');
+  const effects = createTable<EffectDefinition>('effect');
+  const stackings = createTable<StackingDefinition>('stacking');
+  const conditions = createTable<ConditionDefinition>('condition');
+  const hooks = createTable<SkillHookDefinition>('skill-hook');
+  const elements = createTable<ElementDefinition>('element');
+  const selectors = createTable<SelectorDefinition>('selector');
+  const triggers = createTable<SkillTriggerDefinition>('skill-trigger');
+  const bodies = createTable<SkillBodyDefinition>('skill-body');
+  const timers = createOrderedTable<ContentTimerDefinition>('timer');
+  const strategies = createTable<DeployStrategyDefinition>('deploy');
+  const shifts = createTable<ShiftDefinition>('shift');
+  const steps = createOrderedTable<DamageStepDefinition>('damage-step', {
+    compare: byPriority,
+  });
+  const modifiers = createOrderedTable<DamageModifierDefinition>(
+    'damage-modifier',
+    { compare: byPriority },
+  );
+  const systems = createOrderedTable<PhaseSystem>('system', {
+    compare: byPriority,
+  });
+  const tags = createTagCatalog();
+  const timersIn = slotIndex(timers);
+  const systemsIn = slotIndex(systems, (items) =>
+    arrangeConstrained(items, 'system'),
+  );
+  const modifiersIn = stageIndex(modifiers);
+  const extensible = createExtensibleCatalog();
+  let installer = CORE;
 
-  const open: { readonly [C in ExtensibleContract]: Table<ExtensibleDefinitions[C]> } = {
-    "skill-trigger": triggers,
-    "skill-body": bodies,
+  const open: {
+    readonly [C in ExtensibleContract]: Table<ExtensibleDefinitions[C]>;
+  } = {
+    'skill-trigger': triggers,
+    'skill-body': bodies,
     selector: selectors,
-    "damage-step": steps,
+    'damage-step': steps,
     stacking: stackings,
     condition: conditions,
     deploy: strategies,
     element: elements,
-  }
-  const tableOf = <C extends ExtensibleContract>(key: ExtensibleKey<C>): Table<ExtensibleDefinitions[C]> => {
-    const table = open[key.contract] as Table<ExtensibleDefinitions[C]> | undefined
-    if (!table) throw new ExtensionRefusedError(key.contract, key.id, "this registry is not extensible")
-    return table
-  }
+  };
+  const tableOf = <C extends ExtensibleContract>(
+    key: ExtensibleKey<C>,
+  ): Table<ExtensibleDefinitions[C]> => {
+    const table = open[key.contract] as
+      | Table<ExtensibleDefinitions[C]>
+      | undefined;
+    if (!table) {
+      throw new ExtensionRefusedError(
+        key.contract,
+        key.id,
+        'this registry is not extensible',
+      );
+    }
+    return table;
+  };
 
   return {
     registerAttribute: (definition) => attributes.register(definition),
-    findAttribute: (id) => (attributes.has(id) ? attributes.require(id) : undefined),
+    findAttribute: (id) =>
+      attributes.has(id) ? attributes.require(id) : undefined,
     registerEffect: (definition) => effects.register(definition),
     requireEffect: (id) => effects.require(id),
     hasEffect: (id) => effects.has(id),
@@ -85,9 +120,9 @@ export function createRegistry(): BattleRegistry {
     damageSteps: () => steps.ordered(),
     registerDamageModifier(definition) {
       if (!(DAMAGE_STAGES as readonly string[]).includes(definition.stage)) {
-        throw new Error(`unknown damage stage: ${String(definition.stage)}`)
+        throw new Error(`unknown damage stage: ${String(definition.stage)}`);
       }
-      modifiers.register(definition)
+      modifiers.register(definition);
     },
     damageModifiers: modifiersIn,
     registerElement: (definition) => elements.register(definition),
@@ -101,8 +136,8 @@ export function createRegistry(): BattleRegistry {
     requireSkillBody: (id) => bodies.require(id),
     hasSkillBody: (id) => bodies.has(id),
     registerTimer(definition) {
-      requireSlot(definition.slot)
-      timers.register(definition)
+      requireSlot(definition.slot);
+      timers.register(definition);
     },
     requireTimer: (id) => timers.require(id),
     timersInSlot: timersIn,
@@ -111,53 +146,70 @@ export function createRegistry(): BattleRegistry {
     registerShift: (definition) => shifts.register(definition),
     requireShift: (id) => shifts.require(id),
     registerSystem(system) {
-      requireSlot(system.slot)
-      systems.register(system)
+      requireSlot(system.slot);
+      systems.register(system);
     },
     systemsIn,
-    systemOrder: () => PHASE_SLOTS.flatMap((slot) => systemsIn(slot).map((system) => ({ slot, id: system.id }))),
+    systemOrder: () =>
+      PHASE_SLOTS.flatMap((slot) =>
+        systemsIn(slot).map((system) => ({ slot, id: system.id })),
+      ),
     registerTag: (key) => tags.register(key),
     requireTag: (id, owner) => tags.require(id, owner),
     installing(moduleId) {
-      installer = moduleId
+      installer = moduleId;
     },
     markExtensible(key) {
-      tableOf(key)
-      extensible.mark(key)
+      tableOf(key);
+      extensible.mark(key);
     },
     replace(key, definition) {
-      if (definition.id !== key.id) throw new ExtensionRefusedError(key.contract, key.id, `replacement has id ${definition.id}`)
-      const table = tableOf(key)
-      table.require(key.id)
-      extensible.extend(key, "replace", installer)
-      table.replace(definition)
+      if (definition.id !== key.id) {
+        throw new ExtensionRefusedError(
+          key.contract,
+          key.id,
+          `replacement has id ${definition.id}`,
+        );
+      }
+      const table = tableOf(key);
+      table.require(key.id);
+      extensible.extend(key, 'replace', installer);
+      table.replace(definition);
     },
     wrap(key, wrap) {
-      const table = tableOf(key)
-      const inner = table.require(key.id)
-      extensible.extend(key, "wrap", installer)
-      const wrapped = wrap(inner)
-      if (wrapped.id !== key.id) throw new ExtensionRefusedError(key.contract, key.id, `wrapper has id ${wrapped.id}`)
-      table.replace(wrapped)
+      const table = tableOf(key);
+      const inner = table.require(key.id);
+      extensible.extend(key, 'wrap', installer);
+      const wrapped = wrap(inner);
+      if (wrapped.id !== key.id) {
+        throw new ExtensionRefusedError(
+          key.contract,
+          key.id,
+          `wrapper has id ${wrapped.id}`,
+        );
+      }
+      table.replace(wrapped);
     },
     extensions: () => extensible.chain(),
-  }
+  };
 }
 
 function stageIndex(
   table: OrderedTable<DamageModifierDefinition>,
 ): (stage: DamageStage) => readonly DamageModifierDefinition[] {
-  let version = -1
-  const byStage = new Map<DamageStage, readonly DamageModifierDefinition[]>()
+  let version = -1;
+  const byStage = new Map<DamageStage, readonly DamageModifierDefinition[]>();
   return (stage) => {
     if (version !== table.version) {
-      version = table.version
-      byStage.clear()
+      version = table.version;
+      byStage.clear();
     }
-    const found = byStage.get(stage)
-    if (found) return found
-    const items = table.ordered().filter((item) => item.stage === stage)
-    byStage.set(stage, items)
-    return items
-  }
+    const found = byStage.get(stage);
+    if (found) {
+      return found;
+    }
+    const items = table.ordered().filter((item) => item.stage === stage);
+    byStage.set(stage, items);
+    return items;
+  };
 }

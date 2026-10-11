@@ -1,33 +1,34 @@
-import { TILE_HEIGHT, type TileHeightClass } from "#ground/tile.js"
+import { TILE_HEIGHT, type TileHeightClass } from '#ground/tile.js';
 
-export type Vec3 = readonly [number, number, number]
+export type Vec3 = readonly [number, number, number];
 
 /** Raised glyphs and the height class each stands at. */
-export const RAISED_GLYPH_HEIGHT: Readonly<Record<string, TileHeightClass>> = Object.freeze({
-  "#": "forbid",
-  X: "sep",
-  h: "wall",
-  a: "bench",
-  A: "bench",
-})
+export const RAISED_GLYPH_HEIGHT: Readonly<Record<string, TileHeightClass>> =
+  Object.freeze({
+    '#': 'forbid',
+    X: 'sep',
+    h: 'wall',
+    a: 'bench',
+    A: 'bench',
+  });
 
 /** Top bevel inset and drop of low tiles and of raised blocks (tiles). */
 export const BEVEL = Object.freeze({
   low: Object.freeze([0.035, 0.018] as const),
   block: Object.freeze([0.04, 0.035] as const),
-})
+});
 
 /** Deep-sea basins: floor depth below the ground (tiles). */
-export const BASIN = 0.14
+export const BASIN = 0.14;
 
 /** How far the island's cliff faces go down (tiles). */
-export const CLIFF = 0.75
+export const CLIFF = 0.75;
 
 /** Final Assault bench plate: rim, seam and lift of the 2×2 light panels. */
-export const PANEL = Object.freeze({ rim: 0.085, seam: 0.05, lift: 0.004 })
+export const PANEL = Object.freeze({ rim: 0.085, seam: 0.05, lift: 0.004 });
 
 /** Height of a platform device standing on its tile. */
-export const PLATFORM_DEVICE_HEIGHT = TILE_HEIGHT.platform
+export const PLATFORM_DEVICE_HEIGHT = TILE_HEIGHT.platform;
 
 /** 活性源石 colours in linear space. */
 export const ORIGINIUM = Object.freeze({
@@ -35,7 +36,13 @@ export const ORIGINIUM = Object.freeze({
   crust: Object.freeze([0.3, 0.1, 0.07] as const),
   vein: Object.freeze([1.0, 0.46, 0.18] as const),
   spec: Object.freeze([1.0, 0.78, 0.52] as const),
-})
+});
 
 /** The stage's background plane: size, height and how many mirrored copies surround it (tiles). */
-export const BACKDROP = Object.freeze({ z: -8, size: 43.16, color: 0.713, dim: 0.8, tiles: 3 })
+export const BACKDROP = Object.freeze({
+  z: -8,
+  size: 43.16,
+  color: 0.713,
+  dim: 0.8,
+  tiles: 3,
+});

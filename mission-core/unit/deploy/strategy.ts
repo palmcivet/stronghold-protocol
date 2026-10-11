@@ -1,56 +1,89 @@
-import { dropEffectsOnDown } from "#ability/effect/index.js"
-import type { ContentContext } from "#port/context.js"
-import { landShift } from "#field/motion/index.js"
-import type { BattleRegistry } from "#port/definition.js"
-import { emit } from "#kernel/event/index.js"
-import { readTimer } from "#kernel/timer/index.js"
-import { markDeployed, markLatestDeployed, removeUnit, requireUnit, type BattleWorld } from "#unit/record/index.js"
-import { startTimer } from "#unit/record/timer.js"
-import { endSkillsOnDown } from "#ability/skill/point.js"
+import { dropEffectsOnDown } from '#ability/effect/index.js';
+import { endSkillsOnDown } from '#ability/skill/point.js';
+import { landShift } from '#field/motion/index.js';
+import { emit } from '#kernel/event/index.js';
+import { readTimer } from '#kernel/timer/index.js';
+import type { ContentContext } from '#port/context.js';
+import type { BattleRegistry } from '#port/definition.js';
+import {
+  type BattleWorld,
+  markDeployed,
+  markLatestDeployed,
+  removeUnit,
+  requireUnit,
+} from '#unit/record/index.js';
+import { startTimer } from '#unit/record/timer.js';
 
-export function openBattle(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext): void {
-  const strategyId = state.spec.deployStrategy
-  if (strategyId === null) return
-  const strategy = registry.requireDeployStrategy(strategyId)
-  const before = new Set([...state.units.values()].filter((unit) => unit.fielded).map((unit) => unit.id))
-  const fielded = new Set<string>()
+export function openBattle(
+  state: BattleWorld,
+  registry: BattleRegistry,
+  ctx: ContentContext,
+): void {
+  const strategyId = state.spec.deployStrategy;
+  if (strategyId === null) {
+    return;
+  }
+  const strategy = registry.requireDeployStrategy(strategyId);
+  const before = new Set(
+    [...state.units.values()]
+      .filter((unit) => unit.fielded)
+      .map((unit) => unit.id),
+  );
+  const fielded = new Set<string>();
   for (const unitId of strategy.opening(ctx)) {
-    if (fielded.has(unitId)) continue
-    const unit = requireUnit(state, unitId)
-    unit.fielded = true
-    markDeployed(unit)
-    fielded.add(unitId)
-    emit(state, "deploy", { unitId })
+    if (fielded.has(unitId)) {
+      continue;
+    }
+    const unit = requireUnit(state, unitId);
+    unit.fielded = true;
+    markDeployed(unit);
+    fielded.add(unitId);
+    emit(state, 'deploy', { unitId });
   }
   // 仇恨序按开场名单排；开场时随干员一起放进来的召唤物排在所有名单之后
-  for (const unitId of fielded) markLatestDeployed(state, requireUnit(state, unitId))
+  for (const unitId of fielded) {
+    markLatestDeployed(state, requireUnit(state, unitId));
+  }
   for (const unit of [...state.units.values()]) {
-    if (unit.fielded && !fielded.has(unit.id) && !before.has(unit.id)) markLatestDeployed(state, unit)
+    if (unit.fielded && !fielded.has(unit.id) && !before.has(unit.id)) {
+      markLatestDeployed(state, unit);
+    }
   }
 }
 
 /** 单位倒下：结束开着的技能，发 downed。装置倒下就是被摧毁，随后移除。 */
-export function knockDown(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext, unitId: string): void {
-  const unit = requireUnit(state, unitId)
-  if (unit.downed) return
-  endSkillsOnDown(registry, ctx, unit)
-  dropEffectsOnDown(state, registry, ctx, unit)
-  landShift(state, unit)
-  unit.downed = true
-  unit.fielded = false
-  startTimer(state, registry, unitId, "redeploy")
-  const timer = readTimer(unit, "redeploy")
-  if (timer) timer.elapsed = 0
-  const strategyId = state.spec.deployStrategy
-  if (strategyId === null) {
-    emit(state, "downed", { unitId })
-  } else {
-    const strategy = registry.requireDeployStrategy(strategyId)
-    const tile = strategy.downedTile(unitId, ctx)
-    const canStand = strategy.canStand(unitId, tile, ctx)
-    unit.x = tile.x
-    unit.y = tile.y
-    emit(state, "downed", { unitId, x: tile.x, y: tile.y, canStand })
+export function knockDown(
+  state: BattleWorld,
+  registry: BattleRegistry,
+  ctx: ContentContext,
+  unitId: string,
+): void {
+  const unit = requireUnit(state, unitId);
+  if (unit.downed) {
+    return;
   }
-  if (unit.kind === "device") removeUnit(state, unitId)
+  endSkillsOnDown(registry, ctx, unit);
+  dropEffectsOnDown(state, registry, ctx, unit);
+  landShift(state, unit);
+  unit.downed = true;
+  unit.fielded = false;
+  startTimer(state, registry, unitId, 'redeploy');
+  const timer = readTimer(unit, 'redeploy');
+  if (timer) {
+    timer.elapsed = 0;
+  }
+  const strategyId = state.spec.deployStrategy;
+  if (strategyId === null) {
+    emit(state, 'downed', { unitId });
+  } else {
+    const strategy = registry.requireDeployStrategy(strategyId);
+    const tile = strategy.downedTile(unitId, ctx);
+    const canStand = strategy.canStand(unitId, tile, ctx);
+    unit.x = tile.x;
+    unit.y = tile.y;
+    emit(state, 'downed', { unitId, x: tile.x, y: tile.y, canStand });
+  }
+  if (unit.kind === 'device') {
+    removeUnit(state, unitId);
+  }
 }

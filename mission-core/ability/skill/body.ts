@@ -1,95 +1,110 @@
-import type { SkillBodyDefinition, SkillRuntime } from "#port/definition.js"
-import type { BattleRegistry } from "#port/definition.js"
-import { countdown, TICK } from "#kernel/tick/index.js"
+import { countdown, TICK } from '#kernel/tick/index.js';
+import type {
+  BattleRegistry,
+  SkillBodyDefinition,
+  SkillRuntime,
+} from '#port/definition.js';
 
-export const BUILTIN_SKILL_BODIES = ["duration", "ammo", "instant", "charges", "passive", "toggle"] as const
+export const BUILTIN_SKILL_BODIES = [
+  'duration',
+  'ammo',
+  'instant',
+  'charges',
+  'passive',
+  'toggle',
+] as const;
 
 export function registerBuiltinSkillBodies(registry: BattleRegistry): void {
-  registry.registerSkillBody(durationBody())
-  registry.registerSkillBody(ammoBody())
-  registry.registerSkillBody(instantBody())
-  registry.registerSkillBody(chargesBody())
-  registry.registerSkillBody(passiveBody())
-  registry.registerSkillBody(toggleBody())
+  registry.registerSkillBody(durationBody());
+  registry.registerSkillBody(ammoBody());
+  registry.registerSkillBody(instantBody());
+  registry.registerSkillBody(chargesBody());
+  registry.registerSkillBody(passiveBody());
+  registry.registerSkillBody(toggleBody());
 }
 
 function durationBody(): SkillBodyDefinition {
   return {
-    id: "duration",
+    id: 'duration',
     cast(skill, spec) {
-      skill.active = true
-      skill.remaining = Math.max(0.01, spec.duration)
+      skill.active = true;
+      skill.remaining = Math.max(0.01, spec.duration);
     },
     advance(skill) {
-      if (!skill.active) return
-      skill.remaining = countdown(skill.remaining, TICK)
+      if (!skill.active) {
+        return;
+      }
+      skill.remaining = countdown(skill.remaining, TICK);
       if (skill.remaining === 0) {
-        skill.active = false
+        skill.active = false;
       }
     },
-  }
+  };
 }
 
 function ammoBody(): SkillBodyDefinition {
   return {
-    id: "ammo",
+    id: 'ammo',
     cast(skill, spec) {
-      skill.active = true
-      skill.ammo = Math.max(1, spec.ammo)
-      skill.remaining = spec.duration > 0 ? spec.duration : Number.POSITIVE_INFINITY
+      skill.active = true;
+      skill.ammo = Math.max(1, spec.ammo);
+      skill.remaining =
+        spec.duration > 0 ? spec.duration : Number.POSITIVE_INFINITY;
     },
     advance(skill) {
-      if (!skill.active || !Number.isFinite(skill.remaining)) return
-      skill.remaining = countdown(skill.remaining, TICK)
+      if (!skill.active || !Number.isFinite(skill.remaining)) {
+        return;
+      }
+      skill.remaining = countdown(skill.remaining, TICK);
       if (skill.remaining === 0) {
-        skill.active = false
+        skill.active = false;
       }
     },
-  }
+  };
 }
 
 function instantBody(): SkillBodyDefinition {
   return {
-    id: "instant",
+    id: 'instant',
     cast(skill) {
-      skill.active = true
-      skill.remaining = 0
+      skill.active = true;
+      skill.remaining = 0;
     },
     advance(_skill: SkillRuntime) {},
-  }
+  };
 }
 
 function chargesBody(): SkillBodyDefinition {
   return {
-    id: "charges",
+    id: 'charges',
     cast(skill) {
-      skill.active = true
-      skill.remaining = 0
+      skill.active = true;
+      skill.remaining = 0;
     },
     advance(_skill: SkillRuntime) {},
-  }
+  };
 }
 
 function passiveBody(): SkillBodyDefinition {
   return {
-    id: "passive",
+    id: 'passive',
     cast(skill) {
-      skill.active = true
+      skill.active = true;
     },
     advance(skill) {
-      skill.active = true
+      skill.active = true;
     },
-  }
+  };
 }
 
 function toggleBody(): SkillBodyDefinition {
   return {
-    id: "toggle",
+    id: 'toggle',
     cast(skill) {
-      skill.toggled = true
-      skill.active = true
-      skill.remaining = Number.POSITIVE_INFINITY
+      skill.toggled = true;
+      skill.active = true;
+      skill.remaining = Number.POSITIVE_INFINITY;
     },
     advance(_skill: SkillRuntime) {},
-  }
+  };
 }

@@ -1,15 +1,16 @@
 /// <reference types="vitepress/client" />
-import DefaultTheme from "vitepress/theme"
-import type { Theme } from "vitepress"
-import { onMounted } from "vue"
-import { createMermaidRenderer } from "vitepress-mermaid-renderer"
-import "./mermaid.css"
+
+import type { Theme } from 'vitepress';
+import DefaultTheme from 'vitepress/theme';
+import { createMermaidRenderer } from 'vitepress-mermaid-renderer';
+import { onMounted } from 'vue';
+import './mermaid.css';
 
 export default {
   extends: DefaultTheme,
   setup() {
     onMounted(() => {
-      createMermaidRenderer()
-    })
+      createMermaidRenderer();
+    });
   },
-} satisfies Theme
+} satisfies Theme;

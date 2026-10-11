@@ -1,42 +1,43 @@
-import type { AttributeModifier, EffectDefinition } from "#port/definition.js"
-import type { ContentContext } from "#port/context.js"
-import type { BattleRegistry } from "#port/definition.js"
-import { requireUnit, type BattleWorld } from "#unit/record/index.js"
-import { attributeOf } from "#ability/effect/attribute.js"
-import { TICK } from "#kernel/tick/index.js"
-import type { UnitState } from "#unit/record/index.js"
-import { immunityOf } from "#ability/effect/immunity.js"
+import { attributeOf } from '#ability/effect/attribute.js';
 import {
   COLD_ASPD,
   COLD_FREEZE_DURATION,
   FREEZE_RES_DOWN,
+  HALVED_ON_HEAVY,
   LEVITATE_HALF_WEIGHT,
   PALSY_MAX,
   RESIST_CAP,
   RESIST_DEFAULT,
   RESIST_PALSY_DECAY,
-  HALVED_ON_HEAVY,
   RESISTED,
-} from "#ability/effect/constants.js"
-import { dropEffect } from "#ability/effect/tag.js"
-import { hasTag, type TagKey } from "#kernel/world/tag.js"
+} from '#ability/effect/constants.js';
+import { immunityOf } from '#ability/effect/immunity.js';
+import { defineEffect } from '#ability/effect/index.js';
+import { dropEffect } from '#ability/effect/tag.js';
+import { TICK } from '#kernel/tick/index.js';
+import { hasTag, type TagKey } from '#kernel/world/tag.js';
+import type { ContentContext } from '#port/context.js';
+import type {
+  AttributeModifier,
+  BattleRegistry,
+  EffectDefinition,
+} from '#port/definition.js';
 import {
   ATTRACT,
   BIND,
-  GROUNDBIND,
-  NO_MOVE,
   CAMOU,
   COLD,
   DISARM,
   FEAR,
   FREEZE,
+  GROUNDBIND,
   INVULNERABLE,
   ISOLATED,
   LEVITATE,
   LIFTOFF,
   NO_BLOCK,
   NO_DISPLACE,
-
+  NO_MOVE,
   REVEAL,
   SILENCE,
   SLEEP,
@@ -45,193 +46,295 @@ import {
   STUN,
   TREMBLE,
   UNBLOCKABLE,
-} from "#port/tag.js"
-import { defineEffect } from "#ability/effect/index.js"
+} from '#port/tag.js';
+import type { UnitState } from '#unit/record/index.js';
+import { type BattleWorld, requireUnit } from '#unit/record/index.js';
 
-const DECAY_TICKS = ticks(RESIST_PALSY_DECAY)
+const DECAY_TICKS = ticks(RESIST_PALSY_DECAY);
 
-export function registerEffectCatalog(state: BattleWorld, registry: BattleRegistry): void {
-  for (const definition of definitions(state, registry)) registry.registerEffect(definition)
-  registerApplicationModifiers(state, registry)
+export function registerEffectCatalog(
+  state: BattleWorld,
+  registry: BattleRegistry,
+): void {
+  for (const definition of definitions(state, registry)) {
+    registry.registerEffect(definition);
+  }
+  registerApplicationModifiers(state, registry);
 }
 
 /** 飞行单位（缚地中的除外）和已经浮空的单位不再接受浮空。 */
 export function refuseEffect(unit: UnitState, effectId: string): boolean {
-  if (effectId !== "levitate") return false
-  return (unit.motion === "FLY" && !hasTag(unit, GROUNDBIND)) || hasTag(unit, LEVITATE)
+  if (effectId !== 'levitate') {
+    return false;
+  }
+  return (
+    (unit.motion === 'FLY' && !hasTag(unit, GROUNDBIND)) ||
+    hasTag(unit, LEVITATE)
+  );
 }
 
 /** 单位的免疫名单或身上效果的 immunity 挡住这个效果。 */
-export function immuneTo(state: BattleWorld, registry: BattleRegistry, unit: UnitState, effectId: string): boolean {
-  const incoming = registry.requireEffect(effectId)
-  const key = incoming.immune
-  if (key && immunityOf(state, unit.id).has(key)) return true
-  for (const status of unit.effects) {
-    if (status.dropped) continue
-    const definition = registry.requireEffect(status.id)
-    if (definition.immunity.includes(effectId)) return true
-    if (key && definition.immunity.includes(key)) return true
+export function immuneTo(
+  state: BattleWorld,
+  registry: BattleRegistry,
+  unit: UnitState,
+  effectId: string,
+): boolean {
+  const incoming = registry.requireEffect(effectId);
+  const key = incoming.immune;
+  if (key && immunityOf(state, unit.id).has(key)) {
+    return true;
   }
-  return false
+  for (const status of unit.effects) {
+    if (status.dropped) {
+      continue;
+    }
+    const definition = registry.requireEffect(status.id);
+    if (definition.immunity.includes(effectId)) {
+      return true;
+    }
+    if (key && definition.immunity.includes(key)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
  * 内置的 effect 阶段修饰：控制效果的拍数乘上 (1 − 抵抗)；浮空与缚地在重量超过 LEVITATE_HALF_WEIGHT 时再减半。
  * 一直持续的施加不缩短。
  */
-function registerApplicationModifiers(state: BattleWorld, registry: BattleRegistry): void {
+function registerApplicationModifiers(
+  state: BattleWorld,
+  registry: BattleRegistry,
+): void {
   registry.registerDamageModifier({
-    id: "effect-resist",
-    stage: "effect",
+    id: 'effect-resist',
+    stage: 'effect',
     priority: 100,
     modify(change) {
-      if (change.permanent || !RESISTED.has(change.effectId)) return
-      const factor = 1 - resistOf(requireUnit(state, change.unitId))
-      if (factor > 0 && factor < 1) change.ticks *= factor
+      if (change.permanent || !RESISTED.has(change.effectId)) {
+        return;
+      }
+      const factor = 1 - resistOf(requireUnit(state, change.unitId));
+      if (factor > 0 && factor < 1) {
+        change.ticks *= factor;
+      }
     },
-  })
+  });
   registry.registerDamageModifier({
-    id: "effect-heavy",
-    stage: "effect",
+    id: 'effect-heavy',
+    stage: 'effect',
     priority: 200,
     modify(change) {
-      if (change.permanent || !HALVED_ON_HEAVY.has(change.effectId)) return
-      if (attributeOf(requireUnit(state, change.unitId), registry, "massLevel") > LEVITATE_HALF_WEIGHT) change.ticks /= 2
+      if (change.permanent || !HALVED_ON_HEAVY.has(change.effectId)) {
+        return;
+      }
+      if (
+        attributeOf(requireUnit(state, change.unitId), registry, 'massLevel') >
+        LEVITATE_HALF_WEIGHT
+      ) {
+        change.ticks /= 2;
+      }
     },
-  })
+  });
 }
 
-function definitions(state: BattleWorld, registry: BattleRegistry): readonly EffectDefinition[] {
-  const attack = ["attack"]
+function definitions(
+  state: BattleWorld,
+  registry: BattleRegistry,
+): readonly EffectDefinition[] {
+  const attack = ['attack'];
   return [
-    define({ id: "stun", tags: [STUN, NO_BLOCK], cancels: attack, immune: "stun" }),
     define({
-      id: "freeze",
+      id: 'stun',
+      tags: [STUN, NO_BLOCK],
+      cancels: attack,
+      immune: 'stun',
+    }),
+    define({
+      id: 'freeze',
       tags: [FREEZE, STUN],
       cancels: attack,
-      immune: "frozen",
+      immune: 'frozen',
       onApply(unitId) {
-        const unit = requireUnit(state, unitId)
-        const status = unit.effects.find((item) => item.id === "freeze")
-        if (!status) return
+        const unit = requireUnit(state, unitId);
+        const status = unit.effects.find((item) => item.id === 'freeze');
+        if (!status) {
+          return;
+        }
         status.runtimeModifiers =
-          unit.side === "enemy" ? [{ attribute: "res", op: "add", value: -FREEZE_RES_DOWN }] : []
+          unit.side === 'enemy'
+            ? [{ attribute: 'res', op: 'add', value: -FREEZE_RES_DOWN }]
+            : [];
       },
     }),
     define({
-      id: "cold",
+      id: 'cold',
       tags: [COLD],
-      modifiers: [{ attribute: "aspd", op: "add", value: COLD_ASPD }],
+      modifiers: [{ attribute: 'aspd', op: 'add', value: COLD_ASPD }],
       onApply(unitId, _stacks, ctx) {
-        freezeFromCold(state, registry, ctx, unitId)
+        freezeFromCold(state, registry, ctx, unitId);
       },
     }),
-    define({ id: "sleep", tags: [SLEEP, NO_BLOCK], cancels: attack, immune: "sleep" }),
     define({
-      id: "slow",
+      id: 'sleep',
+      tags: [SLEEP, NO_BLOCK],
+      cancels: attack,
+      immune: 'sleep',
+    }),
+    define({
+      id: 'slow',
       valued: 0.5,
-      stacking: "strongest",
-      scale: (value) => [{ attribute: "moveSpeed", op: "mul", value: 1 - clamp01(value) }],
+      stacking: 'strongest',
+      scale: (value) => [
+        { attribute: 'moveSpeed', op: 'mul', value: 1 - clamp01(value) },
+      ],
     }),
-    define({ id: "sluggish", modifiers: [{ attribute: "moveSpeed", op: "mul", value: 0.2 }] }),
-    define({ id: "bind", tags: [BIND, NO_MOVE], modifiers: [{ attribute: "moveSpeed", op: "mul", value: 0 }] }),
     define({
-      id: "groundbind",
+      id: 'sluggish',
+      modifiers: [{ attribute: 'moveSpeed', op: 'mul', value: 0.2 }],
+    }),
+    define({
+      id: 'bind',
+      tags: [BIND, NO_MOVE],
+      modifiers: [{ attribute: 'moveSpeed', op: 'mul', value: 0 }],
+    }),
+    define({
+      id: 'groundbind',
       tags: [GROUNDBIND, NO_MOVE],
-      modifiers: [{ attribute: "moveSpeed", op: "mul", value: 0 }],
+      modifiers: [{ attribute: 'moveSpeed', op: 'mul', value: 0 }],
     }),
     define({
-      id: "fragile",
+      id: 'fragile',
       valued: 0.3,
-      stacking: "strongest",
-      scale: (value) => [{ attribute: "dmgTaken", op: "mul", value: 1 + value }],
+      stacking: 'strongest',
+      scale: (value) => [
+        { attribute: 'dmgTaken', op: 'mul', value: 1 + value },
+      ],
     }),
     define({
-      id: "artsFragile",
+      id: 'artsFragile',
       valued: 0.3,
-      stacking: "strongest",
-      scale: (value) => [{ attribute: "artsTaken", op: "mul", value: 1 + value }],
+      stacking: 'strongest',
+      scale: (value) => [
+        { attribute: 'artsTaken', op: 'mul', value: 1 + value },
+      ],
     }),
     define({
-      id: "physFragile",
+      id: 'physFragile',
       valued: 0.3,
-      stacking: "strongest",
-      scale: (value) => [{ attribute: "physTaken", op: "mul", value: 1 + value }],
+      stacking: 'strongest',
+      scale: (value) => [
+        { attribute: 'physTaken', op: 'mul', value: 1 + value },
+      ],
     }),
     define({
-      id: "elemFragile",
+      id: 'elemFragile',
       valued: 0.2,
-      stacking: "strongest",
-      scale: (value) => [{ attribute: "elementalTaken", op: "mul", value: 1 + value }],
+      stacking: 'strongest',
+      scale: (value) => [
+        { attribute: 'elementalTaken', op: 'mul', value: 1 + value },
+      ],
     }),
-    define({ id: "silence", tags: [SILENCE], cancels: attack, immune: "silence" }),
-    define({ id: "fear", tags: [FEAR, UNBLOCKABLE], cancels: attack, immune: "feared" }),
-    define({ id: "tremble", tags: [TREMBLE], immune: "feared" }),
-    define({ id: "disarm", tags: [DISARM], cancels: attack }),
-    define({ id: "stealth", tags: [STEALTH] }),
-    define({ id: "stealthOff", tags: [STEALTH_OFF] }),
-    define({ id: "overheal" }),
-    define({ id: "camou", tags: [CAMOU] }),
-    define({ id: "reveal", tags: [REVEAL] }),
-    define({ id: "invulnerable", tags: [INVULNERABLE] }),
     define({
-      id: "levitate",
+      id: 'silence',
+      tags: [SILENCE],
+      cancels: attack,
+      immune: 'silence',
+    }),
+    define({
+      id: 'fear',
+      tags: [FEAR, UNBLOCKABLE],
+      cancels: attack,
+      immune: 'feared',
+    }),
+    define({ id: 'tremble', tags: [TREMBLE], immune: 'feared' }),
+    define({ id: 'disarm', tags: [DISARM], cancels: attack }),
+    define({ id: 'stealth', tags: [STEALTH] }),
+    define({ id: 'stealthOff', tags: [STEALTH_OFF] }),
+    define({ id: 'overheal' }),
+    define({ id: 'camou', tags: [CAMOU] }),
+    define({ id: 'reveal', tags: [REVEAL] }),
+    define({ id: 'invulnerable', tags: [INVULNERABLE] }),
+    define({
+      id: 'levitate',
       tags: [LEVITATE, STUN, UNBLOCKABLE, NO_DISPLACE],
       cancels: attack,
-      immune: "levitate",
+      immune: 'levitate',
     }),
-    define({ id: "palsy", stackCap: PALSY_MAX, immune: "palsy", valued: 1, stacking: "stack" }),
     define({
-      id: "taunt",
+      id: 'palsy',
+      stackCap: PALSY_MAX,
+      immune: 'palsy',
       valued: 1,
-      stacking: "strongest",
-      scale: (value) => [{ attribute: "taunt", op: "add", value }],
+      stacking: 'stack',
     }),
     define({
-      id: "weaken",
+      id: 'taunt',
+      valued: 1,
+      stacking: 'strongest',
+      scale: (value) => [{ attribute: 'taunt', op: 'add', value }],
+    }),
+    define({
+      id: 'weaken',
       valued: 0.3,
-      stacking: "strongest",
-      scale: (value) => [{ attribute: "atk", op: "mul", value: 1 - clamp01(value) }],
+      stacking: 'strongest',
+      scale: (value) => [
+        { attribute: 'atk', op: 'mul', value: 1 - clamp01(value) },
+      ],
     }),
     define({
-      id: "aspdDown",
+      id: 'aspdDown',
       valued: -30,
-      stacking: "strongest",
-      scale: (value) => [{ attribute: "aspd", op: "add", value }],
+      stacking: 'strongest',
+      scale: (value) => [{ attribute: 'aspd', op: 'add', value }],
     }),
     define({
-      id: "defDown",
+      id: 'defDown',
       valued: 0.3,
-      stacking: "strongest",
-      scale: (value) => [{ attribute: "def", op: "mul", value: 1 - clamp01(value) }],
+      stacking: 'strongest',
+      scale: (value) => [
+        { attribute: 'def', op: 'mul', value: 1 - clamp01(value) },
+      ],
     }),
     define({
-      id: "resDown",
+      id: 'resDown',
       valued: 20,
-      stacking: "strongest",
-      scale: (value) => [{ attribute: "res", op: "add", value: -value }],
+      stacking: 'strongest',
+      scale: (value) => [{ attribute: 'res', op: 'add', value: -value }],
     }),
-    define({ id: "unblockable", tags: [UNBLOCKABLE] }),
-    define({ id: "attract", tags: [ATTRACT, UNBLOCKABLE] }),
+    define({ id: 'unblockable', tags: [UNBLOCKABLE] }),
+    define({ id: 'attract', tags: [ATTRACT, UNBLOCKABLE] }),
     define({
-      id: "resist",
+      id: 'resist',
       valued: RESIST_DEFAULT,
-      stacking: "strongest",
+      stacking: 'strongest',
       onTick(unitId) {
-        const unit = requireUnit(state, unitId)
-        const status = unit.effects.find((item) => item.id === "resist")
-        if (!status) return
-        status.pulse += 1
-        if (DECAY_TICKS <= 0 || status.pulse % DECAY_TICKS !== 0) return
-        const palsy = unit.effects.find((item) => item.id === "palsy" && !item.dropped)
-        if (!palsy) return
-        palsy.stacks -= 1
-        if (palsy.stacks <= 0) dropEffect(registry, unit, "palsy")
+        const unit = requireUnit(state, unitId);
+        const status = unit.effects.find((item) => item.id === 'resist');
+        if (!status) {
+          return;
+        }
+        status.pulse += 1;
+        if (DECAY_TICKS <= 0 || status.pulse % DECAY_TICKS !== 0) {
+          return;
+        }
+        const palsy = unit.effects.find(
+          (item) => item.id === 'palsy' && !item.dropped,
+        );
+        if (!palsy) {
+          return;
+        }
+        palsy.stacks -= 1;
+        if (palsy.stacks <= 0) {
+          dropEffect(registry, unit, 'palsy');
+        }
       },
     }),
-    define({ id: "liftoff", tags: [LIFTOFF] }),
-    define({ id: "isolated", tags: [ISOLATED] }),
-  ]
+    define({ id: 'liftoff', tags: [LIFTOFF] }),
+    define({ id: 'isolated', tags: [ISOLATED] }),
+  ];
 }
 
 /**
@@ -239,57 +342,93 @@ function definitions(state: BattleWorld, registry: BattleRegistry): readonly Eff
  * 敌人身上的这对寒冷变成冻结，不再留下寒冷；友方的寒冷照样留着。
  */
 // TRACE: assumed/cold-pair-max
-function freezeFromCold(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext, unitId: string): void {
-  const unit = requireUnit(state, unitId)
-  const cold = unit.effects.find((item) => item.id === "cold" && !item.dropped)
-  if (!cold?.carried || immuneTo(state, registry, unit, "freeze")) return
-  const spans = [cold.priorRemaining, cold.permanent ? Number.POSITIVE_INFINITY : cold.remaining].filter(
-    (time) => time === Number.POSITIVE_INFINITY || (Number.isFinite(time) && time > 0),
-  )
-  const wanted = spans.length === 0 ? ticks(COLD_FREEZE_DURATION) : Math.max(...spans)
-  const held = unit.effects.find((item) => item.id === "freeze" && !item.dropped)
-  const prior = held ? (held.permanent ? Number.POSITIVE_INFINITY : held.remaining) : 0
-  ctx.applyEffect(unitId, "freeze")
-  const freeze = unit.effects.find((item) => item.id === "freeze" && !item.dropped)
-  if (!freeze) return
-  const longest = Math.max(prior, wanted)
-  freeze.permanent = !Number.isFinite(longest)
-  freeze.remaining = freeze.permanent ? 0 : longest
-  if (unit.side === "enemy") ctx.removeEffect(unitId, "cold")
+function freezeFromCold(
+  state: BattleWorld,
+  registry: BattleRegistry,
+  ctx: ContentContext,
+  unitId: string,
+): void {
+  const unit = requireUnit(state, unitId);
+  const cold = unit.effects.find((item) => item.id === 'cold' && !item.dropped);
+  if (!cold?.carried || immuneTo(state, registry, unit, 'freeze')) {
+    return;
+  }
+  const spans = [
+    cold.priorRemaining,
+    cold.permanent ? Number.POSITIVE_INFINITY : cold.remaining,
+  ].filter(
+    (time) =>
+      time === Number.POSITIVE_INFINITY || (Number.isFinite(time) && time > 0),
+  );
+  const wanted =
+    spans.length === 0 ? ticks(COLD_FREEZE_DURATION) : Math.max(...spans);
+  const held = unit.effects.find(
+    (item) => item.id === 'freeze' && !item.dropped,
+  );
+  const prior = held
+    ? held.permanent
+      ? Number.POSITIVE_INFINITY
+      : held.remaining
+    : 0;
+  ctx.applyEffect(unitId, 'freeze');
+  const freeze = unit.effects.find(
+    (item) => item.id === 'freeze' && !item.dropped,
+  );
+  if (!freeze) {
+    return;
+  }
+  const longest = Math.max(prior, wanted);
+  freeze.permanent = !Number.isFinite(longest);
+  freeze.remaining = freeze.permanent ? 0 : longest;
+  if (unit.side === 'enemy') {
+    ctx.removeEffect(unitId, 'cold');
+  }
 }
 
 function resistOf(unit: UnitState): number {
-  let best = 0
+  let best = 0;
   for (const status of unit.effects) {
-    if (status.dropped || status.id !== "resist") continue
-    if (status.strength > best) best = status.strength
+    if (status.dropped || status.id !== 'resist') {
+      continue;
+    }
+    if (status.strength > best) {
+      best = status.strength;
+    }
   }
-  return Math.min(RESIST_CAP, best)
+  return Math.min(RESIST_CAP, best);
 }
 
 function ticks(seconds: number): number {
-  return Math.max(0, Math.round(seconds / TICK))
+  return Math.max(0, Math.round(seconds / TICK));
 }
 
 function clamp01(value: number): number {
-  if (value < 0) return 0
-  if (value > 1) return 1
-  return value
+  if (value < 0) {
+    return 0;
+  }
+  if (value > 1) {
+    return 1;
+  }
+  return value;
 }
 
 function define(entry: {
-  id: string
-  tags?: readonly TagKey[]
-  modifiers?: readonly AttributeModifier[]
-  cancels?: readonly string[]
-  stackCap?: number
-  immune?: string
-  valued?: number
-  stacking?: string
-  scale?: EffectDefinition["scale"]
-  onApply?: EffectDefinition["onApply"]
-  onTick?: EffectDefinition["onTick"]
+  id: string;
+  tags?: readonly TagKey[];
+  modifiers?: readonly AttributeModifier[];
+  cancels?: readonly string[];
+  stackCap?: number;
+  immune?: string;
+  valued?: number;
+  stacking?: string;
+  scale?: EffectDefinition['scale'];
+  onApply?: EffectDefinition['onApply'];
+  onTick?: EffectDefinition['onTick'];
 }): EffectDefinition {
-  const { id, tags, ...options } = entry
-  return defineEffect(id, { stacking: "extend", ...(tags ? { grantsTags: tags } : {}), ...options })
+  const { id, tags, ...options } = entry;
+  return defineEffect(id, {
+    stacking: 'extend',
+    ...(tags ? { grantsTags: tags } : {}),
+    ...options,
+  });
 }

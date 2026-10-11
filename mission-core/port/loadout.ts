@@ -1,65 +1,65 @@
 // Operator loadouts: a chess record as the selected skill and module make it, and the attack range it is deployed with.
 
-const GEO = { COLS: 21 }
+const GEO = { COLS: 21 };
 
-type GridCell = [number, number]
-type Grid = readonly GridCell[]
+type GridCell = [number, number];
+type Grid = readonly GridCell[];
 
 interface SkillRecord {
-  readonly index: number
-  readonly isDefault?: boolean
-  readonly rangeGrid?: Grid
-  readonly desc?: string
-  readonly iconId?: string
-  readonly overrideTokenKey?: string
+  readonly index: number;
+  readonly isDefault?: boolean;
+  readonly rangeGrid?: Grid;
+  readonly desc?: string;
+  readonly iconId?: string;
+  readonly overrideTokenKey?: string;
 }
 
 interface ModuleRecord {
-  readonly uniEquipId: string
-  readonly isDefault?: boolean
-  readonly attr?: Record<string, number>
-  readonly traitOverride?: Record<string, unknown>
-  readonly talentChanges?: readonly TalentChange[]
-  readonly name?: string
-  readonly typeName?: string
-  readonly level?: number
+  readonly uniEquipId: string;
+  readonly isDefault?: boolean;
+  readonly attr?: Record<string, number>;
+  readonly traitOverride?: Record<string, unknown>;
+  readonly talentChanges?: readonly TalentChange[];
+  readonly name?: string;
+  readonly typeName?: string;
+  readonly level?: number;
 }
 
 interface TalentRecord {
-  readonly index: number
-  readonly name?: string | undefined
-  readonly desc?: string | undefined
-  readonly descRaw?: string | undefined
-  readonly bb?: Record<string, unknown> | undefined
-  readonly bbStr?: Record<string, unknown> | undefined
-  readonly rangeGrid?: Grid | undefined
-  readonly tokenKey?: string | undefined
-  readonly containerTokenKey?: string | undefined
-  readonly hidden?: boolean | undefined
-  readonly fromModule?: boolean | undefined
+  readonly index: number;
+  readonly name?: string | undefined;
+  readonly desc?: string | undefined;
+  readonly descRaw?: string | undefined;
+  readonly bb?: Record<string, unknown> | undefined;
+  readonly bbStr?: Record<string, unknown> | undefined;
+  readonly rangeGrid?: Grid | undefined;
+  readonly tokenKey?: string | undefined;
+  readonly containerTokenKey?: string | undefined;
+  readonly hidden?: boolean | undefined;
+  readonly fromModule?: boolean | undefined;
 }
 
 interface TalentChange {
-  readonly talentIndex: number
-  readonly name?: string
-  readonly desc?: string
-  readonly descRaw?: string
-  readonly bb?: Record<string, unknown>
-  readonly bbStr?: Record<string, unknown>
-  readonly rangeGrid?: Grid
-  readonly tokenKey?: string
+  readonly talentIndex: number;
+  readonly name?: string;
+  readonly desc?: string;
+  readonly descRaw?: string;
+  readonly bb?: Record<string, unknown>;
+  readonly bbStr?: Record<string, unknown>;
+  readonly rangeGrid?: Grid;
+  readonly tokenKey?: string;
 }
 
 export interface LoadoutRequest {
-  skillIndex?: number
-  moduleId?: string
-  skill?: number
-  module?: string | null
+  skillIndex?: number;
+  moduleId?: string;
+  skill?: number;
+  module?: string | null;
 }
 
 export interface ResolvedRecordLoadout {
-  skillIndex: number | null
-  moduleId: string | null
+  skillIndex: number | null;
+  moduleId: string | null;
 }
 
 /**
@@ -70,28 +70,64 @@ export interface ResolvedRecordLoadout {
  *             isDefault: boolean }|null} null without a record; `moduleId` null for chess without module choices
  */
 export function resolveRecordLoadout(rec: any, loadout: any = null): any {
-  if (!rec || typeof rec !== 'object') return null;
-  const skills: readonly SkillRecord[] | null = Array.isArray(rec.skills) ? rec.skills : null;
-  const defSkill = rec.skill && Number.isInteger(rec.skill.index) ? rec.skill.index : (skills?.find((s) => s && s.isDefault)?.index ?? null);
+  if (!rec || typeof rec !== 'object') {
+    return null;
+  }
+  const skills: readonly SkillRecord[] | null = Array.isArray(rec.skills)
+    ? rec.skills
+    : null;
+  const defSkill =
+    rec.skill && Number.isInteger(rec.skill.index)
+      ? rec.skill.index
+      : (skills?.find((s) => s?.isDefault)?.index ?? null);
   const lo = loadout && typeof loadout === 'object' ? loadout : {};
   const wantSkill = lo.skillIndex ?? lo.skill;
-  const skillIndex = skills && Number.isInteger(wantSkill) && skills.some((s) => s && s.index === wantSkill) ? wantSkill : defSkill;
-  const mods: readonly ModuleRecord[] | null = Array.isArray(rec.modules) ? rec.modules : null;
-  const defMod = mods ? (mods.find((m) => m && m.isDefault)?.uniEquipId ?? 'none') : null;
+  const skillIndex =
+    skills &&
+    Number.isInteger(wantSkill) &&
+    skills.some((s) => s && s.index === wantSkill)
+      ? wantSkill
+      : defSkill;
+  const mods: readonly ModuleRecord[] | null = Array.isArray(rec.modules)
+    ? rec.modules
+    : null;
+  const defMod = mods
+    ? (mods.find((m) => m?.isDefault)?.uniEquipId ?? 'none')
+    : null;
   const wantMod = lo.moduleId ?? lo.module;
-  const moduleId = mods && (wantMod === 'none' || (typeof wantMod === 'string' && mods.some((m) => m && m.uniEquipId === wantMod))) ? wantMod : defMod;
+  const moduleId =
+    mods &&
+    (wantMod === 'none' ||
+      (typeof wantMod === 'string' &&
+        mods.some((m) => m && m.uniEquipId === wantMod)))
+      ? wantMod
+      : defMod;
   const skillIsDefault = skillIndex === defSkill;
   const moduleIsDefault = moduleId === defMod;
-  return { skillIndex, moduleId, skillIsDefault, moduleIsDefault, isDefault: skillIsDefault && moduleIsDefault };
+  return {
+    skillIndex,
+    moduleId,
+    skillIsDefault,
+    moduleIsDefault,
+    isDefault: skillIsDefault && moduleIsDefault,
+  };
 }
 
-const clean6 = (v: unknown): unknown => (typeof v !== 'number' || !Number.isFinite(v) || Number.isInteger(v) || Math.abs(v) >= 1e6 ? v : Math.round(v * 1e6) / 1e6);
+const clean6 = (v: unknown): unknown =>
+  typeof v !== 'number' ||
+  !Number.isFinite(v) ||
+  Number.isInteger(v) ||
+  Math.abs(v) >= 1e6
+    ? v
+    : Math.round(v * 1e6) / 1e6;
 
 /** Stats with a module: the no-module `statsBase` + the module's flat `attr`, rounded to six decimals. */
 // TRACE: source/loadout-compose
 export function composeStats(statsBase: any, attr: any): any {
   const s = { ...(statsBase || {}) };
-  for (const [f, v] of Object.entries(attr || {})) s[f] = clean6((s[f] || 0) + v);
+  for (const [f, v] of Object.entries(attr || {})) {
+    s[f] = clean6((s[f] || 0) + v);
+  }
   return s;
 }
 
@@ -101,27 +137,41 @@ export function composeStats(statsBase: any, attr: any): any {
  */
 // TRACE: source/loadout-compose
 export function composeTalents(base: any, changes: any): any {
-  const talents: TalentRecord[] = (Array.isArray(base) ? base : []).map((t: TalentRecord) => ({ ...t }));
-  const talentChanges: readonly TalentChange[] = Array.isArray(changes) ? changes : [];
+  const talents: TalentRecord[] = (Array.isArray(base) ? base : []).map(
+    (t: TalentRecord) => ({ ...t }),
+  );
+  const talentChanges: readonly TalentChange[] = Array.isArray(changes)
+    ? changes
+    : [];
   for (const ch of talentChanges) {
     const { talentIndex, ...rest } = ch;
     const rec: TalentRecord = { index: talentIndex, ...rest, fromModule: true };
-    const at = talentIndex >= 0 ? talents.findIndex((x) => x.index === talentIndex) : -1;
+    const at =
+      talentIndex >= 0 ? talents.findIndex((x) => x.index === talentIndex) : -1;
     if (at >= 0) {
       const old = talents[at];
-      if (!old) continue;
+      if (!old) {
+        continue;
+      }
       talents[at] = {
         ...rec,
-        name: rec.name || old.name, desc: rec.desc ?? old.desc, descRaw: rec.descRaw ?? old.descRaw,
-        bb: { ...old.bb, ...rec.bb }, bbStr: { ...old.bbStr, ...rec.bbStr },
-        rangeGrid: rec.rangeGrid || old.rangeGrid, tokenKey: rec.tokenKey || old.tokenKey,
+        name: rec.name || old.name,
+        desc: rec.desc ?? old.desc,
+        descRaw: rec.descRaw ?? old.descRaw,
+        bb: { ...old.bb, ...rec.bb },
+        bbStr: { ...old.bbStr, ...rec.bbStr },
+        rangeGrid: rec.rangeGrid || old.rangeGrid,
+        tokenKey: rec.tokenKey || old.tokenKey,
         hidden: old.hidden && rec.hidden,
       };
     } else {
       talents.push(rec);
     }
   }
-  return talents.filter((t: TalentRecord) => t.name || t.desc || Object.keys(t.bb || {}).length || t.tokenKey);
+  return talents.filter(
+    (t: TalentRecord) =>
+      t.name || t.desc || Object.keys(t.bb || {}).length || t.tokenKey,
+  );
 }
 
 /**
@@ -134,26 +184,63 @@ export function composeTalents(base: any, changes: any): any {
  * @param {object} lo resolveRecordLoadout(rec, …)
  */
 export function loadoutRecord(rec: any, lo: any): any {
-  if (!rec || !lo || lo.isDefault) return rec;
+  if (!rec || !lo || lo.isDefault) {
+    return rec;
+  }
   const out = { ...rec };
   if (!lo.moduleIsDefault && Array.isArray(rec.modules)) {
-    const m: ModuleRecord | null = lo.moduleId === 'none' ? null : (rec.modules as readonly ModuleRecord[]).find((x: ModuleRecord) => x.uniEquipId === lo.moduleId) ?? null;
+    const m: ModuleRecord | null =
+      lo.moduleId === 'none'
+        ? null
+        : ((rec.modules as readonly ModuleRecord[]).find(
+            (x: ModuleRecord) => x.uniEquipId === lo.moduleId,
+          ) ?? null);
     out.stats = composeStats(rec.statsBase ?? rec.stats, m ? m.attr : null);
-    out.trait = (m && m.traitOverride) || rec.traitBase || rec.trait;
-    out.talents = composeTalents(rec.talentsBase ?? rec.talents, m ? m.talentChanges : null);
+    out.trait = m?.traitOverride || rec.traitBase || rec.trait;
+    out.talents = composeTalents(
+      rec.talentsBase ?? rec.talents,
+      m ? m.talentChanges : null,
+    );
     out.module = m
-      ? { id: m.uniEquipId, name: m.name ?? null, type: m.typeName ?? null, level: m.level ?? rec.module?.level ?? 0, active: true }
-      : { id: null, name: null, type: null, level: rec.module?.level ?? 0, active: false };
+      ? {
+          id: m.uniEquipId,
+          name: m.name ?? null,
+          type: m.typeName ?? null,
+          level: m.level ?? rec.module?.level ?? 0,
+          active: true,
+        }
+      : {
+          id: null,
+          name: null,
+          type: null,
+          level: rec.module?.level ?? 0,
+          active: false,
+        };
   }
   if (!lo.skillIsDefault && Array.isArray(rec.skills)) {
-    const s = (rec.skills as readonly SkillRecord[]).find((x: SkillRecord) => x.index === lo.skillIndex);
+    const s = (rec.skills as readonly SkillRecord[]).find(
+      (x: SkillRecord) => x.index === lo.skillIndex,
+    );
     if (s) {
       out.skill = s;
-      if (rec.assets) out.assets = { ...rec.assets, skillIcon: s.iconId ?? rec.assets.skillIcon };
+      if (rec.assets) {
+        out.assets = {
+          ...rec.assets,
+          skillIcon: s.iconId ?? rec.assets.skillIcon,
+        };
+      }
       const tok = s.overrideTokenKey;
-      const talents: TalentRecord[] = Array.isArray(out.talents) ? out.talents : [];
-      if (tok && (rec.tokens || []).includes(tok) && talents.some((t: TalentRecord) => t.containerTokenKey)) {
-        out.talents = talents.map((t: TalentRecord) => (t.containerTokenKey ? { ...t, tokenKey: tok } : t));
+      const talents: TalentRecord[] = Array.isArray(out.talents)
+        ? out.talents
+        : [];
+      if (
+        tok &&
+        (rec.tokens || []).includes(tok) &&
+        talents.some((t: TalentRecord) => t.containerTokenKey)
+      ) {
+        out.talents = talents.map((t: TalentRecord) =>
+          t.containerTokenKey ? { ...t, tokenKey: tok } : t,
+        );
       }
     }
   }
@@ -173,16 +260,37 @@ export function loadoutRecord(rec: any, lo: any): any {
  */
 // TRACE: source/loadout-range
 export function attackRangeGrid(rec: any): any {
-  if (!rec || typeof rec !== 'object') return null;
+  if (!rec || typeof rec !== 'object') {
+    return null;
+  }
   let g = Array.isArray(rec.rangeGrid) ? rec.rangeGrid : null;
   const sk = rec.skill;
   const m = rec.module;
-  if (sk && Array.isArray(sk.rangeGrid) && sk.rangeGrid.length && /被动效果：攻击范围扩大/.test(String(sk.desc ?? ''))) {
+  if (
+    sk &&
+    Array.isArray(sk.rangeGrid) &&
+    sk.rangeGrid.length &&
+    /被动效果：攻击范围扩大/.test(String(sk.desc ?? ''))
+  ) {
     g = sk.rangeGrid;
-  } else if (rec.isGolden && m && m.active && m.id && /攻击范围扩大/.test(String(rec.trait?.moduleDesc ?? ''))) {
-    const mod = (Array.isArray(rec.modules) ? rec.modules as readonly ModuleRecord[] : []).find((x: ModuleRecord) => x.uniEquipId === m.id);
-    const mg = (mod?.talentChanges || []).find((t: TalentChange) => t.talentIndex === -1 && Array.isArray(t.rangeGrid) && t.rangeGrid.length)?.rangeGrid;
-    if (mg) g = mg;
+  } else if (
+    rec.isGolden &&
+    m?.active &&
+    m.id &&
+    /攻击范围扩大/.test(String(rec.trait?.moduleDesc ?? ''))
+  ) {
+    const mod = (
+      Array.isArray(rec.modules) ? (rec.modules as readonly ModuleRecord[]) : []
+    ).find((x: ModuleRecord) => x.uniEquipId === m.id);
+    const mg = (mod?.talentChanges || []).find(
+      (t: TalentChange) =>
+        t.talentIndex === -1 &&
+        Array.isArray(t.rangeGrid) &&
+        t.rangeGrid.length,
+    )?.rangeGrid;
+    if (mg) {
+      g = mg;
+    }
   }
   const ext = traitRangeExtend(rec);
   return g && ext ? extendedGrid(g, ext) : g;
@@ -196,7 +304,13 @@ export function attackRangeGrid(rec: any): any {
  */
 export function traitRangeExtend(rec: any): any {
   const t = rec && typeof rec === 'object' ? rec.trait : null;
-  if (!t || typeof t !== 'object' || /集成战略/.test(String(t.moduleDesc ?? ''))) return 0;
+  if (
+    !t ||
+    typeof t !== 'object' ||
+    /集成战略/.test(String(t.moduleDesc ?? ''))
+  ) {
+    return 0;
+  }
   const n = Math.floor(Number(t.bb?.ability_range_forward_extend) || 0);
   return n > 0 ? n : 0;
 }
@@ -213,14 +327,33 @@ export function traitRangeExtend(rec: any): any {
 export function extendedGrid(grid: any, extend: any = 0): any {
   const out: GridCell[] = [];
   const seen = new Set();
-  const add = (dr: number, dc: number): void => { const k = `${dr},${dc}`; if (!seen.has(k)) { seen.add(k); out.push([dr, dc]); } };
-  if (!Array.isArray(grid)) return out;
-  const cells: GridCell[] = grid.filter((p: unknown): p is GridCell => Array.isArray(p) && Number.isInteger(p[0]) && Number.isInteger(p[1]));
-  for (const [dr, dc] of cells) add(dr, dc);
+  const add = (dr: number, dc: number): void => {
+    const k = `${dr},${dc}`;
+    if (!seen.has(k)) {
+      seen.add(k);
+      out.push([dr, dc]);
+    }
+  };
+  if (!Array.isArray(grid)) {
+    return out;
+  }
+  const cells: GridCell[] = grid.filter(
+    (p: unknown): p is GridCell =>
+      Array.isArray(p) && Number.isInteger(p[0]) && Number.isInteger(p[1]),
+  );
+  for (const [dr, dc] of cells) {
+    add(dr, dc);
+  }
   if (extend > 0 && Number.isFinite(extend)) {
     const maxByRow = new Map();
-    for (const [dr, dc] of cells) maxByRow.set(dr, Math.max(maxByRow.get(dr) ?? -Infinity, dc));
-    for (const [dr, mx] of maxByRow) for (let k = 1; k <= Math.min(extend, GEO.COLS); k++) add(dr, mx + k);
+    for (const [dr, dc] of cells) {
+      maxByRow.set(dr, Math.max(maxByRow.get(dr) ?? -Infinity, dc));
+    }
+    for (const [dr, mx] of maxByRow) {
+      for (let k = 1; k <= Math.min(extend, GEO.COLS); k++) {
+        add(dr, mx + k);
+      }
+    }
   }
   return out;
 }

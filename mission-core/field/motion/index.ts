@@ -1,23 +1,38 @@
-import type { ContentContext } from "#port/context.js"
-import type { ShiftDefinition, ShiftInput, ShiftPlan } from "#port/definition.js"
-import type { BattleRegistry } from "#port/definition.js"
-import { releaseBlock } from "#unit/block/index.js"
-import { gridOf, type FieldGrid } from "#field/grid/index.js"
-import { hasTag } from "#kernel/world/tag.js"
-import { ATTRACT, NO_DISPLACE, STATIC_BODY } from "#port/tag.js"
-import { directionVector } from "#field/direction/index.js"
-import { attributeOf } from "#ability/effect/attribute.js"
-import { emit } from "#kernel/event/index.js"
-import { engineOf, requireUnit, unbalanced, type BattleWorld, type UnitState } from "#unit/record/index.js"
-import { attractPoints } from "#field/motion/attract.js"
-import { fearReachableTiles, planFearMove } from "#field/motion/fear.js"
-import { MOVE_SCALE, ROUTE, replanRoute } from "#field/grid/route.js"
-import { SHIFT, shiftOf } from "#field/motion/shift.js"
-import { blockerOf } from "#unit/block/hold.js"
-import { hypot } from "#kernel/math/hypot.js"
-import { cutStand } from "#combat/attack/stand.js"
-import { UNBALANCE_MIN, pullUnbalance, pushUnbalance, unbalanceUnit } from "#field/motion/unbalance.js"
-import { SPATIAL_EPSILON } from "#kernel/math/epsilon.js"
+import { attributeOf } from '#ability/effect/attribute.js';
+import { cutStand } from '#combat/attack/stand.js';
+import { directionVector } from '#field/direction/index.js';
+import { type FieldGrid, gridOf } from '#field/grid/index.js';
+import { MOVE_SCALE, ROUTE, replanRoute } from '#field/grid/route.js';
+import { attractPoints } from '#field/motion/attract.js';
+import { fearReachableTiles, planFearMove } from '#field/motion/fear.js';
+import { SHIFT, shiftOf } from '#field/motion/shift.js';
+import {
+  pullUnbalance,
+  pushUnbalance,
+  UNBALANCE_MIN,
+  unbalanceUnit,
+} from '#field/motion/unbalance.js';
+import { emit } from '#kernel/event/index.js';
+import { SPATIAL_EPSILON } from '#kernel/math/epsilon.js';
+import { hypot } from '#kernel/math/hypot.js';
+import { hasTag } from '#kernel/world/tag.js';
+import type { ContentContext } from '#port/context.js';
+import type {
+  BattleRegistry,
+  ShiftDefinition,
+  ShiftInput,
+  ShiftPlan,
+} from '#port/definition.js';
+import { ATTRACT, NO_DISPLACE, STATIC_BODY } from '#port/tag.js';
+import { blockerOf } from '#unit/block/hold.js';
+import { releaseBlock } from '#unit/block/index.js';
+import {
+  type BattleWorld,
+  engineOf,
+  requireUnit,
+  type UnitState,
+  unbalanced,
+} from '#unit/record/index.js';
 
 /** 推力距离。受力等级 ≤ −3 是 0，≥ 3 用 3 这一档。 */
 export const PUSH_TILES: Readonly<Record<number, number>> = Object.freeze({
@@ -27,36 +42,37 @@ export const PUSH_TILES: Readonly<Record<number, number>> = Object.freeze({
   1: 2.14,
   2: 2.96,
   3: 3.53,
-})
+});
 
 /** 特效推力比弹道少一帧的行程。 */
-export const PUSH_TILES_EFFECT: Readonly<Record<number, number>> = Object.freeze({
-  [-2]: 0.085,
-  [-1]: 0.374,
-  0: 1.562,
-  1: 1.987,
-  2: 2.773,
-  3: 3.331,
-})
+export const PUSH_TILES_EFFECT: Readonly<Record<number, number>> =
+  Object.freeze({
+    [-2]: 0.085,
+    [-1]: 0.374,
+    0: 1.562,
+    1: 1.987,
+    2: 2.773,
+    3: 3.331,
+  });
 
-export const PULL_WEAK_SHARE = 0.35
-export const PULL_CRAWL = 0.03
-export const PULL_ORIGIN = 0.5
-export const PULL_STOP_RADIUS = 0.6708
-export const PUSH_DIRECTIONAL_MIN_DIST = 0.25
+export const PULL_WEAK_SHARE = 0.35;
+export const PULL_CRAWL = 0.03;
+export const PULL_ORIGIN = 0.5;
+export const PULL_STOP_RADIUS = 0.6708;
+export const PUSH_DIRECTIONAL_MIN_DIST = 0.25;
 
-export const SHIFT_PUSH = "push"
-export const SHIFT_PULL = "pull"
-export const SHIFT_FEAR = "fear"
-export const SHIFT_ATTRACT = "attract"
+export const SHIFT_PUSH = 'push';
+export const SHIFT_PULL = 'pull';
+export const SHIFT_FEAR = 'fear';
+export const SHIFT_ATTRACT = 'attract';
 
-const SLIDE_STEP = 0.1
+const SLIDE_STEP = 0.1;
 
 export function registerBuiltinShifts(registry: BattleRegistry): void {
-  registry.registerShift(pushShift())
-  registry.registerShift(pullShift())
-  registry.registerShift(fearShift())
-  registry.registerShift(attractShift())
+  registry.registerShift(pushShift());
+  registry.registerShift(pullShift());
+  registry.registerShift(fearShift());
+  registry.registerShift(attractShift());
 }
 
 /** 按标识执行一段位移。立刻完成的写下落点；还在走的记进位移组件，倒地时先落到终点。 */
@@ -68,72 +84,108 @@ export function applyShift(
   unitId: string,
   input: ShiftInput = {},
 ): boolean {
-  const definition = registry.requireShift(actionId)
-  const plan = definition.plan(unitId, input, ctx)
-  if (!plan) return false
-  const unit = requireUnit(state, unitId)
-  if (definition.instant) {
-    const moved = hypot(unit.x - plan.x, unit.y - plan.y) > 1e-8
-    writeLanding(state, registry, ctx, unit, plan.x, plan.y, input.keepFacing !== false, plan.unbalance ?? 0)
-    state.components.access(SHIFT).delete(unitId)
-    if (plan.unbalance !== undefined) unbalanceUnit(state, unit, plan.unbalance)
-    return moved
+  const definition = registry.requireShift(actionId);
+  const plan = definition.plan(unitId, input, ctx);
+  if (!plan) {
+    return false;
   }
-  if (plan.unbalance !== undefined) unbalanceUnit(state, unit, plan.unbalance)
+  const unit = requireUnit(state, unitId);
+  if (definition.instant) {
+    const moved = hypot(unit.x - plan.x, unit.y - plan.y) > 1e-8;
+    writeLanding(
+      state,
+      registry,
+      ctx,
+      unit,
+      plan.x,
+      plan.y,
+      input.keepFacing !== false,
+      plan.unbalance ?? 0,
+    );
+    state.components.access(SHIFT).delete(unitId);
+    if (plan.unbalance !== undefined) {
+      unbalanceUnit(state, unit, plan.unbalance);
+    }
+    return moved;
+  }
+  if (plan.unbalance !== undefined) {
+    unbalanceUnit(state, unit, plan.unbalance);
+  }
   state.components.access(SHIFT).set(unitId, {
     id: definition.id,
     landingX: plan.x,
     landingY: plan.y,
-    points: (plan.points ?? [{ x: plan.x, y: plan.y }]).map((point) => ({ x: point.x, y: point.y })),
+    points: (plan.points ?? [{ x: plan.x, y: plan.y }]).map((point) => ({
+      x: point.x,
+      y: point.y,
+    })),
     index: 0,
-  })
-  return true
+  });
+  return true;
 }
 
 /** 恐惧和诱导还没走完时，先沿这段动作走，本拍不再沿路线。 */
-export function advanceShift(state: BattleWorld, registry: BattleRegistry, unit: UnitState, dt: number): boolean {
-  const run = shiftOf(state, unit.id)
-  if (!run) return false
+export function advanceShift(
+  state: BattleWorld,
+  registry: BattleRegistry,
+  unit: UnitState,
+  dt: number,
+): boolean {
+  const run = shiftOf(state, unit.id);
+  if (!run) {
+    return false;
+  }
   // 诱导结束（attract 标签没了）时还没走完的诱导位移作废，接着沿路线
   if (run.id === SHIFT_ATTRACT && !hasTag(unit, ATTRACT)) {
-    state.components.access(SHIFT).delete(unit.id)
-    return false
+    state.components.access(SHIFT).delete(unit.id);
+    return false;
   }
-  if (unbalanced(state, unit)) return true
-  const speed = Math.max(0, attributeOf(unit, registry, "moveSpeed")) * MOVE_SCALE
-  let distance = speed * dt
-  let moved = false
+  if (unbalanced(state, unit)) {
+    return true;
+  }
+  const speed =
+    Math.max(0, attributeOf(unit, registry, 'moveSpeed')) * MOVE_SCALE;
+  let distance = speed * dt;
+  let moved = false;
   while (distance > SPATIAL_EPSILON && run.index < run.points.length) {
-    const point = run.points[run.index]
-    if (!point) break
-    const dx = point.x - unit.x
-    const dy = point.y - unit.y
-    const length = hypot(dx, dy)
-    if (length <= distance) {
-      unit.x = point.x
-      unit.y = point.y
-      distance -= length
-      run.index += 1
-    } else {
-      unit.x += (dx / length) * distance
-      unit.y += (dy / length) * distance
-      distance = 0
+    const point = run.points[run.index];
+    if (!point) {
+      break;
     }
-    moved = true
+    const dx = point.x - unit.x;
+    const dy = point.y - unit.y;
+    const length = hypot(dx, dy);
+    if (length <= distance) {
+      unit.x = point.x;
+      unit.y = point.y;
+      distance -= length;
+      run.index += 1;
+    } else {
+      unit.x += (dx / length) * distance;
+      unit.y += (dy / length) * distance;
+      distance = 0;
+    }
+    moved = true;
   }
-  if (moved) replanRoute(state, unit.id)
-  if (run.index >= run.points.length) state.components.access(SHIFT).delete(unit.id)
-  return true
+  if (moved) {
+    replanRoute(state, unit.id);
+  }
+  if (run.index >= run.points.length) {
+    state.components.access(SHIFT).delete(unit.id);
+  }
+  return true;
 }
 
 /** 倒地前先写到这段动作的终点，倒地落点读的就是这个坐标。 */
 export function landShift(state: BattleWorld, unit: UnitState): void {
-  const run = shiftOf(state, unit.id)
-  if (!run) return
-  unit.x = run.landingX
-  unit.y = run.landingY
-  state.components.access(SHIFT).delete(unit.id)
-  replanRoute(state, unit.id)
+  const run = shiftOf(state, unit.id);
+  if (!run) {
+    return;
+  }
+  unit.x = run.landingX;
+  unit.y = run.landingY;
+  state.components.access(SHIFT).delete(unit.id);
+  replanRoute(state, unit.id);
 }
 
 // MARK: push
@@ -143,34 +195,51 @@ function pushShift(): ShiftDefinition {
     id: SHIFT_PUSH,
     instant: true,
     plan(unitId, input, ctx) {
-      const { world: state, registry } = engineOf(ctx)
-      const still = staticBody(state, unitId)
-      if (still) return staticForce(still, forceLevel(still, registry, input.force ?? 0).level, false)
-      const unit = movable(state, unitId)
-      if (!unit) return null
-      const level = forceLevel(unit, registry, input.force ?? 0)
-      const aimed = aimPush(unit, input, level.level)
-      if (!aimed) return null
-      const hold = pushUnbalance(aimed.level)
-      const table = input.effect === true ? PUSH_TILES_EFFECT : PUSH_TILES
-      let distance = pushDistance(table, aimed.level)
-      let ux = aimed.x
-      let uy = aimed.y
-      if (input.inward === true && !(vectorLength(input.dirX, input.dirY) > 0)) {
-        ux = -ux
-        uy = -uy
-        const fromX = input.fromX ?? unit.x
-        const fromY = input.fromY ?? unit.y
-        const gap = hypot(unit.x - fromX, unit.y - fromY)
-        distance = Math.min(distance, Math.max(0, gap - PULL_STOP_RADIUS))
+      const { world: state, registry } = engineOf(ctx);
+      const still = staticBody(state, unitId);
+      if (still) {
+        return staticForce(
+          still,
+          forceLevel(still, registry, input.force ?? 0).level,
+          false,
+        );
+      }
+      const unit = movable(state, unitId);
+      if (!unit) {
+        return null;
+      }
+      const level = forceLevel(unit, registry, input.force ?? 0);
+      const aimed = aimPush(unit, input, level.level);
+      if (!aimed) {
+        return null;
+      }
+      const hold = pushUnbalance(aimed.level);
+      const table = input.effect === true ? PUSH_TILES_EFFECT : PUSH_TILES;
+      let distance = pushDistance(table, aimed.level);
+      let ux = aimed.x;
+      let uy = aimed.y;
+      if (
+        input.inward === true &&
+        !(vectorLength(input.dirX, input.dirY) > 0)
+      ) {
+        ux = -ux;
+        uy = -uy;
+        const fromX = input.fromX ?? unit.x;
+        const fromY = input.fromY ?? unit.y;
+        const gap = hypot(unit.x - fromX, unit.y - fromY);
+        distance = Math.min(distance, Math.max(0, gap - PULL_STOP_RADIUS));
       }
       // 墙让滑动在第一步就停下时按失衡硬直的保底
-      const landing = slide(gridOf(state), unit, ux, uy, distance)
-      if (!(hold > 0)) return landing
-      if (!landing) return { x: unit.x, y: unit.y, unbalance: UNBALANCE_MIN }
-      return { ...landing, unbalance: hold }
+      const landing = slide(gridOf(state), unit, ux, uy, distance);
+      if (!(hold > 0)) {
+        return landing;
+      }
+      if (!landing) {
+        return { x: unit.x, y: unit.y, unbalance: UNBALANCE_MIN };
+      }
+      return { ...landing, unbalance: hold };
     },
-  }
+  };
 }
 
 function pullShift(): ShiftDefinition {
@@ -178,35 +247,69 @@ function pullShift(): ShiftDefinition {
     id: SHIFT_PULL,
     instant: true,
     plan(unitId, input, ctx) {
-      const { world: state, registry } = engineOf(ctx)
-      if (input.toX === undefined || input.toY === undefined) return null
-      const centerX = input.centerX ?? input.toX
-      const centerY = input.centerY ?? input.toY
-      const still = staticBody(state, unitId)
-      if (still) {
-        if (blockedByCenter(state, still, centerX, centerY)) return null
-        return staticForce(still, forceLevel(still, registry, input.force ?? 0).level, true)
+      const { world: state, registry } = engineOf(ctx);
+      if (input.toX === undefined || input.toY === undefined) {
+        return null;
       }
-      const unit = movable(state, unitId)
-      if (!unit) return null
-      if (blockedByCenter(state, unit, centerX, centerY)) return null
+      const centerX = input.centerX ?? input.toX;
+      const centerY = input.centerY ?? input.toY;
+      const still = staticBody(state, unitId);
+      if (still) {
+        if (blockedByCenter(state, still, centerX, centerY)) {
+          return null;
+        }
+        return staticForce(
+          still,
+          forceLevel(still, registry, input.force ?? 0).level,
+          true,
+        );
+      }
+      const unit = movable(state, unitId);
+      if (!unit) {
+        return null;
+      }
+      if (blockedByCenter(state, unit, centerX, centerY)) {
+        return null;
+      }
       // 失衡持续整个作用时间，急停之后也一样
-      const hold = pullUnbalance(forceLevel(unit, registry, input.force ?? 0).level)
-      if (!(hold > 0)) return null
-      const dx = input.toX - unit.x
-      const dy = input.toY - unit.y
-      const distance = hypot(dx, dy)
-      if (!(distance > 1e-6)) return { x: unit.x, y: unit.y, unbalance: hold }
-      const ux = dx / distance
-      const uy = dy / distance
-      const full = stopDistance(unit.x, unit.y, ux, uy, distance, centerX, centerY, PULL_STOP_RADIUS)
-      const level = forceLevel(unit, registry, input.force ?? 0).level
+      const hold = pullUnbalance(
+        forceLevel(unit, registry, input.force ?? 0).level,
+      );
+      if (!(hold > 0)) {
+        return null;
+      }
+      const dx = input.toX - unit.x;
+      const dy = input.toY - unit.y;
+      const distance = hypot(dx, dy);
+      if (!(distance > 1e-6)) {
+        return { x: unit.x, y: unit.y, unbalance: hold };
+      }
+      const ux = dx / distance;
+      const uy = dy / distance;
+      const full = stopDistance(
+        unit.x,
+        unit.y,
+        ux,
+        uy,
+        distance,
+        centerX,
+        centerY,
+        PULL_STOP_RADIUS,
+      );
+      const level = forceLevel(unit, registry, input.force ?? 0).level;
       const travel =
-        level >= 0 ? full : level === -1 ? Math.min(full, PULL_WEAK_SHARE * distance) : level === -2 ? Math.min(full, PULL_CRAWL) : 0
-      const landing = travel > 1e-6 ? slide(gridOf(state), unit, ux, uy, travel) : null
-      return { ...(landing ?? { x: unit.x, y: unit.y }), unbalance: hold }
+        level >= 0
+          ? full
+          : level === -1
+            ? Math.min(full, PULL_WEAK_SHARE * distance)
+            : level === -2
+              ? Math.min(full, PULL_CRAWL)
+              : 0;
+      const landing =
+        travel > 1e-6 ? slide(gridOf(state), unit, ux, uy, travel) : null;
+      return { ...(landing ?? { x: unit.x, y: unit.y }), unbalance: hold };
     },
-  }
+  };
 }
 
 function fearShift(): ShiftDefinition {
@@ -214,21 +317,42 @@ function fearShift(): ShiftDefinition {
     id: SHIFT_FEAR,
     instant: false,
     plan(unitId, input, ctx) {
-      const { world: state } = engineOf(ctx)
-      const unit = movable(state, unitId)
-      if (!unit || input.sourceX === undefined || input.sourceY === undefined) return null
-      const sourceX = input.sourceX
-      const sourceY = input.sourceY
-      const self = hypot(unit.x - sourceX, unit.y - sourceY) <= SPATIAL_EPSILON
-      const end = state.components.access(ROUTE).get(unitId)?.run?.legs.find((leg) => leg.final)
-      const goal = end ? { x: end.x, y: end.y } : null
+      const { world: state } = engineOf(ctx);
+      const unit = movable(state, unitId);
+      if (!unit || input.sourceX === undefined || input.sourceY === undefined) {
+        return null;
+      }
+      const sourceX = input.sourceX;
+      const sourceY = input.sourceY;
+      const self = hypot(unit.x - sourceX, unit.y - sourceY) <= SPATIAL_EPSILON;
+      const end = state.components
+        .access(ROUTE)
+        .get(unitId)
+        ?.run?.legs.find((leg) => leg.final);
+      const goal = end ? { x: end.x, y: end.y } : null;
       const tiles = [
-        ...fearReachableTiles(gridOf(state), unit.motion, unit.x, unit.y, sourceX, sourceY, self, goal),
-      ]
-      const move = planFearMove(gridOf(state), unit.motion, unit.x, unit.y, tiles, state.random)
-      return { x: move.goal.x, y: move.goal.y, points: move.points }
+        ...fearReachableTiles(
+          gridOf(state),
+          unit.motion,
+          unit.x,
+          unit.y,
+          sourceX,
+          sourceY,
+          self,
+          goal,
+        ),
+      ];
+      const move = planFearMove(
+        gridOf(state),
+        unit.motion,
+        unit.x,
+        unit.y,
+        tiles,
+        state.random,
+      );
+      return { x: move.goal.x, y: move.goal.y, points: move.points };
     },
-  }
+  };
 }
 
 function attractShift(): ShiftDefinition {
@@ -236,15 +360,26 @@ function attractShift(): ShiftDefinition {
     id: SHIFT_ATTRACT,
     instant: false,
     plan(unitId, input, ctx) {
-      const { world: state } = engineOf(ctx)
-      const unit = movable(state, unitId)
-      if (!unit || input.toX === undefined || input.toY === undefined) return null
-      const points = attractPoints(gridOf(state), unit.motion, unit.x, unit.y, input.toX, input.toY)
-      const last = points[points.length - 1]
-      if (!last) return null
-      return { x: last.x, y: last.y, points }
+      const { world: state } = engineOf(ctx);
+      const unit = movable(state, unitId);
+      if (!unit || input.toX === undefined || input.toY === undefined) {
+        return null;
+      }
+      const points = attractPoints(
+        gridOf(state),
+        unit.motion,
+        unit.x,
+        unit.y,
+        input.toX,
+        input.toY,
+      );
+      const last = points[points.length - 1];
+      if (!last) {
+        return null;
+      }
+      return { x: last.x, y: last.y, points };
     },
-  }
+  };
 }
 
 // MARK: motion
@@ -253,22 +388,42 @@ function attractShift(): ShiftDefinition {
  * 静态刚体（不是位移免疫）：受力不动，但受力等级不低于 −2 时照样失衡——推是瞬间的，按保底；拉按作用时间，不短于保底。
  */
 function staticBody(state: BattleWorld, unitId: string): UnitState | null {
-  const unit = state.units.get(unitId)
-  if (!unit || unit.side !== "enemy" || !unit.fielded || unit.downed) return null
-  if (hasTag(unit, NO_DISPLACE) || !hasTag(unit, STATIC_BODY)) return null
-  return unit
+  const unit = state.units.get(unitId);
+  if (unit?.side !== 'enemy' || !unit.fielded || unit.downed) {
+    return null;
+  }
+  if (hasTag(unit, NO_DISPLACE) || !hasTag(unit, STATIC_BODY)) {
+    return null;
+  }
+  return unit;
 }
 
-function staticForce(unit: UnitState, level: number, pull: boolean): ShiftPlan | null {
-  if (level < -2) return null
-  return { x: unit.x, y: unit.y, unbalance: pull ? Math.max(UNBALANCE_MIN, pullUnbalance(level)) : UNBALANCE_MIN }
+function staticForce(
+  unit: UnitState,
+  level: number,
+  pull: boolean,
+): ShiftPlan | null {
+  if (level < -2) {
+    return null;
+  }
+  return {
+    x: unit.x,
+    y: unit.y,
+    unbalance: pull
+      ? Math.max(UNBALANCE_MIN, pullUnbalance(level))
+      : UNBALANCE_MIN,
+  };
 }
 
 function movable(state: BattleWorld, unitId: string): UnitState | null {
-  const unit = state.units.get(unitId)
-  if (!unit || unit.side !== "enemy" || !unit.fielded || unit.downed) return null
-  if (hasTag(unit, NO_DISPLACE) || hasTag(unit, STATIC_BODY)) return null
-  return unit
+  const unit = state.units.get(unitId);
+  if (unit?.side !== 'enemy' || !unit.fielded || unit.downed) {
+    return null;
+  }
+  if (hasTag(unit, NO_DISPLACE) || hasTag(unit, STATIC_BODY)) {
+    return null;
+  }
+  return unit;
 }
 
 function writeLanding(
@@ -281,26 +436,39 @@ function writeLanding(
   keepFacing: boolean,
   duration: number,
 ): void {
-  if (hypot(unit.x - x, unit.y - y) <= 1e-8) return
-  unit.x = x
-  unit.y = y
-  replanRoute(state, unit.id)
-  cutStand(state, unit.id)
-  releaseBlock(state, unit, { registry, ctx })
+  if (hypot(unit.x - x, unit.y - y) <= 1e-8) {
+    return;
+  }
+  unit.x = x;
+  unit.y = y;
+  replanRoute(state, unit.id);
+  cutStand(state, unit.id);
+  releaseBlock(state, unit, { registry, ctx });
   // 画面的滑动时长就是失衡的秒数
-  emit(state, "displace", { unitId: unit.id, x, y, duration, keepFacing })
+  emit(state, 'displace', { unitId: unit.id, x, y, duration, keepFacing });
 }
 
-function forceLevel(unit: UnitState, registry: BattleRegistry, force: number): { level: number } {
-  const mass = attributeOf(unit, registry, "massLevel")
-  const level = Math.round(Number.isFinite(force) ? force : 0) - Math.round(Number.isFinite(mass) ? mass : 0)
-  return { level }
+function forceLevel(
+  unit: UnitState,
+  registry: BattleRegistry,
+  force: number,
+): { level: number } {
+  const mass = attributeOf(unit, registry, 'massLevel');
+  const level =
+    Math.round(Number.isFinite(force) ? force : 0) -
+    Math.round(Number.isFinite(mass) ? mass : 0);
+  return { level };
 }
 
-function pushDistance(table: Readonly<Record<number, number>>, level: number): number {
-  if (level <= -3) return 0
-  const key = Math.min(3, level)
-  return table[key] ?? 0
+function pushDistance(
+  table: Readonly<Record<number, number>>,
+  level: number,
+): number {
+  if (level <= -3) {
+    return 0;
+  }
+  const key = Math.min(3, level);
+  return table[key] ?? 0;
 }
 
 function aimPush(
@@ -308,56 +476,81 @@ function aimPush(
   input: ShiftInput,
   level: number,
 ): { x: number; y: number; level: number } | null {
-  const fromX = input.fromX ?? unit.x
-  const fromY = input.fromY ?? unit.y
-  const vx = unit.x - fromX
-  const vy = unit.y - fromY
-  const reach = hypot(vx, vy)
-  const dir = unitVector(input.dirX, input.dirY)
+  const fromX = input.fromX ?? unit.x;
+  const fromY = input.fromY ?? unit.y;
+  const vx = unit.x - fromX;
+  const vy = unit.y - fromY;
+  const reach = hypot(vx, vy);
+  const dir = unitVector(input.dirX, input.dirY);
   if (dir) {
-    let ux = dir.x
-    let uy = dir.y
-    let next = level
+    let ux = dir.x;
+    let uy = dir.y;
+    let next = level;
     // 修正只在给了起点时看：离起点太近，或（没有 fixedAngle 时）和方向夹角超过 45°
-    const given = input.fromX !== undefined && input.fromY !== undefined
-    const aligned = input.fixedAngle === true || (reach > 1e-6 && vx * ux + vy * uy >= reach * Math.SQRT1_2)
-    if (given && input.fixed !== true && (reach < PUSH_DIRECTIONAL_MIN_DIST || !aligned)) {
-      next -= 2
+    const given = input.fromX !== undefined && input.fromY !== undefined;
+    const aligned =
+      input.fixedAngle === true ||
+      (reach > 1e-6 && vx * ux + vy * uy >= reach * Math.SQRT1_2);
+    if (
+      given &&
+      input.fixed !== true &&
+      (reach < PUSH_DIRECTIONAL_MIN_DIST || !aligned)
+    ) {
+      next -= 2;
       if (reach > 1e-6) {
-        ux = vx / reach
-        uy = vy / reach
+        ux = vx / reach;
+        uy = vy / reach;
       }
     }
-    return { x: ux, y: uy, level: next }
+    return { x: ux, y: uy, level: next };
   }
-  if (reach > 1e-6) return { x: vx / reach, y: vy / reach, level }
-  const [row, col] = directionVector(unit.facing)
-  if (row === 0 && col === 0) return null
-  return { x: col, y: row, level }
+  if (reach > 1e-6) {
+    return { x: vx / reach, y: vy / reach, level };
+  }
+  const [row, col] = directionVector(unit.facing);
+  if (row === 0 && col === 0) {
+    return null;
+  }
+  return { x: col, y: row, level };
 }
 
-function slide(grid: FieldGrid, unit: UnitState, ux: number, uy: number, distance: number): ShiftPlan | null {
-  const length = hypot(ux, uy)
-  if (!(length > 0) || !(distance > 0)) return null
-  const stepX = ux / length
-  const stepY = uy / length
-  let x = unit.x
-  let y = unit.y
-  let moved = 0
-  while (moved + SPATIAL_EPSILON < distance) {
-    const step = Math.min(SLIDE_STEP, distance - moved)
-    const nextX = x + stepX * step
-    const nextY = y + stepY * step
-    const tileX = Math.round(nextX)
-    const tileY = Math.round(nextY)
-    const open = unit.motion === "FLY" ? grid.flyPassable(tileX, tileY) : grid.groundPassable(tileX, tileY)
-    if (!open) break
-    x = nextX
-    y = nextY
-    moved += step
+function slide(
+  grid: FieldGrid,
+  unit: UnitState,
+  ux: number,
+  uy: number,
+  distance: number,
+): ShiftPlan | null {
+  const length = hypot(ux, uy);
+  if (!(length > 0) || !(distance > 0)) {
+    return null;
   }
-  if (!(moved > 1e-8)) return null
-  return { x, y }
+  const stepX = ux / length;
+  const stepY = uy / length;
+  let x = unit.x;
+  let y = unit.y;
+  let moved = 0;
+  while (moved + SPATIAL_EPSILON < distance) {
+    const step = Math.min(SLIDE_STEP, distance - moved);
+    const nextX = x + stepX * step;
+    const nextY = y + stepY * step;
+    const tileX = Math.round(nextX);
+    const tileY = Math.round(nextY);
+    const open =
+      unit.motion === 'FLY'
+        ? grid.flyPassable(tileX, tileY)
+        : grid.groundPassable(tileX, tileY);
+    if (!open) {
+      break;
+    }
+    x = nextX;
+    y = nextY;
+    moved += step;
+  }
+  if (!(moved > 1e-8)) {
+    return null;
+  }
+  return { x, y };
 }
 
 function stopDistance(
@@ -370,34 +563,56 @@ function stopDistance(
   centerY: number,
   radius: number,
 ): number {
-  const wx = x - centerX
-  const wy = y - centerY
-  const reach = wx * wx + wy * wy
-  const limit = radius * radius
-  if (reach <= limit) return 0
-  const along = wx * ux + wy * uy
-  const disc = along * along - reach + limit
-  if (disc < 0) return full
-  const hit = -along - Math.sqrt(disc)
-  if (hit >= 0) return Math.min(full, hit)
-  return full
+  const wx = x - centerX;
+  const wy = y - centerY;
+  const reach = wx * wx + wy * wy;
+  const limit = radius * radius;
+  if (reach <= limit) {
+    return 0;
+  }
+  const along = wx * ux + wy * uy;
+  const disc = along * along - reach + limit;
+  if (disc < 0) {
+    return full;
+  }
+  const hit = -along - Math.sqrt(disc);
+  if (hit >= 0) {
+    return Math.min(full, hit);
+  }
+  return full;
 }
 
-function blockedByCenter(state: BattleWorld, unit: UnitState, centerX: number, centerY: number): boolean {
-  const blockerId = blockerOf(state, unit.id)
-  if (!blockerId) return false
-  const blocker = state.units.get(blockerId)
-  if (!blocker) return false
-  return hypot(blocker.x - centerX, blocker.y - centerY) <= 0.2
+function blockedByCenter(
+  state: BattleWorld,
+  unit: UnitState,
+  centerX: number,
+  centerY: number,
+): boolean {
+  const blockerId = blockerOf(state, unit.id);
+  if (!blockerId) {
+    return false;
+  }
+  const blocker = state.units.get(blockerId);
+  if (!blocker) {
+    return false;
+  }
+  return hypot(blocker.x - centerX, blocker.y - centerY) <= 0.2;
 }
 
 function vectorLength(x: number | undefined, y: number | undefined): number {
-  if (x === undefined && y === undefined) return 0
-  return hypot(x ?? 0, y ?? 0)
+  if (x === undefined && y === undefined) {
+    return 0;
+  }
+  return hypot(x ?? 0, y ?? 0);
 }
 
-function unitVector(x: number | undefined, y: number | undefined): { x: number; y: number } | null {
-  const length = vectorLength(x, y)
-  if (!(length > 0)) return null
-  return { x: (x ?? 0) / length, y: (y ?? 0) / length }
+function unitVector(
+  x: number | undefined,
+  y: number | undefined,
+): { x: number; y: number } | null {
+  const length = vectorLength(x, y);
+  if (!(length > 0)) {
+    return null;
+  }
+  return { x: (x ?? 0) / length, y: (y ?? 0) / length };
 }

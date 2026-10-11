@@ -21,7 +21,7 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "lint": "tsc --noEmit && tsc -p tsconfig.test.json --noEmit",
+    "check": "tsc --noEmit && tsc -p tsconfig.test.json --noEmit",
     "test": "vitest run"
   },
   "devDependencies": {

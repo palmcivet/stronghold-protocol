@@ -1,10 +1,12 @@
-import type { BattleSpec, UnitSpec } from "arknights-mission-core"
+import type { BattleSpec, UnitSpec } from 'arknights-mission-core';
 
 export function spec(patch: Partial<BattleSpec> = {}): BattleSpec {
   return {
     seed: patch.seed ?? 1,
     modules: patch.modules ?? [],
-    tiles: patch.tiles ?? [{ x: 0, y: 0, height: 0, deployable: true, walkableBy: ["ground"] }],
+    tiles: patch.tiles ?? [
+      { x: 0, y: 0, height: 0, deployable: true, walkableBy: ['ground'] },
+    ],
     units: patch.units ?? [],
     spawns: patch.spawns ?? [],
     deployStrategy: patch.deployStrategy ?? null,
@@ -12,23 +14,23 @@ export function spec(patch: Partial<BattleSpec> = {}): BattleSpec {
       ally: { initial: 0, regen: 0, cap: 0 },
       enemy: { initial: 0, regen: 0, cap: 0 },
     },
-  }
+  };
 }
 
 export function ally(id: string, patch: Partial<UnitSpec> = {}): UnitSpec {
   return {
     id,
-    side: patch.side ?? "ally",
+    side: patch.side ?? 'ally',
     attributes: patch.attributes ?? { hp: 100, atk: 10, def: 0 },
     skills: patch.skills ?? [],
     attackRange: patch.attackRange ?? [{ x: 1, y: 0 }],
     tags: patch.tags ?? [],
-    deployPositions: patch.deployPositions ?? ["ground"],
+    deployPositions: patch.deployPositions ?? ['ground'],
     x: patch.x ?? 0,
     y: patch.y ?? 0,
-    facing: patch.facing ?? "RIGHT",
+    facing: patch.facing ?? 'RIGHT',
     hitArea: patch.hitArea ?? null,
-    motion: patch.motion ?? "WALK",
+    motion: patch.motion ?? 'WALK',
     route: patch.route ?? null,
     ...(patch.attackClip ? { attackClip: patch.attackClip } : {}),
     ...(patch.attackShape ? { attackShape: patch.attackShape } : {}),
@@ -41,6 +43,8 @@ export function ally(id: string, patch: Partial<UnitSpec> = {}): UnitSpec {
     ...(patch.timers ? { timers: patch.timers } : {}),
     ...(patch.owner !== undefined ? { owner: patch.owner } : {}),
     ...(patch.kind ? { kind: patch.kind } : {}),
-    ...(patch.conditionalEffects ? { conditionalEffects: patch.conditionalEffects } : {}),
-  }
+    ...(patch.conditionalEffects
+      ? { conditionalEffects: patch.conditionalEffects }
+      : {}),
+  };
 }

@@ -1,39 +1,46 @@
-import { describe, expect, it } from "vitest"
-import type { MissionStageCommand, MissionView, MissionPointerHit } from "#contract/view.js"
+import { describe, expect, it } from 'vitest';
+import type {
+  MissionPointerHit,
+  MissionStageCommand,
+  MissionView,
+} from '#contract/view.js';
 
-describe("mission renderer contract", () => {
-  it("represents all stage inputs without app-specific fields", () => {
+describe('mission renderer contract', () => {
+  it('represents all stage inputs without app-specific fields', () => {
     const commands: readonly MissionStageCommand[] = [
-      { type: "set-map", map: { cols: 2, rows: 2, tiles: [] } },
-      { type: "set-camera", camera: { x: 0, y: 0, width: 2, height: 2, margin: 1 } },
-      { type: "set-highlights", tiles: [{ x: 1, y: 1 }] },
-      { type: "set-update-mode", mode: "local" },
-      { type: "set-appearances", appearances: {} },
-      { type: "reset" },
-    ]
+      { type: 'set-map', map: { cols: 2, rows: 2, tiles: [] } },
+      {
+        type: 'set-camera',
+        camera: { x: 0, y: 0, width: 2, height: 2, margin: 1 },
+      },
+      { type: 'set-highlights', tiles: [{ x: 1, y: 1 }] },
+      { type: 'set-update-mode', mode: 'local' },
+      { type: 'set-appearances', appearances: {} },
+      { type: 'reset' },
+    ];
 
     expect(commands.map((command) => command.type)).toEqual([
-      "set-map",
-      "set-camera",
-      "set-highlights",
-      "set-update-mode",
-      "set-appearances",
-      "reset",
-    ])
-  })
+      'set-map',
+      'set-camera',
+      'set-highlights',
+      'set-update-mode',
+      'set-appearances',
+      'reset',
+    ]);
+  });
 
-  it("keeps pointer results discriminated", () => {
+  it('keeps pointer results discriminated', () => {
     const hits: readonly MissionPointerHit[] = [
-      { type: "unit", unitId: "guard" },
-      { type: "tile", x: 1, y: 2 },
-      { type: "empty" },
-    ]
+      { type: 'unit', unitId: 'guard' },
+      { type: 'tile', x: 1, y: 2 },
+      { type: 'empty' },
+    ];
 
-    expect(hits).toHaveLength(3)
-    expect(hits[0]).toEqual({ type: "unit", unitId: "guard" })
-  })
+    expect(hits).toHaveLength(3);
+    expect(hits[0]).toEqual({ type: 'unit', unitId: 'guard' });
+  });
 
-  it("exposes a stable initial view shape", () => {
+  it('exposes a stable initial view shape', () => {
     const view: MissionView = {
       map: null,
       camera: null,
@@ -41,16 +48,16 @@ describe("mission renderer contract", () => {
       units: [],
       events: [],
       highlightedTiles: [],
-      updateMode: "external",
+      updateMode: 'external',
       speed: 2,
       appearances: {},
-    }
+    };
 
     expect(view).toMatchObject({
       map: null,
       snapshot: null,
       highlightedTiles: [],
-      updateMode: "external",
-    })
-  })
-})
+      updateMode: 'external',
+    });
+  });
+});

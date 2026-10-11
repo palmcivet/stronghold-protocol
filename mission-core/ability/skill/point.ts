@@ -1,82 +1,114 @@
-import type { SkillMoment } from "#contract/spec.js"
-import type { ContentContext } from "#port/context.js"
-import type { TimerState } from "#kernel/timer/index.js"
-import type { BattleRegistry } from "#port/definition.js"
-import { readTimer } from "#kernel/timer/index.js"
-import { requireUnit, type BattleWorld } from "#unit/record/index.js"
-import { attributeOf } from "#ability/effect/attribute.js"
-import { type SkillInstance, type UnitState } from "#unit/record/index.js"
-import { refreshTags } from "#ability/effect/tag.js"
-import { hasTag } from "#kernel/world/tag.js"
-import { CANNOT_ACT, CANNOT_CAST, NO_ATTACK, NO_SP } from "#port/tag.js"
-import { startTimer } from "#unit/record/timer.js"
-import { routeHidden } from "#field/grid/route.js"
-import { timerNumber, timerText } from "#kernel/timer/index.js"
-import { reached, TICK } from "#kernel/tick/index.js"
+import { attributeOf } from '#ability/effect/attribute.js';
+import { refreshTags } from '#ability/effect/tag.js';
 import {
   AUTO_OP_COOLDOWN,
-  SP_COST_FLAT,
-  SP_COST_MUL,
   isInstantBody,
   isTickRule,
   isTimedBody,
-} from "#ability/skill/constants.js"
-import { attackWillHit } from "#combat/attack/index.js"
-import { allyTriggerMet, areaTriggerMet, shouldCast } from "#ability/skill/trigger.js"
+  SP_COST_FLAT,
+  SP_COST_MUL,
+} from '#ability/skill/constants.js';
+import {
+  allyTriggerMet,
+  areaTriggerMet,
+  shouldCast,
+} from '#ability/skill/trigger.js';
+import { attackWillHit } from '#combat/attack/index.js';
+import type { SkillMoment } from '#contract/spec.js';
+import { routeHidden } from '#field/grid/route.js';
+import { reached, TICK } from '#kernel/tick/index.js';
+import type { TimerState } from '#kernel/timer/index.js';
+import { readTimer, timerNumber, timerText } from '#kernel/timer/index.js';
+import { hasTag } from '#kernel/world/tag.js';
+import type { ContentContext } from '#port/context.js';
+import type { BattleRegistry } from '#port/definition.js';
+import { CANNOT_ACT, CANNOT_CAST, NO_ATTACK, NO_SP } from '#port/tag.js';
+import {
+  type BattleWorld,
+  requireUnit,
+  type SkillInstance,
+  type UnitState,
+} from '#unit/record/index.js';
+import { startTimer } from '#unit/record/timer.js';
 
 /** 技力计时与技能持续计时。 */
-export function registerSkillTimers(registry: BattleRegistry, state: BattleWorld): void {
+export function registerSkillTimers(
+  registry: BattleRegistry,
+  state: BattleWorld,
+): void {
   registry.registerTimer({
-    id: "skill-body",
-    slot: "ally",
+    id: 'skill-body',
+    slot: 'ally',
     create: () => ({ elapsed: 0 }),
     advance(timer, unitId, ctx) {
-      timer.elapsed = timerNumber(timer, "elapsed") + 1
-      advanceSkillBody(state, registry, ctx, unitId)
+      timer.elapsed = timerNumber(timer, 'elapsed') + 1;
+      advanceSkillBody(state, registry, ctx, unitId);
     },
     cancel(timer) {
-      timer.elapsed = 0
+      timer.elapsed = 0;
     },
     view(timer) {
-      return { elapsed: timerNumber(timer, "elapsed") }
+      return { elapsed: timerNumber(timer, 'elapsed') };
     },
-  })
+  });
   registry.registerTimer({
-    id: "skill-point",
-    slot: "ally",
-    create: () => ({ phase: "recover", elapsed: 0, sp: 0, charges: 0, active: 0, activations: 0 }),
+    id: 'skill-point',
+    slot: 'ally',
+    create: () => ({
+      phase: 'recover',
+      elapsed: 0,
+      sp: 0,
+      charges: 0,
+      active: 0,
+      activations: 0,
+    }),
     advance(timer, unitId, ctx) {
-      advanceSkillPoint(state, registry, ctx, unitId, timer)
+      advanceSkillPoint(state, registry, ctx, unitId, timer);
     },
     cancel() {},
     view(timer) {
       return {
-        phase: timerText(timer, "phase", "recover"),
-        elapsed: timerNumber(timer, "elapsed"),
-        sp: timerNumber(timer, "sp"),
-        charges: timerNumber(timer, "charges"),
-        active: timerNumber(timer, "active"),
-        activations: timerNumber(timer, "activations"),
-      }
+        phase: timerText(timer, 'phase', 'recover'),
+        elapsed: timerNumber(timer, 'elapsed'),
+        sp: timerNumber(timer, 'sp'),
+        charges: timerNumber(timer, 'charges'),
+        active: timerNumber(timer, 'active'),
+        activations: timerNumber(timer, 'activations'),
+      };
     },
-  })
+  });
 }
 
-export function bindSkillSignals(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext): void {
-  ctx.subscribe("attack-hit", (event) => {
-    const unitId = event.data.unitId
-    if (typeof unitId !== "string") return
-    noteAttack(state, registry, ctx, unitId, event.data.noAmmo === true)
-  })
-  ctx.subscribe("damaged", (event) => {
-    const unitId = event.data.targetId
-    if (typeof unitId !== "string") return
-    noteHurt(state, registry, ctx, unitId)
-  })
+export function bindSkillSignals(
+  state: BattleWorld,
+  registry: BattleRegistry,
+  ctx: ContentContext,
+): void {
+  ctx.subscribe('attack-hit', (event) => {
+    const unitId = event.data.unitId;
+    if (typeof unitId !== 'string') {
+      return;
+    }
+    noteAttack(state, registry, ctx, unitId, event.data.noAmmo === true);
+  });
+  ctx.subscribe('damaged', (event) => {
+    const unitId = event.data.targetId;
+    if (typeof unitId !== 'string') {
+      return;
+    }
+    noteHurt(state, registry, ctx, unitId);
+  });
 }
 
-export function armField(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext, initial: boolean): void {
-  for (const unit of state.units.values()) armUnit(state, registry, ctx, unit, initial)
+export function armField(
+  state: BattleWorld,
+  registry: BattleRegistry,
+  ctx: ContentContext,
+  initial: boolean,
+): void {
+  for (const unit of state.units.values()) {
+    armUnit(state, registry, ctx, unit, initial);
+  }
 }
 
 /** 再部署回到场上时，结束还开着的技能，再按入场重新加上初始技力。 */
@@ -87,20 +119,33 @@ export function resetSkills(
   unit: UnitState,
 ): void {
   for (const skill of unit.skills) {
-    if (skill.active || skill.pending || skill.effectsApplied) finishSkill(registry, ctx, unit, skill, "redeploy")
+    if (skill.active || skill.pending || skill.effectsApplied) {
+      finishSkill(registry, ctx, unit, skill, 'redeploy');
+    }
   }
-  for (const skill of unit.skills) openSkill(state, registry, ctx, unit, skill, false)
-  const timer = readTimer(unit, "skill-point")
-  if (timer) timer.phase = phaseOf(registry, unit, shown(unit))
-  sync(unit)
+  for (const skill of unit.skills) {
+    openSkill(state, registry, ctx, unit, skill, false);
+  }
+  const timer = readTimer(unit, 'skill-point');
+  if (timer) {
+    timer.phase = phaseOf(registry, unit, shown(unit));
+  }
+  sync(unit);
 }
 
 /** 单位倒下（原因 death）或被撤下（原因 retreat）时结束还开着的技能，包括被动。 */
-export function endSkillsOnDown(registry: BattleRegistry, ctx: ContentContext, unit: UnitState, reason: "death" | "retreat" = "death"): void {
+export function endSkillsOnDown(
+  registry: BattleRegistry,
+  ctx: ContentContext,
+  unit: UnitState,
+  reason: 'death' | 'retreat' = 'death',
+): void {
   for (const skill of unit.skills) {
-    if (skill.active || skill.pending || skill.effectsApplied) finishSkill(registry, ctx, unit, skill, reason)
+    if (skill.active || skill.pending || skill.effectsApplied) {
+      finishSkill(registry, ctx, unit, skill, reason);
+    }
   }
-  sync(unit)
+  sync(unit);
 }
 
 export function armUnit(
@@ -110,14 +155,27 @@ export function armUnit(
   unit: UnitState,
   initial: boolean,
 ): void {
-  if (unit.side !== "ally" || !unit.fielded || unit.downed || unit.skills.length === 0) return
-  if (unit.timers.has("skill-point")) return
-  startTimer(state, registry, unit.id, "skill-point")
-  startTimer(state, registry, unit.id, "skill-body")
-  for (const skill of unit.skills) openSkill(state, registry, ctx, unit, skill, initial)
-  const timer = readTimer(unit, "skill-point")
-  if (timer) timer.phase = phaseOf(registry, unit, shown(unit))
-  sync(unit)
+  if (
+    unit.side !== 'ally' ||
+    !unit.fielded ||
+    unit.downed ||
+    unit.skills.length === 0
+  ) {
+    return;
+  }
+  if (unit.timers.has('skill-point')) {
+    return;
+  }
+  startTimer(state, registry, unit.id, 'skill-point');
+  startTimer(state, registry, unit.id, 'skill-body');
+  for (const skill of unit.skills) {
+    openSkill(state, registry, ctx, unit, skill, initial);
+  }
+  const timer = readTimer(unit, 'skill-point');
+  if (timer) {
+    timer.phase = phaseOf(registry, unit, shown(unit));
+  }
+  sync(unit);
 }
 
 export function advanceSkillBody(
@@ -126,16 +184,26 @@ export function advanceSkillBody(
   ctx: ContentContext,
   unitId: string,
 ): void {
-  const unit = requireUnit(state, unitId)
+  const unit = requireUnit(state, unitId);
   for (const skill of unit.skills) {
-    if (!skill.active) continue
-    const moment = { unitId, skillId: skill.id, reason: "tick", dt: TICK }
-    runHook(registry, ctx, skill.hooks.tick, moment)
-    registry.requireSkillBody(skill.body).onTick?.(unitId, skill.id, ctx)
-    registry.requireSkillBody(skill.body).advance(skill, ctx)
-    if (!skill.active) finishSkill(registry, ctx, unit, skill, skill.body === "ammo" && skill.ammo <= 0 ? "ammo" : "duration")
+    if (!skill.active) {
+      continue;
+    }
+    const moment = { unitId, skillId: skill.id, reason: 'tick', dt: TICK };
+    runHook(registry, ctx, skill.hooks.tick, moment);
+    registry.requireSkillBody(skill.body).onTick?.(unitId, skill.id, ctx);
+    registry.requireSkillBody(skill.body).advance(skill, ctx);
+    if (!skill.active) {
+      finishSkill(
+        registry,
+        ctx,
+        unit,
+        skill,
+        skill.body === 'ammo' && skill.ammo <= 0 ? 'ammo' : 'duration',
+      );
+    }
   }
-  sync(unit)
+  sync(unit);
 }
 
 export function advanceSkillPoint(
@@ -145,22 +213,31 @@ export function advanceSkillPoint(
   unitId: string,
   timer: TimerState,
 ): void {
-  const unit = requireUnit(state, unitId)
-  const time = state.tick * TICK
-  for (const skill of unit.skills) settleCost(registry, unit, skill)
-  for (const skill of unit.skills) recoverTime(state, registry, unit, skill)
+  const unit = requireUnit(state, unitId);
+  const time = state.tick * TICK;
+  for (const skill of unit.skills) {
+    settleCost(registry, unit, skill);
+  }
+  for (const skill of unit.skills) {
+    recoverTime(state, registry, unit, skill);
+  }
   if (canAct(unit)) {
     for (const skill of unit.skills) {
-      if (skill.pending && skill.triggerAllies && skill.trigger !== "SKILL_RANGE" && !allyTriggerMet(state, registry, unitId, skill.id)) {
-        finishSkill(registry, ctx, unit, skill, "withdrawn")
-        addCharge(registry, unit, skill, 1)
+      if (
+        skill.pending &&
+        skill.triggerAllies &&
+        skill.trigger !== 'SKILL_RANGE' &&
+        !allyTriggerMet(state, registry, unitId, skill.id)
+      ) {
+        finishSkill(registry, ctx, unit, skill, 'withdrawn');
+        addCharge(registry, unit, skill, 1);
       }
-      consider(state, registry, ctx, unit, skill, time)
+      consider(state, registry, ctx, unit, skill, time);
     }
   }
-  timer.elapsed = numberOf(timer.elapsed) + 1
-  timer.phase = phaseOf(registry, unit, shown(unit))
-  sync(unit)
+  timer.elapsed = numberOf(timer.elapsed) + 1;
+  timer.phase = phaseOf(registry, unit, shown(unit));
+  sync(unit);
 }
 
 export function configureSkill(
@@ -169,24 +246,45 @@ export function configureSkill(
   skillId: string,
   spec: { body?: string; ammo?: number; duration?: number },
 ): void {
-  const unit = state.units.get(unitId)
-  if (!unit) return
-  const skill = unit.skills.find((entry) => entry.id === skillId)
-  if (!skill) return
-  const mutable = skill as { body: string; ammoSpec: number; duration: number }
-  if (typeof spec.body === "string" && spec.body.length > 0) mutable.body = spec.body
-  if (typeof spec.ammo === "number" && Number.isFinite(spec.ammo)) mutable.ammoSpec = Math.max(0, spec.ammo)
-  if (typeof spec.duration === "number" && Number.isFinite(spec.duration)) mutable.duration = Math.max(0, spec.duration)
+  const unit = state.units.get(unitId);
+  if (!unit) {
+    return;
+  }
+  const skill = unit.skills.find((entry) => entry.id === skillId);
+  if (!skill) {
+    return;
+  }
+  const mutable = skill as { body: string; ammoSpec: number; duration: number };
+  if (typeof spec.body === 'string' && spec.body.length > 0) {
+    mutable.body = spec.body;
+  }
+  if (typeof spec.ammo === 'number' && Number.isFinite(spec.ammo)) {
+    mutable.ammoSpec = Math.max(0, spec.ammo);
+  }
+  if (typeof spec.duration === 'number' && Number.isFinite(spec.duration)) {
+    mutable.duration = Math.max(0, spec.duration);
+  }
 }
 
-export function readySkill(state: BattleWorld, registry: BattleRegistry, unitId: string, skillId: string): void {
-  const unit = state.units.get(unitId)
-  if (!unit) return
-  const skill = unit.skills.find((entry) => entry.id === skillId)
-  if (!skill || skill.body === "passive") return
-  skill.charges = Math.max(1, skill.maxCharges)
-  const cost = costOf(registry, unit, skill)
-  if (cost > 0) skill.sp = cost
+export function readySkill(
+  state: BattleWorld,
+  registry: BattleRegistry,
+  unitId: string,
+  skillId: string,
+): void {
+  const unit = state.units.get(unitId);
+  if (!unit) {
+    return;
+  }
+  const skill = unit.skills.find((entry) => entry.id === skillId);
+  if (!skill || skill.body === 'passive') {
+    return;
+  }
+  skill.charges = Math.max(1, skill.maxCharges);
+  const cost = costOf(registry, unit, skill);
+  if (cost > 0) {
+    skill.sp = cost;
+  }
 }
 
 export function activateSkill(
@@ -197,25 +295,33 @@ export function activateSkill(
   skillId: string,
   reason: string,
 ): boolean {
-  const unit = requireUnit(state, unitId)
-  const skill = requireSkill(unit, skillId)
-  if (!canActivate(unit, skill)) return false
-  const wasFull = skill.charges >= skill.maxCharges
-  skill.charges -= 1
-  if (skill.maxCharges === 1 || wasFull) skill.sp = 0
-  skill.activations += 1
-  if (skill.operation === "MANUAL") skill.opReadyAt = state.tick * TICK + AUTO_OP_COOLDOWN
-  const body = registry.requireSkillBody(skill.body)
-  body.cast(skill, { duration: skill.duration, ammo: skill.ammoSpec })
-  skill.pending = isInstantBody(skill.body) && skill.hooks.hit !== undefined
-  applyEffects(registry, unit, skill)
-  const moment = { unitId, skillId, reason, dt: 0 }
-  runHook(registry, ctx, skill.hooks.start, moment)
-  body.onCast?.(unitId, skillId, ctx)
-  ctx.emit("skill-start", { unitId, skillId, reason })
-  if (isInstantBody(skill.body) && !skill.pending) finishSkill(registry, ctx, unit, skill, "instant")
-  sync(unit)
-  return true
+  const unit = requireUnit(state, unitId);
+  const skill = requireSkill(unit, skillId);
+  if (!canActivate(unit, skill)) {
+    return false;
+  }
+  const wasFull = skill.charges >= skill.maxCharges;
+  skill.charges -= 1;
+  if (skill.maxCharges === 1 || wasFull) {
+    skill.sp = 0;
+  }
+  skill.activations += 1;
+  if (skill.operation === 'MANUAL') {
+    skill.opReadyAt = state.tick * TICK + AUTO_OP_COOLDOWN;
+  }
+  const body = registry.requireSkillBody(skill.body);
+  body.cast(skill, { duration: skill.duration, ammo: skill.ammoSpec });
+  skill.pending = isInstantBody(skill.body) && skill.hooks.hit !== undefined;
+  applyEffects(registry, unit, skill);
+  const moment = { unitId, skillId, reason, dt: 0 };
+  runHook(registry, ctx, skill.hooks.start, moment);
+  body.onCast?.(unitId, skillId, ctx);
+  ctx.emit('skill-start', { unitId, skillId, reason });
+  if (isInstantBody(skill.body) && !skill.pending) {
+    finishSkill(registry, ctx, unit, skill, 'instant');
+  }
+  sync(unit);
+  return true;
 }
 
 export function gainSkillSp(
@@ -226,22 +332,32 @@ export function gainSkillSp(
   amount: number,
   reason: string,
 ): number {
-  const unit = requireUnit(state, unitId)
-  const skill = requireSkill(unit, skillId)
-  const gained = gain(registry, unit, skill, amount, reason)
-  sync(unit)
-  return gained
+  const unit = requireUnit(state, unitId);
+  const skill = requireSkill(unit, skillId);
+  const gained = gain(registry, unit, skill, amount, reason);
+  sync(unit);
+  return gained;
 }
 
 /** 从当前这一层技力里减去。被动技能，以及正在持续的 duration、ammo、toggle，保持原值。 */
-export function drainSkillSp(state: BattleWorld, unitId: string, amount: number): void {
-  const unit = state.units.get(unitId)
-  if (!unit || !(amount > 0) || !Number.isFinite(amount)) return
-  for (const skill of unit.skills) {
-    if (skill.body === "passive" || (skill.active && isTimedBody(skill.body))) continue
-    if (skill.sp > 0) skill.sp = Math.max(0, skill.sp - amount)
+export function drainSkillSp(
+  state: BattleWorld,
+  unitId: string,
+  amount: number,
+): void {
+  const unit = state.units.get(unitId);
+  if (!unit || !(amount > 0) || !Number.isFinite(amount)) {
+    return;
   }
-  sync(unit)
+  for (const skill of unit.skills) {
+    if (skill.body === 'passive' || (skill.active && isTimedBody(skill.body))) {
+      continue;
+    }
+    if (skill.sp > 0) {
+      skill.sp = Math.max(0, skill.sp - amount);
+    }
+  }
+  sync(unit);
 }
 
 // MARK: clock
@@ -254,28 +370,43 @@ function openSkill(
   skill: SkillInstance,
   initial: boolean,
 ): void {
-  skill.active = false
-  skill.pending = false
-  skill.remaining = 0
-  skill.ammo = 0
-  skill.toggled = false
-  skill.sp = 0
-  skill.charges = 0
-  skill.effectsApplied = false
+  skill.active = false;
+  skill.pending = false;
+  skill.remaining = 0;
+  skill.ammo = 0;
+  skill.toggled = false;
+  skill.sp = 0;
+  skill.charges = 0;
+  skill.effectsApplied = false;
   skill.opReadyAt =
-    initial && skill.operation === "MANUAL" ? state.tick * TICK + AUTO_OP_COOLDOWN : Number.NEGATIVE_INFINITY
-  if (skill.body === "passive") {
-    const body = registry.requireSkillBody(skill.body)
-    body.cast(skill, { duration: skill.duration, ammo: skill.ammoSpec })
-    applyEffects(registry, unit, skill)
-    runHook(registry, ctx, skill.hooks.start, { unitId: unit.id, skillId: skill.id, reason: "passive", dt: 0 })
-    body.onCast?.(unit.id, skill.id, ctx)
-    ctx.emit("skill-start", { unitId: unit.id, skillId: skill.id, reason: "passive" })
-    return
+    initial && skill.operation === 'MANUAL'
+      ? state.tick * TICK + AUTO_OP_COOLDOWN
+      : Number.NEGATIVE_INFINITY;
+  if (skill.body === 'passive') {
+    const body = registry.requireSkillBody(skill.body);
+    body.cast(skill, { duration: skill.duration, ammo: skill.ammoSpec });
+    applyEffects(registry, unit, skill);
+    runHook(registry, ctx, skill.hooks.start, {
+      unitId: unit.id,
+      skillId: skill.id,
+      reason: 'passive',
+      dt: 0,
+    });
+    body.onCast?.(unit.id, skill.id, ctx);
+    ctx.emit('skill-start', {
+      unitId: unit.id,
+      skillId: skill.id,
+      reason: 'passive',
+    });
+    return;
   }
-  gain(registry, unit, skill, skill.initSp, "init")
-  if (costOf(registry, unit, skill) <= 0) skill.charges = skill.maxCharges
-  if (skill.activateOnDeploy) activateSkill(state, registry, ctx, unit.id, skill.id, "deploy")
+  gain(registry, unit, skill, skill.initSp, 'init');
+  if (costOf(registry, unit, skill) <= 0) {
+    skill.charges = skill.maxCharges;
+  }
+  if (skill.activateOnDeploy) {
+    activateSkill(state, registry, ctx, unit.id, skill.id, 'deploy');
+  }
 }
 
 function consider(
@@ -286,77 +417,146 @@ function consider(
   skill: SkillInstance,
   time: number,
 ): void {
-  if (!canAsk(unit, skill, time)) return
-  if (isTickRule(skill.trigger)) {
-    if (shouldCast(state, registry, ctx, unit.id, skill.id)) activateSkill(state, registry, ctx, unit.id, skill.id, skill.trigger)
-    return
+  if (!canAsk(unit, skill, time)) {
+    return;
   }
-  if (skill.trigger === "TAKE_DAMAGE" || skill.trigger === "NEVER") return
+  if (isTickRule(skill.trigger)) {
+    if (shouldCast(state, registry, ctx, unit.id, skill.id)) {
+      activateSkill(state, registry, ctx, unit.id, skill.id, skill.trigger);
+    }
+    return;
+  }
+  if (skill.trigger === 'TAKE_DAMAGE' || skill.trigger === 'NEVER') {
+    return;
+  }
   // 内容的触发区域每拍都问，攻击者与不攻击的都一样，不等攻击
   if (!skill.heal && areaTriggerMet(state, registry, unit)) {
-    activateSkill(state, registry, ctx, unit.id, skill.id, "DEFAULT")
-    return
+    activateSkill(state, registry, ctx, unit.id, skill.id, 'DEFAULT');
+    return;
   }
-  const readyRange = shouldCast(state, registry, ctx, unit.id, skill.id)
+  const readyRange = shouldCast(state, registry, ctx, unit.id, skill.id);
   if (hasTag(unit, NO_ATTACK)) {
-    if (readyRange) activateSkill(state, registry, ctx, unit.id, skill.id, "DEFAULT")
-    return
+    if (readyRange) {
+      activateSkill(state, registry, ctx, unit.id, skill.id, 'DEFAULT');
+    }
+    return;
   }
-  if (!attackWillHit(state, registry, ctx, unit) || !readyRange) return
-  if (skill.triggerAllies && !allyTriggerMet(state, registry, unit.id, skill.id)) return
-  activateSkill(state, registry, ctx, unit.id, skill.id, "DEFAULT")
+  if (!attackWillHit(state, registry, ctx, unit) || !readyRange) {
+    return;
+  }
+  if (
+    skill.triggerAllies &&
+    !allyTriggerMet(state, registry, unit.id, skill.id)
+  ) {
+    return;
+  }
+  activateSkill(state, registry, ctx, unit.id, skill.id, 'DEFAULT');
 }
 
-function recoverTime(state: BattleWorld, registry: BattleRegistry, unit: UnitState, skill: SkillInstance): void {
-  if (skill.spType !== "time" || skill.body === "passive") return
-  if (skill.active && isTimedBody(skill.body)) return
-  if (hasTag(unit, NO_SP) || routeHidden(state, unit.id) || !unit.fielded || unit.downed) return
-  if ((unit.attributes.hp ?? 0) <= 0) return
-  const rate = attributeOf(unit, registry, "spRecovery")
-  if (rate > 0) gain(registry, unit, skill, rate * TICK, "time")
+function recoverTime(
+  state: BattleWorld,
+  registry: BattleRegistry,
+  unit: UnitState,
+  skill: SkillInstance,
+): void {
+  if (skill.spType !== 'time' || skill.body === 'passive') {
+    return;
+  }
+  if (skill.active && isTimedBody(skill.body)) {
+    return;
+  }
+  if (
+    hasTag(unit, NO_SP) ||
+    routeHidden(state, unit.id) ||
+    !unit.fielded ||
+    unit.downed
+  ) {
+    return;
+  }
+  if ((unit.attributes.hp ?? 0) <= 0) {
+    return;
+  }
+  const rate = attributeOf(unit, registry, 'spRecovery');
+  if (rate > 0) {
+    gain(registry, unit, skill, rate * TICK, 'time');
+  }
 }
 
-function noteAttack(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext, unitId: string, noAmmo: boolean): void {
-  const unit = state.units.get(unitId)
-  if (!unit) return
+function noteAttack(
+  state: BattleWorld,
+  registry: BattleRegistry,
+  ctx: ContentContext,
+  unitId: string,
+  noAmmo: boolean,
+): void {
+  const unit = state.units.get(unitId);
+  if (!unit) {
+    return;
+  }
   for (const skill of unit.skills) {
-    const timed = skill.active && isTimedBody(skill.body)
-    const pendingHit = skill.active && skill.pending && isInstantBody(skill.body)
-    if (timed && skill.body === "ammo") {
-      if (noAmmo) continue
-      skill.ammo -= 1
-      ctx.emit("ammo-used", { unitId, skillId: skill.id, left: skill.ammo })
+    const timed = skill.active && isTimedBody(skill.body);
+    const pendingHit =
+      skill.active && skill.pending && isInstantBody(skill.body);
+    if (timed && skill.body === 'ammo') {
+      if (noAmmo) {
+        continue;
+      }
+      skill.ammo -= 1;
+      ctx.emit('ammo-used', { unitId, skillId: skill.id, left: skill.ammo });
       if (skill.ammo <= 0) {
-        skill.active = false
-        finishSkill(registry, ctx, unit, skill, "ammo")
+        skill.active = false;
+        finishSkill(registry, ctx, unit, skill, 'ammo');
       }
     } else if (pendingHit) {
-      runHook(registry, ctx, skill.hooks.hit, { unitId, skillId: skill.id, reason: "hit", dt: 0 })
-      registry.requireSkillBody(skill.body).onHit?.(unitId, skill.id, ctx)
-      skill.pending = false
-      skill.active = false
-      finishSkill(registry, ctx, unit, skill, "instant")
+      runHook(registry, ctx, skill.hooks.hit, {
+        unitId,
+        skillId: skill.id,
+        reason: 'hit',
+        dt: 0,
+      });
+      registry.requireSkillBody(skill.body).onHit?.(unitId, skill.id, ctx);
+      skill.pending = false;
+      skill.active = false;
+      finishSkill(registry, ctx, unit, skill, 'instant');
     }
-    if (skill.spType === "attack" && !timed && !pendingHit && !(skill.active && isTimedBody(skill.body))) {
-      gain(registry, unit, skill, 1, "attack")
+    if (
+      skill.spType === 'attack' &&
+      !timed &&
+      !pendingHit &&
+      !(skill.active && isTimedBody(skill.body))
+    ) {
+      gain(registry, unit, skill, 1, 'attack');
     }
   }
-  sync(unit)
+  sync(unit);
 }
 
-function noteHurt(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext, unitId: string): void {
-  const unit = state.units.get(unitId)
-  if (!unit) return
-  const time = state.tick * TICK
-  for (const skill of unit.skills) {
-    if (skill.spType === "hurt" && !(skill.active && isTimedBody(skill.body))) gain(registry, unit, skill, 1, "hurt")
-    if (skill.trigger !== "TAKE_DAMAGE" || !canAsk(unit, skill, time)) continue
-    skill.hurtPending = true
-    const fire = shouldCast(state, registry, ctx, unitId, skill.id)
-    skill.hurtPending = false
-    if (fire) activateSkill(state, registry, ctx, unitId, skill.id, "TAKE_DAMAGE")
+function noteHurt(
+  state: BattleWorld,
+  registry: BattleRegistry,
+  ctx: ContentContext,
+  unitId: string,
+): void {
+  const unit = state.units.get(unitId);
+  if (!unit) {
+    return;
   }
-  sync(unit)
+  const time = state.tick * TICK;
+  for (const skill of unit.skills) {
+    if (skill.spType === 'hurt' && !(skill.active && isTimedBody(skill.body))) {
+      gain(registry, unit, skill, 1, 'hurt');
+    }
+    if (skill.trigger !== 'TAKE_DAMAGE' || !canAsk(unit, skill, time)) {
+      continue;
+    }
+    skill.hurtPending = true;
+    const fire = shouldCast(state, registry, ctx, unitId, skill.id);
+    skill.hurtPending = false;
+    if (fire) {
+      activateSkill(state, registry, ctx, unitId, skill.id, 'TAKE_DAMAGE');
+    }
+  }
+  sync(unit);
 }
 
 function finishSkill(
@@ -366,140 +566,242 @@ function finishSkill(
   skill: SkillInstance,
   reason: string,
 ): void {
-  if (skill.body === "passive" && reason !== "death") return
-  const mark = skill.activations
-  skill.active = false
-  skill.pending = false
-  runHook(registry, ctx, skill.hooks.end, { unitId: unit.id, skillId: skill.id, reason, dt: 0 })
-  registry.requireSkillBody(skill.body).onEnd?.(unit.id, skill.id, ctx)
-  ctx.emit("skill-end", { unitId: unit.id, skillId: skill.id, reason })
+  if (skill.body === 'passive' && reason !== 'death') {
+    return;
+  }
+  const mark = skill.activations;
+  skill.active = false;
+  skill.pending = false;
+  runHook(registry, ctx, skill.hooks.end, {
+    unitId: unit.id,
+    skillId: skill.id,
+    reason,
+    dt: 0,
+  });
+  registry.requireSkillBody(skill.body).onEnd?.(unit.id, skill.id, ctx);
+  ctx.emit('skill-end', { unitId: unit.id, skillId: skill.id, reason });
   if (!skill.active && skill.activations === mark) {
-    skill.effectsApplied = false
-    skill.toggled = false
-    skill.remaining = 0
-    refreshTags(registry, unit)
+    skill.effectsApplied = false;
+    skill.toggled = false;
+    skill.remaining = 0;
+    refreshTags(registry, unit);
   }
 }
 
-function applyEffects(registry: BattleRegistry, unit: UnitState, skill: SkillInstance): void {
-  skill.effectsApplied = true
-  refreshTags(registry, unit)
+function applyEffects(
+  registry: BattleRegistry,
+  unit: UnitState,
+  skill: SkillInstance,
+): void {
+  skill.effectsApplied = true;
+  refreshTags(registry, unit);
 }
 
-function runHook(registry: BattleRegistry, ctx: ContentContext, hookId: string | undefined, moment: SkillMoment): void {
-  if (hookId !== undefined) registry.requireSkillHook(hookId).run(moment, ctx)
+function runHook(
+  registry: BattleRegistry,
+  ctx: ContentContext,
+  hookId: string | undefined,
+  moment: SkillMoment,
+): void {
+  if (hookId !== undefined) {
+    registry.requireSkillHook(hookId).run(moment, ctx);
+  }
 }
 
 // MARK: sp
 
 /** reason 为 init 或 unlocked 时不看技力锁定：持续技能期间与阻回照样加。 */
-function gain(registry: BattleRegistry, unit: UnitState, skill: SkillInstance, amount: number, reason: string): number {
-  if (skill.body === "passive" || !(amount > 0) || !Number.isFinite(amount)) return 0
-  const unlocked = reason === "init" || reason === "unlocked"
-  if (skill.active && isTimedBody(skill.body) && !unlocked) return 0
-  if (!unlocked && hasTag(unit, NO_SP)) return 0
-  const cost = costOf(registry, unit, skill)
-  if (cost <= 0) return 0
-  if (skill.charges >= skill.maxCharges && reached(skill.sp, cost)) return 0
-  skill.sp += amount
-  while (reached(skill.sp, cost) && skill.charges < skill.maxCharges) {
-    skill.charges += 1
-    if (skill.charges < skill.maxCharges) skill.sp = Math.max(0, skill.sp - cost)
-    else skill.sp = cost
+function gain(
+  registry: BattleRegistry,
+  unit: UnitState,
+  skill: SkillInstance,
+  amount: number,
+  reason: string,
+): number {
+  if (skill.body === 'passive' || !(amount > 0) || !Number.isFinite(amount)) {
+    return 0;
   }
-  if (skill.charges >= skill.maxCharges) skill.sp = cost
-  return amount
+  const unlocked = reason === 'init' || reason === 'unlocked';
+  if (skill.active && isTimedBody(skill.body) && !unlocked) {
+    return 0;
+  }
+  if (!unlocked && hasTag(unit, NO_SP)) {
+    return 0;
+  }
+  const cost = costOf(registry, unit, skill);
+  if (cost <= 0) {
+    return 0;
+  }
+  if (skill.charges >= skill.maxCharges && reached(skill.sp, cost)) {
+    return 0;
+  }
+  skill.sp += amount;
+  while (reached(skill.sp, cost) && skill.charges < skill.maxCharges) {
+    skill.charges += 1;
+    if (skill.charges < skill.maxCharges) {
+      skill.sp = Math.max(0, skill.sp - cost);
+    } else {
+      skill.sp = cost;
+    }
+  }
+  if (skill.charges >= skill.maxCharges) {
+    skill.sp = cost;
+  }
+  return amount;
 }
 
-function addCharge(registry: BattleRegistry, unit: UnitState, skill: SkillInstance, count: number): void {
-  if (!Number.isFinite(count)) return
-  skill.charges = Math.max(0, Math.min(skill.maxCharges, skill.charges + count))
-  if (skill.charges >= skill.maxCharges) skill.sp = costOf(registry, unit, skill)
+function addCharge(
+  registry: BattleRegistry,
+  unit: UnitState,
+  skill: SkillInstance,
+  count: number,
+): void {
+  if (!Number.isFinite(count)) {
+    return;
+  }
+  skill.charges = Math.max(
+    0,
+    Math.min(skill.maxCharges, skill.charges + count),
+  );
+  if (skill.charges >= skill.maxCharges) {
+    skill.sp = costOf(registry, unit, skill);
+  }
 }
 
 /**
  * 技力消耗：floor(spCost × spCostMul + spCostFlat)，不低于 0。两个属性都是缺省值时就是 spCost；
  * 结果不是有限数时用 spCost。
  */
-export function costOf(registry: BattleRegistry, unit: UnitState, skill: SkillInstance): number {
-  const mul = attributeOf(unit, registry, SP_COST_MUL)
-  const flat = attributeOf(unit, registry, SP_COST_FLAT)
-  if (mul === 1 && flat === 0) return skill.spCost
-  const cost = Math.floor(skill.spCost * mul + flat)
-  return Number.isFinite(cost) ? Math.max(0, cost) : skill.spCost
+export function costOf(
+  registry: BattleRegistry,
+  unit: UnitState,
+  skill: SkillInstance,
+): number {
+  const mul = attributeOf(unit, registry, SP_COST_MUL);
+  const flat = attributeOf(unit, registry, SP_COST_FLAT);
+  if (mul === 1 && flat === 0) {
+    return skill.spCost;
+  }
+  const cost = Math.floor(skill.spCost * mul + flat);
+  return Number.isFinite(cost) ? Math.max(0, cost) : skill.spCost;
 }
 
 /** 消耗变化之后把技力夹回去：满出的部分换成充能，变成免费时直接满层。 */
-function settleCost(registry: BattleRegistry, unit: UnitState, skill: SkillInstance): void {
-  if (skill.body === "passive") return
-  const cost = costOf(registry, unit, skill)
+function settleCost(
+  registry: BattleRegistry,
+  unit: UnitState,
+  skill: SkillInstance,
+): void {
+  if (skill.body === 'passive') {
+    return;
+  }
+  const cost = costOf(registry, unit, skill);
   if (cost <= 0) {
     if (skill.sp > 0) {
-      skill.sp = 0
-      skill.charges = skill.maxCharges
+      skill.sp = 0;
+      skill.charges = skill.maxCharges;
     }
-    return
+    return;
   }
   while (reached(skill.sp, cost) && skill.charges < skill.maxCharges) {
-    skill.charges += 1
-    skill.sp = skill.charges < skill.maxCharges ? Math.max(0, skill.sp - cost) : cost
+    skill.charges += 1;
+    skill.sp =
+      skill.charges < skill.maxCharges ? Math.max(0, skill.sp - cost) : cost;
   }
-  if (skill.sp > cost) skill.sp = cost
+  if (skill.sp > cost) {
+    skill.sp = cost;
+  }
 }
 
 function canActivate(unit: UnitState, skill: SkillInstance): boolean {
-  if (skill.body === "passive" || skill.charges < 1) return false
-  if (skill.active && isTimedBody(skill.body)) return false
-  if (!unit.fielded || unit.downed) return false
-  return (unit.attributes.hp ?? 0) > 0
+  if (skill.body === 'passive' || skill.charges < 1) {
+    return false;
+  }
+  if (skill.active && isTimedBody(skill.body)) {
+    return false;
+  }
+  if (!unit.fielded || unit.downed) {
+    return false;
+  }
+  return (unit.attributes.hp ?? 0) > 0;
 }
 
 function canAsk(unit: UnitState, skill: SkillInstance, time: number): boolean {
-  if (!canAct(unit) || !canActivate(unit, skill)) return false
-  if (hasTag(unit, CANNOT_CAST)) return false
-  if (skill.pending || cooling(skill, time)) return false
-  return true
+  if (!canAct(unit) || !canActivate(unit, skill)) {
+    return false;
+  }
+  if (hasTag(unit, CANNOT_CAST)) {
+    return false;
+  }
+  if (skill.pending || cooling(skill, time)) {
+    return false;
+  }
+  return true;
 }
 
 function canAct(unit: UnitState): boolean {
-  if (!unit.fielded || unit.downed || (unit.attributes.hp ?? 0) <= 0) return false
-  return !hasTag(unit, CANNOT_ACT)
+  if (!unit.fielded || unit.downed || (unit.attributes.hp ?? 0) <= 0) {
+    return false;
+  }
+  return !hasTag(unit, CANNOT_ACT);
 }
 
 function cooling(skill: SkillInstance, time: number): boolean {
-  return skill.operation === "MANUAL" && !reached(time, skill.opReadyAt)
+  return skill.operation === 'MANUAL' && !reached(time, skill.opReadyAt);
 }
 
 function shown(unit: UnitState): SkillInstance | undefined {
-  return unit.skills.find((skill) => skill.body !== "passive") ?? unit.skills[0]
+  return (
+    unit.skills.find((skill) => skill.body !== 'passive') ?? unit.skills[0]
+  );
 }
 
-function phaseOf(registry: BattleRegistry, unit: UnitState, skill: SkillInstance | undefined): string {
-  if (!skill) return "idle"
-  if (skill.body === "passive") return "passive"
-  if (skill.active && isTimedBody(skill.body)) return "active"
-  if (skill.charges >= skill.maxCharges && skill.sp >= costOf(registry, unit, skill)) return "full"
-  if (skill.charges >= 1) return "ready"
-  return "recover"
+function phaseOf(
+  registry: BattleRegistry,
+  unit: UnitState,
+  skill: SkillInstance | undefined,
+): string {
+  if (!skill) {
+    return 'idle';
+  }
+  if (skill.body === 'passive') {
+    return 'passive';
+  }
+  if (skill.active && isTimedBody(skill.body)) {
+    return 'active';
+  }
+  if (
+    skill.charges >= skill.maxCharges &&
+    skill.sp >= costOf(registry, unit, skill)
+  ) {
+    return 'full';
+  }
+  if (skill.charges >= 1) {
+    return 'ready';
+  }
+  return 'recover';
 }
 
 function sync(unit: UnitState): void {
-  const timer = unit.timers.get("skill-point")
-  if (!timer) return
-  const skill = shown(unit)
-  timer.sp = skill?.sp ?? 0
-  timer.charges = skill?.charges ?? 0
-  timer.active = skill?.active ? 1 : 0
-  timer.activations = skill?.activations ?? 0
+  const timer = unit.timers.get('skill-point');
+  if (!timer) {
+    return;
+  }
+  const skill = shown(unit);
+  timer.sp = skill?.sp ?? 0;
+  timer.charges = skill?.charges ?? 0;
+  timer.active = skill?.active ? 1 : 0;
+  timer.activations = skill?.activations ?? 0;
 }
 
 function requireSkill(unit: UnitState, skillId: string): SkillInstance {
-  const skill = unit.skills.find((item) => item.id === skillId)
-  if (!skill) throw new Error(`技能不存在: ${skillId}`)
-  return skill
+  const skill = unit.skills.find((item) => item.id === skillId);
+  if (!skill) {
+    throw new Error(`技能不存在: ${skillId}`);
+  }
+  return skill;
 }
 
-
 function numberOf(value: string | number | boolean | undefined): number {
-  return typeof value === "number" ? value : 0
+  return typeof value === 'number' ? value : 0;
 }

@@ -1,24 +1,27 @@
-import { describe, expect, it } from "vitest"
-import type { AssetKey } from "arknights-assets-catalog"
-import type { BattleEvent, UnitSnapshot } from "arknights-mission-core"
-import { createMissionCueBindings } from "#effect/binding.js"
-import { audioCueFor, effectCueFor } from "#audio/index.js"
+import type { AssetKey } from 'arknights-assets-catalog';
+import type { BattleEvent, UnitSnapshot } from 'arknights-mission-core';
+import { describe, expect, it } from 'vitest';
+import { audioCueFor, effectCueFor } from '#audio/index.js';
+import { createMissionCueBindings } from '#effect/binding.js';
 
-const asset: AssetKey = "audio:sfx/battle/b_hit"
+const asset: AssetKey = 'audio:sfx/battle/b_hit';
 
 /** 只带部分字段的事件：audioCueFor 与 effectCueFor 按字段是否存在读取。 */
-function event(type: string, data: Readonly<Record<string, unknown>> = {}): BattleEvent {
-  return { tick: 1, type, data } as BattleEvent
+function event(
+  type: string,
+  data: Readonly<Record<string, unknown>> = {},
+): BattleEvent {
+  return { tick: 1, type, data } as BattleEvent;
 }
 
-function unitOf(id: string, kind: UnitSnapshot["kind"]): UnitSnapshot {
+function unitOf(id: string, kind: UnitSnapshot['kind']): UnitSnapshot {
   return {
     id,
-    side: "ally",
+    side: 'ally',
     kind,
     x: 0,
     y: 0,
-    facing: "RIGHT",
+    facing: 'RIGHT',
     height: 0,
     attributes: { hp: 0, maxHp: 1 },
     maxHp: 1,
@@ -34,57 +37,76 @@ function unitOf(id: string, kind: UnitSnapshot["kind"]): UnitSnapshot {
     redeploy: null,
     unbalanceUntil: null,
     components: {},
-  }
+  };
 }
 
-describe("audio cues", () => {
-  it("maps battle events to cues and ignores events without a sound", () => {
-    expect(audioCueFor(event("damaged", { unitId: "guard", amount: 12 }))).toEqual({
-      type: "damage",
-      eventType: "damaged",
-      unitId: "guard",
-    })
-    expect(audioCueFor(event("element-hit"))?.type).toBe("element")
-    expect(audioCueFor(event("status"))?.type).toBe("status")
-    expect(audioCueFor(event("projectile"))?.type).toBe("projectile")
-    expect(audioCueFor(event("leak"))?.type).toBe("leak")
-    expect(audioCueFor(event("trace"))).toBeNull()
-  })
+describe('audio cues', () => {
+  it('maps battle events to cues and ignores events without a sound', () => {
+    expect(
+      audioCueFor(event('damaged', { unitId: 'guard', amount: 12 })),
+    ).toEqual({
+      type: 'damage',
+      eventType: 'damaged',
+      unitId: 'guard',
+    });
+    expect(audioCueFor(event('element-hit'))?.type).toBe('element');
+    expect(audioCueFor(event('status'))?.type).toBe('status');
+    expect(audioCueFor(event('projectile'))?.type).toBe('projectile');
+    expect(audioCueFor(event('leak'))?.type).toBe('leak');
+    expect(audioCueFor(event('trace'))).toBeNull();
+  });
 
-  it("plays a break cue when a stage device goes down and a downed cue for an operator", () => {
-    const down = event("downed", { unitId: "crate-1" })
+  it('plays a break cue when a stage device goes down and a downed cue for an operator', () => {
+    const down = event('downed', { unitId: 'crate-1' });
 
-    expect(effectCueFor(down, [unitOf("crate-1", "device")])?.type).toBe("break")
-    expect(effectCueFor(down, [unitOf("guard", "operator")])?.type).toBe("downed")
-    expect(effectCueFor(down, [])?.type).toBe("downed")
-  })
+    expect(effectCueFor(down, [unitOf('crate-1', 'device')])?.type).toBe(
+      'break',
+    );
+    expect(effectCueFor(down, [unitOf('guard', 'operator')])?.type).toBe(
+      'downed',
+    );
+    expect(effectCueFor(down, [])?.type).toBe('downed');
+  });
 
-  it("attaches the caller asset key to an audio cue", () => {
-    expect(audioCueFor(event("damaged", { unitId: "guard", targetId: "enemy", amount: 12 }), { audioFor: () => asset })).toEqual({
-      type: "damage",
-      eventType: "damaged",
-      unitId: "guard",
-      targetId: "enemy",
+  it('attaches the caller asset key to an audio cue', () => {
+    expect(
+      audioCueFor(
+        event('damaged', { unitId: 'guard', targetId: 'enemy', amount: 12 }),
+        { audioFor: () => asset },
+      ),
+    ).toEqual({
+      type: 'damage',
+      eventType: 'damaged',
+      unitId: 'guard',
+      targetId: 'enemy',
       asset,
-    })
-    expect(audioCueFor(event("damaged", { amount: 12 }), { audioFor: () => null })).toEqual({
-      type: "damage",
-      eventType: "damaged",
-    })
-  })
-})
+    });
+    expect(
+      audioCueFor(event('damaged', { amount: 12 }), { audioFor: () => null }),
+    ).toEqual({
+      type: 'damage',
+      eventType: 'damaged',
+    });
+  });
+});
 
-describe("cue kind sounds", () => {
-  it("plays the sound bound to a cue kind and stays silent for unbound kinds", () => {
-    const bindings = createMissionCueBindings()
-    bindings.bind("cue:storm", { effect: null, sound: "hit" })
-    expect(audioCueFor(event("cue", { kind: "storm", unitId: "caster" }), { bindings })).toEqual({
-      type: "hit",
-      eventType: "cue",
-      kind: "storm",
-      unitId: "caster",
-    })
-    expect(audioCueFor(event("cue", { kind: "quiet" }), { bindings })).toBeNull()
-    expect(audioCueFor(event("cue", { kind: "storm" }))).toBeNull()
-  })
-})
+describe('cue kind sounds', () => {
+  it('plays the sound bound to a cue kind and stays silent for unbound kinds', () => {
+    const bindings = createMissionCueBindings();
+    bindings.bind('cue:storm', { effect: null, sound: 'hit' });
+    expect(
+      audioCueFor(event('cue', { kind: 'storm', unitId: 'caster' }), {
+        bindings,
+      }),
+    ).toEqual({
+      type: 'hit',
+      eventType: 'cue',
+      kind: 'storm',
+      unitId: 'caster',
+    });
+    expect(
+      audioCueFor(event('cue', { kind: 'quiet' }), { bindings }),
+    ).toBeNull();
+    expect(audioCueFor(event('cue', { kind: 'storm' }))).toBeNull();
+  });
+});

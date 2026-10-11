@@ -1,57 +1,62 @@
-import { TICK, type BattleEvent, type BattleSnapshot, type UnitSnapshot } from "arknights-mission-core"
+import {
+  type BattleEvent,
+  type BattleSnapshot,
+  TICK,
+  type UnitSnapshot,
+} from 'arknights-mission-core';
 
 export interface MissionFeedOptions {
   /** Game seconds per real second: the battle's speed. */
-  readonly speed?: number | undefined
+  readonly speed?: number | undefined;
   /** Real seconds the render clock trails the newest frame. */
-  readonly delay?: number | undefined
+  readonly delay?: number | undefined;
   /** Real seconds of frames kept behind the render clock. */
-  readonly keep?: number | undefined
+  readonly keep?: number | undefined;
 }
 
 export interface MissionFeedSample {
   /** Game time of the render clock, in seconds. */
-  readonly time: number
+  readonly time: number;
   /** The newer frame that brackets the render clock; flags and attributes come from it. */
-  readonly snapshot: BattleSnapshot
+  readonly snapshot: BattleSnapshot;
   /** Units with positions interpolated to `time`. */
-  readonly units: readonly UnitSnapshot[]
+  readonly units: readonly UnitSnapshot[];
   /** Ids of units whose position differs between the two bracketing frames. */
-  readonly moving: ReadonlySet<string>
+  readonly moving: ReadonlySet<string>;
 }
 
 export interface MissionFeed {
-  readonly renderTime: number
-  readonly newestTime: number
-  readonly speed: number
-  readonly delay: number
+  readonly renderTime: number;
+  readonly newestTime: number;
+  readonly speed: number;
+  readonly delay: number;
   /** Changes the speed or the delay; buffered frames and waiting events are kept. */
-  configure(options: Pick<MissionFeedOptions, "speed" | "delay">): void
+  configure(options: Pick<MissionFeedOptions, 'speed' | 'delay'>): void;
   /** Events not released yet, in push order. */
-  pendingEvents(): readonly BattleEvent[]
-  push(snapshot: BattleSnapshot): void
-  pushEvent(event: BattleEvent): void
-  advance(deltaSeconds: number): void
-  sample(): MissionFeedSample | null
-  takeEvents(): readonly BattleEvent[]
-  reset(): void
+  pendingEvents(): readonly BattleEvent[];
+  push(snapshot: BattleSnapshot): void;
+  pushEvent(event: BattleEvent): void;
+  advance(deltaSeconds: number): void;
+  sample(): MissionFeedSample | null;
+  takeEvents(): readonly BattleEvent[];
+  reset(): void;
 }
 
 interface Frame {
-  readonly time: number
-  readonly snapshot: BattleSnapshot
+  readonly time: number;
+  readonly snapshot: BattleSnapshot;
 }
 
-const MAX_EVENTS = 2000
-const SNAP_SECONDS = 0.75
-const MAX_FRAME_SECONDS = 0.25
+const MAX_EVENTS = 2000;
+const SNAP_SECONDS = 0.75;
+const MAX_FRAME_SECONDS = 0.25;
 
 function clamp(value: number, low: number, high: number): number {
-  return Math.min(high, Math.max(low, value))
+  return Math.min(high, Math.max(low, value));
 }
 
 function gameTimeOf(tick: number): number {
-  return tick * TICK
+  return tick * TICK;
 }
 
 /**
@@ -59,126 +64,168 @@ function gameTimeOf(tick: number): number {
  * newest frame by `delay` real seconds; units are interpolated between the two frames around the clock, and an event
  * is released once the clock reaches its tick.
  */
-export function createMissionFeed(options: MissionFeedOptions = {}): MissionFeed {
-  let speed = clamp(options.speed ?? 2, 0.05, 20)
-  let delay = Math.max(0, options.delay ?? 0.034)
-  const keep = Math.max(0.5, options.keep ?? 2.5)
-  let frames: Frame[] = []
-  let events: BattleEvent[] = []
-  let renderTime = Number.NaN
+export function createMissionFeed(
+  options: MissionFeedOptions = {},
+): MissionFeed {
+  let speed = clamp(options.speed ?? 2, 0.05, 20);
+  let delay = Math.max(0, options.delay ?? 0.034);
+  const keep = Math.max(0.5, options.keep ?? 2.5);
+  let frames: Frame[] = [];
+  let events: BattleEvent[] = [];
+  let renderTime = Number.NaN;
 
-  const newestTime = (): number => frames[frames.length - 1]?.time ?? Number.NaN
-  const goalTime = (): number => newestTime() - delay * speed
+  const newestTime = (): number =>
+    frames[frames.length - 1]?.time ?? Number.NaN;
+  const goalTime = (): number => newestTime() - delay * speed;
 
   const clampToFrames = (): void => {
-    const first = frames[0]
-    const last = frames[frames.length - 1]
-    if (!first || !last) return
-    renderTime = clamp(renderTime, first.time, last.time)
-  }
+    const first = frames[0];
+    const last = frames[frames.length - 1];
+    if (!first || !last) {
+      return;
+    }
+    renderTime = clamp(renderTime, first.time, last.time);
+  };
 
   const trim = (): void => {
-    const horizon = newestTime() - keep * speed
-    while (frames.length > 2 && frames[1]!.time <= renderTime) frames.shift()
-    while (frames.length > 2 && frames[1]!.time < horizon) frames.shift()
-  }
+    const horizon = newestTime() - keep * speed;
+    while (frames.length > 2 && frames[1]!.time <= renderTime) {
+      frames.shift();
+    }
+    while (frames.length > 2 && frames[1]!.time < horizon) {
+      frames.shift();
+    }
+  };
 
   return {
     get renderTime() {
-      return renderTime
+      return renderTime;
     },
     get newestTime() {
-      return newestTime()
+      return newestTime();
     },
     get speed() {
-      return speed
+      return speed;
     },
     get delay() {
-      return delay
+      return delay;
     },
     configure(next) {
-      if (next.speed !== undefined) speed = clamp(next.speed, 0.05, 20)
-      if (next.delay !== undefined) delay = Math.max(0, next.delay)
+      if (next.speed !== undefined) {
+        speed = clamp(next.speed, 0.05, 20);
+      }
+      if (next.delay !== undefined) {
+        delay = Math.max(0, next.delay);
+      }
     },
     pendingEvents() {
-      return events
+      return events;
     },
     push(snapshot) {
-      const last = frames[frames.length - 1]
+      const last = frames[frames.length - 1];
       if (last && snapshot.tick < last.snapshot.tick) {
-        frames = []
-        events = []
-        renderTime = Number.NaN
+        frames = [];
+        events = [];
+        renderTime = Number.NaN;
       }
-      const time = gameTimeOf(snapshot.tick)
-      const current = frames[frames.length - 1]
-      if (current && current.time === time) frames[frames.length - 1] = { time, snapshot }
-      else frames.push({ time, snapshot })
-      if (!Number.isFinite(renderTime)) renderTime = goalTime()
-      trim()
-      clampToFrames()
+      const time = gameTimeOf(snapshot.tick);
+      const current = frames[frames.length - 1];
+      if (current && current.time === time) {
+        frames[frames.length - 1] = { time, snapshot };
+      } else {
+        frames.push({ time, snapshot });
+      }
+      if (!Number.isFinite(renderTime)) {
+        renderTime = goalTime();
+      }
+      trim();
+      clampToFrames();
     },
     pushEvent(event) {
-      events.push(event)
-      if (events.length > MAX_EVENTS) events = events.slice(events.length - MAX_EVENTS)
+      events.push(event);
+      if (events.length > MAX_EVENTS) {
+        events = events.slice(events.length - MAX_EVENTS);
+      }
     },
     advance(deltaSeconds) {
-      if (frames.length === 0) return
-      const dt = clamp(deltaSeconds, 0, MAX_FRAME_SECONDS)
-      if (!Number.isFinite(renderTime)) renderTime = goalTime()
-      renderTime += dt * speed
-      const goal = goalTime()
-      const error = goal - renderTime
-      if (Math.abs(error) > SNAP_SECONDS * speed) renderTime = goal
-      else renderTime += error * Math.min(1, dt * 3)
-      clampToFrames()
-      trim()
+      if (frames.length === 0) {
+        return;
+      }
+      const dt = clamp(deltaSeconds, 0, MAX_FRAME_SECONDS);
+      if (!Number.isFinite(renderTime)) {
+        renderTime = goalTime();
+      }
+      renderTime += dt * speed;
+      const goal = goalTime();
+      const error = goal - renderTime;
+      if (Math.abs(error) > SNAP_SECONDS * speed) {
+        renderTime = goal;
+      } else {
+        renderTime += error * Math.min(1, dt * 3);
+      }
+      clampToFrames();
+      trim();
     },
     sample() {
-      if (frames.length === 0) return null
-      const time = Number.isFinite(renderTime) ? renderTime : newestTime()
-      let older = 0
-      for (let index = 0; index < frames.length; index += 1) {
-        if (frames[index]!.time <= time) older = index
+      if (frames.length === 0) {
+        return null;
       }
-      const a = frames[older]!
-      const b = frames[Math.min(older + 1, frames.length - 1)]!
-      const span = b.time - a.time
-      const alpha = span > 0 ? clamp((time - a.time) / span, 0, 1) : 0
-      const before = new Map(a.snapshot.units.map((unit) => [unit.id, unit] as const))
-      const moving = new Set<string>()
-      const units: UnitSnapshot[] = []
-      for (const unit of b.snapshot.units) {
-        const previous = before.get(unit.id)
-        if (!previous) {
-          units.push(unit)
-          continue
+      const time = Number.isFinite(renderTime) ? renderTime : newestTime();
+      let older = 0;
+      for (let index = 0; index < frames.length; index += 1) {
+        if (frames[index]!.time <= time) {
+          older = index;
         }
-        const x = previous.x + (unit.x - previous.x) * alpha
-        const y = previous.y + (unit.y - previous.y) * alpha
-        if (previous.x !== unit.x || previous.y !== unit.y) moving.add(unit.id)
-        units.push({ ...unit, x, y })
+      }
+      const a = frames[older]!;
+      const b = frames[Math.min(older + 1, frames.length - 1)]!;
+      const span = b.time - a.time;
+      const alpha = span > 0 ? clamp((time - a.time) / span, 0, 1) : 0;
+      const before = new Map(
+        a.snapshot.units.map((unit) => [unit.id, unit] as const),
+      );
+      const moving = new Set<string>();
+      const units: UnitSnapshot[] = [];
+      for (const unit of b.snapshot.units) {
+        const previous = before.get(unit.id);
+        if (!previous) {
+          units.push(unit);
+          continue;
+        }
+        const x = previous.x + (unit.x - previous.x) * alpha;
+        const y = previous.y + (unit.y - previous.y) * alpha;
+        if (previous.x !== unit.x || previous.y !== unit.y) {
+          moving.add(unit.id);
+        }
+        units.push({ ...unit, x, y });
       }
       if (alpha < 1) {
-        const newer = new Set(b.snapshot.units.map((unit) => unit.id))
-        for (const unit of a.snapshot.units) if (!newer.has(unit.id)) units.push(unit)
+        const newer = new Set(b.snapshot.units.map((unit) => unit.id));
+        for (const unit of a.snapshot.units) {
+          if (!newer.has(unit.id)) {
+            units.push(unit);
+          }
+        }
       }
-      return { time, snapshot: b.snapshot, units, moving }
+      return { time, snapshot: b.snapshot, units, moving };
     },
     takeEvents() {
-      const due: BattleEvent[] = []
-      const later: BattleEvent[] = []
+      const due: BattleEvent[] = [];
+      const later: BattleEvent[] = [];
       for (const event of events) {
-        if (gameTimeOf(event.tick) <= renderTime) due.push(event)
-        else later.push(event)
+        if (gameTimeOf(event.tick) <= renderTime) {
+          due.push(event);
+        } else {
+          later.push(event);
+        }
       }
-      events = later
-      return due
+      events = later;
+      return due;
     },
     reset() {
-      frames = []
-      events = []
-      renderTime = Number.NaN
+      frames = [];
+      events = [];
+      renderTime = Number.NaN;
     },
-  }
+  };
 }

@@ -1,5 +1,5 @@
 /** Side of a tile on the stage, in pixels before the viewport scale. */
-export const TILE_SIZE = 64
+export const TILE_SIZE = 64;
 
 /** Height of a raised tile class, in tiles. */
 export const TILE_HEIGHT = Object.freeze({
@@ -8,6 +8,6 @@ export const TILE_HEIGHT = Object.freeze({
   sep: 0.55,
   bench: 0.16,
   platform: 0.26,
-})
+});
 
-export type TileHeightClass = keyof typeof TILE_HEIGHT
+export type TileHeightClass = keyof typeof TILE_HEIGHT;

@@ -53,11 +53,12 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "format": "biome check --write",
-    "lint": "tsc --noEmit && tsc -p tsconfig.test.json --noEmit",
-    "test": "vitest run",
+    "check": "tsc --noEmit && tsc -p tsconfig.test.json --noEmit",
     "extract": "node dist/script/extract.js",
-    "extract:local": "python3 source/local-client/python/extract.py"
+    "extract:local": "python3 source/local-client/python/extract.py",
+    "format": "biome check --write",
+    "lint": "biome lint",
+    "test": "vitest run"
   },
   "dependencies": {
     "@pixi-spine/runtime-3.8": "^4.0.6",

@@ -21,8 +21,9 @@
   },
   "scripts": {
     "build": "tsc -b",
+    "check": "tsc --noEmit",
     "format": "biome check --write",
-    "lint": "tsc --noEmit",
+    "lint": "biome lint",
     "test": "vitest run"
   },
   "devDependencies": {

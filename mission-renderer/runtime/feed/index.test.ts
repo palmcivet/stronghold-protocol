@@ -1,15 +1,20 @@
-import { describe, expect, it } from "vitest"
-import { TICK, type BattleEvent, type BattleSnapshot, type UnitSnapshot } from "arknights-mission-core"
-import { createMissionFeed } from "#runtime/feed/index.js"
+import {
+  type BattleEvent,
+  type BattleSnapshot,
+  TICK,
+  type UnitSnapshot,
+} from 'arknights-mission-core';
+import { describe, expect, it } from 'vitest';
+import { createMissionFeed } from '#runtime/feed/index.js';
 
 function unit(id: string, x: number): UnitSnapshot {
   return {
     id,
-    side: "ally",
-    kind: "operator",
+    side: 'ally',
+    kind: 'operator',
     x,
     y: 0,
-    facing: "RIGHT",
+    facing: 'RIGHT',
     height: 0,
     attributes: { hp: 1, maxHp: 1 },
     maxHp: 1,
@@ -25,79 +30,85 @@ function unit(id: string, x: number): UnitSnapshot {
     redeploy: null,
     unbalanceUntil: null,
     components: {},
-  }
+  };
 }
 
 function frame(tick: number, x: number): BattleSnapshot {
-  return { tick, units: [unit("guard", x)] }
+  return { tick, units: [unit('guard', x)] };
 }
 
 function event(tick: number): BattleEvent {
-  return { tick, type: "attack", data: { unitId: "guard", targetIds: [], cancel: false } }
+  return {
+    tick,
+    type: 'attack',
+    data: { unitId: 'guard', targetIds: [], cancel: false },
+  };
 }
 
-describe("local feed", () => {
-  it("trails the newest frame by the delay and interpolates units between frames", () => {
-    const feed = createMissionFeed({ speed: 1, delay: 0.5 })
+describe('local feed', () => {
+  it('trails the newest frame by the delay and interpolates units between frames', () => {
+    const feed = createMissionFeed({ speed: 1, delay: 0.5 });
 
-    feed.push(frame(0, 0))
-    feed.push(frame(100, 100))
-    feed.advance(0)
-    const sample = feed.sample()
-    if (!sample) throw new Error("no sample")
+    feed.push(frame(0, 0));
+    feed.push(frame(100, 100));
+    feed.advance(0);
+    const sample = feed.sample();
+    if (!sample) {
+      throw new Error('no sample');
+    }
 
-    const time = 100 * TICK - 0.5
-    const alpha = time / (100 * TICK)
-    expect(sample.time).toBeCloseTo(time, 9)
-    expect(sample.units[0]?.x).toBeCloseTo(100 * alpha, 6)
-    expect(sample.moving.has("guard")).toBe(true)
-  })
+    const time = 100 * TICK - 0.5;
+    const alpha = time / (100 * TICK);
+    expect(sample.time).toBeCloseTo(time, 9);
+    expect(sample.units[0]?.x).toBeCloseTo(100 * alpha, 6);
+    expect(sample.moving.has('guard')).toBe(true);
+  });
 
-  it("holds a unit that is missing from the newer frame until the clock reaches it", () => {
-    const feed = createMissionFeed({ speed: 1, delay: 0.5 })
+  it('holds a unit that is missing from the newer frame until the clock reaches it', () => {
+    const feed = createMissionFeed({ speed: 1, delay: 0.5 });
 
-    feed.push({ tick: 0, units: [unit("guard", 2), unit("gone", 5)] })
-    feed.push({ tick: 100, units: [unit("guard", 2)] })
-    const sample = feed.sample()
+    feed.push({ tick: 0, units: [unit('guard', 2), unit('gone', 5)] });
+    feed.push({ tick: 100, units: [unit('guard', 2)] });
+    const sample = feed.sample();
 
-    expect(sample?.units.map((item) => item.id)).toContain("gone")
-  })
+    expect(sample?.units.map((item) => item.id)).toContain('gone');
+  });
 
-  it("releases an event once the render clock passes its tick", () => {
-    const feed = createMissionFeed({ speed: 1, delay: 0.5 })
+  it('releases an event once the render clock passes its tick', () => {
+    const feed = createMissionFeed({ speed: 1, delay: 0.5 });
 
-    feed.push(frame(0, 0))
-    feed.push(frame(100, 0))
-    feed.advance(0)
-    feed.pushEvent(event(1))
-    feed.pushEvent(event(100))
+    feed.push(frame(0, 0));
+    feed.push(frame(100, 0));
+    feed.advance(0);
+    feed.pushEvent(event(1));
+    feed.pushEvent(event(100));
 
-    const released = feed.takeEvents()
-    expect(released.map((item) => item.tick)).toEqual([1])
-    expect(feed.takeEvents()).toEqual([])
-  })
+    const released = feed.takeEvents();
+    expect(released.map((item) => item.tick)).toEqual([1]);
+    expect(feed.takeEvents()).toEqual([]);
+  });
 
   it("advances the render clock at the battle's speed and never past the newest frame", () => {
-    const feed = createMissionFeed({ speed: 2, delay: 0 })
+    const feed = createMissionFeed({ speed: 2, delay: 0 });
 
-    feed.push(frame(0, 0))
-    feed.push(frame(10, 10))
-    const before = feed.renderTime
-    feed.advance(0.1)
+    feed.push(frame(0, 0));
+    feed.push(frame(10, 10));
+    const before = feed.renderTime;
+    feed.advance(0.1);
 
-    expect(feed.renderTime).toBeGreaterThanOrEqual(before)
-    expect(feed.renderTime).toBeLessThanOrEqual(feed.newestTime)
-  })
+    expect(feed.renderTime).toBeGreaterThanOrEqual(before);
+    expect(feed.renderTime).toBeLessThanOrEqual(feed.newestTime);
+  });
 
-  it("starts over when the stream restarts with an earlier tick", () => {
-    const feed = createMissionFeed({ speed: 1, delay: 0 })
+  it('starts over when the stream restarts with an earlier tick', () => {
+    const feed = createMissionFeed({ speed: 1, delay: 0 });
 
-    feed.push(frame(200, 20))
-    feed.pushEvent(event(200))
-    feed.push(frame(5, 1))
-    const sample = feed.sample()
+    feed.push(frame(200, 20));
+    feed.pushEvent(event(200));
+    feed.push(frame(5, 1));
+    const sample = feed.sample();
 
-    expect(sample?.snapshot.tick).toBe(5)
-    expect(feed.takeEvents()).toEqual([])
-  })
-})
+    expect(sample?.snapshot.tick).toBe(5);
+    expect(feed.takeEvents()).toEqual([]);
+  });
+});

@@ -8,8 +8,8 @@
   "scripts": {
     "build": "tsc -b",
     "build:web": "vite build",
+    "check": "tsc --noEmit",
     "dev": "vite",
-    "lint": "tsc --noEmit",
     "test": "vitest run"
   },
   "dependencies": {

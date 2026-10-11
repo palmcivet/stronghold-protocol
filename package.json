@@ -27,11 +27,13 @@
   },
   "scripts": {
     "build": "pnpm -r --if-present build",
+    "check": "pnpm -r --if-present check",
     "format": "pnpm -r --if-present format",
     "lint": "pnpm -r --if-present lint",
     "test": "pnpm -r --if-present test"
   },
   "devDependencies": {
+    "@biomejs/biome": "catalog:",
     "vitest": "catalog:"
   }
 }

@@ -1,407 +1,500 @@
-import { expect, test } from "vitest"
 import {
-  UNTARGETABLE,
-  UnknownRegistrationError,
   createBattle,
   type MissionModule,
   type TileSpec,
+  UNTARGETABLE,
   type UnitSpec,
-} from "arknights-mission-core"
-import { ally, spec } from "#test/fixture.js"
+  UnknownRegistrationError,
+} from 'arknights-mission-core';
+import { expect, test } from 'vitest';
+import { ally, spec } from '#test/fixture.js';
 
 const lane: readonly TileSpec[] = [0, 1, 2, 3].map((x) => ({
   x,
   y: 0,
   height: 0,
   deployable: true,
-  walkableBy: ["ground"],
-}))
+  walkableBy: ['ground'],
+}));
 
-function query(units: readonly UnitSpec[], selector: string | readonly string[], origin = "a"): readonly string[] {
-  let found: readonly string[] = []
+function query(
+  units: readonly UnitSpec[],
+  selector: string | readonly string[],
+  origin = 'a',
+): readonly string[] {
+  let found: readonly string[] = [];
   const module: MissionModule = {
-    id: "case",
+    id: 'case',
     install(ctx) {
       ctx.registerSystem({
-        id: "case",
-        slot: "schedule",
+        id: 'case',
+        slot: 'schedule',
         priority: 1,
         run(runCtx) {
-          found = runCtx.unitsInRange(origin, selector)
+          found = runCtx.unitsInRange(origin, selector);
         },
-      })
+      });
     },
-  }
+  };
   const battle = createBattle(
     spec({
-      modules: ["case"],
+      modules: ['case'],
       tiles: lane,
       units,
     }),
     [module],
-  )
-  battle.step()
-  return found
+  );
+  battle.step();
+  return found;
 }
 
-test("筛选和排序按名单顺序叠，单个 all 仍然可用", () => {
+test('筛选和排序按名单顺序叠，单个 all 仍然可用', () => {
   const units = [
-    ally("a", {
+    ally('a', {
       attackRange: [
         { x: 1, y: 0 },
         { x: 2, y: 0 },
         { x: 3, y: 0 },
       ],
     }),
-    ally("near", { side: "enemy", x: 1, y: 0, attributes: { hp: 100, def: 5 } }),
-    ally("far", { side: "enemy", x: 2, y: 0, attributes: { hp: 100, def: 5 } }),
-    ally("weak", { side: "enemy", x: 3, y: 0, attributes: { hp: 100, def: 1 } }),
-    ally("friend", { x: 1, y: 0, attributes: { hp: 100, def: 0 } }),
-  ]
-  const stacked = query(units, ["enemy", "defense", "distance"])
-  expect(stacked).toEqual(["weak", "near", "far"])
-  const everyone = query(units, "all")
-  const listed = query(units, ["all"])
-  expect(everyone).toEqual(listed)
-  expect(everyone).toContain("near")
-  expect(everyone).toContain("friend")
-})
+    ally('near', {
+      side: 'enemy',
+      x: 1,
+      y: 0,
+      attributes: { hp: 100, def: 5 },
+    }),
+    ally('far', { side: 'enemy', x: 2, y: 0, attributes: { hp: 100, def: 5 } }),
+    ally('weak', {
+      side: 'enemy',
+      x: 3,
+      y: 0,
+      attributes: { hp: 100, def: 1 },
+    }),
+    ally('friend', { x: 1, y: 0, attributes: { hp: 100, def: 0 } }),
+  ];
+  const stacked = query(units, ['enemy', 'defense', 'distance']);
+  expect(stacked).toEqual(['weak', 'near', 'far']);
+  const everyone = query(units, 'all');
+  const listed = query(units, ['all']);
+  expect(everyone).toEqual(listed);
+  expect(everyone).toContain('near');
+  expect(everyone).toContain('friend');
+});
 
-test("未知筛选或排序标识被拒绝", () => {
-  const battle = createBattle(spec({ units: [ally("a")] }), [])
+test('未知筛选或排序标识被拒绝', () => {
+  const battle = createBattle(spec({ units: [ally('a')] }), []);
   expect(() => {
     const probe: MissionModule = {
-      id: "case",
+      id: 'case',
       install(ctx) {
         ctx.registerSystem({
-          id: "case",
-          slot: "schedule",
+          id: 'case',
+          slot: 'schedule',
           priority: 1,
           run(runCtx) {
-            runCtx.select(["enemy", "missing-sort"], ["a"])
+            runCtx.select(['enemy', 'missing-sort'], ['a']);
           },
-        })
+        });
       },
-    }
-    createBattle(spec({ modules: ["case"], units: [ally("a")] }), [probe]).step()
-  }).toThrow(UnknownRegistrationError)
+    };
+    createBattle(spec({ modules: ['case'], units: [ally('a')] }), [
+      probe,
+    ]).step();
+  }).toThrow(UnknownRegistrationError);
   try {
     const probe: MissionModule = {
-      id: "case",
+      id: 'case',
       install(ctx) {
         ctx.registerSystem({
-          id: "case",
-          slot: "schedule",
+          id: 'case',
+          slot: 'schedule',
           priority: 1,
           run(runCtx) {
-            runCtx.select("missing-filter", [])
+            runCtx.select('missing-filter', []);
           },
-        })
+        });
       },
-    }
-    createBattle(spec({ modules: ["case"], units: [ally("a")] }), [probe]).step()
-    expect.unreachable()
+    };
+    createBattle(spec({ modules: ['case'], units: [ally('a')] }), [
+      probe,
+    ]).step();
+    expect.unreachable();
   } catch (error) {
-    expect(error).toBeInstanceOf(UnknownRegistrationError)
-    expect((error as UnknownRegistrationError).registry).toBe("selector")
-    expect((error as UnknownRegistrationError).id).toBe("missing-filter")
+    expect(error).toBeInstanceOf(UnknownRegistrationError);
+    expect((error as UnknownRegistrationError).registry).toBe('selector');
+    expect((error as UnknownRegistrationError).id).toBe('missing-filter');
   }
-  expect(battle.snapshot().units.map((unit) => unit.id)).toEqual(["a"])
-})
+  expect(battle.snapshot().units.map((unit) => unit.id)).toEqual(['a']);
+});
 
-test("飞行、隐匿、迷彩和范围效果按各自的筛选分开", () => {
-  const ground = ally("ground", { side: "enemy", x: 1, y: 0 })
-  const flyer = ally("flyer", { side: "enemy", x: 2, y: 0, motion: "FLY" })
-  const attacker = ally("a", {
+test('飞行、隐匿、迷彩和范围效果按各自的筛选分开', () => {
+  const ground = ally('ground', { side: 'enemy', x: 1, y: 0 });
+  const flyer = ally('flyer', { side: 'enemy', x: 2, y: 0, motion: 'FLY' });
+  const attacker = ally('a', {
     attackRange: [
       { x: 1, y: 0 },
       { x: 2, y: 0 },
     ],
-  })
-  expect(query([attacker, ground, flyer], ["enemy", "fly"])).toEqual(["ground"])
-  expect(query([{ ...attacker, tags: ["can-hit-fly"] }, ground, flyer], ["enemy", "fly"])).toEqual(["ground", "flyer"])
+  });
+  expect(query([attacker, ground, flyer], ['enemy', 'fly'])).toEqual([
+    'ground',
+  ]);
+  expect(
+    query(
+      [{ ...attacker, tags: ['can-hit-fly'] }, ground, flyer],
+      ['enemy', 'fly'],
+    ),
+  ).toEqual(['ground', 'flyer']);
 
-  let hidden: readonly string[] = []
-  let revealed: readonly string[] = []
+  let hidden: readonly string[] = [];
+  let revealed: readonly string[] = [];
   const stealth: MissionModule = {
-    id: "case",
+    id: 'case',
     install(ctx) {
       ctx.registerSystem({
-        id: "case",
-        slot: "schedule",
+        id: 'case',
+        slot: 'schedule',
         priority: 1,
         run(runCtx) {
-          runCtx.applyEffect("e", "stealth")
-          hidden = runCtx.unitsInRange("a", ["enemy", "stealth"])
-          runCtx.applyEffect("e", "reveal")
-          revealed = runCtx.unitsInRange("a", ["enemy", "stealth"])
+          runCtx.applyEffect('e', 'stealth');
+          hidden = runCtx.unitsInRange('a', ['enemy', 'stealth']);
+          runCtx.applyEffect('e', 'reveal');
+          revealed = runCtx.unitsInRange('a', ['enemy', 'stealth']);
         },
-      })
+      });
     },
-  }
+  };
   createBattle(
     spec({
-      modules: ["case"],
+      modules: ['case'],
       tiles: lane,
-      units: [ally("a"), ally("e", { side: "enemy", x: 1, y: 0 })],
+      units: [ally('a'), ally('e', { side: 'enemy', x: 1, y: 0 })],
     }),
     [stealth],
-  ).step()
-  expect(hidden).toEqual([])
-  expect(revealed).toEqual(["e"])
+  ).step();
+  expect(hidden).toEqual([]);
+  expect(revealed).toEqual(['e']);
 
-  const camou = ally("camou", { x: 1, y: 0 })
-  const enemy = ally("e", { side: "enemy", attackRange: [{ x: 1, y: 0 }] })
-  let plain: readonly string[] = []
-  let area: readonly string[] = []
+  const camou = ally('camou', { x: 1, y: 0 });
+  const enemy = ally('e', { side: 'enemy', attackRange: [{ x: 1, y: 0 }] });
+  let plain: readonly string[] = [];
+  let area: readonly string[] = [];
   const paint: MissionModule = {
-    id: "case",
+    id: 'case',
     install(ctx) {
       ctx.registerSystem({
-        id: "case",
-        slot: "schedule",
+        id: 'case',
+        slot: 'schedule',
         priority: 1,
         run(runCtx) {
-          runCtx.applyEffect("camou", "camou")
-          plain = runCtx.unitsInRange("e", ["ally", "camouflage"])
-          area = runCtx.unitsInRange("e", ["ally", "area"])
+          runCtx.applyEffect('camou', 'camou');
+          plain = runCtx.unitsInRange('e', ['ally', 'camouflage']);
+          area = runCtx.unitsInRange('e', ['ally', 'area']);
         },
-      })
+      });
     },
-  }
-  createBattle(spec({ modules: ["case"], tiles: lane, units: [enemy, camou] }), [paint]).step()
-  expect(plain).toEqual([])
-  expect(area).toEqual(["camou"])
-})
+  };
+  createBattle(
+    spec({ modules: ['case'], tiles: lane, units: [enemy, camou] }),
+    [paint],
+  ).step();
+  expect(plain).toEqual([]);
+  expect(area).toEqual(['camou']);
+});
 
-test("范围效果不选隐匿、不可选中、沉睡的单位，隐匿的挡着施法者也不选；地面来源不选起飞的；迷彩照选", () => {
-  let area: readonly string[] = []
-  let all: readonly string[] = []
+test('范围效果不选隐匿、不可选中、沉睡的单位，隐匿的挡着施法者也不选；地面来源不选起飞的；迷彩照选', () => {
+  let area: readonly string[] = [];
+  let all: readonly string[] = [];
   const paint: MissionModule = {
-    id: "case",
+    id: 'case',
     install(ctx) {
       ctx.registerSystem({
-        id: "case",
-        slot: "schedule",
+        id: 'case',
+        slot: 'schedule',
         priority: 1,
         run(runCtx) {
-          runCtx.applyEffect("blocker", "stealth")
-          runCtx.applyEffect("hidden", "stealth")
-          runCtx.grantTag("untargetable", UNTARGETABLE, "case")
-          runCtx.applyEffect("asleep", "sleep")
-          runCtx.applyEffect("lifted", "liftoff")
-          runCtx.applyEffect("camou", "camou")
-          area = runCtx.unitsInRange("e", ["ally", "area"])
-          all = runCtx.unitsInRange("e", "ally")
+          runCtx.applyEffect('blocker', 'stealth');
+          runCtx.applyEffect('hidden', 'stealth');
+          runCtx.grantTag('untargetable', UNTARGETABLE, 'case');
+          runCtx.applyEffect('asleep', 'sleep');
+          runCtx.applyEffect('lifted', 'liftoff');
+          runCtx.applyEffect('camou', 'camou');
+          area = runCtx.unitsInRange('e', ['ally', 'area']);
+          all = runCtx.unitsInRange('e', 'ally');
         },
-      })
+      });
     },
-  }
-  const near = { x: 1, y: 0 }
+  };
+  const near = { x: 1, y: 0 };
   createBattle(
     spec({
-      modules: ["case"],
+      modules: ['case'],
       tiles: lane,
       units: [
-        ally("e", { side: "enemy", x: 0, y: 0, attackRange: [{ x: 0, y: 0 }, { x: 1, y: 0 }], blockedBy: "blocker" }),
-        ally("blocker", { x: 0, y: 0, blocking: ["e"] }),
-        ally("hidden", near),
-        ally("untargetable", near),
-        ally("asleep", near),
-        ally("lifted", near),
-        ally("camou", near),
-        ally("plain", near),
+        ally('e', {
+          side: 'enemy',
+          x: 0,
+          y: 0,
+          attackRange: [
+            { x: 0, y: 0 },
+            { x: 1, y: 0 },
+          ],
+          blockedBy: 'blocker',
+        }),
+        ally('blocker', { x: 0, y: 0, blocking: ['e'] }),
+        ally('hidden', near),
+        ally('untargetable', near),
+        ally('asleep', near),
+        ally('lifted', near),
+        ally('camou', near),
+        ally('plain', near),
       ],
     }),
     [paint],
-  ).step()
-  expect(area).toEqual(["camou", "plain"])
-  expect(all).toEqual(["blocker", "hidden", "untargetable", "asleep", "lifted", "camou", "plain"])
-})
+  ).step();
+  expect(area).toEqual(['camou', 'plain']);
+  expect(all).toEqual([
+    'blocker',
+    'hidden',
+    'untargetable',
+    'asleep',
+    'lifted',
+    'camou',
+    'plain',
+  ]);
+});
 
-test("没被挡的隐匿敌人和不可选中的敌人不被选中；被挡住或显形的隐匿敌人可以选中", () => {
-  const picks: Record<string, readonly string[]> = {}
+test('没被挡的隐匿敌人和不可选中的敌人不被选中；被挡住或显形的隐匿敌人可以选中', () => {
+  const picks: Record<string, readonly string[]> = {};
   const probe: MissionModule = {
-    id: "case",
+    id: 'case',
     install(ctx) {
       ctx.registerSystem({
-        id: "case",
-        slot: "schedule",
+        id: 'case',
+        slot: 'schedule',
         priority: 1,
         run(runCtx) {
-          for (const id of ["loose", "held", "shown"]) runCtx.applyEffect(id, "stealth")
-          runCtx.applyEffect("shown", "reveal")
-          runCtx.grantTag("ghost", UNTARGETABLE, "case")
-          picks.foes = runCtx.unitsInRange("a", ["enemy", "stealth", "untargetable"])
-          picks.everyone = runCtx.unitsInRange("a", "enemy")
+          for (const id of ['loose', 'held', 'shown']) {
+            runCtx.applyEffect(id, 'stealth');
+          }
+          runCtx.applyEffect('shown', 'reveal');
+          runCtx.grantTag('ghost', UNTARGETABLE, 'case');
+          picks.foes = runCtx.unitsInRange('a', [
+            'enemy',
+            'stealth',
+            'untargetable',
+          ]);
+          picks.everyone = runCtx.unitsInRange('a', 'enemy');
         },
-      })
+      });
     },
-  }
-  const near = { side: "enemy" as const, x: 1, y: 0 }
+  };
+  const near = { side: 'enemy' as const, x: 1, y: 0 };
   createBattle(
     spec({
-      modules: ["case"],
+      modules: ['case'],
       tiles: lane,
       units: [
-        ally("a", { blocking: ["held"] }),
-        ally("loose", near),
-        ally("held", { ...near, blockedBy: "a" }),
-        ally("shown", near),
-        ally("ghost", near),
+        ally('a', { blocking: ['held'] }),
+        ally('loose', near),
+        ally('held', { ...near, blockedBy: 'a' }),
+        ally('shown', near),
+        ally('ghost', near),
       ],
     }),
     [probe],
-  ).step()
-  expect(picks.foes).toEqual(["held", "shown"])
-  expect(picks.everyone).toEqual(["loose", "held", "shown", "ghost"])
-})
+  ).step();
+  expect(picks.foes).toEqual(['held', 'shown']);
+  expect(picks.everyone).toEqual(['loose', 'held', 'shown', 'ghost']);
+});
 
-test("阻挡优先只读已有关系，特殊优先级、仇恨、路程、生命和防御按键排序", () => {
+test('阻挡优先只读已有关系，特殊优先级、仇恨、路程、生命和防御按键排序', () => {
   const blocked = query(
     [
-      ally("a", {
+      ally('a', {
         attackRange: [
           { x: 1, y: 0 },
           { x: 3, y: 0 },
         ],
-        blocking: ["far"],
+        blocking: ['far'],
       }),
-      ally("near", { side: "enemy", x: 1, y: 0 }),
-      ally("far", { side: "enemy", x: 3, y: 0, blockedBy: "a" }),
+      ally('near', { side: 'enemy', x: 1, y: 0 }),
+      ally('far', { side: 'enemy', x: 3, y: 0, blockedBy: 'a' }),
     ],
-    ["enemy", "block", "distance"],
-  )
-  expect(blocked).toEqual(["far", "near"])
+    ['enemy', 'block', 'distance'],
+  );
+  expect(blocked).toEqual(['far', 'near']);
 
   const none = query(
     [
-      ally("a", {
+      ally('a', {
         attackRange: [
           { x: 1, y: 0 },
           { x: 3, y: 0 },
         ],
       }),
-      ally("near", { side: "enemy", x: 1, y: 0 }),
-      ally("far", { side: "enemy", x: 3, y: 0 }),
+      ally('near', { side: 'enemy', x: 1, y: 0 }),
+      ally('far', { side: 'enemy', x: 3, y: 0 }),
     ],
-    ["enemy", "block", "distance"],
-  )
-  expect(none).toEqual(["near", "far"])
+    ['enemy', 'block', 'distance'],
+  );
+  expect(none).toEqual(['near', 'far']);
 
   const priority = query(
     [
-      ally("a", {
-        targetPriority: "fly",
+      ally('a', {
+        targetPriority: 'fly',
         attackRange: [
           { x: 1, y: 0 },
           { x: 2, y: 0 },
         ],
-        tags: ["can-hit-fly"],
+        tags: ['can-hit-fly'],
       }),
-      ally("ground", { side: "enemy", x: 1, y: 0 }),
-      ally("flyer", { side: "enemy", x: 2, y: 0, motion: "FLY" }),
+      ally('ground', { side: 'enemy', x: 1, y: 0 }),
+      ally('flyer', { side: 'enemy', x: 2, y: 0, motion: 'FLY' }),
     ],
-    ["enemy", "fly", "priority"],
-  )
-  expect(priority).toEqual(["flyer", "ground"])
+    ['enemy', 'fly', 'priority'],
+  );
+  expect(priority).toEqual(['flyer', 'ground']);
 
   const hated = query(
     [
-      ally("e", { side: "enemy", attackRange: [{ x: 1, y: 0 }, { x: 2, y: 0 }] }),
-      ally("early", { x: 1, y: 0, aggroSeq: 1 }),
-      ally("late", { x: 2, y: 0, aggroSeq: 4 }),
+      ally('e', {
+        side: 'enemy',
+        attackRange: [
+          { x: 1, y: 0 },
+          { x: 2, y: 0 },
+        ],
+      }),
+      ally('early', { x: 1, y: 0, aggroSeq: 1 }),
+      ally('late', { x: 2, y: 0, aggroSeq: 4 }),
     ],
-    ["ally", "aggro"],
-    "e",
-  )
-  expect(hated).toEqual(["late", "early"])
+    ['ally', 'aggro'],
+    'e',
+  );
+  expect(hated).toEqual(['late', 'early']);
 
   const ratio = query(
     [
-      ally("a", { attackRange: [{ x: 1, y: 0 }, { x: 2, y: 0 }] }),
-      ally("full", { side: "enemy", x: 1, y: 0, attributes: { hp: 100, def: 0 } }),
-      ally("hurt", { side: "enemy", x: 2, y: 0, attributes: { hp: 20, maxHp: 100, def: 9 } }),
+      ally('a', {
+        attackRange: [
+          { x: 1, y: 0 },
+          { x: 2, y: 0 },
+        ],
+      }),
+      ally('full', {
+        side: 'enemy',
+        x: 1,
+        y: 0,
+        attributes: { hp: 100, def: 0 },
+      }),
+      ally('hurt', {
+        side: 'enemy',
+        x: 2,
+        y: 0,
+        attributes: { hp: 20, maxHp: 100, def: 9 },
+      }),
     ],
-    ["enemy", "hp-ratio"],
-  )
-  expect(ratio).toEqual(["hurt", "full"])
+    ['enemy', 'hp-ratio'],
+  );
+  expect(ratio).toEqual(['hurt', 'full']);
   expect(
     query(
       [
-        ally("a", { attackRange: [{ x: 1, y: 0 }, { x: 2, y: 0 }] }),
-        ally("soft", { side: "enemy", x: 2, y: 0, attributes: { hp: 100, def: 1 } }),
-        ally("hard", { side: "enemy", x: 1, y: 0, attributes: { hp: 100, def: 30 } }),
-      ],
-      ["enemy", "defense"],
-    ),
-  ).toEqual(["soft", "hard"])
-})
-
-test("起飞的干员不被地面敌人选中，孤立友方不被友方选中", () => {
-  let grounded: readonly string[] = []
-  let flying: readonly string[] = []
-  const lift: MissionModule = {
-    id: "case",
-    install(ctx) {
-      ctx.registerSystem({
-        id: "case",
-        slot: "schedule",
-        priority: 1,
-        run(runCtx) {
-          runCtx.applyEffect("a", "liftoff")
-          grounded = runCtx.unitsInRange("walker", ["ally", "liftoff"])
-          flying = runCtx.unitsInRange("flyer", ["ally", "liftoff"])
-        },
-      })
-    },
-  }
-  createBattle(
-    spec({
-      modules: ["case"],
-      tiles: lane,
-      units: [
-        ally("a", { x: 1, y: 0 }),
-        ally("walker", { side: "enemy", attackRange: [{ x: 1, y: 0 }] }),
-        ally("flyer", { side: "enemy", x: 2, y: 0, motion: "FLY", attackRange: [{ x: -1, y: 0 }] }),
-      ],
-    }),
-    [lift],
-  ).step()
-  expect(grounded).toEqual([])
-  expect(flying).toEqual(["a"])
-
-  let allies: readonly string[] = []
-  const alone: MissionModule = {
-    id: "case",
-    install(ctx) {
-      ctx.registerSystem({
-        id: "case",
-        slot: "schedule",
-        priority: 1,
-        run(runCtx) {
-          runCtx.applyEffect("lone", "isolated")
-          allies = runCtx.unitsInRange("a", ["ally", "isolated"])
-        },
-      })
-    },
-  }
-  createBattle(
-    spec({
-      modules: ["case"],
-      tiles: lane,
-      units: [
-        ally("a", {
+        ally('a', {
           attackRange: [
             { x: 1, y: 0 },
             { x: 2, y: 0 },
           ],
         }),
-        ally("friend", { x: 1, y: 0 }),
-        ally("lone", { x: 2, y: 0 }),
+        ally('soft', {
+          side: 'enemy',
+          x: 2,
+          y: 0,
+          attributes: { hp: 100, def: 1 },
+        }),
+        ally('hard', {
+          side: 'enemy',
+          x: 1,
+          y: 0,
+          attributes: { hp: 100, def: 30 },
+        }),
+      ],
+      ['enemy', 'defense'],
+    ),
+  ).toEqual(['soft', 'hard']);
+});
+
+test('起飞的干员不被地面敌人选中，孤立友方不被友方选中', () => {
+  let grounded: readonly string[] = [];
+  let flying: readonly string[] = [];
+  const lift: MissionModule = {
+    id: 'case',
+    install(ctx) {
+      ctx.registerSystem({
+        id: 'case',
+        slot: 'schedule',
+        priority: 1,
+        run(runCtx) {
+          runCtx.applyEffect('a', 'liftoff');
+          grounded = runCtx.unitsInRange('walker', ['ally', 'liftoff']);
+          flying = runCtx.unitsInRange('flyer', ['ally', 'liftoff']);
+        },
+      });
+    },
+  };
+  createBattle(
+    spec({
+      modules: ['case'],
+      tiles: lane,
+      units: [
+        ally('a', { x: 1, y: 0 }),
+        ally('walker', { side: 'enemy', attackRange: [{ x: 1, y: 0 }] }),
+        ally('flyer', {
+          side: 'enemy',
+          x: 2,
+          y: 0,
+          motion: 'FLY',
+          attackRange: [{ x: -1, y: 0 }],
+        }),
+      ],
+    }),
+    [lift],
+  ).step();
+  expect(grounded).toEqual([]);
+  expect(flying).toEqual(['a']);
+
+  let allies: readonly string[] = [];
+  const alone: MissionModule = {
+    id: 'case',
+    install(ctx) {
+      ctx.registerSystem({
+        id: 'case',
+        slot: 'schedule',
+        priority: 1,
+        run(runCtx) {
+          runCtx.applyEffect('lone', 'isolated');
+          allies = runCtx.unitsInRange('a', ['ally', 'isolated']);
+        },
+      });
+    },
+  };
+  createBattle(
+    spec({
+      modules: ['case'],
+      tiles: lane,
+      units: [
+        ally('a', {
+          attackRange: [
+            { x: 1, y: 0 },
+            { x: 2, y: 0 },
+          ],
+        }),
+        ally('friend', { x: 1, y: 0 }),
+        ally('lone', { x: 2, y: 0 }),
       ],
     }),
     [alone],
-  ).step()
-  expect(allies).toEqual(["friend"])
-})
+  ).step();
+  expect(allies).toEqual(['friend']);
+});

@@ -1,56 +1,88 @@
-import type { AttackEvent } from "#contract/event.js"
-import { projectileKindSpeed, resolveAttackImpact, retainOnMiss, returnSpeedOf } from "#combat/attack/shape.js"
-import type { ContentContext } from "#port/context.js"
-import type { BattleRegistry, ContentTimerDefinition } from "#port/definition.js"
-import { CANNOT_ACT, TREMBLE } from "#port/tag.js"
-import { timerNumber, timerText, type TimerState } from "#kernel/timer/index.js"
-import { hasTag } from "#kernel/world/tag.js"
-import { requireUnit, unbalanced, type BattleWorld, type UnitState } from "#unit/record/index.js"
-import { attackTargetIds } from "#combat/target/aim.js"
-import { attributeOf } from "#ability/effect/attribute.js"
-import { interruptEnemyAttack } from "#ability/effect/palsy.js"
+import { attributeOf } from '#ability/effect/attribute.js';
+import { interruptEnemyAttack } from '#ability/effect/palsy.js';
+import { attackProfileOf } from '#combat/attack/profile.js';
+import {
+  projectileKindSpeed,
+  resolveAttackImpact,
+  retainOnMiss,
+  returnSpeedOf,
+} from '#combat/attack/shape.js';
+import { standAfterStrike } from '#combat/attack/stand.js';
 import {
   consumeAttackTiming,
   peekAttackTargetThisTick,
   readAttackTiming,
   registerIndependentTimers,
-} from "#combat/attack/timing.js"
-import { countdown, reached, READY_EPSILON, TICK } from "#kernel/tick/index.js"
-import { attackProfileOf } from "#combat/attack/profile.js"
-import { routeHidden } from "#field/grid/route.js"
-import { blockerOf } from "#unit/block/hold.js"
-import { standAfterStrike } from "#combat/attack/stand.js"
+} from '#combat/attack/timing.js';
+import { attackTargetIds } from '#combat/target/aim.js';
+import type { AttackEvent } from '#contract/event.js';
+import { routeHidden } from '#field/grid/route.js';
+import { countdown, READY_EPSILON, reached, TICK } from '#kernel/tick/index.js';
+import {
+  type TimerState,
+  timerNumber,
+  timerText,
+} from '#kernel/timer/index.js';
+import { hasTag } from '#kernel/world/tag.js';
+import type { ContentContext } from '#port/context.js';
+import type {
+  BattleRegistry,
+  ContentTimerDefinition,
+} from '#port/definition.js';
+import { CANNOT_ACT, TREMBLE } from '#port/tag.js';
+import { blockerOf } from '#unit/block/hold.js';
+import {
+  type BattleWorld,
+  requireUnit,
+  type UnitState,
+  unbalanced,
+} from '#unit/record/index.js';
 
 /** 攻速下限。 */
-export const ASPD_MIN = 20
+export const ASPD_MIN = 20;
 /** 攻速上限。 */
-export const ASPD_MAX = 600
+export const ASPD_MAX = 600;
 /** 没有攻击片段时，命中之后停住的秒数。 */
-export const ATTACK_PAUSE = 0.35
+export const ATTACK_PAUSE = 0.35;
 
 /** 普攻计时器与充能、弹药、回旋物的计时器。 */
-export function registerAttackTimers(registry: BattleRegistry, state: BattleWorld): void {
-  registry.registerTimer(attackTimer(state, registry))
-  registerIndependentTimers(registry, state)
+export function registerAttackTimers(
+  registry: BattleRegistry,
+  state: BattleWorld,
+): void {
+  registry.registerTimer(attackTimer(state, registry));
+  registerIndependentTimers(registry, state);
 }
 
-function attackTimer(state: BattleWorld, registry: BattleRegistry): ContentTimerDefinition {
+function attackTimer(
+  state: BattleWorld,
+  registry: BattleRegistry,
+): ContentTimerDefinition {
   return {
-    id: "attack",
-    slot: "ally",
-    create: () => ({ phase: "idle", elapsed: 0, cooldown: 0, rest: 0, lead: 0 }),
+    id: 'attack',
+    slot: 'ally',
+    create: () => ({
+      phase: 'idle',
+      elapsed: 0,
+      cooldown: 0,
+      rest: 0,
+      lead: 0,
+    }),
     advance(timer, unitId, ctx) {
-      advanceAttack(state, registry, ctx, unitId, timer)
+      advanceAttack(state, registry, ctx, unitId, timer);
     },
     cancel(timer) {
-      timer.phase = "idle"
-      timer.elapsed = 0
-      timer.lead = 0
+      timer.phase = 'idle';
+      timer.elapsed = 0;
+      timer.lead = 0;
     },
     view(timer) {
-      return { phase: timerText(timer, "phase", "idle"), elapsed: timerNumber(timer, "elapsed") }
+      return {
+        phase: timerText(timer, 'phase', 'idle'),
+        elapsed: timerNumber(timer, 'elapsed'),
+      };
     },
-  }
+  };
 }
 
 export function advanceAttack(
@@ -60,19 +92,19 @@ export function advanceAttack(
   unitId: string,
   timer: TimerState,
 ): void {
-  const unit = requireUnit(state, unitId)
-  const timing = attackTiming(state, unit, registry)
-  const stunned = clockStopped(state, unit)
-  const held = attackHeld(state, registry, unit)
-  if (text(timer, "phase") === "windup") {
-    advanceWindup(state, registry, ctx, unit, timer, timing, stunned, held)
-    return
+  const unit = requireUnit(state, unitId);
+  const timing = attackTiming(state, unit, registry);
+  const stunned = clockStopped(state, unit);
+  const held = attackHeld(state, registry, unit);
+  if (text(timer, 'phase') === 'windup') {
+    advanceWindup(state, registry, ctx, unit, timer, timing, stunned, held);
+    return;
   }
-  if (text(timer, "phase") === "recovery") {
-    advanceRecovery(state, registry, ctx, unit, timer, timing, stunned, held)
-    return
+  if (text(timer, 'phase') === 'recovery') {
+    advanceRecovery(state, registry, ctx, unit, timer, timing, stunned, held);
+    return;
   }
-  advanceIdle(state, registry, ctx, unit, timer, timing, stunned, held)
+  advanceIdle(state, registry, ctx, unit, timer, timing, stunned, held);
 }
 
 /** 这一拍的攻击推进会不会打出命中。技力用它决定要不要在命中前释放。 */
@@ -82,34 +114,74 @@ export function attackWillHit(
   ctx: ContentContext,
   unit: UnitState,
 ): boolean {
-  const timer = unit.timers.get("attack")
-  if (!timer || clockStopped(state, unit) || attackHeld(state, registry, unit)) return false
-  if (!readAttackTiming(state, unit, registry).canAttack) return false
-  const timing = attackTiming(state, unit, registry)
-  if (!hasTarget(state, registry, ctx, unit)) return false
-  if (text(timer, "phase") === "windup") {
-    if (number(timer, "lead") === 1) return reached(number(timer, "elapsed") + TICK, timing.wind)
-    return countdown(number(timer, "cooldown"), TICK) === 0
+  const timer = unit.timers.get('attack');
+  if (
+    !timer ||
+    clockStopped(state, unit) ||
+    attackHeld(state, registry, unit)
+  ) {
+    return false;
   }
-  if (text(timer, "phase") !== "idle" && text(timer, "phase") !== "recovery") return false
-  if (timing.wind > READY_EPSILON && number(timer, "cooldown") <= READY_EPSILON) return false
-  return countdown(number(timer, "cooldown"), TICK) === 0
+  if (!readAttackTiming(state, unit, registry).canAttack) {
+    return false;
+  }
+  const timing = attackTiming(state, unit, registry);
+  if (!hasTarget(state, registry, ctx, unit)) {
+    return false;
+  }
+  if (text(timer, 'phase') === 'windup') {
+    if (number(timer, 'lead') === 1) {
+      return reached(number(timer, 'elapsed') + TICK, timing.wind);
+    }
+    return countdown(number(timer, 'cooldown'), TICK) === 0;
+  }
+  if (text(timer, 'phase') !== 'idle' && text(timer, 'phase') !== 'recovery') {
+    return false;
+  }
+  if (
+    timing.wind > READY_EPSILON &&
+    number(timer, 'cooldown') <= READY_EPSILON
+  ) {
+    return false;
+  }
+  return countdown(number(timer, 'cooldown'), TICK) === 0;
 }
 
 /**
  * 这一拍的攻击推进会不会从冷却进入前摇。移动先于出手结算，站定用它让敌人在进入前摇的这一拍就停下。
  */
-export function attackWillWind(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext, unit: UnitState): boolean {
-  const timer = unit.timers.get("attack")
-  if (!timer) return false
-  const phase = text(timer, "phase")
-  if (phase !== "idle" && phase !== "recovery") return false
-  if (clockStopped(state, unit) || attackHeld(state, registry, unit) || targetDenied(unit)) return false
-  const timing = attackTiming(state, unit, registry)
-  if (!(timing.wind > READY_EPSILON)) return false
-  if (!reached(timing.wind, countdown(number(timer, "cooldown"), TICK))) return false
-  if (!readAttackTiming(state, unit, registry).canAttack) return false
-  return hasTarget(state, registry, ctx, unit)
+export function attackWillWind(
+  state: BattleWorld,
+  registry: BattleRegistry,
+  ctx: ContentContext,
+  unit: UnitState,
+): boolean {
+  const timer = unit.timers.get('attack');
+  if (!timer) {
+    return false;
+  }
+  const phase = text(timer, 'phase');
+  if (phase !== 'idle' && phase !== 'recovery') {
+    return false;
+  }
+  if (
+    clockStopped(state, unit) ||
+    attackHeld(state, registry, unit) ||
+    targetDenied(unit)
+  ) {
+    return false;
+  }
+  const timing = attackTiming(state, unit, registry);
+  if (!(timing.wind > READY_EPSILON)) {
+    return false;
+  }
+  if (!reached(timing.wind, countdown(number(timer, 'cooldown'), TICK))) {
+    return false;
+  }
+  if (!readAttackTiming(state, unit, registry).canAttack) {
+    return false;
+  }
+  return hasTarget(state, registry, ctx, unit);
 }
 
 // MARK: clock
@@ -124,22 +196,28 @@ function advanceWindup(
   stunned: boolean,
   held: boolean,
 ): void {
-  if (stunned || held) return
+  if (stunned || held) {
+    return;
+  }
   if (targetDenied(unit)) {
-    timer.phase = "idle"
-    timer.elapsed = 0
-    timer.lead = 0
-    return
+    timer.phase = 'idle';
+    timer.elapsed = 0;
+    timer.lead = 0;
+    return;
   }
-  if (number(timer, "lead") === 1) {
-    timer.elapsed = number(timer, "elapsed") + TICK
-    if (!reached(number(timer, "elapsed"), timing.wind)) return
-    strike(state, registry, ctx, unit, timer, timing)
-    return
+  if (number(timer, 'lead') === 1) {
+    timer.elapsed = number(timer, 'elapsed') + TICK;
+    if (!reached(number(timer, 'elapsed'), timing.wind)) {
+      return;
+    }
+    strike(state, registry, ctx, unit, timer, timing);
+    return;
   }
-  timer.cooldown = countdown(number(timer, "cooldown"), TICK)
-  if (number(timer, "cooldown") > 0) return
-  strike(state, registry, ctx, unit, timer, timing)
+  timer.cooldown = countdown(number(timer, 'cooldown'), TICK);
+  if (number(timer, 'cooldown') > 0) {
+    return;
+  }
+  strike(state, registry, ctx, unit, timer, timing);
 }
 
 function advanceRecovery(
@@ -152,16 +230,22 @@ function advanceRecovery(
   stunned: boolean,
   held: boolean,
 ): void {
-  const before = number(timer, "cooldown")
-  if (!stunned) timer.cooldown = countdown(before, TICK)
-  timer.elapsed = number(timer, "elapsed") + TICK
-  if (!stunned && !held && readyToSwing(state, registry, ctx, unit, timer, timing)) {
-    openSwing(state, registry, ctx, unit, timer, timing, before)
-    return
+  const before = number(timer, 'cooldown');
+  if (!stunned) {
+    timer.cooldown = countdown(before, TICK);
   }
-  if (reached(number(timer, "elapsed"), number(timer, "rest"))) {
-    timer.phase = "idle"
-    timer.elapsed = 0
+  timer.elapsed = number(timer, 'elapsed') + TICK;
+  if (
+    !stunned &&
+    !held &&
+    readyToSwing(state, registry, ctx, unit, timer, timing)
+  ) {
+    openSwing(state, registry, ctx, unit, timer, timing, before);
+    return;
+  }
+  if (reached(number(timer, 'elapsed'), number(timer, 'rest'))) {
+    timer.phase = 'idle';
+    timer.elapsed = 0;
   }
 }
 
@@ -175,10 +259,18 @@ function advanceIdle(
   stunned: boolean,
   held: boolean,
 ): void {
-  const before = number(timer, "cooldown")
-  if (!stunned) timer.cooldown = countdown(before, TICK)
-  if (stunned || held || !readyToSwing(state, registry, ctx, unit, timer, timing)) return
-  openSwing(state, registry, ctx, unit, timer, timing, before)
+  const before = number(timer, 'cooldown');
+  if (!stunned) {
+    timer.cooldown = countdown(before, TICK);
+  }
+  if (
+    stunned ||
+    held ||
+    !readyToSwing(state, registry, ctx, unit, timer, timing)
+  ) {
+    return;
+  }
+  openSwing(state, registry, ctx, unit, timer, timing, before);
 }
 
 function readyToSwing(
@@ -189,9 +281,16 @@ function readyToSwing(
   timer: TimerState,
   timing: AttackTiming,
 ): boolean {
-  if (targetDenied(unit) || !readAttackTiming(state, unit, registry).canAttack) return false
-  if (!reached(timing.wind, number(timer, "cooldown"))) return false
-  return hasTarget(state, registry, ctx, unit)
+  if (
+    targetDenied(unit) ||
+    !readAttackTiming(state, unit, registry).canAttack
+  ) {
+    return false;
+  }
+  if (!reached(timing.wind, number(timer, 'cooldown'))) {
+    return false;
+  }
+  return hasTarget(state, registry, ctx, unit);
 }
 
 function openSwing(
@@ -206,28 +305,28 @@ function openSwing(
   // 这一拍之前冷却就已经在前摇以内（没有目标、被打断或刚解除控制）：从头走完整个前摇
   // TRACE: source/enemy-swing
   if (timing.wind > READY_EPSILON && before < timing.wind - READY_EPSILON) {
-    timer.phase = "windup"
-    timer.lead = 1
-    timer.elapsed = 0
-    return
+    timer.phase = 'windup';
+    timer.lead = 1;
+    timer.elapsed = 0;
+    return;
   }
-  if (number(timer, "cooldown") <= READY_EPSILON && before > READY_EPSILON) {
-    strike(state, registry, ctx, unit, timer, timing)
-    return
+  if (number(timer, 'cooldown') <= READY_EPSILON && before > READY_EPSILON) {
+    strike(state, registry, ctx, unit, timer, timing);
+    return;
   }
-  if (number(timer, "cooldown") > READY_EPSILON) {
-    timer.phase = "windup"
-    timer.lead = 0
-    timer.elapsed = 0
-    return
+  if (number(timer, 'cooldown') > READY_EPSILON) {
+    timer.phase = 'windup';
+    timer.lead = 0;
+    timer.elapsed = 0;
+    return;
   }
   if (timing.wind > READY_EPSILON) {
-    timer.phase = "windup"
-    timer.lead = 1
-    timer.elapsed = 0
-    return
+    timer.phase = 'windup';
+    timer.lead = 1;
+    timer.elapsed = 0;
+    return;
   }
-  strike(state, registry, ctx, unit, timer, timing)
+  strike(state, registry, ctx, unit, timer, timing);
 }
 
 function strike(
@@ -238,48 +337,54 @@ function strike(
   timer: TimerState,
   timing: AttackTiming,
 ): void {
-  const swing = readAttackTiming(state, unit, registry)
+  const swing = readAttackTiming(state, unit, registry);
   if (!swing.canAttack) {
-    timer.phase = "idle"
-    timer.elapsed = 0
-    timer.lead = 0
-    timer.cooldown = 0
-    return
+    timer.phase = 'idle';
+    timer.elapsed = 0;
+    timer.lead = 0;
+    timer.cooldown = 0;
+    return;
   }
-  const targets = attackTargetIds(state, registry, ctx, unit)
+  const targets = attackTargetIds(state, registry, ctx, unit);
   if (targets.length === 0) {
-    timer.phase = "idle"
-    timer.elapsed = 0
-    timer.lead = 0
-    timer.cooldown = 0
-    return
+    timer.phase = 'idle';
+    timer.elapsed = 0;
+    timer.lead = 0;
+    timer.cooldown = 0;
+    return;
   }
   if (interruptEnemyAttack(state, registry, unit.id)) {
-    timer.phase = "recovery"
-    timer.elapsed = 0
-    timer.lead = 0
-    timer.cooldown = timing.interval
-    timer.rest = ATTACK_PAUSE
-    if (!blockerOf(state, unit.id) && unit.attackRange.length > 0) standAfterStrike(state, unit, ATTACK_PAUSE)
-    return
+    timer.phase = 'recovery';
+    timer.elapsed = 0;
+    timer.lead = 0;
+    timer.cooldown = timing.interval;
+    timer.rest = ATTACK_PAUSE;
+    if (!blockerOf(state, unit.id) && unit.attackRange.length > 0) {
+      standAfterStrike(state, unit, ATTACK_PAUSE);
+    }
+    return;
   }
-  const notice: AttackEvent = { unitId: unit.id, targetIds: targets, cancel: false }
-  ctx.intercept("attack", notice)
+  const notice: AttackEvent = {
+    unitId: unit.id,
+    targetIds: targets,
+    cancel: false,
+  };
+  ctx.intercept('attack', notice);
   if (notice.cancel === true) {
-    timer.phase = "recovery"
-    timer.elapsed = 0
-    timer.lead = 0
-    timer.cooldown = timing.interval
-    timer.rest = timing.rest
-    return
+    timer.phase = 'recovery';
+    timer.elapsed = 0;
+    timer.lead = 0;
+    timer.cooldown = timing.interval;
+    timer.rest = timing.rest;
+    return;
   }
-  release(state, registry, ctx, unit, targets, notice.noAmmo === true)
-  timer.phase = "recovery"
-  timer.elapsed = 0
-  timer.lead = 0
-  timer.cooldown = timing.interval
-  timer.rest = timing.rest
-  standAfterStrike(state, unit, timing.rest)
+  release(state, registry, ctx, unit, targets, notice.noAmmo === true);
+  timer.phase = 'recovery';
+  timer.elapsed = 0;
+  timer.lead = 0;
+  timer.cooldown = timing.interval;
+  timer.rest = timing.rest;
+  standAfterStrike(state, unit, timing.rest);
 }
 
 /** 打出这一下：按攻击片段的倍率与段数结算每个目标，用掉片段，送出 attack-hit。 */
@@ -291,13 +396,20 @@ function release(
   targets: readonly string[],
   noAmmo: boolean,
 ): void {
-  const swing = readAttackTiming(state, unit, registry)
-  const scale = Number.isFinite(swing.damageScale) ? swing.damageScale : 1
-  const amount = Math.max(0, attributeOf(unit, registry, "atk") * scale)
-  const hitCount = Number.isFinite(swing.hitCount) ? Math.max(0, Math.floor(swing.hitCount)) : 1
-  for (const targetId of targets) deliver(state, registry, ctx, unit, targetId, amount, hitCount)
-  consumeAttackTiming(unit)
-  ctx.emit("attack-hit", noAmmo ? { unitId: unit.id, noAmmo: true } : { unitId: unit.id })
+  const swing = readAttackTiming(state, unit, registry);
+  const scale = Number.isFinite(swing.damageScale) ? swing.damageScale : 1;
+  const amount = Math.max(0, attributeOf(unit, registry, 'atk') * scale);
+  const hitCount = Number.isFinite(swing.hitCount)
+    ? Math.max(0, Math.floor(swing.hitCount))
+    : 1;
+  for (const targetId of targets) {
+    deliver(state, registry, ctx, unit, targetId, amount, hitCount);
+  }
+  consumeAttackTiming(unit);
+  ctx.emit(
+    'attack-hit',
+    noAmmo ? { unitId: unit.id, noAmmo: true } : { unitId: unit.id },
+  );
 }
 
 /**
@@ -312,87 +424,145 @@ export function forceAttack(
   targetIds: readonly string[] | null,
   noAmmo: boolean,
 ): boolean {
-  const unit = state.units.get(unitId)
-  if (!unit || !unit.fielded || unit.downed || unit.removed || (unit.attributes.hp ?? 0) <= 0) return false
-  const targets = (targetIds ?? attackTargetIds(state, registry, ctx, unit)).filter((id) => {
-    const target = state.units.get(id)
-    return target !== undefined && target.fielded && !target.downed && !target.removed
-  })
-  if (targets.length === 0) return false
-  const notice: AttackEvent = noAmmo ? { unitId, targetIds: targets, cancel: false, noAmmo: true } : { unitId, targetIds: targets, cancel: false }
-  ctx.intercept("attack", notice)
-  if (notice.cancel === true) return false
-  release(state, registry, ctx, unit, targets, notice.noAmmo === true)
-  return true
+  const unit = state.units.get(unitId);
+  if (
+    !unit?.fielded ||
+    unit.downed ||
+    unit.removed ||
+    (unit.attributes.hp ?? 0) <= 0
+  ) {
+    return false;
+  }
+  const targets = (
+    targetIds ?? attackTargetIds(state, registry, ctx, unit)
+  ).filter((id) => {
+    const target = state.units.get(id);
+    return target?.fielded && !target.downed && !target.removed;
+  });
+  if (targets.length === 0) {
+    return false;
+  }
+  const notice: AttackEvent = noAmmo
+    ? { unitId, targetIds: targets, cancel: false, noAmmo: true }
+    : { unitId, targetIds: targets, cancel: false };
+  ctx.intercept('attack', notice);
+  if (notice.cancel === true) {
+    return false;
+  }
+  release(state, registry, ctx, unit, targets, notice.noAmmo === true);
+  return true;
 }
 
 // MARK: timing
 
 interface AttackTiming {
-  readonly interval: number
-  readonly wind: number
-  readonly rest: number
+  readonly interval: number;
+  readonly wind: number;
+  readonly rest: number;
 }
 
-function attackTiming(state: BattleWorld, unit: UnitState, registry: BattleRegistry): AttackTiming {
-  const interval = attackInterval(unit, registry)
-  const clip = attackProfileOf(state, unit.id).clip
-  if (!clip || !(clip.duration > 0)) return { interval, wind: 0, rest: ATTACK_PAUSE }
-  const speed = interval > 0 && interval < clip.duration ? clip.duration / interval : 1
-  const hit = Number.isFinite(clip.hit) ? Math.min(clip.duration, Math.max(0, clip.hit)) : clip.duration / 2
-  return { interval, wind: hit / speed, rest: Math.max(0, (clip.duration - hit) / speed) }
+function attackTiming(
+  state: BattleWorld,
+  unit: UnitState,
+  registry: BattleRegistry,
+): AttackTiming {
+  const interval = attackInterval(unit, registry);
+  const clip = attackProfileOf(state, unit.id).clip;
+  if (!clip || !(clip.duration > 0)) {
+    return { interval, wind: 0, rest: ATTACK_PAUSE };
+  }
+  const speed =
+    interval > 0 && interval < clip.duration ? clip.duration / interval : 1;
+  const hit = Number.isFinite(clip.hit)
+    ? Math.min(clip.duration, Math.max(0, clip.hit))
+    : clip.duration / 2;
+  return {
+    interval,
+    wind: hit / speed,
+    rest: Math.max(0, (clip.duration - hit) / speed),
+  };
 }
 
 function attackInterval(unit: UnitState, registry: BattleRegistry): number {
-  const aspd = clamp(aspdOf(unit, registry), ASPD_MIN, ASPD_MAX)
-  const batBase = unit.base.bat
-  const bat = (batBase !== undefined && batBase > 0 ? batBase : 1) * Math.max(0.1, 1 + attributeOf(unit, registry, "batPct"))
-  return (bat * 100) / aspd
+  const aspd = clamp(aspdOf(unit, registry), ASPD_MIN, ASPD_MAX);
+  const batBase = unit.base.bat;
+  const bat =
+    (batBase !== undefined && batBase > 0 ? batBase : 1) *
+    Math.max(0.1, 1 + attributeOf(unit, registry, 'batPct'));
+  return (bat * 100) / aspd;
 }
 
 function aspdOf(unit: UnitState, registry: BattleRegistry): number {
-  const value = attributeOf(unit, registry, "aspd", 100)
-  return Number.isFinite(value) ? value : 100
+  const value = attributeOf(unit, registry, 'aspd', 100);
+  return Number.isFinite(value) ? value : 100;
 }
 
 function clamp(value: number, min: number, max: number): number {
-  if (value < min) return min
-  if (value > max) return max
-  return value
+  if (value < min) {
+    return min;
+  }
+  if (value > max) {
+    return max;
+  }
+  return value;
 }
 
 // MARK: target
 
-function hasTarget(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext, unit: UnitState): boolean {
-  return attackTargetIds(state, registry, ctx, unit).length > 0
+function hasTarget(
+  state: BattleWorld,
+  registry: BattleRegistry,
+  ctx: ContentContext,
+  unit: UnitState,
+): boolean {
+  return attackTargetIds(state, registry, ctx, unit).length > 0;
 }
 
 function targetDenied(unit: UnitState): boolean {
-  return peekAttackTargetThisTick(unit) === false
+  return peekAttackTargetThisTick(unit) === false;
 }
 
-function attackHeld(state: BattleWorld, registry: BattleRegistry, unit: UnitState): boolean {
-  if (hasTag(unit, TREMBLE) && blockerOf(state, unit.id)) return true
-  for (const status of unit.effects) {
-    if (status.dropped) continue
-    if (registry.requireEffect(status.id).cancels.includes("attack")) return true
+function attackHeld(
+  state: BattleWorld,
+  registry: BattleRegistry,
+  unit: UnitState,
+): boolean {
+  if (hasTag(unit, TREMBLE) && blockerOf(state, unit.id)) {
+    return true;
   }
-  return false
+  for (const status of unit.effects) {
+    if (status.dropped) {
+      continue;
+    }
+    if (registry.requireEffect(status.id).cancels.includes('attack')) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /** 打断前摇中的一下（失衡）：回到冷却，之后重新走完整个前摇。已经出手的不撤回。 */
 export function cutSwing(unit: UnitState): void {
-  const timer = unit.timers.get("attack")
-  if (!timer || text(timer, "phase") !== "windup") return
-  timer.phase = "idle"
-  timer.elapsed = 0
-  timer.lead = 0
+  const timer = unit.timers.get('attack');
+  if (!timer || text(timer, 'phase') !== 'windup') {
+    return;
+  }
+  timer.phase = 'idle';
+  timer.elapsed = 0;
+  timer.lead = 0;
 }
 
 function clockStopped(state: BattleWorld, unit: UnitState): boolean {
-  if (!unit.fielded || unit.downed || (unit.attributes.hp ?? 0) <= 0 || routeHidden(state, unit.id)) return true
+  if (
+    !unit.fielded ||
+    unit.downed ||
+    (unit.attributes.hp ?? 0) <= 0 ||
+    routeHidden(state, unit.id)
+  ) {
+    return true;
+  }
   // 失衡时不开始普攻，前摇中的一下被打断，冷却停下
-  return hasTag(unit, CANNOT_ACT) || unbalanced(state, unit)
+  return hasTag(unit, CANNOT_ACT) || unbalanced(state, unit);
 }
 
 function deliver(
@@ -404,9 +574,9 @@ function deliver(
   amount: number,
   hitCount: number,
 ): void {
-  const shape = attackProfileOf(state, attacker.id).shape
+  const shape = attackProfileOf(state, attacker.id).shape;
   if (shape?.projectile && shape.lockRange !== true) {
-    const back = returnSpeedOf(shape.projectile)
+    const back = returnSpeedOf(shape.projectile);
     ctx.launchProjectile({
       id: `${attacker.id}:${targetId}:${state.tick}`,
       sourceId: attacker.id,
@@ -414,11 +584,13 @@ function deliver(
       amount,
       speed: projectileKindSpeed(shape.projectile),
       retain: retainOnMiss(shape),
-      ...(back !== undefined ? { attack: { shape, hitCount, leg: "out", returnSpeed: back } } : { attack: { shape, hitCount } }),
-    })
-    return
+      ...(back !== undefined
+        ? { attack: { shape, hitCount, leg: 'out', returnSpeed: back } }
+        : { attack: { shape, hitCount } }),
+    });
+    return;
   }
-  const target = state.units.get(targetId)
+  const target = state.units.get(targetId);
   resolveAttackImpact(state, registry, ctx, {
     sourceId: attacker.id,
     targetId,
@@ -427,15 +599,15 @@ function deliver(
     amount,
     hitCount,
     shape: shape ?? {},
-  })
+  });
 }
 
 function number(timer: TimerState, key: string): number {
-  const value = timer[key]
-  return typeof value === "number" ? value : 0
+  const value = timer[key];
+  return typeof value === 'number' ? value : 0;
 }
 
 function text(timer: TimerState, key: string): string {
-  const value = timer[key]
-  return typeof value === "string" ? value : "idle"
+  const value = timer[key];
+  return typeof value === 'string' ? value : 'idle';
 }

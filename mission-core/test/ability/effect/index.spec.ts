@@ -1,80 +1,89 @@
-import { expect, test } from "vitest"
-import { STUN } from "#port/tag.js"
-import { createBattle, type MissionModule, type EffectDefinition } from "arknights-mission-core"
-import { ally, spec } from "#test/fixture.js"
+import {
+  createBattle,
+  type EffectDefinition,
+  type MissionModule,
+} from 'arknights-mission-core';
+import { expect, test } from 'vitest';
+import { STUN } from '#port/tag.js';
+import { ally, spec } from '#test/fixture.js';
 
 const stun: EffectDefinition = {
-  id: "probe-stun",
+  id: 'probe-stun',
   grantsTags: [STUN],
   modifiers: [],
   immunity: [],
   stackCap: 1,
-  cancels: ["attack"],
+  cancels: ['attack'],
   duration: 0,
   instant: false,
   period: 1,
-  stacking: "refresh",
-}
+  stacking: 'refresh',
+};
 
-test("取消前摇后命中不发生", () => {
-  const hits: string[] = []
+test('取消前摇后命中不发生', () => {
+  const hits: string[] = [];
   const module: MissionModule = {
-    id: "stun",
+    id: 'stun',
     install(ctx) {
-      ctx.registerEffect(stun)
-      ctx.subscribe("attack-hit", () => {
-        hits.push("hit")
-      })
+      ctx.registerEffect(stun);
+      ctx.subscribe('attack-hit', () => {
+        hits.push('hit');
+      });
       ctx.registerSystem({
-        id: "arm",
-        slot: "schedule",
+        id: 'arm',
+        slot: 'schedule',
         priority: 1,
         run(runCtx) {
-          runCtx.startTimer("a", "attack")
+          runCtx.startTimer('a', 'attack');
         },
-      })
+      });
       ctx.registerSystem({
-        id: "apply",
-        slot: "status",
+        id: 'apply',
+        slot: 'status',
         priority: -1,
         run(runCtx) {
-          runCtx.applyEffect("a", "probe-stun")
+          runCtx.applyEffect('a', 'probe-stun');
         },
-      })
+      });
     },
-  }
-  const battle = createBattle(spec({ modules: ["stun"], units: [ally("a")] }), [module])
-  battle.step()
-  battle.step()
-  battle.step()
-  expect(hits).toEqual([])
-  expect(battle.snapshot().units[0]?.tags).toContain("stun")
-})
+  };
+  const battle = createBattle(spec({ modules: ['stun'], units: [ally('a')] }), [
+    module,
+  ]);
+  battle.step();
+  battle.step();
+  battle.step();
+  expect(hits).toEqual([]);
+  expect(battle.snapshot().units[0]?.tags).toContain('stun');
+});
 
-test("没有取消时前摇结束后命中", () => {
-  const hits: string[] = []
+test('没有取消时前摇结束后命中', () => {
+  const hits: string[] = [];
   const module: MissionModule = {
-    id: "arm",
+    id: 'arm',
     install(ctx) {
-      ctx.subscribe("attack-hit", () => {
-        hits.push("hit")
-      })
+      ctx.subscribe('attack-hit', () => {
+        hits.push('hit');
+      });
       ctx.registerSystem({
-        id: "arm",
-        slot: "schedule",
+        id: 'arm',
+        slot: 'schedule',
         priority: 1,
         run(runCtx) {
-          runCtx.startTimer("a", "attack")
+          runCtx.startTimer('a', 'attack');
         },
-      })
+      });
     },
-  }
+  };
   const battle = createBattle(
-    spec({ modules: ["arm"], units: [ally("a"), ally("foe", { side: "enemy", x: 1, y: 0 })] }),
+    spec({
+      modules: ['arm'],
+      units: [ally('a'), ally('foe', { side: 'enemy', x: 1, y: 0 })],
+    }),
     [module],
-  )
-  battle.step()
-  battle.step()
-  battle.step()
-  expect(hits).toEqual(["hit"])
-})
+  );
+  battle.step();
+  battle.step();
+  battle.step();
+  expect(hits).toEqual(['hit']);
+});

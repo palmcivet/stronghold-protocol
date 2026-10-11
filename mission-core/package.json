@@ -58,10 +58,11 @@
   },
   "scripts": {
     "build": "tsc -b",
+    "check": "tsc --noEmit",
     "format": "biome check --write",
-    "lint": "tsc --noEmit",
-    "test": "vitest run",
-    "perf": "vitest bench --run --reporter=verbose"
+    "lint": "biome lint",
+    "perf": "vitest bench --run --reporter=verbose",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
