@@ -73,6 +73,7 @@ interface MissionGround {
   readonly layout: TerrainLayout | null
   readonly overlay: Group
   readonly highlights: Group
+  readonly camera: OrthographicCamera | null
   readonly surfaceHeight: (x: number, y: number) => number
   readonly setHighlights: (tiles: readonly TileCoord[]) => void
   readonly ready: Promise<void>
@@ -96,6 +97,7 @@ interface MissionGround {
 ### 方法
 
 - `setMap(map)`：释放旧场景和资源包，保存新地图，然后异步加载资源包并建立场景。
+- `camera`：绘制场景用的正交相机，场景建好之前是 `null`。舞台的 `cull` 系统用它的视锥剔除。
 - `setCamera(camera)`：把相机矩形作为焦点。焦点内的材质保持亮度，焦点外的材质按距离渐暗。传入 `null` 时没有焦点。
 - `setDisplayScale(scale)`：设置显示缩放。非正数被忽略。画布尺寸随之变化。
 - `setAvailable(available)`：开关地面，并刷新模式。

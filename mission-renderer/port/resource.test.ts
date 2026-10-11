@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest"
-import { LinearSRGBColorSpace, SRGBColorSpace, Texture } from "three"
+import { LinearFilter, LinearMipmapLinearFilter, LinearSRGBColorSpace, SRGBColorSpace, Texture } from "three"
 import {
   createAssetResolver,
   packFileRoot,
@@ -24,6 +24,7 @@ const SPINE: AssetKey = "spine:enemy/slime"
 const MODEL: AssetKey = "model:map/gate"
 const JSON_KEY: AssetKey = "json:board/tiles"
 const NORMAL: AssetKey = "image:board/normal"
+const BOARD: AssetKey = "texture:board/color"
 
 const singleFile = (format: FileFormat): PackFile[] => [{ role: "main", name: null, format, bytes: 1, hash: HASH }]
 const SPINE_FILES: PackFile[] = [
@@ -48,6 +49,7 @@ const manifest: PackManifest = {
     [MODEL]: asset("model", singleFile("obj")),
     [JSON_KEY]: asset("json", singleFile("json")),
     [NORMAL]: { ...asset("image", singleFile("png")), colorSpace: "linear" },
+    [BOARD]: asset("texture", singleFile("png")),
   },
 }
 
@@ -76,6 +78,16 @@ describe("renderer resource port", () => {
     expect(image.mock.calls.map((call) => (call as unknown[])[2])).toEqual(["linear", "srgb"])
     expect(normal.colorSpace).toBe(LinearSRGBColorSpace)
     expect(color.colorSpace).toBe(SRGBColorSpace)
+  })
+
+  it("mipmaps board textures and filters them anisotropically, but not images", async () => {
+    const port = createMissionResourcePort(loadersWith({ image: async () => new Texture(), anisotropy: 8 }))
+    const board = (await port.image(BOARD)) as Texture
+    const avatar = (await port.image(IMAGE)) as Texture
+    expect([board.generateMipmaps, board.minFilter, board.anisotropy]).toEqual([true, LinearMipmapLinearFilter, 8])
+    expect([avatar.generateMipmaps, avatar.minFilter, avatar.anisotropy]).toEqual([false, LinearFilter, 1])
+    const plain = createMissionResourcePort(loadersWith({ image: async () => new Texture() }))
+    expect(((await plain.image(BOARD)) as Texture).anisotropy).toBe(1)
   })
 
   it("shares one image load between callers and loads again after the last release", async () => {

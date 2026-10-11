@@ -3,14 +3,13 @@ import { skillModSum } from "#ability/skill/modifier.js"
 import type { AttributeModifier } from "#port/definition.js"
 import type { UnitState } from "#unit/record/index.js"
 import { powi } from "#kernel/math/powi.js"
+import { HEALTH_EPSILON } from "#kernel/math/epsilon.js"
 
 /** 写出一份属性定义。 */
 export function defineAttribute(id: string, options: { readonly base: number; readonly clamp?: AttributeDefinition["clamp"] }): AttributeDefinition {
   if (!Number.isFinite(options.base)) throw new Error(`attribute base must be finite: ${id}`)
   return { id, base: options.base, ...(options.clamp ? { clamp: { ...options.clamp } } : {}) }
 }
-
-const MAX_HP_EPSILON = 1e-9
 
 /** 基础值从 1 开始的乘数属性。 */
 export const MULTIPLIER_ATTRIBUTES: readonly AttributeDefinition[] = [
@@ -77,7 +76,7 @@ export function maxHpOf(unit: UnitState, registry: BattleRegistry): number {
   const value = maxHpValue(unit, registry)
   const seen = unit.maxHpSeen
   unit.maxHpSeen = value
-  if (!(seen > 0) || Math.abs(seen - value) <= MAX_HP_EPSILON) return value
+  if (!(seen > 0) || Math.abs(seen - value) <= HEALTH_EPSILON) return value
   // 只有在场的单位跟着缩放；不在场、倒下的只记下新上限
   if (!unit.fielded || unit.downed) return value
   const hp = unit.attributes.hp ?? 0

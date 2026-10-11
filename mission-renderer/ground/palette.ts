@@ -1,15 +1,6 @@
+import { TILE_HEIGHT, type TileHeightClass } from "#ground/tile.js"
+
 export type Vec3 = readonly [number, number, number]
-
-/** Height of a raised tile class, in tiles. */
-export const TILE_HEIGHT = Object.freeze({
-  wall: 0.42,
-  forbid: 0.3,
-  sep: 0.55,
-  bench: 0.16,
-  platform: 0.26,
-})
-
-export type TileHeightClass = keyof typeof TILE_HEIGHT
 
 /** Raised glyphs and the height class each stands at. */
 export const RAISED_GLYPH_HEIGHT: Readonly<Record<string, TileHeightClass>> = Object.freeze({

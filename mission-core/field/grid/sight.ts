@@ -1,3 +1,5 @@
+import { SPATIAL_EPSILON } from "#kernel/math/epsilon.js"
+
 export interface GridPoint {
   readonly x: number
   readonly y: number
@@ -150,7 +152,7 @@ export function straightClear(
     (tileRow === point.y && tileCol === point.x) || (walkable(tileCol, tileRow) && !crate(tileCol, tileRow))
   for (let guard = guardLimit; guard > 0 && (row !== point.y || col !== point.x); guard -= 1) {
     if (timeX >= 1 && timeY >= 1) break
-    if (Math.abs(timeX - timeY) < 1e-9) {
+    if (Math.abs(timeX - timeY) < SPATIAL_EPSILON) {
       if (!clear(row, col + stepCol) || !clear(row + stepRow, col)) return false
       col += stepCol
       row += stepRow

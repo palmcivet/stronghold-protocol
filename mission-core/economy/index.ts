@@ -4,8 +4,7 @@ import { emit } from "#kernel/event/index.js"
 import { engineOf, type BattleWorld } from "#unit/record/index.js"
 import { defineResource } from "#kernel/world/resource.js"
 import { TICK } from "#kernel/tick/index.js"
-
-const COST_EPSILON = 1e-9
+import { COST_EPSILON } from "#kernel/math/epsilon.js"
 
 export function nonNegative(value: number): number {
   if (!Number.isFinite(value) || value < 0) return 0

@@ -31,6 +31,8 @@ description: 技力、充能和触发在 skill-point 上走，技能体在 skill
 
 沉默、眩晕、睡眠、未在场、已倒地、生命不大于 0、没有层数，或已经处在持续技能中时，不自动询问。
 
+内容可以用两条命令直接改技能：`readySkill(unitId, skillId)` 把技能补满层，技力停在当前花费上，被动技能不动；`configureSkill(unitId, skillId, { body?, ammo?, duration? })` 换技能体，或改弹药数与持续秒数（负数按 0），只影响之后的释放。找不到单位或技能时两条都什么也不做。
+
 技力视图的 `phase` 是 `recover`、`ready`、`full`、`active`、`passive`、`idle`。
 
 ## 触发

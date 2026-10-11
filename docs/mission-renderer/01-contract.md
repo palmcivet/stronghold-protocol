@@ -46,6 +46,8 @@ interface MissionView {
   readonly events: readonly BattleEvent[]
   readonly highlightedTiles: readonly TileCoord[]
   readonly updateMode: MissionUpdateMode
+  readonly speed: number
+  readonly appearances: MissionAppearances
 }
 ```
 

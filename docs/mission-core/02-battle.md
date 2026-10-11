@@ -80,7 +80,7 @@ type BattleInput =
 | `ally` | `engine:ally-timers` |
 | `projectile` | `engine:projectile` |
 | `redeploy` | `redeploy` |
-| `finale` | `engine:modifiers` |
+| `finale` | `engine:modifiers`、`engine:max-hp` |
 
 友方槽对每个这样的友方，按登记顺序推进已开始的技能体、技力、特性计数和攻击。规格列出的独立计时排在攻击之后。敌人移动见 [规格](./01-spec.md) 的路线。
 
@@ -151,6 +151,10 @@ declare module "arknights-mission-core" {
   }
 }
 ```
+
+处理函数可以直接改写可拦截事件的 `data`，也可以用 `ctx.revise(event, { prevented?, cancel?, keep? })`：只写事件数据里本来就有的那几个字段。
+
+核心不丢事件，也不吞异常：订阅者、拦截器或系统里抛出的异常原样从 `step` 传出。
 
 `drainEvents` 取出缓冲并清空，没人取走时事件一直留着。一条事件的 `tick` 是送出时的拍数。`cue` 是给画面与音效的线索，`kind` 的种类在 `CueMap` 里声明合并。
 

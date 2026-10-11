@@ -1,7 +1,7 @@
 import type { AttackEvent } from "#contract/event.js"
 import { projectileKindSpeed, resolveAttackImpact, retainOnMiss, returnSpeedOf } from "#combat/attack/shape.js"
 import type { ContentContext } from "#port/context.js"
-import type { BattleRegistry, TimerDefinition } from "#port/definition.js"
+import type { BattleRegistry, ContentTimerDefinition } from "#port/definition.js"
 import { CANNOT_ACT, TREMBLE } from "#port/tag.js"
 import { timerNumber, timerText, type TimerState } from "#kernel/timer/index.js"
 import { hasTag } from "#kernel/world/tag.js"
@@ -34,7 +34,7 @@ export function registerAttackTimers(registry: BattleRegistry, state: BattleWorl
   registerIndependentTimers(registry, state)
 }
 
-function attackTimer(state: BattleWorld, registry: BattleRegistry): TimerDefinition {
+function attackTimer(state: BattleWorld, registry: BattleRegistry): ContentTimerDefinition {
   return {
     id: "attack",
     slot: "ally",

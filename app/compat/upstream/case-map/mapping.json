@@ -79,8 +79,8 @@
       "status": "rewritten",
       "next": [
         "mission-core/test/economy/index.spec.ts::费用按阵营回复，加费不超过上限",
-        "mission-core/test/unit/redeploy/index.spec.ts::费用不够就继续等，够了的那一拍再回来",
-        "mission-core/test/unit/redeploy/index.spec.ts::倒计时走完并且费用够时，在当前坐标满血回到场上"
+        "mission-core/test/unit/deploy/redeploy.spec.ts::费用不够就继续等，够了的那一拍再回来",
+        "mission-core/test/unit/deploy/redeploy.spec.ts::倒计时走完并且费用够时，在当前坐标满血回到场上"
       ],
       "reason": "10 / 1 / 99 是 BattleSpec.cost 的数据，核心不内置；回复、上限与再部署等费按用例断言"
     },
@@ -144,7 +144,7 @@
     "sim/battle.test.js::boss field: side R is mirrored and faces left; range grid mirrored": {
       "status": "moved",
       "owner": "app/server/match",
-      "reason": "首领场右侧的镜像坐标与朝向由对局层编译；核心按朝向旋转范围（mission-core/test/combat/range/index.spec.ts）"
+      "reason": "首领场右侧的镜像坐标与朝向由对局层编译；核心按朝向旋转范围（mission-core/test/combat/target/range.spec.ts）"
     },
     "sim/battle.test.js::shared boss pool: damage routed to the pool from two battles; victory when it reaches 0": {
       "status": "moved",
@@ -600,7 +600,7 @@
       "next": [
         "mission-core/test/battle/snapshot.spec.ts::倒下的单位带再部署计时：先计时，到点后费用不够就停在满值等待，回来后清掉",
         "mission-core/test/unit/deploy/board.spec.ts::自己的初始格子被占着就留在倒下的格子，倒地干员占着的格子不能站",
-        "mission-core/test/unit/redeploy/index.spec.ts::费用不够就继续等，够了的那一拍再回来"
+        "mission-core/test/unit/deploy/redeploy.spec.ts::费用不够就继续等，够了的那一拍再回来"
       ],
       "reason": "next 的快照不单列 down 表，单位自带 downed 与 redeploy（已过秒数与总秒数）；计时、等费用、倒地格子不能站分别由快照与部署用例覆盖，fieldMeta 属于 app/server"
     },
@@ -744,7 +744,7 @@
     "sim/facing-invariance.test.js::rotation invariance: every chess (normal + elite) facing UP / LEFT / DOWN plays like its RIGHT-facing original": {
       "status": "moved",
       "owner": "app/server/content",
-      "reason": "逐个真实干员的检查随内容模块；核心的旋转由 mission-core/test/combat/range/index.spec.ts 断言"
+      "reason": "逐个真实干员的检查随内容模块；核心的旋转由 mission-core/test/combat/target/range.spec.ts 断言"
     },
     "sim/facing-invariance.test.js::localOrder / localBefore: the facing-RIGHT frame tie-break equals the tile-key order for RIGHT and turns with the direction": {
       "status": "moved",
@@ -775,7 +775,7 @@
     "sim/facing.test.js::absoluteRangeKeys rotates the facing-RIGHT grid; rangeExtend goes along +dCol before rotating": {
       "status": "rewritten",
       "next": [
-        "mission-core/test/combat/range/index.spec.ts::范围查询按朝向返回旋转后的格子",
+        "mission-core/test/combat/target/range.spec.ts::范围查询按朝向返回旋转后的格子",
         "mission-core/test/port/command.spec.ts::攻击距离按 rangeExtend 沿行延伸"
       ],
       "reason": "旋转与沿行延伸分两条用例"
@@ -783,7 +783,7 @@
     "sim/facing.test.js::units take `dir` from the battle input (default RIGHT): rotated rangeKeys, derived facing sign, UnitInfo.dir": {
       "status": "rewritten",
       "next": [
-        "mission-core/test/combat/range/index.spec.ts::范围查询按朝向返回旋转后的格子",
+        "mission-core/test/combat/target/range.spec.ts::范围查询按朝向返回旋转后的格子",
         "mission-core/field/direction/index.test.ts::同一份相对格按四个朝向旋转"
       ],
       "reason": "朝向来自单位规格（缺省 RIGHT），范围按朝向旋转；画面的朝向读快照 facing"
@@ -791,7 +791,7 @@
     "sim/facing.test.js::a unit only hits enemies inside its rotated range (DOWN-facing sniper shoots the row below)": {
       "status": "rewritten",
       "next": [
-        "mission-core/test/combat/range/index.spec.ts::范围查询按朝向返回旋转后的格子"
+        "mission-core/test/combat/target/range.spec.ts::范围查询按朝向返回旋转后的格子"
       ],
       "reason": "普攻目标来自旋转后的范围"
     },

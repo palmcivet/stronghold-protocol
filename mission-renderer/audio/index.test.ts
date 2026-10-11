@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import type { AssetKey } from "arknights-assets-catalog"
 import type { BattleEvent, UnitSnapshot } from "arknights-mission-core"
+import { createMissionCueBindings } from "#effect/binding.js"
 import { audioCueFor, effectCueFor } from "#audio/index.js"
 
 const asset: AssetKey = "audio:sfx/battle/b_hit"
@@ -59,16 +60,31 @@ describe("audio cues", () => {
   })
 
   it("attaches the caller asset key to an audio cue", () => {
-    expect(audioCueFor(event("damaged", { unitId: "guard", targetId: "enemy", amount: 12 }), () => asset)).toEqual({
+    expect(audioCueFor(event("damaged", { unitId: "guard", targetId: "enemy", amount: 12 }), { audioFor: () => asset })).toEqual({
       type: "damage",
       eventType: "damaged",
       unitId: "guard",
       targetId: "enemy",
       asset,
     })
-    expect(audioCueFor(event("damaged", { amount: 12 }), () => null)).toEqual({
+    expect(audioCueFor(event("damaged", { amount: 12 }), { audioFor: () => null })).toEqual({
       type: "damage",
       eventType: "damaged",
     })
+  })
+})
+
+describe("cue kind sounds", () => {
+  it("plays the sound bound to a cue kind and stays silent for unbound kinds", () => {
+    const bindings = createMissionCueBindings()
+    bindings.bind("cue:storm", { effect: null, sound: "hit" })
+    expect(audioCueFor(event("cue", { kind: "storm", unitId: "caster" }), { bindings })).toEqual({
+      type: "hit",
+      eventType: "cue",
+      kind: "storm",
+      unitId: "caster",
+    })
+    expect(audioCueFor(event("cue", { kind: "quiet" }), { bindings })).toBeNull()
+    expect(audioCueFor(event("cue", { kind: "storm" }))).toBeNull()
   })
 })

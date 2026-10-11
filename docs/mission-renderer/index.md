@@ -19,18 +19,22 @@ mission-renderer/
     stage/        舞台入口：组装与命令分发
     feed/         快照缓冲与本地喂数
     camera/       投影与相机
-  ground/         三维地面：场景、材质、布局、地形资源包
+    cull/         视口剔除
+    registry/     命名空间 id 的封存注册表
+  ground/         三维地面：场景、材质、布局、地形资源包、格子尺寸
   actor/
     entity/       演员实体、视图组件与对象池
     skeleton/     骨骼端口的默认实现：Spine 3.8 运行时与 Three 网格
-    hud/          头顶条
+    hud/          头顶条与读数
+    impostor/     替身图集
+  effect/         特效表、线索绑定与特效层
   pointer/        拾取
   audio/          事件到音效线索
 ```
 
 `contract/` 的类型是对外的输入输出。`runtime/stage/` 的 `createMissionStage` 把它们串起来。`port/` 是唯一向外要资源的地方。
 
-每个顶层目录有一个路径别名（`#contract/*.js`、`#port/*.js`、`#runtime/*.js`、`#ground/*.js`、`#actor/*.js`、`#pointer/*.js`、`#audio/*.js`），包内用别名引用，不写相对路径。
+每个顶层目录有一个路径别名（`#contract/*.js`、`#port/*.js`、`#runtime/*.js`、`#ground/*.js`、`#actor/*.js`、`#pointer/*.js`、`#audio/*.js`、`#effect/*.js`），包内用别名引用，不写相对路径。
 
 ## 快速开始
 
@@ -43,7 +47,7 @@ const stage = createMissionStage(map, {
   terrain: {
     resources: createMissionResourcePort({
       resolver,
-      image: (url) => textureLoader.loadAsync(url), // 颜色空间由端口按资源目录设置
+      image: (url) => textureLoader.loadAsync(url), // 颜色空间、mipmap 与各向异性由端口按资源种类设置
       spine: (source) => loadSpine(source),
       model: (url) => loadModel(url),
       json: async (url) => (await fetch(url)).json(),
@@ -87,6 +91,8 @@ host.addEventListener("pointerup", (event) => {
 | --- | --- |
 | `arknights-mission-core` | `BattleSnapshot`、`BattleEvent`、`UnitSnapshot`、`TileSpec` 等类型，`TICK` |
 | `arknights-assets-catalog` | `AssetKey`、`AssetResolver` 类型，`spineSource` 与 Spine 缓存 |
+| `@pixi-spine/runtime-3.8`、`@pixi-spine/base` | Spine 3.8 骨骼数据与动画状态，只用在 `actor/skeleton` 里，不用 Pixi 画布 |
+| `@pixi/core` 等 `@pixi/*` | 上面两个包要求的依赖，固定在 7.4.3 |
 | `three` | 三维地面，作为 peer 依赖由宿主安装 |
 
 ## 导出
@@ -96,11 +102,16 @@ host.addEventListener("pointerup", (event) => {
 - 舞台：`createMissionStage`，以及类型 `MissionBoard`、`MissionStageOptions`
 - 视图系统：`MISSION_VIEW_SYSTEM_ORDER`，以及类型 `MissionViewSystemId`
 - 地面：`createMissionGround`、`MISSION_GROUND_GATE_NODES`、`MISSION_GROUND_HIGHLIGHT`、`MISSION_GROUND_IMAGE_SLOTS`、`MISSION_GROUND_MESH_SLOTS`，以及类型 `MissionGround`、`MissionGroundOptions`、`MissionGroundMode`、`MissionGroundPack`、`MissionGroundImageSlot`
-- 资源：`createMissionResourcePort`，以及类型 `MissionResourcePort`、`MissionResourceLoaders`、`MissionAssetKind`
+- 资源：`createMissionResourcePort`、`MISSION_TEXTURE_POLICY`，以及类型 `MissionResourcePort`、`MissionResourceLoaders`、`MissionAssetKind`
 - 演员：`MISSION_ACTOR_FADE_SECONDS`、`MISSION_HUD_BAR`，以及类型 `MissionActor`、`MissionActorPhase`、`MissionActorRole`、`MissionActorWorld`、`MissionActorWorldOptions`、`MissionHudLayer`
 - 骨骼：`createMissionSkeletonRuntime`、`createMissionSkeletonLoader`、`parseMissionAtlas`，以及类型 `MissionSkeletonRuntime`、`MissionSkeletonData`、`MissionSkeletonInstance`、`MissionSkeletonEvent`、`MissionSkeletonBounds`、`MissionSkeletonSource`、`MissionSkeletonAtlas`、`MissionSkeletonFetch`、`MissionSkeletonRuntimeOptions`、`MissionAtlasPage`、`MissionAtlasRegion`
 - 相机：`calculateBoardTransform`，以及类型 `MissionBoardTransform`
 - 喂数：`createMissionFeed`，以及类型 `MissionFeed`、`MissionFeedOptions`、`MissionFeedSample`
-- 音效：`audioCueFor`、`effectCueFor`，以及类型 `MissionAudioCue`
+- 音效：`audioCueFor`、`effectCueFor`，以及类型 `MissionAudioCue`、`MissionAudioCueType`、`MissionAudioCueOptions`、`EffectAudioFor`
+- 线索：`cueFor`、`MISSION_EVENT_BINDINGS`、`createMissionCueBindings`、`sealMissionCues`，以及类型 `MissionCue`、`MissionCueBase`、`MissionCueBinding`、`MissionCueBindings`、`MissionCueData`、`MissionCueKey`、`MissionCueKind`、`MissionEventBindings`、`MissionEventCueKey`、`MissionKindCueKey`
+- 特效：`createMissionEffectTable`、`MISSION_EFFECT_KINDS`、`createPulseKind`，以及类型 `MissionEffectTable`、`MissionEffectKind`、`MissionEffectKindId`、`MissionEffectContext`、`MissionEffectLayer`、`MissionPulseOptions`
+- 头顶条读数：`createMissionHudReaders`、`hudReadoutsOf`，以及类型 `MissionHudReader`、`MissionHudReaderTable`、`MissionHudReadouts`、`MissionHudCount`
+- 替身：`createMissionImpostorAtlas`、`impostorDue`，以及类型 `MissionImpostorAtlas`、`MissionImpostorAtlasOptions`、`MissionImpostorRenderer`、`MissionImpostorRefresh`、`MissionImpostorSlot`
+- 注册表：`isNamespacedId`，以及类型 `MissionNamespacedId`
 - 表现数据：`MissionAppearance`、`MissionAppearances`、`MissionAnimRoles`、`MissionAnimClip`、`MissionSkillClip`
 - 契约：`MissionMap`、`MissionCamera`、`MissionView`、`MissionStage`、`MissionStageCommand`、`MissionUpdateMode`、`MissionPointerHit`、`MissionPointerEvent`、`MissionPointerPhase`

@@ -22,6 +22,19 @@ description: kernel/math 的逐位确定的数学函数，kernel/tick 的节拍�
 
 引擎里的整数次幂写 `powi(x, n)`；`x ** n` 只允许指数是整数字面量。
 
+## kernel/math 容差
+
+浮点比较的容差按用途命名，值都是 `1e-9`，改动其中一个不牵连其他用途。
+
+| 名字 | 用途 |
+| --- | --- |
+| `SPATIAL_EPSILON` | 空间比较，单位是格：距离与半径、地块矩形的边、射线参数、路径上剩下的距离 |
+| `COST_EPSILON` | 费用比较 |
+| `BLOCK_EPSILON` | 阻挡数与阻挡权重比较 |
+| `HEALTH_EPSILON` | 生命、护盾与生命比例比较 |
+
+按时间或拍数比较的量（倒计时、等待剩余、站定的拍）用 `kernel/tick` 的 `READY_EPSILON`。引擎源码里不再直接写 `1e-9`。
+
 ## kernel/tick
 
 | 名字 | 值或签名 | 含义 |

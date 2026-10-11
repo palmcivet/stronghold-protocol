@@ -13,6 +13,10 @@ import type { MissionAudioCue } from "#contract/audio.js"
 import type { MissionAppearances } from "#contract/appearance.js"
 import { createActorWorld, type ActorFrame, type MissionActorWorld, type MissionActorWorldOptions } from "#actor/entity/index.js"
 import { createHudLayer, type MissionHudLayer } from "#actor/hud/index.js"
+import type { MissionHudReaderTable } from "#actor/hud/readout.js"
+import { createMissionCueBindings, type MissionCueBindings } from "#effect/binding.js"
+import { createEffectLayer, type MissionEffectLayer } from "#effect/layer.js"
+import { createMissionEffectTable, type MissionEffectTable } from "#effect/table.js"
 import { createViewLoop, type ViewSystem } from "#runtime/stage/loop.js"
 import { effectCueFor } from "#audio/index.js"
 import { createMissionFeed, type MissionFeed } from "#runtime/feed/index.js"
@@ -20,6 +24,8 @@ import { createMissionGround } from "#ground/index.js"
 import type { MissionGroundMode, MissionGround, MissionGroundOptions } from "#ground/index.js"
 import { pickBoard } from "#pointer/index.js"
 import { calculateBoardTransform, type MissionBoardTransform } from "#runtime/camera/index.js"
+import { createCullSystem } from "#runtime/cull/index.js"
+import { TILE_SIZE } from "#ground/tile.js"
 
 export type { MissionGroundPack, TerrainResourcePort, MissionGround, MissionGroundOptions } from "#ground/index.js"
 export { MISSION_GROUND_GATE_NODES, MISSION_GROUND_IMAGE_SLOTS, MISSION_GROUND_MESH_SLOTS } from "#ground/index.js"
@@ -29,6 +35,7 @@ export type MissionBoard = MissionStage & {
   readonly canvas: MissionGround["canvas"]
   readonly actors: MissionActorWorld
   readonly hud: MissionHudLayer
+  readonly effects: MissionEffectLayer
 }
 
 export interface MissionStageOptions {
@@ -37,6 +44,14 @@ export interface MissionStageOptions {
   readonly terrain?: MissionGroundOptions
   /** Skeleton runtime and resources the actors draw their models with. Without them actors carry no model. */
   readonly actors?: MissionActorWorldOptions
+  /** Effect kinds the cues start. Defaults to a table of the engine's kinds. Sealed by the stage. */
+  readonly effects?: MissionEffectTable
+  /** What each cue key draws and plays. Defaults to the core event bindings. Sealed by the stage. */
+  readonly cues?: MissionCueBindings
+  /** Called once per key when an event arrives whose cue key is neither bound nor declared; it draws and plays nothing. */
+  readonly onUnboundCue?: (key: string) => void
+  /** Readers of the pips and negative health pool on the bars. Sealed by the stage. */
+  readonly hud?: MissionHudReaderTable
 }
 
 interface StageState {
@@ -59,7 +74,6 @@ interface StageFrame {
   moving: ReadonlySet<string>
 }
 
-const TILE_SIZE = 64
 const DEFAULT_SPEED = 2
 
 function clampSpeed(speed: number): number {
@@ -77,10 +91,11 @@ const IDENTITY: MissionBoardTransform = {
   worldHeight: 0,
 }
 
-export function createMissionStage(
-  initialMap: MissionMap | null = null,
-  options: MissionStageOptions = {},
-): MissionBoard {
+/**
+ * Creates a stage. Seals the effect table, the cue bindings and the HUD readers it is given, and throws when a binding
+ * names an effect kind that is missing or does not accept its key.
+ */
+export function createMissionStage(initialMap: MissionMap | null = null, options: MissionStageOptions = {}): MissionBoard {
   const state: StageState = {
     map: null,
     camera: null,
@@ -153,8 +168,14 @@ export function createMissionStage(
   }
 
   const actors = createActorWorld({ ...options.actors, ...(terrain ? { surface: terrain.surfaceHeight } : {}) })
-  const hud = createHudLayer(actors)
-  terrain?.overlay.add(actors.layer, hud.layer)
+  const hud = createHudLayer(actors, options.hud)
+  const bindings = options.cues ?? createMissionCueBindings()
+  const effects = createEffectLayer(actors, {
+    table: options.effects ?? createMissionEffectTable(),
+    bindings,
+    ...(options.onUnboundCue ? { onUnboundCue: options.onUnboundCue } : {}),
+  })
+  terrain?.overlay.add(actors.layer, hud.layer, effects.layer)
   /** Events pushed in external mode, waiting for the next frame. */
   let arrived: BattleEvent[] = []
   let moving: ReadonlySet<string> = new Set()
@@ -187,7 +208,7 @@ export function createMissionStage(
     id: "audio",
     run(frame) {
       for (const event of frame.events) {
-        const cue = effectCueFor(event, frame.units)
+        const cue = effectCueFor(event, frame.units, { bindings })
         if (cue) options.onAudioCue?.(cue)
         if (event.type === "leak") terrain?.flashObjective()
       }
@@ -198,7 +219,9 @@ export function createMissionStage(
     ingest,
     ...actors.systems,
     hud.system,
+    effects.system,
     audio,
+    createCullSystem({ camera: () => terrain?.camera ?? null, actors, effects: effects.layer }),
   ])
 
   const renderMap = (map: MissionMap): void => {
@@ -275,6 +298,7 @@ export function createMissionStage(
         arrived = []
         actors.clear()
         hud.clear()
+        effects.clear()
         break
     }
   }
@@ -292,6 +316,7 @@ export function createMissionStage(
     dispatch,
     actors,
     hud,
+    effects,
     update(deltaSeconds) {
       loop.run({ deltaSeconds, events: [], units: state.units, moving })
       terrain?.update(deltaSeconds)
@@ -323,6 +348,7 @@ export function createMissionStage(
     destroy() {
       actors.clear()
       hud.clear()
+      effects.clear()
       terrain?.destroy()
     },
   }

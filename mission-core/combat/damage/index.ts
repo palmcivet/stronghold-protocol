@@ -16,6 +16,7 @@ import { isFlying, type UnitState } from "#unit/record/index.js"
 import { applyEffect, removeEffect } from "#ability/effect/index.js"
 import { hasTag } from "#kernel/world/tag.js"
 import { healBlocked, healsThrough } from "#combat/damage/heal.js"
+import { HEALTH_EPSILON } from "#kernel/math/epsilon.js"
 import {
   BURST_LOCK,
   HEAL_FREE,
@@ -26,9 +27,6 @@ import {
   LIFTOFF,
   SLEEP,
 } from "#port/tag.js"
-
-/** 护盾数值小于这个就算用完。 */
-const SHIELD_EPSILON = 1e-9
 
 export function registerDamageSteps(state: BattleWorld, registry: BattleRegistry): void {
   registry.registerDamageStep({
@@ -345,12 +343,12 @@ function absorb(state: BattleWorld, registry: BattleRegistry, unit: UnitState, k
 function dropSpentShields(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext, unit: UnitState): void {
   const spent = new Set<string>()
   for (const status of unit.effects) {
-    if (status.dropped || status.shield > SHIELD_EPSILON || status.shieldHits > 0) continue
+    if (status.dropped || status.shield > HEALTH_EPSILON || status.shieldHits > 0) continue
     if (status.runtimeModifiers.length > 0 || !shieldOnly(registry.requireEffect(status.id))) continue
     spent.add(status.id)
   }
   for (const effectId of spent) {
-    const live = unit.effects.some((status) => status.id === effectId && !status.dropped && (status.shield > SHIELD_EPSILON || status.shieldHits > 0))
+    const live = unit.effects.some((status) => status.id === effectId && !status.dropped && (status.shield > HEALTH_EPSILON || status.shieldHits > 0))
     if (!live) removeEffect(state, registry, ctx, unit.id, effectId)
   }
 }

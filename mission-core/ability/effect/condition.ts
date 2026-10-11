@@ -20,6 +20,7 @@ export function registerBuiltinConditions(registry: BattleRegistry): void {
 }
 
 /** 每拍在效果计时器之前，按条件挂上或取下规格里的条件效果。不在场或已倒下的单位全部取下。 */
+// TRACE: assumed/condition-every-tick
 export function registerConditionSystem(registry: BattleRegistry, state: BattleWorld): void {
   registry.registerSystem({
     id: "engine:conditional-effects",

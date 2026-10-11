@@ -11,6 +11,7 @@ import { hypot } from "#kernel/math/hypot.js"
 import { powi } from "#kernel/math/powi.js"
 import { routeHidden } from "#field/grid/route.js"
 import { healBlocked } from "#combat/damage/heal.js"
+import { SPATIAL_EPSILON } from "#kernel/math/epsilon.js"
 
 /** 治疗链缺省的跳跃范围：上一个人所在格子周围这么多格（切比雪夫距离）。 */
 export const CHAIN_HEAL_REACH = 1
@@ -264,7 +265,7 @@ function around(
   for (const unit of state.units.values()) {
     if (!selectable(state, unit, attacker)) continue
     const distance = measure === "centre" ? hypot(unit.x - x, unit.y - y) : bodyDist(unit, x, y)
-    if (distance <= radius + 1e-9) found.push(unit)
+    if (distance <= radius + SPATIAL_EPSILON) found.push(unit)
   }
   found.sort((left, right) => left.spawnSeq - right.spawnSeq)
   return found
@@ -283,8 +284,8 @@ function nearest(
     if (seen.has(unit.id) || !selectable(state, unit, attacker)) continue
     if (!hitsFlying(attacker) && isFlying(unit)) continue
     const distance = bodyDist(unit, prev.x, prev.y)
-    if (distance > radius + 1e-9) continue
-    if (best === null || distance < bestDist - 1e-9 || (Math.abs(distance - bestDist) <= 1e-9 && unit.spawnSeq < best.spawnSeq)) {
+    if (distance > radius + SPATIAL_EPSILON) continue
+    if (best === null || distance < bestDist - SPATIAL_EPSILON || (Math.abs(distance - bestDist) <= SPATIAL_EPSILON && unit.spawnSeq < best.spawnSeq)) {
       best = unit
       bestDist = distance
     }
@@ -309,7 +310,7 @@ function lowestAlly(
     if (!chainReach(prev, unit, radius)) continue
     // 满血的也能跳，按比例自然排在受伤的后面；同比例时最晚部署的在前
     const ratio = hpRatio(unit, registry)
-    if (best === null || ratio < bestRatio - 1e-9 || (Math.abs(ratio - bestRatio) <= 1e-9 && unit.aggroSeq > best.aggroSeq)) {
+    if (best === null || ratio < bestRatio - SPATIAL_EPSILON || (Math.abs(ratio - bestRatio) <= SPATIAL_EPSILON && unit.aggroSeq > best.aggroSeq)) {
       best = unit
       bestRatio = ratio
     }
@@ -319,7 +320,7 @@ function lowestAlly(
 
 /** 缺省跳到上一个人周围 3×3 的格子；写了半径时按直线距离。 */
 function chainReach(prev: UnitState, unit: UnitState, radius: number | null): boolean {
-  if (radius !== null) return hypot(unit.x - prev.x, unit.y - prev.y) <= radius + 1e-9
+  if (radius !== null) return hypot(unit.x - prev.x, unit.y - prev.y) <= radius + SPATIAL_EPSILON
   return Math.abs(Math.round(unit.x) - Math.round(prev.x)) <= CHAIN_HEAL_REACH && Math.abs(Math.round(unit.y) - Math.round(prev.y)) <= CHAIN_HEAL_REACH
 }
 

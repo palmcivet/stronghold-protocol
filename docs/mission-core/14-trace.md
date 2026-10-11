@@ -43,6 +43,7 @@ pnpm test
 |---|---|---|---|---|---|
 | `assumed/cold-pair-max` | 寒冷叠寒冷时冻结取两段中更长的，不分寒冷来自哪个阵营 | `ability/effect/catalog.ts`（`freezeFromCold`） | 参考实现 `server/sim/battle/status.js`（`applyStatus` 的寒冷分支），设计记录 0.2.0 寒冷转冻结 | PRTS 术语释义「寒冷」只在友方寒冷一条写明「持续时间取双方之中最高」，引擎只有一种寒冷，敌方施加的寒冷沿用同一条 | 已按参考实现核对 |
 | `assumed/max-hp-ratio` | 最大生命变化时在场单位的当前生命按新旧上限之比缩放，夹在 0 到新上限，不取整；不在场或倒下时只记新上限。结算在拍内第一次读到最大生命时，没人读时在拍末 | `ability/effect/attribute.ts`（`maxHpOf`）、`battle/step.ts`（`engine:max-hp`） | 参考实现 `server/sim/units.js`（属性重算时 `hp × maxHp / prevMax`），用例 `core.test.js` stat aggregation | 比例、夹取与浮点来自参考实现；参考实现在属性脏后下一次读取时重算，结算时刻随读取而定，这里固定为拍内首次读取或拍末，属于假定 | 已按参考实现核对 |
+| `assumed/condition-every-tick` | 条件效果（如模组的「攻击范围内存在 2 名及以上敌人时攻击速度 +12」）每拍重新判断一次：条件成立的那一拍挂上，不成立的那一拍取下 | `ability/effect/condition.ts`（`registerConditionSystem`） | 参考实现 `server/sim/content/traitMods.js`（`installTraitAttackSpeed`），设计记录 0.2.2 §27.15 | 官方没有写明检查频率；参考实现每拍检查，并注明官方频率未记载（此前干员各自的 0.2 秒轮询同样没有依据） | 已按参考实现核对 |
 | `source/latest-deployed` | 用部署策略时，敌人的「最后部署的目标」按部署先后：开场按名单（干员按列从左到右、同列从上到下，再召唤物）排仇恨序，开场时随干员放进来的召唤物排在名单之后；战斗中放进来的友方与再部署的友方排到最后 | `unit/record/index.ts`（`markLatestDeployed`）、`unit/deploy/strategy.ts`、`unit/deploy/command.ts` | PRTS 作战机制「索敌」，PRTS 卫戍协议/帮助；参考实现用例 `playtest5-targeting.test.js` #5 | 「仇恨值…最后部署的目标」；「按从上到下>从左到右的顺序部署。优先部署干员，随后为召唤物」 | 已按参考实现核对 |
 | `source/fly-over-block` | `targetPriority` 为 `fly` 的友方（速射手）范围里有飞行敌人时，先打飞行的，不先打自己挡着的地面敌人；别的特殊优先级（如神射手）仍先打挡着的 | `combat/target/catalog.ts`（`blockRank`） | 参考实现用例 `playtest5-targeting.test.js` #220（所有者 2026-10-08 的决定） | 速射手「优先攻击空中单位」压过阻挡优先 | 已按参考实现核对 |
 | `source/deterministic-math` | `hypot`、`powi`、`sin`、`cos`、`atan2` 只用正确舍入的运算，各引擎逐位一致 | `kernel/math/hypot.ts`、`kernel/math/powi.ts`、`kernel/math/trig.ts` | 参考实现 `server/sim/detmath.js`，设计记录 0.2.2 §27.1；`sin`、`cos`、`atan2` 是 fdlibm 5.3 与 FreeBSD msun 的算法 | 规范允许 `Math.hypot` 等返回近似值，各引擎末位不同；逐位与参考实现一致（用例固定了同一组摘要） | 已按参考实现核对 |
@@ -63,6 +64,8 @@ pnpm test
 | `source/range-extend` | 攻击距离增加 n 时，范围每一行在最远端外补上 1…⌊n⌋ 格，去重，丢弃无效项 | `port/loadout.ts`（`extendedGrid`） | 参考实现 `server/sim/targeting.js`（`absoluteRangeKeys`），设计记录 DESIGN §3 | 官方「攻击距离 +1」按行向前延伸 | 未核对 |
 
 ## mission-renderer
+
+`mission-renderer` 目前没有标记，下表为空；加标记时在这里补一行。
 
 | id | 规则 | 位置 | 来源 | 依据 | 核对 |
 |---|---|---|---|---|---|

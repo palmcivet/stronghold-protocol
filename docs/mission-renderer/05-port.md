@@ -32,6 +32,7 @@ interface MissionResourceLoaders<TImage, TSpine, TModel, TJson> {
   readonly model: (url: string, key: AssetKey) => Promise<TModel>
   readonly json: (url: string, key: AssetKey) => Promise<TJson>
   readonly retryDelays?: readonly number[] // 缺省 [250, 1000]
+  readonly anisotropy?: number // texture 键的各向异性，通常取渲染器的最大值，缺省 1
   readonly spineCache?: Omit<SpineCacheOptions, "load">
 }
 
@@ -61,9 +62,18 @@ interface MissionResourcePort<TImage, TSpine, TModel, TJson> {
 - 图片、模型、JSON 的缓存按种类分开，同一个键在不同种类之间互不影响。
 - Spine 由 `createSpineCache` 管理。回退命中时，缓存里保存的是实际加载的那个键；释放请求的键时一并释放它。空闲淘汰、内存预算与卸载回调见 [缓存](../assets-catalog/05-cache.md#spine)，可用 `spineCache` 调整。
 
-## 颜色空间
+## 纹理策略
 
-资源目录的 `image`、`texture` 条目可以写 `colorSpace`（`srgb` 或 `linear`），省略时是 `srgb`，见 [资源目录格式](../assets-catalog/02-schema.md#包清单)。端口按实际加载的那个条目（回退命中时是回退条目）取得颜色空间，作为第三个参数交给 `image` 加载函数；加载结果是 Three 的 `Texture` 时，端口再把它的 `colorSpace` 设为 `SRGBColorSpace` 或 `LinearSRGBColorSpace`。其余种类没有颜色空间。
+图片加载结果是 Three 的 `Texture` 时，端口按条目的种类一处设置颜色空间、mipmap 与各向异性（`MISSION_TEXTURE_POLICY`），使用方不再逐处设置：
+
+| 种类 | mipmap | `minFilter` | 各向异性 |
+| --- | --- | --- | --- |
+| `texture`（棋盘颜色、法线、粗糙度、遮罩） | 生成 | `LinearMipmapLinearFilter` | `anisotropy` |
+| `image`（界面与精灵） | 不生成 | `LinearFilter` | 1 |
+
+棋盘贴图斜着看并且被缩小，需要 mipmap 与各向异性；界面图与精灵按接近原尺寸绘制。
+
+资源目录的 `image`、`texture` 条目可以写 `colorSpace`（`srgb` 或 `linear`），省略时是 `srgb`，见 [资源目录格式](../assets-catalog/02-schema.md#包清单)。端口按实际加载的那个条目（回退命中时是回退条目）取得颜色空间，作为第三个参数交给 `image` 加载函数；加载结果是 Three 的 `Texture` 时，端口再把它的 `colorSpace` 设为 `SRGBColorSpace` 或 `LinearSRGBColorSpace`。模型、JSON 与 Spine 没有纹理策略。
 
 ## 地面使用的部分
 

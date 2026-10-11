@@ -29,7 +29,7 @@ interface DamageInfo {
 
 目标不存在或已倒地时不进入步骤。进入之前，直接授予的 `invulnerable` 会挡下。沉睡会挡下，除非 `ignoreSleep`，或来源带有 `hit-sleep`。起飞会挡下来源是地面敌人的一击，除非 `ignoreSelect`、`sourceless`，或来源自己在飞行。起飞只在命中事件之前查一次。
 
-不是预览、且种类不是 `element` 时，先送出可拦截的 `hit`。订阅者可以改 `amount`、`kind`、`cancel`、`mul`。`cancel` 为真则不再进入步骤。
+不是预览、且种类不是 `element` 时，先跑 `hit` 阶段的[伤害修饰](#伤害修饰)，可以改 `amount`、`kind`、`cancel`、`mul`；再送出只读的 `hit`，带改写后的值。`cancel` 为真则不再进入步骤。
 
 ## 步骤
 
@@ -44,7 +44,6 @@ interface DamageInfo {
 | `boss-limit` | 400 | `hitLimit` 打开且达到限伤时整段取消 |
 | `shield` | 600 | 先扣次数护盾，再扣数值护盾 |
 | `hp` | 1000 | 写当前生命 |
-| `effect` | 一次效果施加在免疫之后、叠加之前 | `ticks`（效果计时器的拍数）、`permanent`、`value`、`cancel` | 非有限的拍数或强度不生效；`ticks` 为 `Infinity` 时改成一直持续；拍数不是正数又不一直持续时这次不施加。内置的抵抗（`effect-resist`，priority 100）与重量减半（`effect-heavy`，priority 200）也在这一阶段 |
 
 `cancel` 为真，或种类仍是 `element` 时，后面的步骤不再写生命。模块用别的优先级插在这些 id 之间。同名再登记报 `RegistrationConflictError`；内置步骤标成可扩展，用 `replace` 或 `wrap` 换掉。
 
@@ -83,11 +82,13 @@ interface DamageInfo {
 ```ts
 interface DamageModifierDefinition {
   id: string
-  stage: "hit" | "element-hit" | "hp"
+  stage: "hit" | "element-hit" | "hp" | "effect"
   priority: number
-  modify(change: HitChange | HpChange, ctx: ContentContext): void
+  modify(change: HitChange | HpChange | EffectChange, ctx: ContentContext): void
 }
 ```
+
+阶段名单从包根的 `DAMAGE_STAGES` 导出。`modify` 收到的改动随阶段而定：`hit` 与 `element-hit` 是 `HitChange`，`hp` 是 `HpChange`，`effect` 是 `EffectChange`。
 
 改写伤害数值的逻辑注册成伤害修饰（`registerDamageModifier`），同一阶段按 `priority` 从小到大、相同按注册先后调用。只读字段是来源、记功者、目标、`sourceless`、`attack` 和元素。
 
@@ -96,6 +97,7 @@ interface DamageModifierDefinition {
 | `hit` | 进入伤害步骤之前（非元素） | `amount`、`mul`、`kind`、`cancel` | 非有限的数额与倍率不生效 |
 | `element-hit` | 元素进槽之前 | 同上 | 同上；种类改离 `element` 后再走 `hit` 阶段 |
 | `hp` | 护盾之后、扣生命之前，数额大于 0 时 | `amount` | 只能调低：每个修饰之后，只接受低于原值的有限数，并夹到 0 以上。流失与被护盾整段吸收的伤害不经过 |
+| `effect` | 一次效果施加在免疫之后、叠加之前 | `ticks`（效果计时器的拍数）、`permanent`、`value`、`cancel` | 非有限的拍数或强度不生效；`ticks` 为 `Infinity` 时改成一直持续；拍数不是正数又不一直持续时这次不施加。内置的抵抗（`effect-resist`，priority 100）与重量减半（`effect-heavy`，priority 200）也在这一阶段，见 [效果与属性](./09-status.md) |
 
 阶段之后送出的 `hit`、`element-hit` 事件带改写后的值，订阅者只读。
 

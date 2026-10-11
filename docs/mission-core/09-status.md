@@ -20,7 +20,7 @@ interface EffectApplication {
 
 `duration` 是秒。缺省时用定义上的 `duration`，那个数是效果计时器的拍数；不大于 0 表示一直持续。传入 `Infinity` 也是一直持续。0、负数或非有限数这次施加不成立。正数秒换成拍数，至少 1 拍。`value` 缺省用定义上的 `valued`，再没有则是 0。`stackAs` 只用于 `strongest` 叠法排先后，不改变生效的数值。
 
-单位免疫，或这次被拒绝时，不施加。飞行单位（缚地中的除外）和已经浮空的单位不再接受 `levitate`。叠加之前先跑伤害修饰的 `effect` 阶段（见 05-damage），可以改这次的拍数、强度或取消；内置的抵抗与重量减半就是这一阶段 priority 100 与 200 的修饰，见下文。施加时可以带 `sourceId`，交给这一阶段。施加成功后开始效果计时器，送出 `status` 事件（事件名与 `statusId` 字段沿用，画面与回放不受影响）；`entered` 为真表示施加之前身上没有这个效果（条件效果挂上的也算有），刷新与加层为假。较弱的施加排进等待链时不送 `status`（与 master 的事件对齐留到步骤 8）。效果槽每拍按 `period` 调用 `onTick`。非永久的剩余拍数减 1，到 0 时接上等待链里的下一项，没有则取下并调用 `onRemove`。`removeEffect` 取下这个 id 的全部记录并调用 `onRemove`。友方倒下或撤下时取下身上全部效果，各调用一次 `onRemove`；定义写了 `keepOnDown`（特性、天赋这类常驻效果）的留着，再部署时还在。
+单位免疫，或这次被拒绝时，不施加。飞行单位（缚地中的除外）和已经浮空的单位不再接受 `levitate`。叠加之前先跑伤害修饰的 `effect` 阶段（见 [伤害修饰](./05-damage.md#伤害修饰)），可以改这次的拍数、强度或取消；内置的抵抗与重量减半就是这一阶段 priority 100 与 200 的修饰，见下文。施加时可以带 `sourceId`，交给这一阶段。施加成功后开始效果计时器，送出 `status` 事件（事件名与字段名是 `status`、`statusId`）；`entered` 为真表示施加之前身上没有这个效果（条件效果挂上的也算有），刷新与加层为假。较弱的施加排进等待链时不送 `status`。效果槽每拍按 `period` 调用 `onTick`。非永久的剩余拍数减 1，到 0 时接上等待链里的下一项，没有则取下并调用 `onRemove`。`removeEffect` 取下这个 id 的全部记录并调用 `onRemove`。友方倒下或撤下时取下身上全部效果，各调用一次 `onRemove`；定义写了 `keepOnDown`（特性、天赋这类常驻效果）的留着，再部署时还在。
 
 ## 定义
 
@@ -80,7 +80,7 @@ interface ConditionalEffectSpec {
 }
 ```
 
-单位规格的 `conditionalEffects` 列出按条件挂上的效果。系统 `engine:conditional-effects` 在效果计时器之前，每拍对在场、未倒下的单位求条件，成立时挂上一条永久记录，不成立时取下。条件按 id 注册（`registerCondition`）。内置 `enemies-in-range`：攻击范围内的敌方不少于 `params.count`（缺省 1）。规格里的条件 id 与效果 id 在创建时检查，未注册时报 `UnknownRegistrationError`。
+单位规格的 `conditionalEffects` 列出按条件挂上的效果。系统 `engine:conditional-effects` 在效果计时器之前，每拍对在场、未倒下的单位求条件，成立时挂上一条永久记录，不成立时取下。条件在成立的那一拍挂上、不成立的那一拍取下；官方没有写明检查频率，每拍检查沿用参考实现（`assumed/condition-every-tick`，见[追溯标记](./14-trace.md)）。条件按 id 注册（`registerCondition`）。内置 `enemies-in-range`：攻击范围内的敌方不少于 `params.count`（缺省 1）。规格里的条件 id 与效果 id 在创建时检查，未注册时报 `UnknownRegistrationError`。
 
 ## 属性
 
@@ -103,6 +103,18 @@ function defineAttribute(id: string, options: { base: number; clamp?: { min?: nu
 `independent` 是独立乘区，与 `mul` 一样相乘，留给需要与直接乘算分开计的来源（例如练度）。基础值取单位规格，规格没写时取属性定义的 `base`，未注册的属性是 0。内置注册的乘区属性 `dmgDealt`、`dmgTaken` 等基础值是 1。结果不是有限数时退回基础值（基础值本身也不是有限数时退回定义的 `base`），再按 `clamp` 夹住。引擎内部读取时可以带一个 `assumed` 基础值，规格没写时用它代替定义的 `base`，不改单位规格。当前生命是单位上存放的 `hp`，不走这条公式。
 
 最大生命用 `hp` 和 `maxHp` 的修饰一起算，基础取 `maxHp`，没有则取 `hp`。最大生命变了时，在场单位的当前生命按新旧上限之比缩放，夹在 0 到新上限之间，不取整；不在场或倒下的单位只记下新上限。缩放在这一拍里第一次读到最大生命时发生，没人读时在 `finale` 槽的 `engine:max-hp`（拍末）。快照不读最大生命，不改状态。
+
+### 带时限的修饰
+
+不想为一次性的数值改动注册效果时，内容可以直接挂一组修饰：
+
+```ts
+ctx.setModifier(unitId, key, modifiers, duration?)
+ctx.clearModifier(unitId, key)
+ctx.hasModifier(unitId, key)
+```
+
+同一个单位同一个 `key` 只留一组，再写就整组换掉。`duration` 是秒，换成拍数后至少 1 拍；不写是一直生效，直到 `clearModifier`；写了但不大于 0 等于清掉。剩余拍数在 `finale` 槽的 `engine:modifiers` 里每拍减一，减到 0 就撤下。这组修饰和效果的修饰一起进上面的公式，每组按一层计。它不是效果，不进 `effects`，不看免疫，也不送效果事件。
 
 ## 免疫名
 

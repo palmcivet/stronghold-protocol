@@ -15,6 +15,7 @@ import type { TileCoord } from "#contract/spec.js"
 import { CAN_HIT_FLY, NO_RANGE_EXTEND, REVEAL, STEALTH, STEALTH_OFF, UNTARGETABLE } from "#port/tag.js"
 import { isFlying, type SkillInstance, type UnitState } from "#unit/record/index.js"
 import { attackProfileOf } from "#combat/attack/profile.js"
+import { HEALTH_EPSILON } from "#kernel/math/epsilon.js"
 
 export function registerBuiltinSkillTriggers(state: BattleWorld, registry: BattleRegistry): void {
   openTrigger(registry, {
@@ -207,8 +208,8 @@ function injuredIn(
     if (keys && !bodyInKeys(unit, keys, gridOf(state).rect)) continue
     const max = maxHpOf(unit, registry)
     const hp = unit.attributes.hp ?? 0
-    if (!(hp < max - 1e-9)) continue
-    if (hp / max <= hpAtMost + 1e-9) return true
+    if (!(hp < max - HEALTH_EPSILON)) continue
+    if (hp / max <= hpAtMost + HEALTH_EPSILON) return true
   }
   return false
 }

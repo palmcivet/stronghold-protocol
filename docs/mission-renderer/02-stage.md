@@ -18,6 +18,10 @@ interface MissionStageOptions {
   readonly onPointer?: (event: MissionPointerEvent) => void
   readonly terrain?: MissionGroundOptions
   readonly actors?: MissionActorWorldOptions
+  readonly effects?: MissionEffectTable
+  readonly cues?: MissionCueBindings
+  readonly onUnboundCue?: (key: string) => void
+  readonly hud?: MissionHudReaderTable
 }
 
 type MissionBoard = MissionStage & {
@@ -25,10 +29,13 @@ type MissionBoard = MissionStage & {
   readonly canvas: TerrainRenderView["canvas"] | null
   readonly actors: MissionActorWorld
   readonly hud: MissionHudLayer
+  readonly effects: MissionEffectLayer
 }
 ```
 
 `initialMap` 缺省为 `null`，传入时等同于紧接着 `dispatch({ type: "set-map", map })`。`options.terrain` 缺省时，舞台不创建地面，`terrain` 与 `canvas` 都是 `null`。`options.actors` 给出骨骼运行时与资源端口，缺省时演员照常建立，但没有模型。演员与头顶条见 [演员](./07-actor.md)。
+
+`effects`、`cues` 与 `hud` 缺省时，舞台新建带引擎特效种类的特效表、带核心默认绑定的线索绑定和空的头顶条读数表。舞台创建时封存这三张表，并校验绑定与特效表一致，不一致时抛出 `RangeError`，见 [特效与线索绑定](./08-effect.md)。`onUnboundCue` 对每个没有绑定的线索键调用一次。
 
 ## 方法
 
@@ -40,7 +47,7 @@ type MissionBoard = MissionStage & {
 | `pick(screenX, screenY)` | 返回视口坐标下的单位、格子或空 |
 | `pointer(phase, screenX, screenY)` | 拾取并把指针事件交给 `onPointer`，同时返回它 |
 | `resize(width, height)` | 设置视口尺寸，并重算视口变换 |
-| `destroy()` | 释放演员、地面的场景、地形资源句柄和 WebGL 视图 |
+| `destroy()` | 释放演员、特效、地面的场景、地形资源句柄和 WebGL 视图 |
 
 `destroy` 不移除画布的 DOM 节点，节点由宿主移除。
 
@@ -56,13 +63,14 @@ type MissionBoard = MissionStage & {
 | `push-snapshot` | 保存为 `view.snapshot`。外部模式下立即作为 `view.units`；本地模式下送入渲染时钟，等下一次 `update` 生效 |
 | `push-event` | 外部模式下不在 `dispatch` 里立即释放，而是等下一次 `update` 的 `ingest` 系统释放，这样事件引起的演员动画与音效线索落在同一帧；本地模式下按 tick 排队，等渲染时钟到达再释放 |
 | `set-appearances` | 按单位 id 合并进 `view.appearances`，已有的演员换上新的表现数据 |
-| `reset` | 清空快照、单位、事件、高亮与表现数据，释放全部演员，模式回到 `external`，并丢弃渲染时钟。地图、相机和地面保留 |
+| `reset` | 清空快照、单位、事件、高亮与表现数据，释放全部演员，结束全部特效，模式回到 `external`，并丢弃渲染时钟。地图、相机和地面保留 |
 
-释放一条事件时，舞台做三件事：
+释放一条事件时，舞台做四件事：
 
 1. 把事件追加到 `view.events`，超过 100 条时丢弃最早的。
 2. 交给演员：`deploy` 播部署动画，`attack` 播攻击动画，`downed` 进入倒下姿态，`removed` 开始淡出。
-3. 调用 `effectCueFor(event, units)` 得到音效线索，交给 `onAudioCue`。`leak` 事件还会让地面的目标门闪烁。
+3. 按线索绑定启动特效，见 [特效与线索绑定](./08-effect.md)。
+4. 按线索绑定调用 `effectCueFor` 得到音效线索，交给 `onAudioCue`。`leak` 事件还会让地面的目标门闪烁。
 
 音效线索的映射见 [音效线索](./06-audio.md)。
 
@@ -73,9 +81,9 @@ type MissionBoard = MissionStage & {
 1. `ingest`：本地模式下推进渲染时钟、取出到期的事件，并把 `view.units` 换成插值结果；外部模式下取出推入以来的事件。
 2. `lifecycle`、`position`、`facing`、`skeleton`：演员的建立、位置、朝向与动画。
 3. `hud`：头顶条。
-4. `effect`：特效（还没有注册的系统）。
+4. `effect`：推进正在播放的特效，启动本帧线索的特效。
 5. `audio`：音效线索与目标门闪烁。
-6. `cull`：视口剔除（还没有注册的系统）。
+6. `cull`：视口剔除。按地面相机的视锥，把视锥外的演员与特效对象设为不可见；剔除的演员下一帧起骨骼不推进。没有地面相机时不剔除。没有 LOD。
 7. `release`：淡出的演员归还对象池。
 
 之后推进地面，并把画布放到视口中。`deltaSeconds` 是真实秒数。
@@ -119,6 +127,6 @@ if (stage.canvas instanceof HTMLCanvasElement && stage.canvas.parentElement !== 
 
 ## 地面
 
-`stage.terrain` 是地面对象，字段和方法见 [地面](./04-ground.md)。演员与头顶条挂在 `terrain.overlay` 下，随地面的场景一起绘制。舞台创建地面时固定 `tileSize` 为 64，`options.terrain.tileSize` 不生效。`pixelRatio`、`resources`、`pack`、`view`、`available`、`onMode` 原样传入。`onMode` 在舞台内部先被包装：舞台先调用宿主的 `onMode`，再更新画布的样式。
+`stage.terrain` 是地面对象，字段和方法见 [地面](./04-ground.md)。演员、头顶条与特效挂在 `terrain.overlay` 下，随地面的场景一起绘制。舞台创建地面时固定 `tileSize` 为 64，`options.terrain.tileSize` 不生效。`pixelRatio`、`resources`、`pack`、`view`、`available`、`onMode` 原样传入。`onMode` 在舞台内部先被包装：舞台先调用宿主的 `onMode`，再更新画布的样式。
 
 等待地形资源加载完成可以使用 `stage.terrain?.ready`。

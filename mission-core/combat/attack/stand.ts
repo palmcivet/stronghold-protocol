@@ -1,6 +1,6 @@
 import { defineComponent, type ComponentStore } from "#kernel/world/component.js"
 import { hasTag } from "#kernel/world/tag.js"
-import { TICK } from "#kernel/tick/index.js"
+import { READY_EPSILON, TICK } from "#kernel/tick/index.js"
 import { timerText } from "#kernel/timer/index.js"
 import { ATTACK_MOVES, CANNOT_ACT, FEAR } from "#port/tag.js"
 import { routeHidden } from "#field/grid/route.js"
@@ -23,8 +23,6 @@ export interface AttackStandView {
   readonly cutAt: number | null
 }
 
-const EPSILON = 1e-9
-
 export const ATTACK_STAND = defineComponent<AttackStand>("attack:stand", {
   create: () => ({ until: null, cutAt: null, held: false }),
   view: (stand): AttackStandView => ({ until: stand.held ? null : stand.until, cutAt: stand.cutAt }),
@@ -42,7 +40,7 @@ export function standAfterStrike(state: BattleWorld, unit: UnitState, seconds: n
 export function cutStand(state: BattleWorld, unitId: string): void {
   const stand = state.components.access(ATTACK_STAND).get(unitId)
   if (!stand || stand.until === null) return
-  if (stand.until > state.tick + EPSILON) stand.cutAt = state.tick
+  if (stand.until > state.tick + READY_EPSILON) stand.cutAt = state.tick
   stand.until = null
 }
 
@@ -55,7 +53,7 @@ export function settleStands(state: BattleWorld): void {
   for (const unit of state.units.values()) {
     const stand = table.get(unit.id)
     if (!stand) continue
-    if (stand.until !== null && stand.until <= state.tick + EPSILON) stand.until = null
+    if (stand.until !== null && stand.until <= state.tick + READY_EPSILON) stand.until = null
     if (!unit.fielded || unit.downed || unit.removed || routeHidden(state, unit.id) || hasTag(unit, CANNOT_ACT)) {
       cutStand(state, unit.id)
       stand.held = false

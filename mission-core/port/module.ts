@@ -19,7 +19,7 @@ import type {
   SkillHookDefinition,
   SkillTriggerDefinition,
   StackingDefinition,
-  TimerDefinition,
+  ContentTimerDefinition,
 } from "#port/definition.js"
 
 /**
@@ -38,7 +38,7 @@ export interface Registration {
   registerSelector(definition: SelectorDefinition): void
   registerSkillTrigger(definition: SkillTriggerDefinition): void
   registerSkillBody(definition: SkillBodyDefinition): void
-  registerTimer(definition: TimerDefinition): void
+  registerTimer(definition: ContentTimerDefinition): void
   registerDeployStrategy(definition: DeployStrategyDefinition): void
   registerShift(definition: ShiftDefinition): void
   registerSystem(system: PhaseSystem): void

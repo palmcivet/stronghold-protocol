@@ -22,12 +22,15 @@ interface BattleSpec {
   spawns: readonly SpawnSpec[]
   deployStrategy: string | null
   cost: { ally: CostPoolSpec; enemy: CostPoolSpec }
+  notes?: Readonly<Record<string, unknown>>
 }
 ```
 
 `seed` 生成这场战斗的随机数。种子 0 换成固定的非零值。`modules` 是要安装的模块 id，顺序不决定安装顺序，依赖见 [模块](./03-module.md)。`units` 在创建时放入，id 重复会失败。`spawns` 留到 `spawn` 槽，`atTick` 等于当前拍数时放入。`deployStrategy` 为 `null` 时，`units` 一开始就在场。写了策略 id 时，它们先不在场，创建结束时按该策略的 `opening` 上场。内置策略的 id 是 `deploy`，要同时把 `deploy` 放进 `modules`。
 
 `cost` 是两个阵营各自的费用池。`initial` 是开场值，`regen` 是每游戏秒回复，`cap` 是上限。没有内置的 10 / 1 / 99。负值或非有限数按 0。开场值超过上限时夹到上限。装了 `cost` 模块才每拍回复。`spendCost` 和 `addCost` 不依赖这个模块。见 [费用、阻挡与投射物](./11-field.md)。
+
+`notes` 是给内容模块读的本场事实（例如地图或模式的参数），核心不解释，内容用 `ctx.field()` 读取；没写时读到空记录。它和规格的其余部分一样是纯数据，计入 `contentHash`。
 
 ## 地块
 
@@ -43,6 +46,12 @@ interface TileSpec {
 ```
 
 `x` 是列，`y` 是行，行号向上增加。`walkableBy` 里的 `WALK`、`walk`、`ground`、`GROUND`、`ALL`、`all` 表示地面可走，`FLY`、`fly` 表示只有飞行可过。地面可走的格子，飞行也能过。`objective` 为真的格子是保护目标，恐惧选落点时跳过。装了 `leak` 模块时，敌人站上这种格子会离场。
+
+地块规格只写通用的几何与通行。高台、近战位、远程位这类部署规则由调用方的地图数据与部署策略解释（见 [模块](./03-module.md) 的 `canStand`），不在地块上加模式专用的字段。
+
+### 寻路
+
+地面单位按目的地建一张流场：从目的地出发按上、右、下、左四个方向逐格扩展，再把每一格的下一步拉直到视线可达的最远一格。同样长的路线里，选穿过「不可阻挡格」更少的一条。不可阻挡格是地面可走、但不是可部署的低地（`deployable` 为假或 `height` 大于 0）的格子，干员站不上去，也就挡不住走在上面的敌人。流场按目的地与网格版本缓存；`setObstacle` 改动障碍时网格版本加一，已算好的流场作废。飞行单位直线飞向检查点，不走流场。
 
 ## 单位
 
@@ -72,6 +81,8 @@ interface UnitSpec {
   hitLimit?: boolean
   immunity?: readonly string[]
   timers?: readonly string[]
+  conditionalEffects?: readonly ConditionalEffectSpec[]
+  script?: Readonly<Record<string, string | number | boolean>>
 }
 ```
 
@@ -92,6 +103,8 @@ interface UnitSpec {
 `targetPriority` 交给选择器的 `priority` 键。空字符串不改变顺序。`blocking` 是这个单位正在阻挡的单位 id。`blockedBy` 是挡住它的单位 id。`aggroSeq` 缺省按入场先后，越晚越大；用部署策略时按部署先后重排，见 [选择器](./10-selector.md)。
 
 `hitLimit` 为真时，一次结算的数额向上取整达到 300000，这一整段取消。`immunity` 是免疫名。冻结写 `frozen`，恐惧和战栗写 `feared`，其余与效果 id 相同。见 [效果与属性](./09-status.md)。`conditionalEffects` 见 [条件效果](./09-status.md#条件效果)。
+
+`script` 是这个单位的纯数据黑板，内容用 `ctx.script(unitId)` 读取，核心不解释；没写时读到空记录。
 
 `timers` 列出要启动的独立计时器 id。引擎对每一项调用 `startTimer`。缺省是空。未知 id 拒绝创建。内置 id 是 `charge`、`ammo`、`boomerang`，这三条只在友方身上启动。见 [计时](./08-timer.md)。
 

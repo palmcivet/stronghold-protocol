@@ -12,6 +12,7 @@ import { attributeOf, carriesAttribute } from "#ability/effect/attribute.js"
 import { isFlying, type UnitState } from "#unit/record/index.js"
 import { routeHidden } from "#field/grid/route.js"
 import { blockOf, blockerOf, blockingOf } from "#unit/block/hold.js"
+import { BLOCK_EPSILON, SPATIAL_EPSILON } from "#kernel/math/epsilon.js"
 
 /** 地面单位的阻挡接触半径，格。 */
 export const BLOCK_RADIUS = 0.70709997
@@ -32,8 +33,6 @@ export const BLOCK_RADIUS_DEVICE_SQ: number = BLOCK_RADIUS_DEVICE * BLOCK_RADIUS
 
 /** 解除阻挡后，隐匿过这么多秒才恢复。隐匿状态的强度大于 0 时改用那个秒数。 */
 export const STEALTH_RESTORE = 3
-
-const COUNT_EPSILON = 1e-9
 
 export function releaseBlock(
   state: BattleWorld,
@@ -105,7 +104,7 @@ function canBeBlocked(state: BattleWorld, unit: UnitState): boolean {
 function canBlock(state: BattleWorld, unit: UnitState, registry: BattleRegistry): boolean {
   if (unit.side !== "ally" || !unit.fielded || unit.downed || routeHidden(state, unit.id)) return false
   if (hasTag(unit, NO_BLOCK)) return false
-  return blockCount(unit, registry) > COUNT_EPSILON
+  return blockCount(unit, registry) > BLOCK_EPSILON
 }
 
 function inContact(blocker: UnitState, enemy: UnitState): boolean {
@@ -167,7 +166,7 @@ function usedWeight(state: BattleWorld, registry: BattleRegistry, blocker: UnitS
 }
 
 function hasRoom(state: BattleWorld, registry: BattleRegistry, blocker: UnitState, weight: number): boolean {
-  return usedWeight(state, registry, blocker) + weight <= blockCount(blocker, registry) + COUNT_EPSILON
+  return usedWeight(state, registry, blocker) + weight <= blockCount(blocker, registry) + BLOCK_EPSILON
 }
 
 function enforceCapacity(
@@ -185,7 +184,7 @@ function enforceCapacity(
   }
   const blocking = blockingOf(state, blocker.id)
   let guard = blocking.length
-  while (guard > 0 && usedWeight(state, registry, blocker) > blockCount(blocker, registry) + COUNT_EPSILON) {
+  while (guard > 0 && usedWeight(state, registry, blocker) > blockCount(blocker, registry) + BLOCK_EPSILON) {
     guard -= 1
     const id = blocking[blocking.length - 1]
     if (!id) break
@@ -216,8 +215,8 @@ function pickBlocker(state: BattleWorld, registry: BattleRegistry, enemy: UnitSt
 }
 
 function closer(distance: number, unit: UnitState, best: number, chosen: UnitState | null): boolean {
-  if (!chosen || distance < best - COUNT_EPSILON) return true
-  if (distance > best + COUNT_EPSILON) return false
+  if (!chosen || distance < best - SPATIAL_EPSILON) return true
+  if (distance > best + SPATIAL_EPSILON) return false
   if (unit.y !== chosen.y) return unit.y < chosen.y
   if (unit.x !== chosen.x) return unit.x < chosen.x
   return unit.id < chosen.id

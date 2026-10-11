@@ -9,13 +9,15 @@ import { directionVector } from "#field/direction/index.js"
 import { attributeOf } from "#ability/effect/attribute.js"
 import { emit } from "#kernel/event/index.js"
 import { engineOf, requireUnit, unbalanced, type BattleWorld, type UnitState } from "#unit/record/index.js"
-import { attractPoints, fearReachableTiles, planFearMove } from "#field/motion/fear.js"
+import { attractPoints } from "#field/motion/attract.js"
+import { fearReachableTiles, planFearMove } from "#field/motion/fear.js"
 import { MOVE_SCALE, ROUTE, replanRoute } from "#field/grid/route.js"
 import { SHIFT, shiftOf } from "#field/motion/shift.js"
 import { blockerOf } from "#unit/block/hold.js"
 import { hypot } from "#kernel/math/hypot.js"
 import { cutStand } from "#combat/attack/stand.js"
 import { UNBALANCE_MIN, pullUnbalance, pushUnbalance, unbalanceUnit } from "#field/motion/unbalance.js"
+import { SPATIAL_EPSILON } from "#kernel/math/epsilon.js"
 
 /** 推力距离。受力等级 ≤ −3 是 0，≥ 3 用 3 这一档。 */
 export const PUSH_TILES: Readonly<Record<number, number>> = Object.freeze({
@@ -101,7 +103,7 @@ export function advanceShift(state: BattleWorld, registry: BattleRegistry, unit:
   const speed = Math.max(0, attributeOf(unit, registry, "moveSpeed")) * MOVE_SCALE
   let distance = speed * dt
   let moved = false
-  while (distance > 1e-9 && run.index < run.points.length) {
+  while (distance > SPATIAL_EPSILON && run.index < run.points.length) {
     const point = run.points[run.index]
     if (!point) break
     const dx = point.x - unit.x
@@ -217,7 +219,7 @@ function fearShift(): ShiftDefinition {
       if (!unit || input.sourceX === undefined || input.sourceY === undefined) return null
       const sourceX = input.sourceX
       const sourceY = input.sourceY
-      const self = hypot(unit.x - sourceX, unit.y - sourceY) <= 1e-9
+      const self = hypot(unit.x - sourceX, unit.y - sourceY) <= SPATIAL_EPSILON
       const end = state.components.access(ROUTE).get(unitId)?.run?.legs.find((leg) => leg.final)
       const goal = end ? { x: end.x, y: end.y } : null
       const tiles = [
@@ -342,7 +344,7 @@ function slide(grid: FieldGrid, unit: UnitState, ux: number, uy: number, distanc
   let x = unit.x
   let y = unit.y
   let moved = 0
-  while (moved + 1e-9 < distance) {
+  while (moved + SPATIAL_EPSILON < distance) {
     const step = Math.min(SLIDE_STEP, distance - moved)
     const nextX = x + stepX * step
     const nextY = y + stepY * step

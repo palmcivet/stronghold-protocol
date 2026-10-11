@@ -1,5 +1,6 @@
 import type { HitArea } from "#contract/spec.js"
 import { hypot } from "#kernel/math/hypot.js"
+import { SPATIAL_EPSILON } from "#kernel/math/epsilon.js"
 
 export interface BodyUnit {
   readonly x: number
@@ -67,10 +68,10 @@ export function bodyKeys(unit: BodyUnit, span: BoardSpan): readonly string[] {
     const key = positionKey(unit, span)
     return key === null ? [] : [key]
   }
-  const y0 = Math.max(span.y0, Math.floor(rect.y0 + 0.5 + 1e-9))
-  const y1 = Math.min(span.y1, Math.ceil(rect.y1 - 0.5 - 1e-9))
-  const x0 = Math.max(span.x0, Math.floor(rect.x0 + 0.5 + 1e-9))
-  const x1 = Math.min(span.x1, Math.ceil(rect.x1 - 0.5 - 1e-9))
+  const y0 = Math.max(span.y0, Math.floor(rect.y0 + 0.5 + SPATIAL_EPSILON))
+  const y1 = Math.min(span.y1, Math.ceil(rect.y1 - 0.5 - SPATIAL_EPSILON))
+  const x0 = Math.max(span.x0, Math.floor(rect.x0 + 0.5 + SPATIAL_EPSILON))
+  const x1 = Math.min(span.x1, Math.ceil(rect.x1 - 0.5 - SPATIAL_EPSILON))
   const keys: string[] = []
   for (let y = y0; y <= y1; y += 1) {
     for (let x = x0; x <= x1; x += 1) keys.push(tileKey(x, y))
@@ -82,7 +83,7 @@ export function bodyKeys(unit: BodyUnit, span: BoardSpan): readonly string[] {
 export function bodyOnTile(unit: BodyUnit, x: number, y: number): boolean {
   const rect = bodyRect(unit)
   if (!rect) return Math.round(unit.y) === y && Math.round(unit.x) === x
-  return x + 0.5 > rect.x0 + 1e-9 && x - 0.5 < rect.x1 - 1e-9 && y + 0.5 > rect.y0 + 1e-9 && y - 0.5 < rect.y1 - 1e-9
+  return x + 0.5 > rect.x0 + SPATIAL_EPSILON && x - 0.5 < rect.x1 - SPATIAL_EPSILON && y + 0.5 > rect.y0 + SPATIAL_EPSILON && y - 0.5 < rect.y1 - SPATIAL_EPSILON
 }
 
 function hasKey(keys: KeyCollection, key: string): boolean {
@@ -112,7 +113,7 @@ export function bodyDist(unit: BodyUnit, x: number, y: number): number {
 
 /** 身体是否在点 (x, y) 的 r 格以内。 */
 export function bodyInRadius(unit: BodyUnit, x: number, y: number, radius: number): boolean {
-  return bodyDist(unit, x, y) <= radius + 1e-9
+  return bodyDist(unit, x, y) <= radius + SPATIAL_EPSILON
 }
 
 /** 格子 (x, y) 到身体的切比雪夫距离。占据该格时是 0。 */

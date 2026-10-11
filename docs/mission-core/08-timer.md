@@ -9,7 +9,7 @@ description: 充能、弹药和回旋持有是单位身上各自的计时器，�
 
 独立计时和 `attack`、`skill-point`、`skill-body`、`trait`、`redeploy`、`status` 分开。单位规格的 `timers` 列出 id，引擎调用 `startTimer`。友方槽按登记顺序推进，这三条排在该单位的攻击之后。没有新的阶段槽。
 
-再登记一种，就再 `registerTimer`，`slot` 用 `ally`，把 id 写进单位的 `timers`。`advance` 里加上 `independentDt(unit, registry)`。友方槽不会按单位种类分支。定义可以写 `sides`。没写时两边都能 `startTimer`。这三条写了 `sides: ["ally"]`，点在敌人身上，或对敌人调用 `startTimer`，都不会启动，视图保持 `{ started: false }`。攻击计时没有 `sides`，敌人槽照常推进已经开始的攻击。
+再登记一种，就再 `registerTimer`（定义的类型是 `ContentTimerDefinition`，`advance` 拿到 `ContentContext`），`slot` 用 `ally`，把 id 写进单位的 `timers`。`advance` 里加上 `independentDt(unit, registry)`。友方槽不会按单位种类分支。定义可以写 `sides`。没写时两边都能 `startTimer`。这三条写了 `sides: ["ally"]`，点在敌人身上，或对敌人调用 `startTimer`，都不会启动，视图保持 `{ started: false }`。攻击计时没有 `sides`，敌人槽照常推进已经开始的攻击。
 
 ## 速度
 

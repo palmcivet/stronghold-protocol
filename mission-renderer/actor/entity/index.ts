@@ -54,6 +54,8 @@ export interface MissionActor {
   fade: number
   /** Whether the unit appears in the current frame. */
   seen: boolean
+  /** Outside the camera's view as of the last `cull`: hidden, and its skeleton does not advance. */
+  culled: boolean
   readonly position: ActorPosition
   /** True when the model looks towards smaller columns. */
   left: boolean
@@ -140,6 +142,7 @@ export function createActorWorld(options: MissionActorWorldOptions = {}): Missio
       phase: unit.downed ? "downed" : "standing",
       fade: 1,
       seen: true,
+      culled: false,
       position: { x: unit.x, y: unit.y, height: unit.height, moving: false, stand: standOf(unit) },
       left: unit.facing === "LEFT",
       appearance: appearances[unit.id] ?? null,
@@ -265,7 +268,7 @@ export function createActorWorld(options: MissionActorWorldOptions = {}): Missio
           state.role = role
         }
         state.pending = null
-        instance.update(frame.deltaSeconds)
+        if (!actor.culled) instance.update(frame.deltaSeconds)
       }
     },
   }

@@ -1,6 +1,6 @@
 import type { PhaseSlot } from "#contract/phase.js"
 import type { AttackShape, SkillMoment, TileCoord } from "#contract/spec.js"
-import type { TimerDefinition as EntityTimer } from "#kernel/timer/index.js"
+import type { TimerDefinition } from "#kernel/timer/index.js"
 import type { ExtensibleKey, ExtensionRecord } from "#kernel/registry/extensible.js"
 import type { TagKey } from "#kernel/world/tag.js"
 import type { ContentContext } from "#port/context.js"
@@ -304,7 +304,7 @@ export interface SkillBodyDefinition {
   onHit?(unitId: string, skillId: string, ctx: ContentContext): void
 }
 
-export type TimerDefinition = EntityTimer<ContentContext>
+export type ContentTimerDefinition = TimerDefinition<ContentContext>
 
 /** 推、拉、恐惧、诱导的输入。用到的字段由这个动作自己读。 */
 export interface ShiftInput {
@@ -434,9 +434,9 @@ export interface BattleRegistry extends ExtensibleRegistry {
   registerSkillBody(definition: SkillBodyDefinition): void
   requireSkillBody(id: string): SkillBodyDefinition
   hasSkillBody(id: string): boolean
-  registerTimer(definition: TimerDefinition): void
-  requireTimer(id: string): TimerDefinition
-  timersInSlot(slot: PhaseSlot): readonly TimerDefinition[]
+  registerTimer(definition: ContentTimerDefinition): void
+  requireTimer(id: string): ContentTimerDefinition
+  timersInSlot(slot: PhaseSlot): readonly ContentTimerDefinition[]
   registerDeployStrategy(definition: DeployStrategyDefinition): void
   requireDeployStrategy(id: string): DeployStrategyDefinition
   registerShift(definition: ShiftDefinition): void

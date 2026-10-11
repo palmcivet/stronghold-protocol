@@ -132,7 +132,7 @@ export type {
   SkillHookDefinition,
   StackingDefinition,
   SystemOrderEntry,
-  TimerDefinition,
+  ContentTimerDefinition,
 } from "#port/definition.js"
 export type { ContentContext, EventRevision, GainSpOptions, HealOptions, HitShape, UnitView } from "#port/context.js"
 export type { MissionModule, Registration } from "#port/module.js"
@@ -195,7 +195,8 @@ export { frontTile, offsetTile, oppositeDirection, rotateOffset } from "#field/d
 export { bodyDist, bodyInKeys, bodyInRadius, bodyKeys, bodyOnTile, bodyRect } from "#field/body/index.js"
 export { createGrid } from "#field/grid/index.js"
 export type { FieldGrid, GridPoint } from "#field/grid/index.js"
-export { attractPoints, fearReachableTiles, fearSteps, planFearMove } from "#field/motion/fear.js"
+export { attractPoints } from "#field/motion/attract.js"
+export { fearReachableTiles, fearSteps, planFearMove } from "#field/motion/fear.js"
 export {
   PULL_CRAWL,
   PULL_ORIGIN,

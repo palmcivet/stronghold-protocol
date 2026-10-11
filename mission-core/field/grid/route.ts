@@ -6,6 +6,8 @@ import type { UnitState } from "#unit/record/index.js"
 import { hypot } from "#kernel/math/hypot.js"
 import { defineComponent, type ComponentStore } from "#kernel/world/component.js"
 import { blockerOf } from "#unit/block/hold.js"
+import { READY_EPSILON } from "#kernel/tick/index.js"
+import { SPATIAL_EPSILON } from "#kernel/math/epsilon.js"
 
 /** 每秒移动格数 = moveSpeed × MOVE_SCALE。 */
 export const MOVE_SCALE = 0.5
@@ -127,7 +129,7 @@ export function advanceRoute(
   if (!state || !route || blockerOf(world, unit.id)) return
   let budget = dt
   let guard = 16
-  while (budget > 1e-9 && guard > 0) {
+  while (budget > READY_EPSILON && guard > 0) {
     guard -= 1
     const leg = route.legs[route.legIdx]
     if (!leg) return
@@ -136,7 +138,7 @@ export function advanceRoute(
       const use = Math.min(budget, route.waitLeft)
       route.waitLeft -= use
       budget -= use
-      if (route.waitLeft <= 1e-9) {
+      if (route.waitLeft <= READY_EPSILON) {
         route.waitLeft = null
         route.legIdx += 1
         route.pts = null
@@ -165,7 +167,7 @@ export function advanceRoute(
     if (!(speed > 0)) return
     let distance = speed * budget
     let steps = 64
-    while (distance > 1e-9 && steps > 0) {
+    while (distance > SPATIAL_EPSILON && steps > 0) {
       steps -= 1
       if (!route.pts || route.version !== grid.version) planLeg(grid, unit, route, leg)
       if (!route.pts || route.ptIdx >= route.pts.length) break

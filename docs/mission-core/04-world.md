@@ -72,6 +72,10 @@ const tally: MissionModule = {
 | `element:gauges` | `combat/element/gauge.ts` | 各元素槽的值、上限、锁定，爆发中，最近打满的来源 | 最满的一槽 `{ element, ratio, locked }`，没有非空槽时是 `null` |
 | `motion:shift` | `field/motion/shift.ts` | 正在走的强制位移 | 无 |
 | `grid:route` | `field/grid/route.ts` | 敌人的路线进度与路线消失 | 无（快照的 `tags` 写 `hidden`） |
+| `attack:stand` | `combat/attack/stand.ts` | 敌人出手后站定到哪一拍、被打断的时刻 | `{ until, cutAt }` |
+| `target:extra-range` | `combat/target/selector.ts` | 内容加进攻击范围的绝对格子 | 无 |
+| `skill:trigger-areas` | `ability/skill/trigger.ts` | 内容登记的技能触发区域，按键 | 无 |
+| `deploy:redeploy-plan` | `unit/deploy/command.ts` | 排下的再部署：落点、延迟、费用、`keepSp` 与起算计时 | 无 |
 
 ## 资源
 
@@ -142,10 +146,12 @@ ctx.revokeTag(unitId, CHARMED, "mark:charm")
 | `SILENCE` | `silence` | 沉默，蕴含 `cannot-cast` |
 | `DISARM` | `disarm` | 缴械，蕴含 `cannot-attack` |
 | `BIND` | `bind` | 束缚 |
+| `GROUNDBIND` | `groundbind` | 缚地：敌方空中单位算作地面单位，浮空时除外 |
 | `FEAR` | `fear` | 恐惧 |
 | `ATTRACT` | `attract` | 诱导 |
 | `TREMBLE` | `tremble` | 战栗：被阻挡时停止普攻 |
 | `NO_ATTACK` | `no-attack` | 单位本身不普攻 |
+| `ATTACK_MOVES` | `attack-moves` | 不停止移动：敌人出手前后都不站定，边走边打 |
 | `NO_BLOCK` | `no-block` | 不阻挡 |
 | `UNBLOCKABLE` | `unblockable` | 不被阻挡 |
 | `BLOCK_FLY` | `block-fly` | 能挡住飞行单位 |

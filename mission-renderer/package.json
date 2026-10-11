@@ -42,6 +42,10 @@
       "source": "./audio/*.ts",
       "default": "./dist/audio/*.js"
     },
+    "#effect/*.js": {
+      "source": "./effect/*.ts",
+      "default": "./dist/effect/*.js"
+    },
     "#test/*.js": "./test/*.ts"
   },
   "scripts": {

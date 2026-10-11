@@ -3,6 +3,7 @@ import type { Random } from "#kernel/random/index.js"
 import type { FieldGrid } from "#field/grid/index.js"
 import type { GridPoint } from "#field/grid/sight.js"
 import { hypot } from "#kernel/math/hypot.js"
+import { SPATIAL_EPSILON } from "#kernel/math/epsilon.js"
 
 /** 恐惧扇形半径。 */
 export const FEAR_RADIUS = 10
@@ -52,7 +53,7 @@ export function fearReachableTiles(
   const dx = hitX - sourceX
   const dy = hitY - sourceY
   const length = hypot(dx, dy)
-  if (!(length > 1e-9)) return []
+  if (!(length > SPATIAL_EPSILON)) return []
   const ux = dx / length
   const uy = dy / length
   const fly = motion === "FLY"
@@ -64,8 +65,8 @@ export function fearReachableTiles(
       const vx = x - hitX
       const vy = y - hitY
       const reach = hypot(vx, vy)
-      if (reach > FEAR_RADIUS + 1e-9) continue
-      if (reach > 1e-9 && vx * ux + vy * uy < FEAR_HALF_COS * reach - 1e-9) continue
+      if (reach > FEAR_RADIUS + SPATIAL_EPSILON) continue
+      if (reach > SPATIAL_EPSILON && vx * ux + vy * uy < FEAR_HALF_COS * reach - SPATIAL_EPSILON) continue
       if (!passable(grid, fly, x, y) || grid.at(x, y)?.objective) continue
       if (goalField && goalFieldOpen) {
         const key = grid.key(x, y)
@@ -188,23 +189,4 @@ export function planFearMove(
     goal: { x: tileX + offsetX, y: tileY + offsetY },
     points: planned,
   }
-}
-
-/** 诱导：地面走流场，走不通时忽略障碍再找；飞行直线到目标点。 */
-export function attractPoints(grid: FieldGrid, motion: Motion, x: number, y: number, targetX: number, targetY: number): GridPoint[] {
-  if (motion === "FLY") return [{ x: targetX, y: targetY }]
-  const startX = Math.round(x)
-  const startY = Math.round(y)
-  const path =
-    grid.waypoints(startX, startY, targetX, targetY) ??
-    grid.waypoints(startX, startY, targetX, targetY, { ignoreObstacles: true })
-  if (!path) return [{ x: targetX, y: targetY }]
-  const points: GridPoint[] = []
-  for (let index = 0; index < path.length; index += 1) {
-    const point = path[index]
-    if (!point) continue
-    if (index === 0 && Math.abs(x - point.x) < 1e-6 && Math.abs(y - point.y) < 1e-6) continue
-    points.push(point)
-  }
-  return points.length > 0 ? points : [{ x: targetX, y: targetY }]
 }

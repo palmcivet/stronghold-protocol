@@ -1,4 +1,4 @@
-import { LinearSRGBColorSpace, SRGBColorSpace, type Texture } from "three"
+import { LinearFilter, LinearMipmapLinearFilter, LinearSRGBColorSpace, SRGBColorSpace, type Texture } from "three"
 import {
   assetColorSpace,
   assetKindOf,
@@ -30,13 +30,18 @@ export interface MissionResourcePort<TImage = unknown, TSpine = unknown, TModel 
 
 export interface MissionResourceLoaders<TImage = unknown, TSpine = unknown, TModel = unknown, TJson = unknown> {
   readonly resolver: AssetResolver
-  /** `colorSpace` is the entry's, `srgb` unless the catalog marks it `linear`. A Three texture returned here gets it set. */
+  /**
+   * `colorSpace` is the entry's, `srgb` unless the catalog marks it `linear`. A Three texture returned here gets the
+   * texture policy of its kind: colour space, mipmaps and anisotropy.
+   */
   readonly image: (url: string, key: AssetKey, colorSpace: AssetColorSpace) => Promise<TImage>
   readonly spine: (source: SpineSource) => Promise<TSpine>
   readonly model: (url: string, key: AssetKey) => Promise<TModel>
   readonly json: (url: string, key: AssetKey) => Promise<TJson>
   /** Delays before each retry of a failed load. Default [250, 1000]. */
   readonly retryDelays?: readonly number[]
+  /** Anisotropic filtering of `texture` keys, usually the renderer's maximum. Default 1. */
+  readonly anisotropy?: number
   /** Optional spine cache tuning; `load` is taken from `spine` above. */
   readonly spineCache?: Omit<SpineCacheOptions, "load">
 }
@@ -50,6 +55,22 @@ const ACCEPTED_KINDS: Readonly<Record<FileKind, readonly AssetKind[]>> = {
   image: ["image", "texture"],
   model: ["model"],
   json: ["json"],
+}
+
+/** How each catalog kind loaded as an image is sampled. Board textures are seen at a slant and minified; images are drawn near their size. */
+export const MISSION_TEXTURE_POLICY = Object.freeze({
+  texture: Object.freeze({ mipmaps: true, anisotropic: true }),
+  image: Object.freeze({ mipmaps: false, anisotropic: false }),
+})
+
+/** Sets the colour space, mipmaps and anisotropy of a loaded texture by its catalog kind. */
+function applyTexturePolicy(texture: Texture, kind: "image" | "texture", colorSpace: AssetColorSpace, anisotropy: number): void {
+  const policy = MISSION_TEXTURE_POLICY[kind]
+  texture.colorSpace = colorSpace === "srgb" ? SRGBColorSpace : LinearSRGBColorSpace
+  texture.generateMipmaps = policy.mipmaps
+  texture.minFilter = policy.mipmaps ? LinearMipmapLinearFilter : LinearFilter
+  texture.anisotropy = policy.anisotropic ? Math.max(1, anisotropy) : 1
+  texture.needsUpdate = true
 }
 
 interface SharedLoad {
@@ -90,14 +111,12 @@ export function createMissionResourcePort<TImage = unknown, TSpine = unknown, TM
 ): MissionResourcePort<TImage, TSpine, TModel, TJson> {
   const { resolver } = options
   const retryDelays = options.retryDelays ?? DEFAULT_RETRY_DELAYS
+  const anisotropy = options.anisotropy ?? 1
   const fileLoaders: Record<FileKind, (url: string, entry: ResolvedAsset) => Promise<unknown>> = {
     image: async (url, entry) => {
       const colorSpace = assetColorSpace(entry.asset) ?? "srgb"
       const image = await options.image(url, entry.key, colorSpace)
-      if (isTexture(image)) {
-        image.colorSpace = colorSpace === "srgb" ? SRGBColorSpace : LinearSRGBColorSpace
-        image.needsUpdate = true
-      }
+      if (isTexture(image)) applyTexturePolicy(image, entry.kind === "texture" ? "texture" : "image", colorSpace, anisotropy)
       return image
     },
     model: (url, entry) => options.model(url, entry.key),

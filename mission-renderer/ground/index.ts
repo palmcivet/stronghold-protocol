@@ -6,6 +6,7 @@ import { cellKey, classifyCells, type TerrainCells } from "#ground/cells.js"
 import { createTerrainScene, type TerrainFocusRect, type TerrainScene } from "#ground/scene.js"
 import { loadTerrainPack, type TerrainPack, type MissionGroundPack, type TerrainResourcePort } from "#ground/pack.js"
 import type { TerrainLayout } from "#ground/layout.js"
+import { TILE_SIZE } from "#ground/tile.js"
 import type { WebGLContextEvent, WebGLSurface } from "#ground/webgl.js"
 
 export type { MissionGroundPack, TerrainResourcePort } from "#ground/pack.js"
@@ -50,6 +51,8 @@ export interface MissionGround {
   readonly overlay: Group
   /** The highlighted tiles drawn on the board. */
   readonly highlights: Group
+  /** The camera the scene is drawn with. Null until a scene is built. */
+  readonly camera: OrthographicCamera | null
   /** Height of the board's surface at a tile, in tiles. 0 off the map. */
   readonly surfaceHeight: (x: number, y: number) => number
   readonly setHighlights: (tiles: readonly TileCoord[]) => void
@@ -99,7 +102,7 @@ function focusOf(camera: MissionCamera | null): TerrainFocusRect | null {
  * context returns. Units and the battle state are never touched here.
  */
 export function createMissionGround(options: MissionGroundOptions = {}): MissionGround {
-  const tileSize = options.tileSize ?? 64
+  const tileSize = options.tileSize ?? TILE_SIZE
   const pixelRatio = options.pixelRatio ?? 1
   const view = options.view === undefined ? createWebGLView(pixelRatio) : options.view
   let enabled = options.available ?? view !== null
@@ -218,6 +221,9 @@ export function createMissionGround(options: MissionGroundOptions = {}): Mission
     },
     overlay,
     highlights,
+    get camera() {
+      return sceneRef?.camera ?? null
+    },
     surfaceHeight,
     setHighlights(tiles) {
       highlighted = tiles

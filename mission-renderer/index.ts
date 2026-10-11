@@ -1,5 +1,6 @@
 export {
   createMissionResourcePort,
+  MISSION_TEXTURE_POLICY,
   type MissionAssetKind,
   type MissionResourceLoaders,
   type MissionResourcePort,
@@ -16,7 +17,19 @@ export type {
   MissionUpdateMode,
   MissionView,
 } from "#contract/view.js"
-export type { MissionAudioCue } from "#contract/audio.js"
+export type { MissionAudioCue, MissionAudioCueType } from "#contract/audio.js"
+export type {
+  MissionCue,
+  MissionCueBase,
+  MissionCueBinding,
+  MissionCueData,
+  MissionCueKey,
+  MissionCueKind,
+  MissionEffectKindId,
+  MissionEventBindings,
+  MissionEventCueKey,
+  MissionKindCueKey,
+} from "#contract/cue.js"
 export type {
   MissionAnimClip,
   MissionAnimRoles,
@@ -41,6 +54,40 @@ export {
   type MissionActorWorldOptions,
 } from "#actor/entity/index.js"
 export { MISSION_HUD_BAR, type MissionHudLayer } from "#actor/hud/index.js"
+export {
+  createMissionHudReaders,
+  hudReadoutsOf,
+  type MissionHudCount,
+  type MissionHudReader,
+  type MissionHudReaderTable,
+  type MissionHudReadouts,
+} from "#actor/hud/readout.js"
+export {
+  createMissionImpostorAtlas,
+  impostorDue,
+  type MissionImpostorAtlas,
+  type MissionImpostorAtlasOptions,
+  type MissionImpostorRefresh,
+  type MissionImpostorRenderer,
+  type MissionImpostorSlot,
+} from "#actor/impostor/index.js"
+export { cueFor } from "#effect/cue.js"
+export {
+  MISSION_EVENT_BINDINGS,
+  createMissionCueBindings,
+  sealMissionCues,
+  type MissionCueBindings,
+} from "#effect/binding.js"
+export {
+  createMissionEffectTable,
+  type MissionEffectContext,
+  type MissionEffectKind,
+  type MissionEffectTable,
+} from "#effect/table.js"
+export { MISSION_EFFECT_KINDS } from "#effect/builtin.js"
+export { createPulseKind, type MissionPulseOptions } from "#effect/pulse.js"
+export type { MissionEffectLayer } from "#effect/layer.js"
+export { isNamespacedId, type MissionNamespacedId } from "#runtime/registry/index.js"
 export {
   createMissionSkeletonLoader,
   createMissionSkeletonRuntime,
@@ -70,7 +117,12 @@ export {
   type MissionGround,
   type MissionGroundOptions,
 } from "#ground/index.js"
-export { audioCueFor, effectCueFor } from "#audio/index.js"
+export {
+  audioCueFor,
+  effectCueFor,
+  type EffectAudioFor,
+  type MissionAudioCueOptions,
+} from "#audio/index.js"
 export {
   createMissionFeed,
   type MissionFeedSample,

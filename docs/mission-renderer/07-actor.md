@@ -76,6 +76,47 @@ interface MissionAnimRoles {
 
 头顶条画在站立的演员上方，显示生命与护盾占快照顶层 `maxHp`（生效的最大生命，含效果修饰）的比例。`hpBar` 为 `false` 的单位不显示。`stage.hud.bar(unitId)` 返回正在显示的比例，没有头顶条时返回 `null`。
 
+### 读数
+
+头顶条另有三种读数，`stage.hud.readouts(unitId)` 返回正在显示的值：
+
+- 弹匣 `magazine`：弹药技能持续中时的剩余弹药与弹匣，读快照 `skills` 的 `ammo`，画成生命条下方的黄色条。敌人不显示。
+- 计数 `pips`：一排小方块，剩余的亮，用掉的暗。
+- 负生命池 `negative`：0 到 1，画成盖在生命条上的红色条。
+
+计数与负生命池由内容提供读法，登记在头顶条读数表里，经 `options.hud` 传给舞台：
+
+```ts
+const hud = createMissionHudReaders()
+hud.register({ id: "my-mod:stock", readout: "pips", read: (unit) => (unit.components["my-mod:stock"] as MissionHudCount | undefined) ?? null })
+hud.register({ id: "my-mod:debt", readout: "negative", read: (unit) => (unit.components["my-mod:debt"] as number | undefined) ?? null })
+const stage = createMissionStage(map, { hud })
+```
+
+读数表和特效表一样按命名空间 id 登记，可以 `replace`，舞台创建时封存。同一种读数有多个读法时，按登记顺序取第一个读到值的。`hudReadoutsOf(unit, readers)` 单独计算一个单位的读数。
+
+## 替身
+
+替身把骨骼画进共享的渲染目标页，再用一块贴图显示，适合拥挤的场面和带裁剪附件的骨骼。
+
+```ts
+function createMissionImpostorAtlas(options: MissionImpostorAtlasOptions): MissionImpostorAtlas
+
+interface MissionImpostorAtlas {
+  alloc(width: number, height: number, clip: boolean): MissionImpostorSlot | null
+  free(slot: MissionImpostorSlot): void
+  draw(slot: MissionImpostorSlot, object: Object3D, camera: Camera): void
+  flush(): void
+  texture(slot: MissionImpostorSlot): Texture
+  stats(): { readonly pages: number; readonly slots: number }
+  clear(): void
+}
+```
+
+- 每页按 `cell`（缺省 256 像素）切成等大的格子，一个槽占一格。主页缺省 2048 像素、最多 3 页；带裁剪的骨骼用单独的裁剪页，缺省 1024 像素、最多 2 页。页按需新建。所有页都满或尺寸超过一格时，`alloc` 返回 `null`，演员直接绘制骨骼。
+- `draw` 把骨骼排进队列，`flush` 每帧一次，在主渲染之前把队列里的骨骼以透明背景画进各自的槽，之后恢复渲染器原来的渲染目标与清屏透明度。
+- `impostorDue(refresh)` 决定替身这一帧是否重画：按演员在本帧更新序里的位置把重画均匀分散到间隔内；图像过期、缩放变化超过 12 % 或间隔不大于 1 时立即重画；最迟两个间隔重画一次；保持的姿态不重画。
+
 ## 视图系统
 
 每帧的系统顺序固定为 `MISSION_VIEW_SYSTEM_ORDER`：
@@ -84,7 +125,7 @@ interface MissionAnimRoles {
 const MISSION_VIEW_SYSTEM_ORDER = ["ingest", "lifecycle", "position", "facing", "skeleton", "hud", "effect", "audio", "cull", "release"]
 ```
 
-系统以 id 注册，注册的先后不影响运行顺序。`effect` 与 `cull` 目前没有注册的系统。
+系统以 id 注册，注册的先后不影响运行顺序。`cull` 由舞台注册（`createCullSystem`）：演员用以其位置为心、半径 `MISSION_CULL_ACTOR_RADIUS`（1.5 格）乘外观缩放的球测试，特效对象用包围盒测试；视锥外的演员 `culled` 为真、根节点不可见，`skeleton` 系统不推进它的动画（切换动作照常记下），回到视锥内时恢复；特效对象只隐藏，生命周期照常推进。特效见 [特效与线索绑定](./08-effect.md)。
 
 ## 骨骼端口
 

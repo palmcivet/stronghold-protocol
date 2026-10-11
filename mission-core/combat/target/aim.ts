@@ -8,6 +8,7 @@ import { healBlocked } from "#combat/damage/heal.js"
 import type { UnitState } from "#unit/record/index.js"
 import { attackProfileOf } from "#combat/attack/profile.js"
 import { routeHidden } from "#field/grid/route.js"
+import { BLOCK_EPSILON } from "#kernel/math/epsilon.js"
 
 const ALLY_QUERY = [
   "foe",
@@ -44,8 +45,6 @@ const ENEMY_QUERY = [
 
 /** 这一下攻击会打到的单位，和出手用的是同一份名单。 */
 // TRACE: source/block-targets
-const BLOCK_TARGET_EPSILON = 1e-9
-
 export function attackTargetIds(
   state: BattleWorld,
   registry: BattleRegistry,
@@ -58,7 +57,7 @@ export function attackTargetIds(
   const query = shape?.filters ? [...base, ...shape.filters] : base
   const found = unitsInRange(state, registry, ctx, unit.id, query)
   if (shape?.lockRange === true) return found
-  if (shape?.blockTargets === true) return found.slice(0, Math.max(1, Math.floor(blockCount(unit, registry) + BLOCK_TARGET_EPSILON)))
+  if (shape?.blockTargets === true) return found.slice(0, Math.max(1, Math.floor(blockCount(unit, registry) + BLOCK_EPSILON)))
   return found.slice(0, 1)
 }
 

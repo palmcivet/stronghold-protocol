@@ -24,7 +24,7 @@ import {
   type SkillHookDefinition,
   type SkillTriggerDefinition,
   type StackingDefinition,
-  type TimerDefinition,
+  type ContentTimerDefinition,
 } from "#port/definition.js"
 
 /** 引擎自己做的替换记在这个名下。 */
@@ -40,7 +40,7 @@ export function createRegistry(): BattleRegistry {
   const selectors = createTable<SelectorDefinition>("selector")
   const triggers = createTable<SkillTriggerDefinition>("skill-trigger")
   const bodies = createTable<SkillBodyDefinition>("skill-body")
-  const timers = createOrderedTable<TimerDefinition>("timer")
+  const timers = createOrderedTable<ContentTimerDefinition>("timer")
   const strategies = createTable<DeployStrategyDefinition>("deploy")
   const shifts = createTable<ShiftDefinition>("shift")
   const steps = createOrderedTable<DamageStepDefinition>("damage-step", { compare: byPriority })

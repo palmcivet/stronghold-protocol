@@ -1,5 +1,5 @@
 import type { ContentContext } from "#port/context.js"
-import type { BattleRegistry, TimerDefinition } from "#port/definition.js"
+import type { BattleRegistry, ContentTimerDefinition } from "#port/definition.js"
 import { CANNOT_ACT } from "#port/tag.js"
 import type { TimerState } from "#kernel/timer/index.js"
 import { hasTag } from "#kernel/world/tag.js"
@@ -114,7 +114,7 @@ export function independentDt(unit: UnitState, registry: BattleRegistry): number
 
 // MARK: charge
 
-function chargeTimer(state: BattleWorld, registry: BattleRegistry): TimerDefinition {
+function chargeTimer(state: BattleWorld, registry: BattleRegistry): ContentTimerDefinition {
   return {
     id: CHARGE_TIMER,
     slot: "ally",
@@ -161,7 +161,7 @@ function advanceCharge(
 
 // MARK: ammo
 
-function ammoTimer(state: BattleWorld, registry: BattleRegistry): TimerDefinition {
+function ammoTimer(state: BattleWorld, registry: BattleRegistry): ContentTimerDefinition {
   return {
     id: AMMO_TIMER,
     slot: "ally",
@@ -220,7 +220,7 @@ function refillAmmo(registry: BattleRegistry, unit: UnitState): void {
 
 // MARK: boomerang
 
-function boomerangTimer(state: BattleWorld, registry: BattleRegistry): TimerDefinition {
+function boomerangTimer(state: BattleWorld, registry: BattleRegistry): ContentTimerDefinition {
   return {
     id: BOOMERANG_TIMER,
     slot: "ally",
