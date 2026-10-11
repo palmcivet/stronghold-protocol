@@ -91,7 +91,7 @@ interface UnitSpec {
 
 `targetPriority` 交给选择器的 `priority` 键。空字符串不改变顺序。`blocking` 是这个单位正在阻挡的单位 id。`blockedBy` 是挡住它的单位 id。`aggroSeq` 缺省按入场先后，越晚越大。
 
-`hitLimit` 为真时，一次结算的数额向上取整达到 300000，这一整段取消。`immunity` 是免疫名。冻结写 `frozen`，恐惧和战栗写 `feared`，其余与状态 id 相同。见 [状态](./09-status.md)。
+`hitLimit` 为真时，一次结算的数额向上取整达到 300000，这一整段取消。`immunity` 是免疫名。冻结写 `frozen`，恐惧和战栗写 `feared`，其余与效果 id 相同。见 [效果与属性](./09-status.md)。`conditionalEffects` 见 [条件效果](./09-status.md#条件效果)。
 
 `timers` 列出要启动的独立计时器 id。引擎对每一项调用 `startTimer`。缺省是空。未知 id 拒绝创建。内置 id 是 `charge`、`ammo`、`boomerang`，这三条只在友方身上启动。见 [计时](./08-timer.md)。
 
@@ -120,16 +120,20 @@ interface SkillSpec {
   triggerAllies?: boolean
   triggerHpAtMost?: number
   activateOnDeploy?: boolean
-  onStart?: SkillHook
-  onEnd?: SkillHook
-  onTick?: SkillHook
-  onHit?: SkillHook
+  hooks?: SkillHooks
+}
+
+interface SkillHooks {
+  start?: string
+  end?: string
+  tick?: string
+  hit?: string
 }
 ```
 
 `body` 和 `trigger` 必须是已经登记的标识，创建时检查。触发先归一化：转成大写，`ALWAYS` 记成 `SP_FULL`，`MANUAL` 记成 `NEVER`，以 `CUSTOM_RANGE` 开头的记成 `CUSTOM_RANGE`。`spType` 缺省 `time`，`operation` 缺省 `MANUAL`，`charges` 缺省 1。写了名单以外的技力类型或操作，放入单位时失败。
 
-`mods` 在技能生效期间参加属性汇总。`onStart`、`onEnd`、`onTick`、`onHit` 和技能体上的同名回调一起被调用。回调看到 `{ unitId, skillId, reason, dt }`。
+`mods` 在技能生效期间参加属性汇总，`op` 可以是 `add`、`percent`、`mul`、`independent`。`hooks` 是已注册技能钩子（`registerSkillHook`）的 id，规格保持纯数据；创建时检查，未注册报 `UnknownRegistrationError`。钩子和技能体上的同名回调一起被调用，看到 `{ unitId, skillId, reason, dt }`。
 
 ## 刷出
 

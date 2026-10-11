@@ -5,14 +5,16 @@ export interface ModSum {
   add: number
   percent: number
   mul: number
+  independent: number
   touched: boolean
 }
 
-/** 正在生效的技能修饰。加算、百分比、乘算和状态修饰同一套汇总。 */
+/** 正在生效的技能修饰。各聚合阶段和效果修饰同一套汇总。 */
 export function skillModSum(unit: UnitState, key: string): ModSum {
   let add = 0
   let percent = 0
   let mul = 1
+  let independent = 1
   let touched = false
   for (const skill of unit.skills) {
     if (!skill.effectsApplied) continue
@@ -22,9 +24,10 @@ export function skillModSum(unit: UnitState, key: string): ModSum {
       add += modifier.op === "add" ? modifier.value : 0
       percent += modifier.op === "percent" ? modifier.value : 0
       if (modifier.op === "mul") mul *= modifier.value
+      if (modifier.op === "independent") independent *= modifier.value
     }
   }
-  return { add, percent, mul, touched }
+  return { add, percent, mul, independent, touched }
 }
 
 
@@ -38,7 +41,7 @@ export function overlaySkillAttributes(unit: UnitState, attributes: Record<strin
   for (const key of keys) {
     const sum = skillModSum(unit, key)
     const current = attributes[key] ?? 0
-    attributes[key] = (current + sum.add) * (1 + sum.percent) * sum.mul
+    attributes[key] = (current + sum.add) * (1 + sum.percent) * sum.mul * sum.independent
   }
 }
 

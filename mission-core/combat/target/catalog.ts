@@ -1,3 +1,4 @@
+import { defineExtensible } from "#kernel/registry/extensible.js"
 import type { BattleRegistry, SelectorDefinition, SelectorQuery } from "#port/definition.js"
 import { CAMOU, CAN_HIT_FLY, ISOLATED, LIFTOFF, REVEAL, SLEEP, STEALTH, STEALTH_OFF, UNTARGETABLE } from "#port/tag.js"
 import { hasTag } from "#kernel/world/tag.js"
@@ -11,13 +12,11 @@ import { attributeOf, maxHpOf } from "#ability/effect/attribute.js"
 import { isFlying, type BattleWorld, type UnitState } from "#unit/record/index.js"
 
 export function registerBuiltinSelectors(state: BattleWorld, registry: BattleRegistry): void {
-  registry.registerSelector({
-    id: "all",
-    filter: () => true,
-    compare: () => 0,
-  })
-  for (const definition of filters(state, registry)) registry.registerSelector(definition)
-  for (const definition of sorts(state, registry)) registry.registerSelector(definition)
+  const all: SelectorDefinition = { id: "all", filter: () => true, compare: () => 0 }
+  for (const definition of [all, ...filters(state, registry), ...sorts(state, registry)]) {
+    registry.registerSelector(definition)
+    registry.markExtensible(defineExtensible(definition.id, { version: 1, contract: "selector" }))
+  }
 }
 
 // MARK: filter

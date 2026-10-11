@@ -39,7 +39,7 @@ function run(battle: ReturnType<typeof open>, steps: number): void {
 
 test("沉睡的敌人立刻放开，原地不动，阻挡位让给下一个；醒来没有空位时不再被挡", () => {
   const battle = open([ally("a"), enemy("first", 0.3), enemy("second", 0.4)], {
-    1: (ctx) => ctx.applyStatus("first", "sleep", { duration: 1 }),
+    1: (ctx) => ctx.applyEffect("first", "sleep", { duration: 1 }),
   })
   battle.step()
   expect(unitOf(battle, "a")?.blocking).toEqual(["first"])
@@ -55,7 +55,7 @@ test("沉睡的敌人立刻放开，原地不动，阻挡位让给下一个；�
 
 test("沉睡期间有空位也不被挡，醒来在原地重新被挡", () => {
   const battle = open([ally("a", { attributes: { hp: 100, blockCnt: 2 } }), enemy("e", 0.3)], {
-    0: (ctx) => ctx.applyStatus("e", "sleep", { duration: 1 }),
+    0: (ctx) => ctx.applyEffect("e", "sleep", { duration: 1 }),
   })
   run(battle, 20)
   expect(unitOf(battle, "e")).toMatchObject({ blockedBy: null, x: 0.3 })
@@ -74,9 +74,9 @@ test("被挡的敌人沉睡后放开；眩晕或免疫沉睡的敌人仍被挡�
     ],
     {
       1: (ctx) => {
-        ctx.applyStatus("asleep", "sleep", { duration: 2 })
-        ctx.applyStatus("stunned", "stun", { duration: 2 })
-        ctx.applyStatus("immune", "sleep", { duration: 2 })
+        ctx.applyEffect("asleep", "sleep", { duration: 2 })
+        ctx.applyEffect("stunned", "stun", { duration: 2 })
+        ctx.applyEffect("immune", "sleep", { duration: 2 })
       },
     },
   )
@@ -93,9 +93,9 @@ function reblockWhileHeld(held: "freeze" | "stun"): void {
   const units = [enemy("plain", 1.2), enemy("hidden", 3.2)]
   const battle = open(units, {
     0: (ctx) => {
-      ctx.applyStatus("plain", held, { duration: 3 })
-      ctx.applyStatus("hidden", held, { duration: 3 })
-      ctx.applyStatus("hidden", "stealth")
+      ctx.applyEffect("plain", held, { duration: 3 })
+      ctx.applyEffect("hidden", held, { duration: 3 })
+      ctx.applyEffect("hidden", "stealth")
     },
     5: (ctx) => {
       ctx.spawnUnit(ally("a", { x: 1, y: 0 }))
@@ -120,7 +120,7 @@ test("只看接触：没走到阻挡者跟前就被眩晕的敌人不被挡，�
   const walker = (id: string, y: number) =>
     enemy(id, 0, { y, attributes: { hp: 50, moveSpeed: 1, blockWeight: 1 }, route })
   const battle = open([ally("a", { x: 3, y: 0, attributes: { hp: 100, blockCnt: 2 } }), walker("stunned", 0), walker("plain", 0)], {
-    3: (ctx) => ctx.applyStatus("stunned", "stun", { duration: 0.5 }),
+    3: (ctx) => ctx.applyEffect("stunned", "stun", { duration: 0.5 }),
   })
   run(battle, 10)
   expect(unitOf(battle, "stunned")?.blockedBy).toBeNull()
@@ -134,7 +134,7 @@ test("只看接触：没走到阻挡者跟前就被眩晕的敌人不被挡，�
 
 function blockWhenSlotFrees(held: "bind" | "stun" | "freeze"): void {
   const battle = open([ally("a"), enemy("first", 0.3), enemy("held", 0.4)], {
-    0: (ctx) => ctx.applyStatus("held", held, { duration: 5 }),
+    0: (ctx) => ctx.applyEffect("held", held, { duration: 5 }),
     3: (ctx) => ctx.loseHp("first", 1000),
   })
   run(battle, 3)
@@ -155,12 +155,12 @@ test("沉睡、浮空、恐惧加冻结、不可阻挡加眩晕的敌人，旁�
     [enemy("asleep", 1.2), enemy("levitated", 1.25), enemy("feared", 1.3), enemy("unblockable", 1.35)],
     {
       0: (ctx) => {
-        ctx.applyStatus("asleep", "sleep", { duration: 3 })
-        ctx.applyStatus("levitated", "levitate", { duration: 3 })
-        ctx.applyStatus("feared", "fear", { duration: 3 })
-        ctx.applyStatus("feared", "freeze", { duration: 3 })
-        ctx.applyStatus("unblockable", "unblockable", { duration: 3 })
-        ctx.applyStatus("unblockable", "stun", { duration: 3 })
+        ctx.applyEffect("asleep", "sleep", { duration: 3 })
+        ctx.applyEffect("levitated", "levitate", { duration: 3 })
+        ctx.applyEffect("feared", "fear", { duration: 3 })
+        ctx.applyEffect("feared", "freeze", { duration: 3 })
+        ctx.applyEffect("unblockable", "unblockable", { duration: 3 })
+        ctx.applyEffect("unblockable", "stun", { duration: 3 })
       },
       2: (ctx) => ctx.spawnUnit(ally("a", { x: 1, y: 0, attributes: { hp: 100, blockCnt: 4 } })),
     },

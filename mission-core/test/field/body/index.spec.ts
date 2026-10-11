@@ -6,6 +6,7 @@ import {
   bodyKeys,
   bodyOnTile,
   createBattle,
+  defineExtensible,
   type HitShape,
   type MissionModule,
 } from "arknights-mission-core"
@@ -54,7 +55,7 @@ test("范围里的一格能命中跨格身体，邻格打不中点单位", () =>
   const probe: MissionModule = {
     id: "probe",
     install(ctx) {
-      ctx.registerSelector({
+      ctx.replace(defineExtensible("all", { version: 1, contract: "selector" }), {
         id: "all",
         filter() {
           return true

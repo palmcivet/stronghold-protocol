@@ -63,7 +63,7 @@ function readSkill(unit: UnitState, skill: SkillInstance): SkillSnapshot {
 
 function shieldOf(unit: UnitState): number {
   let total = unit.attributes.shield ?? 0
-  for (const status of unit.statuses) if (!status.dropped && status.shield > 0) total += status.shield
+  for (const status of unit.effects) if (!status.dropped && status.shield > 0) total += status.shield
   return total
 }
 

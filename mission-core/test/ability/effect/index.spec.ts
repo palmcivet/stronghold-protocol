@@ -1,16 +1,19 @@
 import { expect, test } from "vitest"
 import { STUN } from "#port/tag.js"
-import { createBattle, type MissionModule, type StatusDefinition } from "arknights-mission-core"
+import { createBattle, type MissionModule, type EffectDefinition } from "arknights-mission-core"
 import { ally, spec } from "#test/fixture.js"
 
-const stun: StatusDefinition = {
-  id: "stun",
-  tags: [STUN],
+const stun: EffectDefinition = {
+  id: "probe-stun",
+  grantsTags: [STUN],
   modifiers: [],
   immunity: [],
   stackCap: 1,
   cancels: ["attack"],
   duration: 0,
+  instant: false,
+  period: 1,
+  stacking: "refresh",
 }
 
 test("取消前摇后命中不发生", () => {
@@ -18,7 +21,7 @@ test("取消前摇后命中不发生", () => {
   const module: MissionModule = {
     id: "stun",
     install(ctx) {
-      ctx.registerStatus(stun)
+      ctx.registerEffect(stun)
       ctx.subscribe("attack-hit", () => {
         hits.push("hit")
       })
@@ -35,7 +38,7 @@ test("取消前摇后命中不发生", () => {
         slot: "status",
         priority: -1,
         run(runCtx) {
-          runCtx.applyStatus("a", "stun")
+          runCtx.applyEffect("a", "probe-stun")
         },
       })
     },

@@ -79,8 +79,8 @@ test("解除阻挡后隐匿过 STEALTH_RESTORE 秒才恢复", () => {
         slot: "schedule",
         priority: 0,
         run(runCtx) {
-          if (runCtx.tick() === 0) runCtx.applyStatus("e", "stealth")
-          if (runCtx.tick() === 1) runCtx.applyStatus("a", "stun")
+          if (runCtx.tick() === 0) runCtx.applyEffect("e", "stealth")
+          if (runCtx.tick() === 1) runCtx.applyEffect("a", "stun")
         },
       })
     },

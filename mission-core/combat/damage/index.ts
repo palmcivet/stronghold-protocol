@@ -1,6 +1,6 @@
 import type { ElementHitEvent, FatalEvent, HitEvent } from "#contract/event.js"
 import type { ContentContext, HealOptions } from "#port/context.js"
-import type { DamageInfo, DamagePreview } from "#port/definition.js"
+import type { DamageInfo, DamageOrigin, DamagePreview, HitChange, HpChange } from "#port/definition.js"
 import type { BattleRegistry } from "#port/definition.js"
 import { BOSS_HIT_LIMIT, MIN_DAMAGE_RATIO } from "#combat/damage/constants.js"
 import { canonicalKind, clamp01, mitigate, type Penetration } from "#combat/damage/formula.js"
@@ -13,7 +13,7 @@ import { peekGauges } from "#combat/element/gauge.js"
 import { hasHitLimit } from "#combat/damage/limit.js"
 import { overhealOf, setOverheal } from "#combat/damage/shield.js"
 import { isFlying, type UnitState } from "#unit/record/index.js"
-import { applyStatus } from "#ability/effect/index.js"
+import { applyEffect } from "#ability/effect/index.js"
 import { hasTag } from "#kernel/world/tag.js"
 import {
   BURST_LOCK,
@@ -47,10 +47,10 @@ export function registerDamageSteps(state: BattleWorld, registry: BattleRegistry
         return
       }
       if (!pass.preview) {
-        const cancelled = publishElementHit(state, info)
+        const cancelled = publishElementHit(state, registry, ctx, info)
         if (cancelled) return
         if (info.kind !== "element") {
-          publishHit(state, info)
+          publishHit(state, registry, ctx, info)
           return
         }
       }
@@ -139,6 +139,7 @@ export function registerDamageSteps(state: BattleWorld, registry: BattleRegistry
     apply(info, ctx, pass) {
       if (skipHp(info) || pass.preview) return
       const target = requireUnit(state, info.targetId)
+      if (info.amount > 0) info.amount = reviseHp(registry, ctx, info)
       applyLife(state, registry, ctx, target, info.amount, info.sourceId, info.sourceless === true, true, info.kind, info.attack === true)
     },
   })
@@ -161,7 +162,7 @@ export function runDamage(
     return viewed(info, [])
   }
   if (!preview && info.kind !== "element") {
-    publishHit(state, info)
+    publishHit(state, registry, ctx, info)
     if (info.cancel === true) return viewed(info, [])
     const current = state.units.get(info.targetId)
     if (!current || current.downed) return viewed(info, [])
@@ -225,7 +226,7 @@ function applyOverheal(
   shield: number,
   duration: number,
 ): void {
-  applyStatus(state, registry, ctx, unitId, "overheal", { duration, value: shield })
+  applyEffect(state, registry, ctx, unitId, "overheal", { duration, value: shield })
 }
 
 /** 流失。不减防御和法抗，不进伤害步骤。达到首领限伤时整段取消，不扣生命。 */
@@ -295,7 +296,7 @@ function applyLife(
 function absorb(state: BattleWorld, unit: UnitState, amount: number, commit: boolean): number {
   if (!(amount > 0)) return 0
   let rest = amount
-  for (const status of unit.statuses) {
+  for (const status of unit.effects) {
     if (!(rest > 0)) break
     if (status.shieldHits > 0) {
       if (commit) status.shieldHits -= 1
@@ -307,7 +308,7 @@ function absorb(state: BattleWorld, unit: UnitState, amount: number, commit: boo
     if (commit) unit.attributes.shieldHits = hits - 1
     return 0
   }
-  for (const status of unit.statuses) {
+  for (const status of unit.effects) {
     if (!(rest > 0)) break
     if (!(status.shield > 0)) continue
     const take = Math.min(status.shield, rest)
@@ -363,43 +364,87 @@ function viewed(info: DamageInfo, steps: readonly string[]): DamagePreview {
   }
 }
 
-function publishElementHit(state: BattleWorld, info: DamageInfo): boolean {
-  const hit: ElementHitEvent = {
+function originOf(info: DamageInfo): DamageOrigin {
+  return {
     sourceId: info.sourceless === true ? "" : info.sourceId,
     creditId: info.sourceId,
     targetId: info.targetId,
-    amount: info.amount,
-    mul: info.mul ?? 1,
-    kind: info.kind,
-    cancel: false,
     sourceless: info.sourceless === true,
+    attack: info.attack === true,
     ...(info.element !== undefined ? { element: info.element } : {}),
   }
-  intercept(state, "element-hit", hit)
-  if (typeof hit.amount === "number" && Number.isFinite(hit.amount)) info.amount = hit.amount
-  if (typeof hit.mul === "number" && Number.isFinite(hit.mul)) info.mul = hit.mul
-  if (typeof hit.kind === "string") info.kind = canonicalKind(hit.kind)
-  const cancelled = hit.cancel === true
-  if (cancelled) info.cancel = true
-  return cancelled
 }
 
-function publishHit(state: BattleWorld, info: DamageInfo): void {
-  const hit: HitEvent = {
-    sourceId: info.sourceless === true ? "" : info.sourceId,
-    creditId: info.sourceId,
-    targetId: info.targetId,
-    amount: info.amount,
-    kind: info.kind,
-    cancel: false,
-    sourceless: info.sourceless === true,
-    ...(info.element !== undefined ? { element: info.element } : {}),
+/** 按 hit 或 element-hit 阶段的修饰改写这一击。非有限的数额与倍率不生效。 */
+function reviseHit(
+  registry: BattleRegistry,
+  ctx: ContentContext,
+  stage: "hit" | "element-hit",
+  info: DamageInfo,
+): HitChange {
+  const start = info.mul ?? 1
+  const change: HitChange = { ...originOf(info), amount: info.amount, mul: start, kind: info.kind, cancel: false }
+  for (const modifier of registry.damageModifiers(stage)) {
+    if (modifier.stage === "hp") continue
+    const before = { amount: change.amount, mul: change.mul, kind: change.kind }
+    modifier.modify(change, ctx)
+    if (typeof change.amount !== "number" || !Number.isFinite(change.amount)) change.amount = before.amount
+    if (typeof change.mul !== "number" || !Number.isFinite(change.mul)) change.mul = before.mul
+    change.kind = typeof change.kind === "string" ? canonicalKind(change.kind) : before.kind
+    change.cancel = change.cancel === true
   }
-  intercept(state, "hit", hit)
-  if (typeof hit.amount === "number" && Number.isFinite(hit.amount)) info.amount = hit.amount
-  if (typeof hit.kind === "string") info.kind = canonicalKind(hit.kind)
-  if (hit.cancel === true) info.cancel = true
-  if (typeof hit.mul === "number" && Number.isFinite(hit.mul)) info.mul = hit.mul
+  info.amount = change.amount
+  info.kind = change.kind
+  if (change.mul !== start) info.mul = change.mul
+  if (change.cancel) info.cancel = true
+  return change
+}
+
+/** 按 hp 阶段的修饰调低这一击：每个修饰之后，只接受不高于原值的有限数额，并夹到 0 以上。 */
+function reviseHp(registry: BattleRegistry, ctx: ContentContext, info: DamageInfo): number {
+  const modifiers = registry.damageModifiers("hp")
+  if (modifiers.length === 0) return info.amount
+  const change: HpChange = { ...originOf(info), kind: info.kind, amount: info.amount }
+  for (const modifier of modifiers) {
+    if (modifier.stage !== "hp") continue
+    const before = change.amount
+    modifier.modify(change, ctx)
+    const after = change.amount
+    change.amount = typeof after === "number" && Number.isFinite(after) && after < before ? Math.max(0, after) : before
+  }
+  return change.amount
+}
+
+function publishElementHit(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext, info: DamageInfo): boolean {
+  const change = reviseHit(registry, ctx, "element-hit", info)
+  const hit: ElementHitEvent = {
+    sourceId: change.sourceId,
+    creditId: change.creditId,
+    targetId: change.targetId,
+    amount: change.amount,
+    mul: change.mul,
+    kind: change.kind,
+    cancel: change.cancel,
+    sourceless: change.sourceless,
+    ...(change.element !== undefined ? { element: change.element } : {}),
+  }
+  emit(state, "element-hit", hit)
+  return change.cancel
+}
+
+function publishHit(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext, info: DamageInfo): void {
+  const change = reviseHit(registry, ctx, "hit", info)
+  const hit: HitEvent = {
+    sourceId: change.sourceId,
+    creditId: change.creditId,
+    targetId: change.targetId,
+    amount: change.amount,
+    kind: change.kind,
+    cancel: change.cancel,
+    sourceless: change.sourceless,
+    ...(change.element !== undefined ? { element: change.element } : {}),
+  }
+  emit(state, "hit", hit)
 }
 
 function penetration(state: BattleWorld, registry: BattleRegistry, info: DamageInfo): Penetration {

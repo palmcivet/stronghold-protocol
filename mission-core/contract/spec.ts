@@ -62,11 +62,11 @@ export type SkillOperation = (typeof SKILL_OPERATIONS)[number]
 
 export interface SkillModifier {
   readonly attribute: string
-  readonly op: "add" | "percent" | "mul"
+  readonly op: "add" | "percent" | "mul" | "independent"
   readonly value: number
 }
 
-/** 技能体回调看到的这一拍。 */
+/** 技能钩子看到的这一拍。 */
 export interface SkillMoment {
   readonly unitId: string
   readonly skillId: string
@@ -74,7 +74,13 @@ export interface SkillMoment {
   readonly dt: number
 }
 
-export type SkillHook = (moment: SkillMoment) => void
+/** 技能在释放、结束、每拍与命中时调用的技能钩子 id。钩子由模块注册。 */
+export interface SkillHooks {
+  readonly start?: string
+  readonly end?: string
+  readonly tick?: string
+  readonly hit?: string
+}
 
 export interface SkillSpec {
   readonly id: string
@@ -101,10 +107,7 @@ export interface SkillSpec {
   readonly triggerAllies?: boolean
   readonly triggerHpAtMost?: number
   readonly activateOnDeploy?: boolean
-  readonly onStart?: SkillHook
-  readonly onEnd?: SkillHook
-  readonly onTick?: SkillHook
-  readonly onHit?: SkillHook
+  readonly hooks?: SkillHooks
 }
 
 /** 攻击片段。时长和命中点都是秒。 */
@@ -160,6 +163,16 @@ export interface AttackShape {
   readonly projectile?: ProjectileKind
 }
 
+/** 条件效果：条件成立的拍挂上效果，不成立的拍取下。 */
+export interface ConditionalEffectSpec {
+  readonly condition: string
+  /** 交给条件的参数。 */
+  readonly params?: Readonly<Record<string, string | number | boolean>>
+  readonly effect: string
+  /** 效果强度。缺省用效果定义上的默认强度。 */
+  readonly value?: number
+}
+
 export interface UnitSpec {
   readonly id: string
   readonly side: UnitSide
@@ -199,6 +212,7 @@ export interface UnitSpec {
   readonly immunity?: readonly string[]
   /** 要启动的独立计时器 id。引擎对每一项调用 startTimer。 */
   readonly timers?: readonly string[]
+  readonly conditionalEffects?: readonly ConditionalEffectSpec[]
   /** Content blackboard. Absent means the unit has no script values. */
   readonly script?: Readonly<Record<string, string | number | boolean>>
 }

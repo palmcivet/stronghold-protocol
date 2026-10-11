@@ -1,5 +1,5 @@
-import type { Direction, HitArea, Motion, SkillHook, SkillModifier, UnitKind, UnitSpec } from "#contract/spec.js"
-import type { AttributeModifier, BattleRegistry, SkillRuntime } from "#port/definition.js"
+import type { ConditionalEffectSpec, Direction, HitArea, Motion, SkillHooks, SkillModifier, UnitKind, UnitSpec } from "#contract/spec.js"
+import type { AttributeModifier, BattleRegistry, EffectRecord, SkillRuntime } from "#port/definition.js"
 import type { ContentContext } from "#port/context.js"
 import { AIRBORNE } from "#port/tag.js"
 import type { TimerState } from "#kernel/timer/index.js"
@@ -23,25 +23,7 @@ import { TARGET_PRIORITY } from "#combat/target/priority.js"
 import { HIT_LIMIT } from "#combat/damage/limit.js"
 import { IMMUNITY } from "#ability/effect/immunity.js"
 
-export interface StatusInstance {
-  id: string
-  stacks: number
-  remaining: number
-  permanent: boolean
-  shield: number
-  shieldHits: number
-  runtimeModifiers: AttributeModifier[]
-  pulse: number
-  /** 这次施加之前已经在身上。 */
-  carried: boolean
-  /** 刷新前剩下的拍数。一直持续记成 Infinity。 */
-  priorRemaining: number
-  /** 取最高、抵抗用的强度。没有时是 0。 */
-  strength: number
-  dropped: boolean
-  /** 弱的一次等强的结束再续上。until 是战场拍数。 */
-  tail: { value: number; until: number } | null
-}
+export type { EffectRecord } from "#port/definition.js"
 
 /** 空中单位：飞行，或敌人正浮空、近地悬浮。 */
 export function isFlying(unit: UnitState): boolean {
@@ -68,10 +50,7 @@ export interface SkillInstance extends SkillRuntime {
   readonly mods: readonly SkillModifier[]
   readonly skillFlags: readonly string[]
   readonly activateOnDeploy: boolean
-  readonly onStart: SkillHook | null
-  readonly onEnd: SkillHook | null
-  readonly onTick: SkillHook | null
-  readonly onHit: SkillHook | null
+  readonly hooks: SkillHooks
   sp: number
   charges: number
   opReadyAt: number
@@ -90,7 +69,7 @@ export interface UnitState {
   readonly attributes: Record<string, number>
   readonly skills: SkillInstance[]
   readonly attackRange: readonly UnitSpec["attackRange"][number][]
-  /** 规格、状态、技能与模块按来源授予的标签。 */
+  /** 规格、效果、技能与模块按来源授予的标签。 */
   readonly tags: TagGrants
   readonly deployPositions: readonly string[]
   readonly aggroSeq: number
@@ -103,7 +82,10 @@ export interface UnitState {
   facing: Direction
   hitArea: HitArea | null
   motion: Motion
-  readonly statuses: StatusInstance[]
+  /** 身上的效果，按挂上的先后。 */
+  readonly effects: EffectRecord[]
+  /** 规格写的条件效果。 */
+  readonly conditionalEffects: readonly ConditionalEffectSpec[]
   readonly timers: Map<string, TimerState>
   /** 规格列出的独立计时器 id。 */
   readonly listedTimers: readonly string[]
@@ -143,10 +125,7 @@ function createSkill(spec: UnitSpec["skills"][number]): SkillInstance {
     mods: copyModifiers(spec.mods),
     skillFlags: spec.flags ? [...spec.flags] : [],
     activateOnDeploy: spec.activateOnDeploy === true,
-    onStart: spec.onStart ?? null,
-    onEnd: spec.onEnd ?? null,
-    onTick: spec.onTick ?? null,
-    onHit: spec.onHit ?? null,
+    hooks: { ...spec.hooks },
     active: false,
     remaining: 0,
     ammo: 0,
@@ -188,7 +167,8 @@ export function createUnit(spec: UnitSpec, fielded: boolean, order: number): Uni
     facing: spec.facing ?? "RIGHT",
     hitArea: spec.hitArea ?? null,
     motion: spec.motion ?? "WALK",
-    statuses: [],
+    effects: [],
+    conditionalEffects: (spec.conditionalEffects ?? []).map((entry) => ({ ...entry, ...(entry.params ? { params: { ...entry.params } } : {}) })),
     timers: new Map(),
     listedTimers: spec.timers ? [...spec.timers] : [],
     modifiers: new Map(),

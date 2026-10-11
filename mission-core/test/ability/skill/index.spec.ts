@@ -5,6 +5,7 @@ import {
   TICK,
   UnknownRegistrationError,
   createBattle,
+  defineEffect,
   type MissionModule,
   type SkillSpec,
   type UnitSpec,
@@ -19,14 +20,17 @@ test("随时间的技力在眩晕时仍涨，阻回时不涨", () => {
   const gate: MissionModule = {
     id: "gate",
     install(ctx) {
-      ctx.registerStatus({
+      ctx.registerEffect({
         id: "stop-sp",
-        tags: [NO_SP],
+        grantsTags: [NO_SP],
         modifiers: [],
         immunity: [],
         stackCap: 1,
         cancels: [],
         duration: 0,
+        instant: false,
+        period: 1,
+        stacking: "refresh",
       })
       ctx.registerSystem({
         id: "apply",
@@ -34,8 +38,8 @@ test("随时间的技力在眩晕时仍涨，阻回时不涨", () => {
         priority: -1,
         run(runCtx) {
           if (runCtx.tick() !== 0) return
-          runCtx.applyStatus("stun", "stun")
-          runCtx.applyStatus("blocked", "stop-sp")
+          runCtx.applyEffect("stun", "stun")
+          runCtx.applyEffect("blocked", "stop-sp")
           granted = runCtx.gainSp("blocked", "s", 4)
         },
       })
@@ -52,6 +56,31 @@ test("随时间的技力在眩晕时仍涨，阻回时不涨", () => {
   expect(granted).toBe(0)
   expect(watch.read("stun").sp).toBe(5)
   expect(watch.read("blocked").sp).toBe(0)
+})
+
+test("gainSp 带 ignoreLock 时绕过阻回", () => {
+  let granted = -1
+  const watch = recorder("watch", ["blocked"])
+  const gate: MissionModule = {
+    id: "gate",
+    install(ctx) {
+      ctx.registerEffect(defineEffect("stop-sp", { grantsTags: [NO_SP] }))
+      ctx.registerSystem({
+        id: "apply",
+        slot: "status",
+        priority: -1,
+        run(runCtx) {
+          if (runCtx.tick() !== 0) return
+          runCtx.applyEffect("blocked", "stop-sp")
+          granted = runCtx.gainSp("blocked", "s", 4, { ignoreLock: true })
+        },
+      })
+    },
+  }
+  const gated = createBattle(spec({ modules: ["gate", "watch"], units: [timed("blocked", "NEVER")] }), [gate, watch.module])
+  gated.step()
+  expect(granted).toBe(4)
+  expect(watch.read("blocked").sp).toBe(4)
 })
 
 test("充能满层后不再继续涨", () => {
@@ -230,7 +259,7 @@ test("攻击前摇被眩晕取消则命中不发生，技力计时器的相位�
           if (runCtx.tick() !== 1) return
           const view = runCtx.timerView("stun", "skill-point")
           before = { phase: String(view.phase), elapsed: Number(view.elapsed) }
-          runCtx.applyStatus("stun", "stun")
+          runCtx.applyEffect("stun", "stun")
           const next = runCtx.timerView("stun", "skill-point")
           after = { phase: String(next.phase), elapsed: Number(next.elapsed) }
         },
@@ -338,14 +367,17 @@ test("技能范围无视不可选中，初始范围不放", () => {
   const module: MissionModule = {
     id: "case",
     install(ctx) {
-      ctx.registerStatus({
+      ctx.registerEffect({
         id: "ghost",
-        tags: [UNTARGETABLE],
+        grantsTags: [UNTARGETABLE],
         modifiers: [],
         immunity: [],
         stackCap: 1,
         cancels: [],
         duration: 0,
+        instant: false,
+        period: 1,
+        stacking: "refresh",
       })
       ctx.registerSystem({
         id: "mark",
@@ -353,8 +385,14 @@ test("技能范围无视不可选中，初始范围不放", () => {
         priority: 1,
         run(runCtx) {
           if (runCtx.tick() !== 0) return
-          runCtx.applyStatus("e", "ghost")
+          runCtx.applyEffect("e", "ghost")
           runCtx.startTimer("basic", "attack")
+        },
+      })
+      ctx.registerSkillHook({
+        id: "range-end",
+        run(moment) {
+          ends.push(`range:${moment.reason}`)
         },
       })
     },
@@ -364,9 +402,7 @@ test("技能范围无视不可选中，初始范围不放", () => {
     spec({
       modules: ["case", "watch"],
       units: [
-        caster("range", "SKILL_RANGE", (moment) => {
-          ends.push(`range:${moment.reason}`)
-        }),
+        caster("range", "SKILL_RANGE", "range-end"),
         caster("basic", "DEFAULT"),
         ally("e", { side: "enemy", x: 1, y: 0, attributes: { hp: 100 } }),
       ],
@@ -383,7 +419,7 @@ test("技能范围无视不可选中，初始范围不放", () => {
 test("替换当次攻击要范围内有受伤友方，条件消失则退回充能", () => {
   const reasons: string[] = []
   const hits: string[] = []
-  const skill = (id: string): SkillSpec => ({
+  const skill = (): SkillSpec => ({
     id: "s",
     body: "instant",
     trigger: "DEFAULT",
@@ -393,13 +429,25 @@ test("替换当次攻击要范围内有受伤友方，条件消失则退回充�
     operation: "AUTO",
     triggerAllies: true,
     triggerHpAtMost: 0.5,
-    onHit: () => {
-      hits.push(id)
-    },
-    onEnd: (moment) => {
-      reasons.push(`${id}:${moment.reason}`)
-    },
+    hooks: { hit: "record-hit", end: "record-end" },
   })
+  const record: MissionModule = {
+    id: "record",
+    install(ctx) {
+      ctx.registerSkillHook({
+        id: "record-hit",
+        run(moment) {
+          hits.push(moment.unitId)
+        },
+      })
+      ctx.registerSkillHook({
+        id: "record-end",
+        run(moment) {
+          reasons.push(`${moment.unitId}:${moment.reason}`)
+        },
+      })
+    },
+  }
   const castWatch = recorder("cast-watch", ["cast"])
   const backWatch = recorder("back-watch", ["back"])
   const attack: MissionModule = {
@@ -417,10 +465,10 @@ test("替换当次攻击要范围内有受伤友方，条件消失则退回充�
   }
   const cast = createBattle(
     spec({
-      modules: ["attack", "cast-watch"],
-      units: [operator("cast", skill("cast")), injured(), enemy()],
+      modules: ["attack", "cast-watch", "record"],
+      units: [operator("cast", skill()), injured(), enemy()],
     }),
-    [attack, castWatch.module],
+    [attack, castWatch.module, record],
   )
   cast.step()
   cast.step()
@@ -443,10 +491,10 @@ test("替换当次攻击要范围内有受伤友方，条件消失则退回充�
   }
   const back = createBattle(
     spec({
-      modules: ["heal", "back-watch"],
-      units: [operator("back", skill("back")), injured(), enemy()],
+      modules: ["heal", "back-watch", "record"],
+      units: [operator("back", skill()), injured(), enemy()],
     }),
-    [heal, backWatch.module],
+    [heal, backWatch.module, record],
   )
   back.step()
   expect(backWatch.read("back").charges).toBe(0)
@@ -492,7 +540,7 @@ function charged(id: string, operation: "MANUAL" | "AUTO"): UnitSpec {
   })
 }
 
-function caster(id: string, trigger: string, onEnd?: SkillSpec["onEnd"]): UnitSpec {
+function caster(id: string, trigger: string, end?: string): UnitSpec {
   return ally(id, {
     attackRange: [{ x: 1, y: 0 }],
     skills: [
@@ -505,7 +553,7 @@ function caster(id: string, trigger: string, onEnd?: SkillSpec["onEnd"]): UnitSp
         ammo: 0,
         operation: "AUTO",
         triggerRange: [{ x: 1, y: 0 }],
-        ...(onEnd ? { onEnd } : {}),
+        ...(end ? { hooks: { end } } : {}),
       },
     ],
   })

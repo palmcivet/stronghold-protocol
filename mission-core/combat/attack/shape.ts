@@ -157,14 +157,14 @@ function resolveBounce(
   const pause = finite(bounce.pause, 0)
   const damage = damageOf(impact.shape)
   const seen = new Set<string>([start.id])
-  if (pause > 0 && present(state, start)) ctx.applyStatus(start.id, "sluggish", { duration: pause })
+  if (pause > 0 && present(state, start)) ctx.applyEffect(start.id, "sluggish", { duration: pause })
   let prev = start
   for (let jump = 1; jump < count; jump += 1) {
     const next = nearest(state, attacker, prev, radius, seen)
     if (!next) return
     seen.add(next.id)
     pay(ctx, impact.sourceId, next.id, scaled(impact.amount * powi(1 - falloff, jump)), damage)
-    if (pause > 0 && present(state, state.units.get(next.id))) ctx.applyStatus(next.id, "sluggish", { duration: pause })
+    if (pause > 0 && present(state, state.units.get(next.id))) ctx.applyEffect(next.id, "sluggish", { duration: pause })
     prev = next
   }
 }

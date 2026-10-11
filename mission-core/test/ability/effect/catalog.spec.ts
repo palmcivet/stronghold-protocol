@@ -38,15 +38,15 @@ function swing(ctx: ContentContext, unitId: string): void {
 
 test("目录状态写上对应旗标", () => {
   const battle = open([ally("a")], (ctx) => {
-    ctx.applyStatus("a", "stun")
-    ctx.applyStatus("a", "sleep")
-    ctx.applyStatus("a", "bind")
-    ctx.applyStatus("a", "stealth")
-    ctx.applyStatus("a", "camou")
-    ctx.applyStatus("a", "liftoff")
-    ctx.applyStatus("a", "isolated")
-    ctx.applyStatus("a", "fear")
-    ctx.applyStatus("a", "levitate")
+    ctx.applyEffect("a", "stun")
+    ctx.applyEffect("a", "sleep")
+    ctx.applyEffect("a", "bind")
+    ctx.applyEffect("a", "stealth")
+    ctx.applyEffect("a", "camou")
+    ctx.applyEffect("a", "liftoff")
+    ctx.applyEffect("a", "isolated")
+    ctx.applyEffect("a", "fear")
+    ctx.applyEffect("a", "levitate")
   })
   battle.step()
   expect(flagsOf(battle, "a")).toEqual([
@@ -70,8 +70,8 @@ test("飞行单位不被浮空，地面单位会被浮空", () => {
   const battle = open(
     [ally("ground"), ally("flyer", { motion: "FLY" })],
     (ctx) => {
-      ctx.applyStatus("ground", "levitate")
-      ctx.applyStatus("flyer", "levitate")
+      ctx.applyEffect("ground", "levitate")
+      ctx.applyEffect("flyer", "levitate")
     },
   )
   battle.step()
@@ -81,17 +81,17 @@ test("飞行单位不被浮空，地面单位会被浮空", () => {
 
 test("第二次寒冷还在身上时施加冻结，单位免疫 frozen 则跳过", () => {
   const openCold = open([ally("a"), ally("b")], (ctx) => {
-    ctx.applyStatus("a", "cold")
-    ctx.applyStatus("b", "cold")
-    ctx.applyStatus("b", "cold")
+    ctx.applyEffect("a", "cold")
+    ctx.applyEffect("b", "cold")
+    ctx.applyEffect("b", "cold")
   })
   openCold.step()
   expect(flagsOf(openCold, "a")).toEqual(["cold"])
   expect(flagsOf(openCold, "b")).toEqual(["cold", "freeze", "stun"])
 
   const immune = open([ally("a", { immunity: ["frozen"] })], (ctx) => {
-    ctx.applyStatus("a", "cold")
-    ctx.applyStatus("a", "cold")
+    ctx.applyEffect("a", "cold")
+    ctx.applyEffect("a", "cold")
   })
   immune.step()
   expect(flagsOf(immune, "a")).not.toContain("freeze")
@@ -105,8 +105,8 @@ test("冻结只降低敌人的法术抗性", () => {
       ally("friend", { attributes: { hp: 200, res: 50 } }),
     ],
     (ctx) => {
-      ctx.applyStatus("enemy", "freeze")
-      ctx.applyStatus("friend", "freeze")
+      ctx.applyEffect("enemy", "freeze")
+      ctx.applyEffect("friend", "freeze")
       ctx.dealDamage({ sourceId: "friend", targetId: "enemy", amount: 100, kind: "arts" })
       ctx.dealDamage({ sourceId: "enemy", targetId: "friend", amount: 100, kind: "arts" })
     },
@@ -119,8 +119,8 @@ test("冻结只降低敌人的法术抗性", () => {
 
 test("脆弱和元素脆弱使用默认倍率", () => {
   const battle = open([ally("a", { attributes: { hp: 200 } }), ally("b", { attributes: { hp: 200 } })], (ctx) => {
-    ctx.applyStatus("a", "fragile")
-    ctx.applyStatus("b", "elemFragile")
+    ctx.applyEffect("a", "fragile")
+    ctx.applyEffect("b", "elemFragile")
     ctx.dealDamage({ sourceId: "a", targetId: "a", amount: 100, kind: "true" })
     ctx.dealDamage({ sourceId: "b", targetId: "b", amount: 100, kind: "elemental" })
   })
@@ -153,8 +153,8 @@ test("眩晕和缴械取消攻击", () => {
         slot: "status",
         priority: -1,
         run(runCtx) {
-          runCtx.applyStatus("stun", "stun")
-          runCtx.applyStatus("disarm", "disarm")
+          runCtx.applyEffect("stun", "stun")
+          runCtx.applyEffect("disarm", "disarm")
         },
       })
     },
@@ -219,8 +219,8 @@ test("战栗的敌人被挡住时不出手，没被挡时照常打", () => {
             priority: 1,
             run(runCtx) {
               if (runCtx.tick() !== 0) return
-              runCtx.applyStatus("held", "tremble")
-              runCtx.applyStatus("free", "tremble")
+              runCtx.applyEffect("held", "tremble")
+              runCtx.applyEffect("free", "tremble")
               runCtx.startTimer("held", "attack")
               runCtx.startTimer("free", "attack")
             },
@@ -245,8 +245,8 @@ test("麻痹按层取消敌人普攻，第五层加不上去，友方不受影�
     ctx.subscribe("attack-hit", (event) => {
       hits.push(String(event.data.unitId))
     })
-    for (let count = 0; count < 5; count += 1) ctx.applyStatus("e", "palsy")
-    ctx.applyStatus("a", "palsy")
+    for (let count = 0; count < 5; count += 1) ctx.applyEffect("e", "palsy")
+    ctx.applyEffect("a", "palsy")
     for (let count = 0; count < 4; count += 1) swing(ctx, "e")
     swing(ctx, "a")
   })
@@ -304,8 +304,8 @@ test("抵抗每 5 秒去掉 1 层麻痹", () => {
         priority: 1,
         run(runCtx) {
           if (runCtx.tick() === 0) {
-            runCtx.applyStatus("e", "palsy")
-            runCtx.applyStatus("e", "resist")
+            runCtx.applyEffect("e", "palsy")
+            runCtx.applyEffect("e", "resist")
             return
           }
           if (runCtx.tick() !== 150) return
@@ -330,7 +330,7 @@ test("抵抗每 5 秒去掉 1 层麻痹", () => {
 
 test("施加可以带秒数，到时消失；0 秒不施加", () => {
   const timed = open([ally("a")], (ctx) => {
-    ctx.applyStatus("a", "stun", { duration: 2 * TICK })
+    ctx.applyEffect("a", "stun", { duration: 2 * TICK })
   })
   timed.step()
   expect(flagsOf(timed, "a")).toContain("stun")
@@ -338,7 +338,7 @@ test("施加可以带秒数，到时消失；0 秒不施加", () => {
   expect(flagsOf(timed, "a")).not.toContain("stun")
 
   const refused = open([ally("a")], (ctx) => {
-    ctx.applyStatus("a", "stun", { duration: 0 })
+    ctx.applyEffect("a", "stun", { duration: 0 })
   })
   refused.step()
   expect(flagsOf(refused, "a")).not.toContain("stun")
@@ -347,8 +347,8 @@ test("施加可以带秒数，到时消失；0 秒不施加", () => {
 test("脆弱用这次的强度，弱的不盖过强的，强的结束后续上弱的", () => {
   const battle = open([ally("a", { attributes: { hp: 500 } })], (ctx) => {
     if (ctx.tick() !== 0) return
-    ctx.applyStatus("a", "fragile", { value: 0.5, duration: 2 * TICK })
-    ctx.applyStatus("a", "fragile", { value: 0.2, duration: 1 })
+    ctx.applyEffect("a", "fragile", { value: 0.5, duration: 2 * TICK })
+    ctx.applyEffect("a", "fragile", { value: 0.2, duration: 1 })
     ctx.dealDamage({ sourceId: "a", targetId: "a", amount: 100, kind: "true" })
   })
   battle.step()
@@ -383,8 +383,8 @@ test("脆弱用这次的强度，弱的不盖过强的，强的结束后续上�
             priority: 1,
             run(runCtx) {
               if (runCtx.tick() !== 0) return
-              runCtx.applyStatus("a", "fragile", { value: 0.5, duration: 2 * TICK })
-              runCtx.applyStatus("a", "fragile", { value: 0.2, duration: 1 })
+              runCtx.applyEffect("a", "fragile", { value: 0.5, duration: 2 * TICK })
+              runCtx.applyEffect("a", "fragile", { value: 0.2, duration: 1 })
             },
           })
         },
@@ -400,8 +400,8 @@ test("脆弱用这次的强度，弱的不盖过强的，强的结束后续上�
 
 test("恐惧免疫用 feared", () => {
   const battle = open([ally("a", { immunity: ["feared"] })], (ctx) => {
-    ctx.applyStatus("a", "fear")
-    ctx.applyStatus("a", "tremble")
+    ctx.applyEffect("a", "fear")
+    ctx.applyEffect("a", "tremble")
   })
   battle.step()
   expect(flagsOf(battle, "a")).toEqual([])

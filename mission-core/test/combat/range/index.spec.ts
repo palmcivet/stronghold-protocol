@@ -1,5 +1,5 @@
 import { expect, test } from "vitest"
-import { createBattle, type Direction, type MissionModule } from "arknights-mission-core"
+import { createBattle, defineExtensible, type Direction, type MissionModule } from "arknights-mission-core"
 import { ally, spec } from "#test/fixture.js"
 
 const cell = { x: 1, y: 2 }
@@ -22,7 +22,7 @@ test("范围查询按朝向返回旋转后的格子", () => {
     const probe: MissionModule = {
       id: "probe",
       install(ctx) {
-        ctx.registerSelector({
+        ctx.replace(defineExtensible("all", { version: 1, contract: "selector" }), {
           id: "all",
           filter() {
             selectorCalls += 1

@@ -7,7 +7,7 @@ import { gridOf } from "#field/grid/index.js"
 import { hasTag } from "#kernel/world/tag.js"
 import { BLOCK_FLY, DEVICE, NO_BLOCK, STEALTH, UNBLOCKABLE } from "#port/tag.js"
 import { allowsGround } from "#field/grid/pass.js"
-import { applyStatus } from "#ability/effect/index.js"
+import { applyEffect } from "#ability/effect/index.js"
 import { attributeOf, carriesAttribute } from "#ability/effect/attribute.js"
 import { isFlying, type UnitState } from "#unit/record/index.js"
 import { routeHidden } from "#field/grid/route.js"
@@ -134,10 +134,10 @@ function fenced(state: BattleWorld, blocker: UnitState): boolean {
 
 function restoreStealth(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext, enemy: UnitState): void {
   if (!hasTag(enemy, STEALTH) || !enemy.fielded || enemy.downed) return
-  const stealth = enemy.statuses.find((status) => status.id === "stealth" && !status.dropped)
+  const stealth = enemy.effects.find((status) => status.id === "stealth" && !status.dropped)
   const delay = stealth && stealth.strength > 0 ? stealth.strength : STEALTH_RESTORE
   if (!(delay > 0)) return
-  applyStatus(state, registry, ctx, enemy.id, "stealthOff", { duration: delay })
+  applyEffect(state, registry, ctx, enemy.id, "stealthOff", { duration: delay })
 }
 
 /** 没写 blockCnt 时按 1。写了就走属性汇总。 */

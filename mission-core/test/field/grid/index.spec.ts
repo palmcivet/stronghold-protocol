@@ -130,14 +130,17 @@ test("路线消失在状态刷新之后仍留在快照里", () => {
     id: "mark",
     install(ctx) {
       ctx.registerTag(MARKED)
-      ctx.registerStatus({
+      ctx.registerEffect({
         id: "marked",
-        tags: [MARKED],
+        grantsTags: [MARKED],
         modifiers: [],
         immunity: [],
         stackCap: 1,
         cancels: [],
         duration: 5,
+        instant: false,
+        period: 1,
+        stacking: "refresh",
       })
       ctx.registerSystem({
         id: "arm",
@@ -145,7 +148,7 @@ test("路线消失在状态刷新之后仍留在快照里", () => {
         priority: 1,
         run(runCtx) {
           if (runCtx.tick() !== 1) return
-          runCtx.applyStatus("hider", "marked")
+          runCtx.applyEffect("hider", "marked")
         },
       })
     },

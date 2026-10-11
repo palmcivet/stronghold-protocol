@@ -76,6 +76,6 @@ reg.registerSkillTrigger({
 
 `castSkill(unitId, skillId)` 不另问触发。有层数、在场、生命大于 0，且没有处在持续技能中时，消耗一层并释放。
 
-`gainSp(unitId, skillId, amount)` 从外界加技力。被动、正在持续的 `duration` / `ammo` / `toggle`、带 `no-sp`、花费不大于 0，或层数和技力都已经满了时返回 0。否则返回传入的数量。
+`gainSp(unitId, skillId, amount, options?)` 从外界加技力。被动、正在持续的 `duration` / `ammo` / `toggle`、带 `no-sp`、花费不大于 0，或层数和技力都已经满了时返回 0。否则返回传入的数量。`options.ignoreLock` 为真时不看持续期间的锁定与 `no-sp`。
 
 技能修饰在技能生效期间参加属性汇总。快照叠这些修饰时跳过当前生命。持续结束时先跑 `onEnd`，再撤下修饰。

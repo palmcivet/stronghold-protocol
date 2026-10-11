@@ -184,7 +184,7 @@ test("前摇被眩晕取消则不结算伤害，技力相位不被这次取消�
           if (runCtx.tick() !== 1) return
           const view = runCtx.timerView("a", "skill-point")
           before = { phase: String(view.phase), elapsed: Number(view.elapsed) }
-          runCtx.applyStatus("a", "stun")
+          runCtx.applyEffect("a", "stun")
           const next = runCtx.timerView("a", "skill-point")
           after = { phase: String(next.phase), elapsed: Number(next.elapsed) }
         },
@@ -257,17 +257,20 @@ test("阻回不取消攻击，敌人在敌人行动槽里打出伤害", () => {
     }),
     [
       attackModule((ctx) => {
-        ctx.registerStatus({
+        ctx.registerEffect({
           id: "stop-sp",
-          tags: [NO_SP],
+          grantsTags: [NO_SP],
           modifiers: [],
           immunity: [],
           stackCap: 1,
           cancels: [],
           duration: 0,
+          instant: false,
+          period: 1,
+          stacking: "refresh",
         })
         if (ctx.tick() !== 0) return
-        ctx.applyStatus("e", "stop-sp")
+        ctx.applyEffect("e", "stop-sp")
         ctx.startTimer("e", "attack")
       }),
     ],
@@ -331,11 +334,11 @@ test("不能打空的攻击不选飞行单位，隐匿要显形才打得到", ()
     [
       attackModule((ctx) => {
         if (ctx.tick() === 0) {
-          ctx.applyStatus("e", "stealth")
+          ctx.applyEffect("e", "stealth")
           ctx.startTimer("a", "attack")
           return
         }
-        if (ctx.tick() === 3) ctx.applyStatus("e", "reveal")
+        if (ctx.tick() === 3) ctx.applyEffect("e", "reveal")
       }),
     ],
   )

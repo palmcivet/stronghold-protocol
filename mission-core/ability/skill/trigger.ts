@@ -1,5 +1,6 @@
+import { defineExtensible } from "#kernel/registry/extensible.js"
 import type { ContentContext } from "#port/context.js"
-import type { BattleRegistry } from "#port/definition.js"
+import type { BattleRegistry, SkillTriggerDefinition } from "#port/definition.js"
 import { rotateOffset } from "#field/direction/index.js"
 import { bodyInKeys, tileKey } from "#field/body/index.js"
 import { requireUnit, type BattleWorld } from "#unit/record/index.js"
@@ -10,38 +11,44 @@ import { CAN_HIT_FLY, REVEAL, STEALTH, STEALTH_OFF, UNTARGETABLE } from "#port/t
 import { isFlying, type SkillInstance, type UnitState } from "#unit/record/index.js"
 
 export function registerBuiltinSkillTriggers(state: BattleWorld, registry: BattleRegistry): void {
-  registry.registerSkillTrigger({
+  openTrigger(registry, {
     id: "DEFAULT",
     shouldCast: (unitId, skillId) => defaultCondition(state, registry, unitId, skillId),
   })
-  registry.registerSkillTrigger({
+  openTrigger(registry, {
     id: "SKILL_RANGE",
     shouldCast: (unitId, skillId) => skillRange(state, registry, unitId, skillId),
   })
-  registry.registerSkillTrigger({
+  openTrigger(registry, {
     id: "TAKE_DAMAGE",
     shouldCast: (unitId, skillId) => skillOf(state, unitId, skillId).hurtPending,
   })
-  registry.registerSkillTrigger({
+  openTrigger(registry, {
     id: "SP_FULL",
     shouldCast: () => true,
   })
-  registry.registerSkillTrigger({
+  openTrigger(registry, {
     id: "CUSTOM_RANGE",
     shouldCast: (unitId, skillId) => customRange(state, registry, unitId, skillId),
   })
-  registry.registerSkillTrigger({
+  openTrigger(registry, {
     id: "SEARCH",
     shouldCast: (unitId, skillId) => defaultCondition(state, registry, unitId, skillId),
   })
-  registry.registerSkillTrigger({
+  openTrigger(registry, {
     id: "GDGLOW_SKILL_2",
     shouldCast: (unitId, skillId) => fieldTarget(state, registry, unitId, skillId),
   })
-  registry.registerSkillTrigger({
+  openTrigger(registry, {
     id: "NEVER",
     shouldCast: () => false,
   })
+}
+
+/** 注册内置技能触发并标成可扩展。 */
+function openTrigger(registry: BattleRegistry, definition: SkillTriggerDefinition): void {
+  registry.registerSkillTrigger(definition)
+  registry.markExtensible(defineExtensible(definition.id, { version: 1, contract: "skill-trigger" }))
 }
 
 export function shouldCast(

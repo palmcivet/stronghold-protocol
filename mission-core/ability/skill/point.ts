@@ -1,3 +1,4 @@
+import type { SkillMoment } from "#contract/spec.js"
 import type { ContentContext } from "#port/context.js"
 import type { TimerState } from "#kernel/timer/index.js"
 import type { BattleRegistry } from "#port/definition.js"
@@ -114,7 +115,7 @@ export function advanceSkillBody(
   for (const skill of unit.skills) {
     if (!skill.active) continue
     const moment = { unitId, skillId: skill.id, reason: "tick", dt: TICK }
-    skill.onTick?.(moment)
+    runHook(registry, ctx, skill.hooks.tick, moment)
     registry.requireSkillBody(skill.body).onTick?.(unitId, skill.id, ctx)
     registry.requireSkillBody(skill.body).advance(skill, ctx)
     if (!skill.active) finishSkill(registry, ctx, unit, skill, skill.body === "ammo" && skill.ammo <= 0 ? "ammo" : "duration")
@@ -189,10 +190,10 @@ export function activateSkill(
   if (skill.operation === "MANUAL") skill.opReadyAt = state.tick * TICK + AUTO_OP_COOLDOWN
   const body = registry.requireSkillBody(skill.body)
   body.cast(skill, { duration: skill.duration, ammo: skill.ammoSpec })
-  skill.pending = isInstantBody(skill.body) && skill.onHit !== null
+  skill.pending = isInstantBody(skill.body) && skill.hooks.hit !== undefined
   applyEffects(registry, unit, skill)
   const moment = { unitId, skillId, reason, dt: 0 }
-  skill.onStart?.(moment)
+  runHook(registry, ctx, skill.hooks.start, moment)
   body.onCast?.(unitId, skillId, ctx)
   ctx.emit("skill-start", { unitId, skillId, reason })
   if (isInstantBody(skill.body) && !skill.pending) finishSkill(registry, ctx, unit, skill, "instant")
@@ -249,7 +250,7 @@ function openSkill(
     const body = registry.requireSkillBody(skill.body)
     body.cast(skill, { duration: skill.duration, ammo: skill.ammoSpec })
     applyEffects(registry, unit, skill)
-    skill.onStart?.({ unitId: unit.id, skillId: skill.id, reason: "passive", dt: 0 })
+    runHook(registry, ctx, skill.hooks.start, { unitId: unit.id, skillId: skill.id, reason: "passive", dt: 0 })
     body.onCast?.(unit.id, skill.id, ctx)
     ctx.emit("skill-start", { unitId: unit.id, skillId: skill.id, reason: "passive" })
     return
@@ -306,7 +307,7 @@ function noteAttack(state: BattleWorld, registry: BattleRegistry, ctx: ContentCo
         finishSkill(registry, ctx, unit, skill, "ammo")
       }
     } else if (pendingHit) {
-      skill.onHit?.({ unitId, skillId: skill.id, reason: "hit", dt: 0 })
+      runHook(registry, ctx, skill.hooks.hit, { unitId, skillId: skill.id, reason: "hit", dt: 0 })
       registry.requireSkillBody(skill.body).onHit?.(unitId, skill.id, ctx)
       skill.pending = false
       skill.active = false
@@ -345,7 +346,7 @@ function finishSkill(
   const mark = skill.activations
   skill.active = false
   skill.pending = false
-  skill.onEnd?.({ unitId: unit.id, skillId: skill.id, reason, dt: 0 })
+  runHook(registry, ctx, skill.hooks.end, { unitId: unit.id, skillId: skill.id, reason, dt: 0 })
   registry.requireSkillBody(skill.body).onEnd?.(unit.id, skill.id, ctx)
   ctx.emit("skill-end", { unitId: unit.id, skillId: skill.id, reason })
   if (!skill.active && skill.activations === mark) {
@@ -361,12 +362,18 @@ function applyEffects(registry: BattleRegistry, unit: UnitState, skill: SkillIns
   refreshTags(registry, unit)
 }
 
+function runHook(registry: BattleRegistry, ctx: ContentContext, hookId: string | undefined, moment: SkillMoment): void {
+  if (hookId !== undefined) registry.requireSkillHook(hookId).run(moment, ctx)
+}
+
 // MARK: sp
 
+/** reason 为 init 或 unlocked 时不看技力锁定：持续技能期间与阻回照样加。 */
 function gain(unit: UnitState, skill: SkillInstance, amount: number, reason: string): number {
   if (skill.body === "passive" || !(amount > 0) || !Number.isFinite(amount)) return 0
-  if (skill.active && isTimedBody(skill.body) && reason !== "init") return 0
-  if (reason !== "init" && hasTag(unit, NO_SP)) return 0
+  const unlocked = reason === "init" || reason === "unlocked"
+  if (skill.active && isTimedBody(skill.body) && !unlocked) return 0
+  if (!unlocked && hasTag(unit, NO_SP)) return 0
   const cost = skill.spCost
   if (cost <= 0) return 0
   if (skill.charges >= skill.maxCharges && reached(skill.sp, cost)) return 0

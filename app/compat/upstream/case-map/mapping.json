@@ -208,24 +208,24 @@
       "reason": "在浏览器里跑 master sim 的整场用例，next 的作战核心另有 Node 与浏览器一致性的保证"
     },
     "sim/bosshp_stacking.test.js::directMods: 直接乘算 ratios go to the additive percentage bucket (zeros dropped, extras merged)": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "属性乘区与加算桶"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "盟约、装备、潜能与练度的取值随内容模块改写；核心提供加值、百分比、乘算与独立乘区（mission-core/test/battle/content.spec.ts）"
     },
     "sim/bosshp_stacking.test.js::bonds + equipment + a skill ATK%: one sum (精准 L100 +130 %, 独行 +60 %, two items +55 %, skill +50 %)": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "属性乘区与加算桶"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "盟约、装备、潜能与练度的取值随内容模块改写；核心提供加值、百分比、乘算与独立乘区（mission-core/test/battle/content.spec.ts）"
     },
     "sim/bosshp_stacking.test.js::strategy + bonds add up: 阿米娅 众志合一 (3 active bonds: +20 % ATK / HP) with 精准 and 绝技 (elite)": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "属性乘区与加算桶"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "盟约、装备、潜能与练度的取值随内容模块改写；核心提供加值、百分比、乘算与独立乘区（mission-core/test/battle/content.spec.ts）"
     },
     "sim/bosshp_stacking.test.js::a leader sharing the pool takes the summed ATK: one normal hit of a stacked operator (精准 L600 + 独行 + 2 items)": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "属性乘区与加算桶"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "盟约、装备、潜能与练度的取值随内容模块改写；核心提供加值、百分比、乘算与独立乘区（mission-core/test/battle/content.spec.ts）"
     },
     "sim/combat.test.js::stun stops enemy movement and attacks; immunity honoured; statusApplied fires": {
       "status": "pending",
@@ -1651,43 +1651,43 @@
     },
     "sim/feedback3-cold-freeze.test.js::cold 10s then immediately another cold 1s → freeze lasts about 10s, not 3": {
       "status": "pending",
-      "step": "ECS 5",
-      "reason": "寒冷叠加转冻结的时长"
+      "step": "ECS 6",
+      "reason": "寒冷叠加转冻结的时长规则未在 next 核对，随状态目录核对"
     },
     "sim/feedback3-cold-freeze.test.js::cold 1s then cold 8s → freeze lasts about 8s, not 3": {
       "status": "pending",
-      "step": "ECS 5",
-      "reason": "寒冷叠加转冻结的时长"
+      "step": "ECS 6",
+      "reason": "寒冷叠加转冻结的时长规则未在 next 核对，随状态目录核对"
     },
     "sim/feedback3-cold-freeze.test.js::a shorter second cold does not shorten a longer remaining cold's freeze": {
       "status": "pending",
-      "step": "ECS 5",
-      "reason": "寒冷叠加转冻结的时长"
+      "step": "ECS 6",
+      "reason": "寒冷叠加转冻结的时长规则未在 next 核对，随状态目录核对"
     },
     "sim/feedback3-cold-freeze.test.js::抵抗 still shortens the incoming duration before the max": {
       "status": "pending",
-      "step": "ECS 5",
-      "reason": "寒冷叠加转冻结的时长"
+      "step": "ECS 6",
+      "reason": "寒冷叠加转冻结的时长规则未在 next 核对，随状态目录核对"
     },
     "sim/feedback3-cold-freeze.test.js::a frozen-immune enemy gets the second cold and no freeze": {
       "status": "pending",
-      "step": "ECS 5",
-      "reason": "寒冷叠加转冻结的时长"
+      "step": "ECS 6",
+      "reason": "寒冷叠加转冻结的时长规则未在 next 核对，随状态目录核对"
     },
     "sim/feedback3-cold-freeze.test.js::吉兆飞鳞: the stun when a freeze ends follows the longer or shorter cold, not a fixed 3 s": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "寒冷叠加转冻结的时长"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "吉兆飞鳞是内容用例"
     },
     "sim/feedback3-stunsp.test.js::洛洛 S2 自负此轭: the data matches skill_table (lv 4 / 7), the stun lasts the overload, and her SP recovers while she is stunned": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "晕眩与冻结期间的自然技力"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "真实技能数据的内容用例"
     },
     "sim/feedback3-stunsp.test.js::frozen or stunned operators keep their natural SP recovery; 阻回 (noSp) still stops it; no cast while stunned": {
       "status": "pending",
-      "step": "ECS 5",
-      "reason": "晕眩与冻结期间的自然技力"
+      "step": "ECS 6",
+      "reason": "眩晕与冻结期间照常回技力、阻回停回已有 next 用例；眩晕期间不释放未核对"
     },
     "sim/feedback3-swire-s3.test.js::琳琅诗怀雅 S3 shoots at the cap only once an enemy is in the skill attack range": {
       "status": "moved",
@@ -2135,28 +2135,33 @@
     },
     "sim/feedback5-groundbind.test.js::缚地 is a catalogue status: flag groundbind + noMove, move ×0, one of 抵抗's statuses": {
       "status": "pending",
-      "step": "ECS 5",
-      "reason": "缚地状态"
+      "step": "ECS 6",
+      "reason": "缚地还不在核心效果目录里，随状态目录补上"
     },
     "sim/feedback5-groundbind.test.js::缚地: an air unit is a ground unit (melee operators hit it) and cannot move; half as long on weight > 3; 抵抗 shortens it; 浮空 lands on a 缚地 flyer; back in the air when it ends": {
       "status": "pending",
-      "step": "ECS 5",
-      "reason": "缚地状态"
+      "step": "ECS 6",
+      "reason": "缚地还不在核心效果目录里，随状态目录补上"
     },
     "sim/feedback5-groundbind.test.js::the hovering enemies (PRTS \"受…缚地影响后\"): 掠海漂移体 drops to its 爬行模式 for good; 吉兆飞鳞 is down while the 缚地 holds": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "缚地状态"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "真实敌人的内容用例"
     },
     "sim/feedback5-hpdamage-hook.test.js::hpDamage: after the shields, before the HP loss — a handler lowers what reaches the HP; a raise is ignored": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "修饰管线将规定钩子的约束，例如钩子只能调低伤害"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/damage/modifier.spec.ts::hp 阶段在护盾之后、扣生命之前：修饰看到穿过护盾的数额，只能调低，调高不生效",
+        "mission-core/test/combat/damage/modifier.spec.ts::hp 阶段的修饰按 priority 依次调低，后一个看到前一个的结果"
+      ],
+      "reason": "hpDamage 钩子改为伤害修饰管线的 hp 阶段，管线只接受调低"
     },
     "sim/feedback5-hpdamage-hook.test.js::hpDamage: no call for a 流失 nor for a hit the shields take whole; without a handler nothing changes": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "修饰管线将规定钩子的约束，例如钩子只能调低伤害"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/damage/modifier.spec.ts::流失与被护盾整段吸收的伤害不经过 hp 阶段；没有修饰时照常结算"
+      ],
+      "reason": "hpDamage 钩子改为伤害修饰管线的 hp 阶段"
     },
     "sim/feedback5-kjerag-cold.test.js::谢拉格 wind alone: below 50 layers it never freezes (each 20 + 0.1·L s cold ends before the next gust)": {
       "status": "moved",
@@ -2380,103 +2385,103 @@
     },
     "sim/fidelity.test.js::attack-SP instant skill fires every spCost+1 attacks: the skill attack itself recovers no SP": {
       "status": "pending",
-      "step": "ECS 5",
-      "reason": "技力规则"
+      "step": "ECS 6",
+      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
     },
     "sim/fidelity.test.js::attack-SP ammo skill: no SP from any ammo shot, including the last one": {
       "status": "pending",
-      "step": "ECS 5",
-      "reason": "技力规则"
+      "step": "ECS 6",
+      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
     },
     "sim/fidelity.test.js::unite carryState: a skill running at the end of the own combat is not carried — unitsEnd reports sp 0 and the skill enters 联防 off": {
       "status": "pending",
-      "step": "ECS 5",
-      "reason": "技力规则"
+      "step": "ECS 6",
+      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
     },
     "sim/fidelity.test.js::MELEE enemies only hit their blocker even with a data radius; RANGED ones shoot unblocking operators": {
       "status": "pending",
-      "step": "ECS 5",
-      "reason": "技力规则"
+      "step": "ECS 6",
+      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
     },
     "sim/fidelity.test.js::real data: MELEE enemies with an official radius (宿主士兵) leave high-ground operators alone": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "技力规则"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "通用 kit、真实数据、关卡装置与 DESIGN 契约属于内容与对局层"
     },
     "sim/fidelity.test.js::stage devices: act1 m02 crates are hidden and inactive in 下半 (research 08 §3.2) ⇒ none; act1 m04 active crates ⇒ obstacles": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "技力规则"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "通用 kit、真实数据、关卡装置与 DESIGN 契约属于内容与对局层"
     },
     "sim/fidelity.test.js::stage devices: active platforms (act1 m03) block ground paths and elevate operators standing on them": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "技力规则"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "通用 kit、真实数据、关卡装置与 DESIGN 契约属于内容与对局层"
     },
     "sim/fidelity.test.js::generic kind: duration −1 is instant/charges unless the skill is explicitly endless": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "技力规则"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "通用 kit、真实数据、关卡装置与 DESIGN 契约属于内容与对局层"
     },
     "sim/fidelity.test.js::generic scales: attack@atk_scale wins for hits; burst/counter/bonus scales never become the attack scale": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "技力规则"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "通用 kit、真实数据、关卡装置与 DESIGN 契约属于内容与对局层"
     },
     "sim/fidelity.test.js::generic passives only buff stats: 星熊 keeps 100 % attacks and counters attackers for 65 % ATK": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "技力规则"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "通用 kit、真实数据、关卡装置与 DESIGN 契约属于内容与对局层"
     },
     "sim/fidelity.test.js::generic target debuffs: 初雪 shreds enemies in range (not herself); 流星 marks its targets for 5 s": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "技力规则"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "通用 kit、真实数据、关卡装置与 DESIGN 契约属于内容与对局层"
     },
     "sim/fidelity.test.js::generic text rules: 泡泡 stops attacking; 小满 sleeps ≤3 enemies once; 宴 +65 % ATK only for 14 s after losing half HP; 砾 shield": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "技力规则"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "通用 kit、真实数据、关卡装置与 DESIGN 契约属于内容与对局层"
     },
     "sim/fidelity.test.js::generic element: 塑心 charges add 85 % ATK of 凋亡 (apoptosis) damage to the gauge": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "技力规则"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "通用 kit、真实数据、关卡装置与 DESIGN 契约属于内容与对局层"
     },
     "sim/fidelity.test.js::taunt as a buff flag (DESIGN §5.3) raises aggro: ranged enemies pick the taunting operator": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "技力规则"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "通用 kit、真实数据、关卡装置与 DESIGN 契约属于内容与对局层"
     },
     "sim/fidelity.test.js::librator module (玛恩纳 elite init_atk): +100 % ATK right after deployment": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "技力规则"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "通用 kit、真实数据、关卡装置与 DESIGN 契约属于内容与对局层"
     },
     "sim/fidelity.test.js::dollkeeper without a substitute token (归溟幽灵鲨) keeps its own max HP, not 风丸's 纸偶": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "技力规则"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "通用 kit、真实数据、关卡装置与 DESIGN 契约属于内容与对局层"
     },
     "sim/fidelity.test.js::real data: R5 template on act1 m04 (crates) with a real lineup runs to the limit with invariants": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "技力规则"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "通用 kit、真实数据、关卡装置与 DESIGN 契约属于内容与对局层"
     },
     "sim/fidelity.test.js::generic kit never throws and yields finite numbers for every real chess (normal & elite)": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "技力规则"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "通用 kit、真实数据、关卡装置与 DESIGN 契约属于内容与对局层"
     },
     "sim/fidelity.test.js::DESIGN §5.1/§5.4 contract: Battle API + helpers exist and every hook fires with its documented ctx keys": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "技力规则"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "通用 kit、真实数据、关卡装置与 DESIGN 契约属于内容与对局层"
     },
     "sim/fidelity.test.js::kits keyed like the DESIGN §5.6 example (suffix-less `chess_char_1_01`) are found for normal and elite chess": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "技力规则"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "通用 kit、真实数据、关卡装置与 DESIGN 契约属于内容与对局层"
     },
     "sim/fuzz.test.js::fuzz: 200 random battles on real data run to completion with invariants": {
       "status": "not-migrated",
@@ -2607,89 +2612,93 @@
       "reason": "在浏览器里跑 master sim 的整场用例，干员配置的合成在 port/loadout.ts 另有用例"
     },
     "sim/loadout.test.js::resolveLoadout: legal choices resolve, anything else falls back to the default": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "干员配置合成（port/loadout.ts）"
+      "status": "moved",
+      "owner": "app/server",
+      "reason": "干员配置合成属于对局层，随 MIGRATE 迁移"
     },
     "sim/loadout.test.js::every choice the lobby accepts (shared loadoutOptions) resolves to itself in the sim; defaults agree": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "干员配置合成（port/loadout.ts）"
+      "status": "moved",
+      "owner": "app/server",
+      "reason": "干员配置合成属于对局层，随 MIGRATE 迁移"
     },
     "sim/loadout.test.js::getChess(id, loadout): selected skill (bb, SP, trigger) and module (stats, trait, talents); cached; default = same def": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "干员配置合成（port/loadout.ts）"
+      "status": "moved",
+      "owner": "app/server",
+      "reason": "干员配置合成属于对局层，随 MIGRATE 迁移"
     },
     "sim/loadout.test.js::getToken(id, owner, ownerLoadout): summons follow the owner's skill slot and module": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "干员配置合成（port/loadout.ts）"
+      "status": "moved",
+      "owner": "app/server",
+      "reason": "干员配置合成属于对局层，随 MIGRATE 迁移"
     },
     "sim/loadout.test.js::kit loader: skills[selected] → kit.skill (default only) → generic; talents / trait / install always from the kit": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "干员配置合成（port/loadout.ts）"
+      "status": "moved",
+      "owner": "app/server",
+      "reason": "干员配置合成属于对局层，随 MIGRATE 迁移"
     },
     "sim/loadout.test.js::BattleSpec: units carry skillIndex / moduleId (sanitised); a battle uses the selected skill and module": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "干员配置合成（port/loadout.ts）"
+      "status": "moved",
+      "owner": "app/server",
+      "reason": "干员配置合成属于对局层，随 MIGRATE 迁移"
     },
     "sim/loadout.test.js::determinism: a spec with loadouts gives identical results on independent sources; the loadout matters": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "干员配置合成（port/loadout.ts）"
+      "status": "moved",
+      "owner": "app/server",
+      "reason": "干员配置合成属于对局层，随 MIGRATE 迁移"
     },
     "sim/loadout.test.js::withUnitLoadouts: per-battle view; explicit loadouts win; conflicting chess ids are reported": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "干员配置合成（port/loadout.ts）"
+      "status": "moved",
+      "owner": "app/server",
+      "reason": "干员配置合成属于对局层，随 MIGRATE 迁移"
     },
     "sim/loadout.test.js::multi-player field: the same chess with different loadouts per player — every unit (and summon) gets its own": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "干员配置合成（port/loadout.ts）"
+      "status": "moved",
+      "owner": "app/server",
+      "reason": "干员配置合成属于对局层，随 MIGRATE 迁移"
     },
     "sim/loadout.test.js::harness battle with injected kits: non-default skill via the view uses the authored skills entry": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "干员配置合成（port/loadout.ts）"
+      "status": "moved",
+      "owner": "app/server",
+      "reason": "干员配置合成属于对局层，随 MIGRATE 迁移"
     },
     "sim/loadout.test.js::tools/kit-coverage: every visible chess and each selectable skill, defaults hand-authored": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "干员配置合成（port/loadout.ts）"
+      "status": "moved",
+      "owner": "app/server",
+      "reason": "干员配置合成属于对局层，随 MIGRATE 迁移"
     },
     "sim/loadout.test.js::multi-player field: a unit WITHOUT loadout fields fights with the default even when another player picked a variant": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "干员配置合成（port/loadout.ts）"
+      "status": "moved",
+      "owner": "app/server",
+      "reason": "干员配置合成属于对局层，随 MIGRATE 迁移"
     },
     "sim/loadout.test.js::an inline token def of a PlayerBattleInput entry is never replaced by the loadout sync": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "干员配置合成（port/loadout.ts）"
+      "status": "moved",
+      "owner": "app/server",
+      "reason": "干员配置合成属于对局层，随 MIGRATE 迁移"
     },
     "sim/loadout.test.js::getToken: def.sources / def.count follow the owner loadout (which summons a chess really produces)": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "干员配置合成（port/loadout.ts）"
+      "status": "moved",
+      "owner": "app/server",
+      "reason": "干员配置合成属于对局层，随 MIGRATE 迁移"
     },
     "sim/loadout.test.js::a Battle built WITHOUT the spec path (server-run fields) resolves mid-battle summons with the owner loadout": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "干员配置合成（port/loadout.ts）"
+      "status": "moved",
+      "owner": "app/server",
+      "reason": "干员配置合成属于对局层，随 MIGRATE 迁移"
     },
     "sim/palsy-trigger.test.js::palsyTrigger: one event per interrupted attack, before the stack is used; no event without 麻痹": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "麻痹打断的事件随步骤 5 的效果系统定"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/palsy.spec.ts::palsy-interrupt 每次打断发一次，带用掉之前的层数；没有麻痹不发"
+      ],
+      "reason": "palsyTrigger 改为可拦截事件 palsy-interrupt"
     },
     "sim/palsy-trigger.test.js::palsyTrigger: `keep` leaves the stack; a handler that kills the enemy ends its turn": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "麻痹打断的事件随步骤 5 的效果系统定"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/palsy.spec.ts::订阅者把 keep 改成 true 时这一层留着，普攻仍被打断；订阅者击倒敌人时这次普攻结束"
+      ],
+      "reason": "palsyTrigger 改为可拦截事件 palsy-interrupt，keep 用 revise 写入"
     },
     "sim/pathing-blockable.test.js::equal-length lanes: the road (blockable) lane wins over the floor lane whichever side it is on": {
       "status": "pending",
@@ -3725,34 +3734,34 @@
       "reason": "路线 APPEAR 补写由 app/data 编译路线，核心执行路线"
     },
     "sim/potential-battle.test.js::potential on a battle unit: the def at that potential (stats, redeploy, cost, talent), 潜能 6 / absent = the data record": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "潜能与练度的独立乘区"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "盟约、装备、潜能与练度的取值随内容模块改写；核心提供加值、百分比、乘算与独立乘区（mission-core/test/battle/content.spec.ts）"
     },
     "sim/potential-battle.test.js::练度 on a battle unit: ×ATK / ×DEF / ×max HP of its tier, a multiplier of its own on top of the percentages": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "潜能与练度的独立乘区"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "盟约、装备、潜能与练度的取值随内容模块改写；核心提供加值、百分比、乘算与独立乘区（mission-core/test/battle/content.spec.ts）"
     },
     "sim/potential-battle.test.js::a 补位 stand-in and a prototype 自选 pick take neither; an owned 自选 pick takes both": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "潜能与练度的独立乘区"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "盟约、装备、潜能与练度的取值随内容模块改写；核心提供加值、百分比、乘算与独立乘区（mission-core/test/battle/content.spec.ts）"
     },
     "sim/potential-battle.test.js::summons follow their owner's potential: Mon3tr's 不毁重构 and 望's 棋子 deploy limit / holding": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "潜能与练度的独立乘区"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "盟约、装备、潜能与练度的取值随内容模块改写；核心提供加值、百分比、乘算与独立乘区（mission-core/test/battle/content.spec.ts）"
     },
     "sim/potential-battle.test.js::spec round trip: potential / 练度 kept when well-formed, dropped otherwise; the JSON spec fields the same battle": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "潜能与练度的独立乘区"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "盟约、装备、潜能与练度的取值随内容模块改写；核心提供加值、百分比、乘算与独立乘区（mission-core/test/battle/content.spec.ts）"
     },
     "sim/potential-battle.test.js::two players field the same chess at different potentials and 练度 on one field: each unit is exact": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "潜能与练度的独立乘区"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "盟约、装备、潜能与练度的取值随内容模块改写；核心提供加值、百分比、乘算与独立乘区（mission-core/test/battle/content.spec.ts）"
     },
     "sim/professions.test.js::every subProfessionId in the visible pool has a dedicated profile entry": {
       "status": "moved",
@@ -3941,7 +3950,7 @@
     "sim/robustness.test.js::kill handlers that write NaN / huge / negative hp: revive clamps to maxHp, otherwise the unit dies with hp 0": {
       "status": "rewritten",
       "next": [
-        "mission-core/test/combat/damage/index.spec.ts::hit 在减伤前可以改伤害，fatal 可以把生命留在 1"
+        "mission-core/test/combat/damage/index.spec.ts::hit 阶段的伤害修饰在减伤前改伤害，hit 事件带改后的数额；fatal 可以把生命留在 1"
       ],
       "reason": "fatal 的订阅者只能把 prevented 改成真，不能直接写生命；留下的生命由核心夹到 min(1, 最大生命)"
     },
@@ -3966,9 +3975,11 @@
       "reason": "畸形的干员数据由内容模块与 app/server 校验"
     },
     "sim/robustness.test.js::stat aggregation never produces non-finite stats (overflowing stacked multipliers fall back to base)": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "按 master，非有限的属性退回基础值，属于步骤 5 的属性系统"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/battle/guard.spec.ts::叠加溢出的乘算修饰让属性退回基础值（atk 是 10），不出现非有限值"
+      ],
+      "reason": "按 master 退回基础值；原先退回缺省值 0 的断言随之改名"
     },
     "sim/robustness.test.js::zero / junk attack intervals from data never yield NaN or 0-length cooldowns": {
       "status": "rewritten",
@@ -4052,183 +4063,233 @@
     },
     "sim/skills.test.js::deployment duration: synchronous start, one charge, countdown, carry and fresh redeployment": {
       "status": "pending",
-      "step": "ECS 5",
-      "reason": "技能体与持续技能，核对 next 现有用例"
+      "step": "ECS 6",
+      "reason": "技能体与持续技能的通用行为，核对 next 现有用例后改为 covered 或 rewritten"
     },
     "sim/skills.test.js::deployment duration: early retreat/death cleans effects and leaves no stale end on redeployment": {
       "status": "pending",
-      "step": "ECS 5",
-      "reason": "技能体与持续技能，核对 next 现有用例"
+      "step": "ECS 6",
+      "reason": "技能体与持续技能的通用行为，核对 next 现有用例后改为 covered 或 rewritten"
     },
     "sim/skills.test.js::generic timed passive: deployment window owns stats and arts hits without reinterpreting passive proc parameters; permanent passive stays on": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "技能体与持续技能，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "通用 kit 与 kit 转规格属于内容模块；核心技能钩子改为按 id 注册的纯数据（mission-core/test/battle/content.spec.ts）"
     },
     "sim/skills.test.js::generic 宴 S2: real normal/elite descriptions convert damage to arts only during the deployment window": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "技能体与持续技能，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "通用 kit 与 kit 转规格属于内容模块；核心技能钩子改为按 id 注册的纯数据（mission-core/test/battle/content.spec.ts）"
     },
     "sim/skills.test.js::SP: time regen, starts at initSp, capped at cost; DEFAULT waits for an enemy in the initial range": {
       "status": "pending",
-      "step": "ECS 5",
-      "reason": "技能体与持续技能，核对 next 现有用例"
+      "step": "ECS 6",
+      "reason": "技能体与持续技能的通用行为，核对 next 现有用例后改为 covered 或 rewritten"
     },
     "sim/skills.test.js::SP types: attack (+1 per attack) and hurt (+1 per hit taken)": {
       "status": "pending",
-      "step": "ECS 5",
-      "reason": "技能体与持续技能，核对 next 现有用例"
+      "step": "ECS 6",
+      "reason": "技能体与持续技能的通用行为，核对 next 现有用例后改为 covered 或 rewritten"
     },
     "sim/skills.test.js::trigger TAKE_DAMAGE fires on the first hit once ready; SP_FULL fires immediately; SEARCH needs an enemy in the initial range": {
       "status": "pending",
-      "step": "ECS 5",
-      "reason": "技能体与持续技能，核对 next 现有用例"
+      "step": "ECS 6",
+      "reason": "技能体与持续技能的通用行为，核对 next 现有用例后改为 covered 或 rewritten"
     },
     "sim/skills.test.js::trigger CUSTOM_RANGE uses the custom grid; unknown rules fall back to DEFAULT": {
       "status": "pending",
-      "step": "ECS 5",
-      "reason": "技能体与持续技能，核对 next 现有用例"
+      "step": "ECS 6",
+      "reason": "技能体与持续技能的通用行为，核对 next 现有用例后改为 covered 或 rewritten"
     },
     "sim/skills.test.js::ammo skills end when ammo runs out; ammoUsed fires per shot; no SP gain while active": {
       "status": "pending",
-      "step": "ECS 5",
-      "reason": "技能体与持续技能，核对 next 现有用例"
+      "step": "ECS 6",
+      "reason": "技能体与持续技能的通用行为，核对 next 现有用例后改为 covered 或 rewritten"
     },
     "sim/skills.test.js::charges accumulate up to maxCharges and are spent one per cast, 3 s apart (the automatic operation cooldown)": {
       "status": "pending",
-      "step": "ECS 5",
-      "reason": "技能体与持续技能，核对 next 现有用例"
+      "step": "ECS 6",
+      "reason": "技能体与持续技能的通用行为，核对 next 现有用例后改为 covered 或 rewritten"
     },
     "sim/skills.test.js::instant skills with an attack override apply to exactly one attack": {
       "status": "pending",
-      "step": "ECS 5",
-      "reason": "技能体与持续技能，核对 next 现有用例"
+      "step": "ECS 6",
+      "reason": "技能体与持续技能的通用行为，核对 next 现有用例后改为 covered 或 rewritten"
     },
     "sim/skills.test.js::SkillSpec from a kit: mods, targeting override, attack override, onStart/onEnd/onHit": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "技能体与持续技能，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "通用 kit 与 kit 转规格属于内容模块；核心技能钩子改为按 id 注册的纯数据（mission-core/test/battle/content.spec.ts）"
     },
     "sim/skills.test.js::passive and toggle kinds; carryState restores hp/sp, never a running skill": {
       "status": "pending",
-      "step": "ECS 5",
-      "reason": "技能体与持续技能，核对 next 现有用例"
+      "step": "ECS 6",
+      "reason": "技能体与持续技能的通用行为，核对 next 现有用例后改为 covered 或 rewritten"
     },
     "sim/skills.test.js::generic kit maps blackboards of every real chess to a sane SkillSpec": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "技能体与持续技能，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "通用 kit 与 kit 转规格属于内容模块；核心技能钩子改为按 id 注册的纯数据（mission-core/test/battle/content.spec.ts）"
     },
     "sim/skills.test.js::generic kit heuristics: self-stun after skill, on-hit statuses, displacement direction": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "技能体与持续技能，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "通用 kit 与 kit 转规格属于内容模块；核心技能钩子改为按 id 注册的纯数据（mission-core/test/battle/content.spec.ts）"
     },
     "sim/skills.test.js::spCostMul changes (绝技-style) keep SP within bounds and convert overflow into a charge": {
       "status": "pending",
-      "step": "ECS 5",
-      "reason": "技能体与持续技能，核对 next 现有用例"
+      "step": "ECS 6",
+      "reason": "技能体与持续技能的通用行为，核对 next 现有用例后改为 covered 或 rewritten"
     },
     "sim/skills.test.js::a deploy-time passive fires the skill animation window; a deploy-timed skill runs its duration (PR #109)": {
       "status": "pending",
-      "step": "ECS 5",
-      "reason": "技能体与持续技能，核对 next 现有用例"
+      "step": "ECS 6",
+      "reason": "技能体与持续技能的通用行为，核对 next 现有用例后改为 covered 或 rewritten"
     },
     "sim/strongest-status.test.js::fragile: three effects expire in strength order after application order 0,1,2": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "同名取最高的等待链"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/stacking.spec.ts::三次 fragile 按任何施加顺序都按强度依次接续（%i %i %i）",
+        "mission-core/test/ability/effect/stacking.spec.ts::随机施加与参照模型一致：每拍生效的是仍未到期的施加里强度最高的一次"
+      ],
+      "reason": "六种施加顺序合成一条参数化用例；applyStrongest 在 next 就是 stacking 为 strongest 的效果，与 fragile 同一条路径"
     },
     "sim/strongest-status.test.js::fragile: three effects expire in strength order after application order 0,2,1": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "同名取最高的等待链"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/stacking.spec.ts::三次 fragile 按任何施加顺序都按强度依次接续（%i %i %i）",
+        "mission-core/test/ability/effect/stacking.spec.ts::随机施加与参照模型一致：每拍生效的是仍未到期的施加里强度最高的一次"
+      ],
+      "reason": "六种施加顺序合成一条参数化用例；applyStrongest 在 next 就是 stacking 为 strongest 的效果，与 fragile 同一条路径"
     },
     "sim/strongest-status.test.js::fragile: three effects expire in strength order after application order 1,0,2": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "同名取最高的等待链"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/stacking.spec.ts::三次 fragile 按任何施加顺序都按强度依次接续（%i %i %i）",
+        "mission-core/test/ability/effect/stacking.spec.ts::随机施加与参照模型一致：每拍生效的是仍未到期的施加里强度最高的一次"
+      ],
+      "reason": "六种施加顺序合成一条参数化用例；applyStrongest 在 next 就是 stacking 为 strongest 的效果，与 fragile 同一条路径"
     },
     "sim/strongest-status.test.js::fragile: three effects expire in strength order after application order 1,2,0": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "同名取最高的等待链"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/stacking.spec.ts::三次 fragile 按任何施加顺序都按强度依次接续（%i %i %i）",
+        "mission-core/test/ability/effect/stacking.spec.ts::随机施加与参照模型一致：每拍生效的是仍未到期的施加里强度最高的一次"
+      ],
+      "reason": "六种施加顺序合成一条参数化用例；applyStrongest 在 next 就是 stacking 为 strongest 的效果，与 fragile 同一条路径"
     },
     "sim/strongest-status.test.js::fragile: three effects expire in strength order after application order 2,0,1": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "同名取最高的等待链"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/stacking.spec.ts::三次 fragile 按任何施加顺序都按强度依次接续（%i %i %i）",
+        "mission-core/test/ability/effect/stacking.spec.ts::随机施加与参照模型一致：每拍生效的是仍未到期的施加里强度最高的一次"
+      ],
+      "reason": "六种施加顺序合成一条参数化用例；applyStrongest 在 next 就是 stacking 为 strongest 的效果，与 fragile 同一条路径"
     },
     "sim/strongest-status.test.js::fragile: three effects expire in strength order after application order 2,1,0": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "同名取最高的等待链"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/stacking.spec.ts::三次 fragile 按任何施加顺序都按强度依次接续（%i %i %i）",
+        "mission-core/test/ability/effect/stacking.spec.ts::随机施加与参照模型一致：每拍生效的是仍未到期的施加里强度最高的一次"
+      ],
+      "reason": "六种施加顺序合成一条参数化用例；applyStrongest 在 next 就是 stacking 为 strongest 的效果，与 fragile 同一条路径"
     },
     "sim/strongest-status.test.js::applyStrongest: three effects expire in strength order after application order 0,1,2": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "同名取最高的等待链"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/stacking.spec.ts::三次 fragile 按任何施加顺序都按强度依次接续（%i %i %i）",
+        "mission-core/test/ability/effect/stacking.spec.ts::随机施加与参照模型一致：每拍生效的是仍未到期的施加里强度最高的一次"
+      ],
+      "reason": "六种施加顺序合成一条参数化用例；applyStrongest 在 next 就是 stacking 为 strongest 的效果，与 fragile 同一条路径"
     },
     "sim/strongest-status.test.js::applyStrongest: three effects expire in strength order after application order 0,2,1": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "同名取最高的等待链"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/stacking.spec.ts::三次 fragile 按任何施加顺序都按强度依次接续（%i %i %i）",
+        "mission-core/test/ability/effect/stacking.spec.ts::随机施加与参照模型一致：每拍生效的是仍未到期的施加里强度最高的一次"
+      ],
+      "reason": "六种施加顺序合成一条参数化用例；applyStrongest 在 next 就是 stacking 为 strongest 的效果，与 fragile 同一条路径"
     },
     "sim/strongest-status.test.js::applyStrongest: three effects expire in strength order after application order 1,0,2": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "同名取最高的等待链"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/stacking.spec.ts::三次 fragile 按任何施加顺序都按强度依次接续（%i %i %i）",
+        "mission-core/test/ability/effect/stacking.spec.ts::随机施加与参照模型一致：每拍生效的是仍未到期的施加里强度最高的一次"
+      ],
+      "reason": "六种施加顺序合成一条参数化用例；applyStrongest 在 next 就是 stacking 为 strongest 的效果，与 fragile 同一条路径"
     },
     "sim/strongest-status.test.js::applyStrongest: three effects expire in strength order after application order 1,2,0": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "同名取最高的等待链"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/stacking.spec.ts::三次 fragile 按任何施加顺序都按强度依次接续（%i %i %i）",
+        "mission-core/test/ability/effect/stacking.spec.ts::随机施加与参照模型一致：每拍生效的是仍未到期的施加里强度最高的一次"
+      ],
+      "reason": "六种施加顺序合成一条参数化用例；applyStrongest 在 next 就是 stacking 为 strongest 的效果，与 fragile 同一条路径"
     },
     "sim/strongest-status.test.js::applyStrongest: three effects expire in strength order after application order 2,0,1": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "同名取最高的等待链"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/stacking.spec.ts::三次 fragile 按任何施加顺序都按强度依次接续（%i %i %i）",
+        "mission-core/test/ability/effect/stacking.spec.ts::随机施加与参照模型一致：每拍生效的是仍未到期的施加里强度最高的一次"
+      ],
+      "reason": "六种施加顺序合成一条参数化用例；applyStrongest 在 next 就是 stacking 为 strongest 的效果，与 fragile 同一条路径"
     },
     "sim/strongest-status.test.js::applyStrongest: three effects expire in strength order after application order 2,1,0": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "同名取最高的等待链"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/stacking.spec.ts::三次 fragile 按任何施加顺序都按强度依次接续（%i %i %i）",
+        "mission-core/test/ability/effect/stacking.spec.ts::随机施加与参照模型一致：每拍生效的是仍未到期的施加里强度最高的一次"
+      ],
+      "reason": "六种施加顺序合成一条参数化用例；applyStrongest 在 next 就是 stacking 为 strongest 的效果，与 fragile 同一条路径"
     },
     "sim/strongest-status.test.js::strongest statuses: a weaker effect that expires under the winner never resumes": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "同名取最高的等待链"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/stacking.spec.ts::随机施加与参照模型一致：每拍生效的是仍未到期的施加里强度最高的一次"
+      ],
+      "reason": "由随机施加与参照模型的对照覆盖：生效的总是仍未到期的施加里强度最高的一次"
     },
     "sim/strongest-status.test.js::strongest statuses: equal-strength refresh skips expired fallbacks but keeps the later one": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "同名取最高的等待链"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/stacking.spec.ts::随机施加与参照模型一致：每拍生效的是仍未到期的施加里强度最高的一次"
+      ],
+      "reason": "由随机施加与参照模型的对照覆盖：生效的总是仍未到期的施加里强度最高的一次"
     },
     "sim/strongest-status.test.js::strongest statuses: refreshing a waiting effect preserves the weaker later fallback": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "同名取最高的等待链"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/stacking.spec.ts::随机施加与参照模型一致：每拍生效的是仍未到期的施加里强度最高的一次"
+      ],
+      "reason": "由随机施加与参照模型的对照覆盖：生效的总是仍未到期的施加里强度最高的一次"
     },
     "sim/strongest-status.test.js::strongest statuses: stackAs controls every fallback without changing its actual effect": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "同名取最高的等待链"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/stacking.spec.ts::stackAs 决定接续的先后，生效的仍是各自的 value"
+      ],
+      "reason": "改用核心 weaken 效果，按拍检查"
     },
     "sim/strongest-status.test.js::strongest statuses: equal-priority waiting effects keep the longest-lived application value": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "同名取最高的等待链"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/stacking.spec.ts::强度相同的等待项保留到期最晚的那次的 value"
+      ],
+      "reason": "改用核心 weaken 效果，按拍检查"
     },
     "sim/strongest-status.test.js::removeStatus discards every waiting strongest effect": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "同名取最高的等待链"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/stacking.spec.ts::removeEffect 连等待链一起取下，之后的新施加单独计时"
+      ],
+      "reason": "removeStatus 与 removeBuff 在 next 都是 removeEffect"
     },
     "sim/strongest-status.test.js::removeBuff discards every waiting strongest effect": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "同名取最高的等待链"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/stacking.spec.ts::removeEffect 连等待链一起取下，之后的新施加单独计时"
+      ],
+      "reason": "removeStatus 与 removeBuff 在 next 都是 removeEffect"
     },
     "sim/tick-tolerance.test.js::the residue: thirty steps of 1/30 leave 1 s above 0, 300 gains of 1/30 leave 10 SP short": {
       "status": "covered",
@@ -4273,49 +4334,49 @@
       "reason": "具体干员的内容用例，倒计时本身由 countdown 覆盖"
     },
     "sim/trait_attack_speed.test.js::圣约送葬人 / 隐德来希 REA-Y: 1 名敌人 → 正好 base，2 名 → 正好 +12 点（不是 +24）且实测攻击间隔按 ASPD 比缩短，击杀后恢复，重新进范围再加回": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "条件攻速效果"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "词条解析与数值随内容模块改写；核心提供条件效果 enemies-in-range（mission-core/test/battle/content.spec.ts）"
     },
     "sim/trait_attack_speed.test.js::两名受益者的取值来源不同（隐藏天赋 / traitBb），引擎两条路都读；默认模组都没有这条词条": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "条件攻速效果"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "词条解析与数值随内容模块改写；核心提供条件效果 enemies-in-range（mission-core/test/battle/content.spec.ts）"
     },
     "sim/trait_attack_speed.test.js::回归: 没有该词条的干员完全不变（3 名敌人也不动）": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "条件攻速效果"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "词条解析与数值随内容模块改写；核心提供条件效果 enemies-in-range（mission-core/test/battle/content.spec.ts）"
     },
     "sim/trait_attack_speed.test.js::回归: 手写实现的那几条特性词条，引擎显式拒绝接管（防止二次加成）": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "条件攻速效果"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "词条解析与数值随内容模块改写；核心提供条件效果 enemies-in-range（mission-core/test/battle/content.spec.ts）"
     },
     "sim/trait_attack_speed.test.js::回归: 史尔特尔 / 维娜·维多利亚 / 山 / 空弦 / 斯卡蒂 的数值与改动前一致（各自的 kit 路径照旧）": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "条件攻速效果"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "词条解析与数值随内容模块改写；核心提供条件效果 enemies-in-range（mission-core/test/battle/content.spec.ts）"
     },
     "sim/trait_attack_speed.test.js::规则解析: 条件子句 + 取值被显式报出；读不出条件 / 不认识的形状 → 什么都不装": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "条件攻速效果"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "词条解析与数值随内容模块改写；核心提供条件效果 enemies-in-range（mission-core/test/battle/content.spec.ts）"
     },
     "sim/trait_attack_speed.test.js::规则解析: 仇白 LOR-Y 同文案但数值写进具名天赋 —— 引擎连这条词条都看不到（她的 kit 负责，绝不二次加成）": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "条件攻速效果"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "词条解析与数值随内容模块改写；核心提供条件效果 enemies-in-range（mission-core/test/battle/content.spec.ts）"
     },
     "sim/trait_attack_speed.test.js::覆盖锁定: 全数据 266 个棋子 × 全部模组选择里，被引擎接管的只有那两条 REA-Y，其余全部显式拒绝（unknown = 0）": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "条件攻速效果"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "词条解析与数值随内容模块改写；核心提供条件效果 enemies-in-range（mission-core/test/battle/content.spec.ts）"
     },
     "sim/trait_attack_speed.test.js::覆盖锁定（补位 / 自选）: 每个补位干员和每个自选组合（池内干员 × 两种形态 × 技能 × 可选模组）都不被引擎接管": {
-      "status": "pending",
-      "step": "ECS 5",
-      "reason": "条件攻速效果"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "词条解析与数值随内容模块改写；核心提供条件效果 enemies-in-range（mission-core/test/battle/content.spec.ts）"
     },
     "sim/unbalance.test.js::a push holds the enemy for the 位移时间 of its 受力等级 (PRTS 游戏数据基础), then it walks on": {
       "status": "pending",

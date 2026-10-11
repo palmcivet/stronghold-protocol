@@ -196,21 +196,24 @@ test("timerRate 和状态修饰加快同一条充能，不按种类分叉", () =
   const haste: MissionModule = {
     id: "haste",
     install(ctx) {
-      ctx.registerStatus({
+      ctx.registerEffect({
         id: "haste",
-        tags: [],
+        grantsTags: [],
         modifiers: [{ attribute: "timerRate", op: "mul", value: 2 }],
         immunity: [],
         stackCap: 1,
         cancels: [],
         duration: 0,
+        instant: false,
+        period: 1,
+        stacking: "refresh",
       })
       ctx.registerSystem({
         id: "apply",
         slot: "status",
         priority: -1,
         run(runCtx) {
-          if (runCtx.tick() === 0) runCtx.applyStatus("a", "haste")
+          if (runCtx.tick() === 0) runCtx.applyEffect("a", "haste")
         },
       })
     },
@@ -233,7 +236,7 @@ test("不能行动时不积蓄，层数停在 times", () => {
         slot: "status",
         priority: -1,
         run(runCtx) {
-          if (runCtx.tick() === 0) runCtx.applyStatus("a", "stun")
+          if (runCtx.tick() === 0) runCtx.applyEffect("a", "stun")
         },
       })
     },

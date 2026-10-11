@@ -146,13 +146,13 @@ export const SCENARIOS: readonly Scenario[] = [
       }),
     modules: () => [
       script("status", {
-        5: (ctx) => ctx.applyStatus("e1", "slow", { duration: 3, value: 0.6 }),
-        10: (ctx) => ctx.applyStatus("e2", "cold", { duration: 2 }),
-        20: (ctx) => ctx.applyStatus("e2", "cold", { duration: 2 }),
-        30: (ctx) => ctx.applyStatus("e3", "stun", { duration: 2 }),
-        40: (ctx) => ctx.applyStatus("e1", "palsy", { value: 2 }),
-        60: (ctx) => ctx.applyStatus("g", "fragile", { duration: 4, value: 0.3 }),
-        90: (ctx) => ctx.applyStatus("e1", "slow", { duration: 2, value: 0.3 }),
+        5: (ctx) => ctx.applyEffect("e1", "slow", { duration: 3, value: 0.6 }),
+        10: (ctx) => ctx.applyEffect("e2", "cold", { duration: 2 }),
+        20: (ctx) => ctx.applyEffect("e2", "cold", { duration: 2 }),
+        30: (ctx) => ctx.applyEffect("e3", "stun", { duration: 2 }),
+        40: (ctx) => ctx.applyEffect("e1", "palsy", { value: 2 }),
+        60: (ctx) => ctx.applyEffect("g", "fragile", { duration: 4, value: 0.3 }),
+        90: (ctx) => ctx.applyEffect("e1", "slow", { duration: 2, value: 0.3 }),
       }),
     ],
   },
@@ -195,11 +195,11 @@ export const SCENARIOS: readonly Scenario[] = [
           ctx.shift(SHIFT_PULL, "e2", { force: 2, toX: 1, toY: 0, fromX: 1, fromY: 0 })
         },
         50: (ctx) => {
-          ctx.applyStatus("e3", "fear", { duration: 2 })
+          ctx.applyEffect("e3", "fear", { duration: 2 })
           ctx.shift(SHIFT_FEAR, "e3", { sourceX: 0, sourceY: 2 })
         },
         70: (ctx) => {
-          ctx.applyStatus("e4", "attract", { duration: 2 })
+          ctx.applyEffect("e4", "attract", { duration: 2 })
           ctx.shift(SHIFT_ATTRACT, "e4", { toX: 3, toY: 1 })
         },
         90: (ctx) => ctx.displace("e1", 2.5, 1.25),

@@ -45,11 +45,11 @@ interface DamageInfo {
 | `shield` | 600 | 先扣次数护盾，再扣数值护盾 |
 | `hp` | 1000 | 写当前生命 |
 
-`cancel` 为真，或种类仍是 `element` 时，后面的步骤不再写生命。模块用别的优先级插在这些 id 之间。同名再登记会换掉原来的步骤。
+`cancel` 为真，或种类仍是 `element` 时，后面的步骤不再写生命。模块用别的优先级插在这些 id 之间。同名再登记报 `RegistrationConflictError`；内置步骤标成可扩展，用 `replace` 或 `wrap` 换掉。
 
 ### 元素进槽
 
-没有 `element` 标识时数额变成 0。目标没有生命、正在爆发、带 `burst-lock`，或这个槽已锁定时，数额变成 0。不是预览时送出可拦截的 `element-hit`。种类被改离 `element` 后会再送出 `hit`，后面的步骤按新种类继续。
+没有 `element` 标识时数额变成 0。目标没有生命、正在爆发、带 `burst-lock`，或这个槽已锁定时，数额变成 0。不是预览时先跑 `element-hit` 阶段的伤害修饰，再送出只读的 `element-hit`。种类被改离 `element` 后会再送出 `hit`，后面的步骤按新种类继续。
 
 否则按抗性收成进槽的量。单位带了 `elementRes` 就用它，没有则用元素定义上的 `resistance`。抗性按 0 到 100 的百分数，系数是 `max(0.05, 1 - 抗性 / 100)`。进槽量是数额 × 乘数 × `elemTaken` × 这个系数。预览不进槽。蓄满则爆发。
 
@@ -76,6 +76,27 @@ interface DamageInfo {
 护盾先看状态上的次数，再看属性 `shieldHits`。命中次数的护盾直接吃掉这一下。然后按状态上的数值护盾和属性 `shield` 扣。
 
 生命步骤把当前 `hp` 减去数额。会扣到 0 时先送出 `fatal`。`prevented` 为真时，生命留在 1 和最大生命里较小的那个。否则写下剩余生命，再送出 `damaged`。生命不大于 0 时倒地：标成已倒地、离场，送出 `downed`。有部署策略时，落点用 `downedTile`，坐标写成这个格子，事件里带上坐标和 `canStand`。内置策略 `deploy` 的落点见 [模块](./03-module.md)。
+
+## 伤害修饰
+
+```ts
+interface DamageModifierDefinition {
+  id: string
+  stage: "hit" | "element-hit" | "hp"
+  priority: number
+  modify(change: HitChange | HpChange, ctx: ContentContext): void
+}
+```
+
+改写伤害数值的逻辑注册成伤害修饰（`registerDamageModifier`），同一阶段按 `priority` 从小到大、相同按注册先后调用。只读字段是来源、记功者、目标、`sourceless`、`attack` 和元素。
+
+| 阶段 | 何时 | 可写 | 约束 |
+| --- | --- | --- | --- |
+| `hit` | 进入伤害步骤之前（非元素） | `amount`、`mul`、`kind`、`cancel` | 非有限的数额与倍率不生效 |
+| `element-hit` | 元素进槽之前 | 同上 | 同上；种类改离 `element` 后再走 `hit` 阶段 |
+| `hp` | 护盾之后、扣生命之前，数额大于 0 时 | `amount` | 只能调低：每个修饰之后，只接受低于原值的有限数，并夹到 0 以上。流失与被护盾整段吸收的伤害不经过 |
+
+阶段之后送出的 `hit`、`element-hit` 事件带改写后的值，订阅者只读。
 
 ## 预览
 

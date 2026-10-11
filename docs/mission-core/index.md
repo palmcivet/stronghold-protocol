@@ -77,7 +77,7 @@ const result = battle.result()
 | `battle/` | `#battle/*.js` | 组装与推进：建战斗、组装 `BattleRegistry`、每拍的系统、上下文、快照、帧时钟、无头推进 |
 | `unit/` | `#unit/*.js` | 单位与生命周期：`record/`、`deploy/`、`block/`、`leak/` |
 | `combat/` | `#combat/*.js` | 战斗：`attack/`、`target/`、`damage/`、`projectile/`、`element/` |
-| `ability/` | `#ability/*.js` | 技能与状态：`skill/`、`effect/` |
+| `ability/` | `#ability/*.js` | 技能与效果：`skill/`、`effect/`（效果、属性、叠加策略、条件） |
 | `field/` | `#field/*.js` | 场地与移动：`direction/`、`grid/`、`body/`、`motion/` |
 | `economy/` | `#economy/*.js` | 费用 |
 | `ledger/` | `#ledger/*.js` | 按单位 `owner` 记的账本 |

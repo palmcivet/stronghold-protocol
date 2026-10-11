@@ -1,6 +1,6 @@
 ---
 title: 确定性数学与整帧对齐
-description: kernel/math 的逐位确定的数学函数，kernel/tick 的节拍常量、倒计时与到达判断。
+description: kernel/math 的逐位确定的数学函数，kernel/tick 的节拍常量、倒计时与到达判断，kernel/hash 的规范文本与摘要。
 ---
 
 # 确定性数学与整帧对齐
@@ -34,3 +34,10 @@ description: kernel/math 的逐位确定的数学函数，kernel/tick 的节拍�
 时长是整拍数时，倒计时正好走那么多拍：1 秒走 30 拍，攻击间隔 `bat × 100 / aspd` 走 `⌈30 × 间隔⌉` 拍；不在拍网格上的时长在越过 0 的那一拍结束（1.25 秒走 38 拍）。300 次加 `1/30` 到达 10。
 
 使用的地方：攻击计时的冷却与前摇（[攻击](./07-attack.md)），技力与充能、手动技能的就绪时刻（[技能](./06-skill.md)），持续技能的剩余时间，充能与装填的间隔（[计时](./08-timer.md)）。
+
+## kernel/hash
+
+| 导出 | 说明 |
+| --- | --- |
+| `canonicalJson(value, path?)` | 纯数据的规范文本：对象键按字典序，`undefined` 属性像 JSON 一样省略，`-0`、`NaN`、`±Infinity` 写成各自的字面量，数字按最短往返形式。函数、类实例、`Map` 等非纯数据抛错并报出路径 |
+| `hashText(text)` | 两个种子各跑一遍 32 位 FNV-1a，拼成 16 位十六进制。不是密码学摘要，只用于 `contentHash` 这类一致性比较 |

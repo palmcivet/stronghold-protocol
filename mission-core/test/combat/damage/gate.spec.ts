@@ -1,6 +1,6 @@
 import { expect, test } from "vitest"
 import { HIT_COUNT, HIT_COUNT_ARTS, HIT_SLEEP } from "#port/tag.js"
-import { createBattle, type ContentContext, type MissionModule, type UnitSpec } from "arknights-mission-core"
+import { createBattle, defineEffect, type ContentContext, type MissionModule, type UnitSpec } from "arknights-mission-core"
 import { ally, spec } from "#test/fixture.js"
 
 function open(units: UnitSpec[], run: (ctx: ContentContext) => void, prepare?: MissionModule["install"]) {
@@ -26,15 +26,7 @@ function hpOf(battle: ReturnType<typeof createBattle>, id: string): number {
   return battle.snapshot().units.find((unit) => unit.id === id)?.attributes.hp ?? Number.NaN
 }
 
-const counted = {
-  id: "counted",
-  tags: [HIT_COUNT],
-  modifiers: [],
-  immunity: [],
-  stackCap: 1,
-  cancels: [],
-  duration: 0,
-}
+const counted = defineEffect("counted", { grantsTags: [HIT_COUNT] })
 
 test("无敌和沉睡挡在命中之前，流失仍然扣生命", () => {
   const types: string[] = []
@@ -48,7 +40,7 @@ test("无敌和沉睡挡在命中之前，流失仍然扣生命", () => {
     ctx.subscribe("element-hit", (event) => {
       types.push(event.type)
     })
-    ctx.applyStatus("t", "invulnerable")
+    ctx.applyEffect("t", "invulnerable")
     ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 40, kind: "physical" })
     ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 20, kind: "element", element: "burn" })
     ctx.loseHp("t", 5)
@@ -63,21 +55,24 @@ test("沉睡挡住伤害和元素槽，能打沉睡或这一击声明忽略时�
   const battle = open(
     [ally("s", { attributes: { hp: 50 } }), ally("t", { attributes: { hp: 100 } })],
     (ctx) => {
-      ctx.applyStatus("s", "awake")
-      ctx.applyStatus("t", "sleep")
+      ctx.applyEffect("s", "awake")
+      ctx.applyEffect("t", "sleep")
       ctx.dealDamage({ sourceId: "s", targetId: "t", amount: 40, kind: "physical" })
       ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 10, kind: "element", element: "burn" })
       ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 30, kind: "true", ignoreSleep: true })
     },
     (ctx) => {
-      ctx.registerStatus({
+      ctx.registerEffect({
         id: "awake",
-        tags: [HIT_SLEEP],
+        grantsTags: [HIT_SLEEP],
         modifiers: [],
         immunity: [],
         stackCap: 1,
         cancels: [],
         duration: 0,
+        instant: false,
+        period: 1,
+        stacking: "refresh",
       })
     },
   )
@@ -88,7 +83,7 @@ test("沉睡挡住伤害和元素槽，能打沉睡或这一击声明忽略时�
 
 test("没有例外时沉睡不受伤", () => {
   const battle = open([ally("t", { attributes: { hp: 100 } })], (ctx) => {
-    ctx.applyStatus("t", "sleep")
+    ctx.applyEffect("t", "sleep")
     ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 40, kind: "physical" })
   })
   battle.step()
@@ -104,8 +99,8 @@ test("地面敌人打不到起飞的干员，飞行、无来源和忽略选择�
       ally("lifted", { side: "enemy", attributes: { hp: 50 } }),
     ],
     (ctx) => {
-      ctx.applyStatus("t", "liftoff")
-      ctx.applyStatus("lifted", "levitate")
+      ctx.applyEffect("t", "liftoff")
+      ctx.applyEffect("lifted", "levitate")
       ctx.dealDamage({ sourceId: "ground", targetId: "t", amount: 30, kind: "physical" })
       ctx.dealDamage({ sourceId: "ground", targetId: "t", amount: 15, kind: "element", element: "burn" })
       ctx.dealDamage({ sourceId: "flyer", targetId: "t", amount: 10, kind: "true" })
@@ -134,7 +129,7 @@ test("地面敌人打不到起飞的干员，飞行、无来源和忽略选择�
 test("命中回调里才起飞的伤害照常结算，回调里变成无敌则取消", () => {
   const landed = open([ally("t", { attributes: { hp: 100 } }), ally("e", { side: "enemy" })], (ctx) => {
     ctx.subscribe("hit", () => {
-      ctx.applyStatus("t", "liftoff")
+      ctx.applyEffect("t", "liftoff")
     })
     ctx.dealDamage({ sourceId: "e", targetId: "t", amount: 12, kind: "true" })
   })
@@ -144,7 +139,7 @@ test("命中回调里才起飞的伤害照常结算，回调里变成无敌则�
 
   const stopped = open([ally("t", { attributes: { hp: 100 } })], (ctx) => {
     ctx.subscribe("hit", () => {
-      ctx.applyStatus("t", "invulnerable")
+      ctx.applyEffect("t", "invulnerable")
     })
     ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 12, kind: "true" })
   })
@@ -156,11 +151,11 @@ test("受击次数每次扣 1 并跳过防御，闪避仍然先判定", () => {
   const battle = open(
     [ally("t", { attributes: { hp: 100, def: 80, shield: 10 } })],
     (ctx) => {
-      ctx.applyStatus("t", "counted")
+      ctx.applyEffect("t", "counted")
       ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 400, kind: "physical" })
     },
     (ctx) => {
-      ctx.registerStatus(counted)
+      ctx.registerEffect(counted)
     },
   )
   battle.step()
@@ -171,11 +166,11 @@ test("受击次数每次扣 1 并跳过防御，闪避仍然先判定", () => {
   const dodged = open(
     [ally("t", { attributes: { hp: 100, def: 0 } })],
     (ctx) => {
-      ctx.applyStatus("t", "counted-dodge")
+      ctx.applyEffect("t", "counted-dodge")
       ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 400, kind: "physical" })
     },
     (ctx) => {
-      ctx.registerStatus({
+      ctx.registerEffect({
         ...counted,
         id: "counted-dodge",
         modifiers: [{ attribute: "dodgePhys", op: "add", value: 1 }],
@@ -188,11 +183,11 @@ test("受击次数每次扣 1 并跳过防御，闪避仍然先判定", () => {
   const bare = open(
     [ally("t", { attributes: { hp: 100, def: 80 } })],
     (ctx) => {
-      ctx.applyStatus("t", "counted")
+      ctx.applyEffect("t", "counted")
       ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 400, kind: "physical" })
     },
     (ctx) => {
-      ctx.registerStatus(counted)
+      ctx.registerEffect(counted)
     },
   )
   bare.step()
@@ -203,12 +198,12 @@ test("只数法术的受击次数放过物理", () => {
   const battle = open(
     [ally("t", { attributes: { hp: 100, res: 90 } })],
     (ctx) => {
-      ctx.applyStatus("t", "arts-only")
+      ctx.applyEffect("t", "arts-only")
       ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 400, kind: "physical" })
       ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 400, kind: "arts" })
     },
     (ctx) => {
-      ctx.registerStatus({ ...counted, id: "arts-only", tags: [HIT_COUNT_ARTS] })
+      ctx.registerEffect({ ...counted, id: "arts-only", grantsTags: [HIT_COUNT_ARTS] })
     },
   )
   battle.step()
@@ -221,14 +216,14 @@ test("预览对无敌给出 0，对受击次数给出 1", () => {
   const module: MissionModule = {
     id: "case",
     install(ctx) {
-      ctx.registerStatus(counted)
+      ctx.registerEffect(counted)
       ctx.registerSystem({
         id: "case",
         slot: "schedule",
         priority: 1,
         run(runCtx) {
-          runCtx.applyStatus("wall", "invulnerable")
-          runCtx.applyStatus("hits", "counted")
+          runCtx.applyEffect("wall", "invulnerable")
+          runCtx.applyEffect("hits", "counted")
           invulnerable = runCtx.previewDamage({
             sourceId: "wall",
             targetId: "wall",

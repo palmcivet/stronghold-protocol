@@ -9,22 +9,30 @@ export type AttackEvent = {
   cancel: boolean
 }
 
-/** 一次伤害进入减伤之前。订阅者可以改数额、倍率、类型或取消。 */
+/** 一次伤害进入减伤之前，hit 阶段的伤害修饰都已执行。数值的修改走伤害修饰。 */
 export type HitEvent = {
   readonly sourceId: string
   /** 记功的单位。sourceless 时 sourceId 是空串，creditId 仍是出手者。 */
   readonly creditId: string
   readonly targetId: string
-  amount: number
-  kind: string
-  mul?: number
-  cancel: boolean
+  readonly amount: number
+  readonly kind: string
+  /** hit 阶段的修饰取消了这一击。 */
+  readonly cancel: boolean
   readonly sourceless: boolean
   readonly element?: string
 }
 
-/** 元素损伤进槽之前。字段与 hit 相同，mul 总是有值。 */
-export type ElementHitEvent = HitEvent & { mul: number }
+/** 元素损伤进槽之前，element-hit 阶段的伤害修饰都已执行。字段与 hit 相同，另带倍率。 */
+export type ElementHitEvent = HitEvent & { readonly mul: number }
+
+/** 麻痹打断敌人的一次普攻，用掉一层之前。订阅者把 keep 改成 true 时这一层留着；这次普攻照样被打断。 */
+export type PalsyInterruptEvent = {
+  readonly unitId: string
+  /** 用掉之前的层数。 */
+  readonly stacks: number
+  keep: boolean
+}
 
 /** 生命降到 0。订阅者把 prevented 改成 true 时留 1 点生命。 */
 export type FatalEvent = {
@@ -165,9 +173,10 @@ export interface Intercept<T> {
 export interface BattleEventMap {
   attack: Intercept<AttackEvent>
   "attack-hit": UnitEvent
-  hit: Intercept<HitEvent>
-  "element-hit": Intercept<ElementHitEvent>
+  hit: HitEvent
+  "element-hit": ElementHitEvent
   fatal: Intercept<FatalEvent>
+  "palsy-interrupt": Intercept<PalsyInterruptEvent>
   damaged: DamagedEvent
   loss: LossEvent
   heal: HealEvent

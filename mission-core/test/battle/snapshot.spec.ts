@@ -1,6 +1,6 @@
 import { expect, test } from "vitest"
 import { STEALTH } from "#port/tag.js"
-import { createBattle, redeployModule, type MissionModule, type StatusDefinition, type UnitSnapshot } from "arknights-mission-core"
+import { createBattle, defineExtensible, redeployModule, type MissionModule, type EffectDefinition, type UnitSnapshot } from "arknights-mission-core"
 import { ally, spec } from "#test/fixture.js"
 import { SCENARIOS } from "#test/golden/scenario.js"
 
@@ -10,14 +10,17 @@ function unitIn(battle: ReturnType<typeof createBattle>, id: string): UnitSnapsh
   return unit
 }
 
-const stealth: StatusDefinition = {
-  id: "stealth",
-  tags: [STEALTH],
+const stealth: EffectDefinition = {
+  id: "probe-stealth",
+  grantsTags: [STEALTH],
   modifiers: [],
   immunity: [],
   stackCap: 1,
   cancels: [],
   duration: 0,
+  instant: false,
+  period: 1,
+  stacking: "refresh",
 }
 
 test("快照不调用选择器", () => {
@@ -25,7 +28,7 @@ test("快照不调用选择器", () => {
   const probe: MissionModule = {
     id: "probe",
     install(ctx) {
-      ctx.registerStatus(stealth)
+      ctx.registerEffect(stealth)
       ctx.registerSelector({
         id: "trap",
         filter() {
@@ -42,7 +45,7 @@ test("快照不调用选择器", () => {
         slot: "schedule",
         priority: 1,
         run(runCtx) {
-          runCtx.applyStatus("a", "stealth")
+          runCtx.applyEffect("a", "probe-stealth")
         },
       })
       ctx.registerSystem({
@@ -127,8 +130,8 @@ test("元素视图取最满的一槽，一样满按官方元素先后，爆发�
   const module: MissionModule = {
     id: "elements",
     install(ctx) {
-      ctx.registerElement({ id: "burn", cap: 10, resistance: 0 })
-      ctx.registerElement({ id: "neural", cap: 10, resistance: 0 })
+      ctx.replace(defineExtensible("burn", { version: 1, contract: "element" }), { id: "burn", cap: 10, resistance: 0 })
+      ctx.replace(defineExtensible("neural", { version: 1, contract: "element" }), { id: "neural", cap: 10, resistance: 0 })
       ctx.registerSystem({
         id: "charge",
         slot: "schedule",

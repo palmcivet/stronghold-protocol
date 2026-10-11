@@ -6,7 +6,6 @@ import {
   defineResource,
   defineTag,
   type AttributeModifier,
-  type BattleEvent,
   type BattleEventType,
   type ContentContext,
   type ModifierOp,
@@ -323,8 +322,12 @@ function createFacade(ctx: ContentContext, shared: FacadeStore) {
     }
   }
 
-  function facadeEvent(type: string, event: BattleEvent): Record<string, unknown> {
-    const data: Readonly<Record<string, unknown>> = event.data
+  /** setAmount 只在 hit 阶段的伤害修饰里改数额；别的事件只读，调用记为未支持。 */
+  function facadeEvent(
+    type: string,
+    data: Readonly<Record<string, unknown>>,
+    setAmount: (value: number) => void = () => noteBlocked(`setAmount:${type}`),
+  ): Record<string, unknown> {
     const source = typeof data.sourceId === "string" ? unitProxy(data.sourceId) : null
     const targetId = typeof data.targetId === "string" ? data.targetId : typeof data.unitId === "string" ? data.unitId : ""
     const target = targetId ? unitProxy(targetId) : null
@@ -344,7 +347,7 @@ function createFacade(ctx: ContentContext, shared: FacadeStore) {
       skill: target && typeof target.skill === "object" ? target.skill : null,
       left: typeof data.left === "number" ? data.left : undefined,
       t: ctx.tick() * TICK,
-      setAmount(value: number) { ctx.revise(event, { amount: value }) },
+      setAmount,
     }
   }
 
@@ -352,15 +355,32 @@ function createFacade(ctx: ContentContext, shared: FacadeStore) {
     const mapped = EVENT_MAP[eventType]
     if (!mapped || subscribed.has(mapped)) return
     subscribed.add(mapped)
+    if (mapped === "hit") {
+      ctx.registerDamageModifier({
+        id: "content-facade-hit",
+        stage: "hit",
+        priority: 0,
+        modify(change) {
+          runHooks(mapped, { ...change }, (value) => {
+            if (Number.isFinite(value)) change.amount = value
+          })
+        },
+      })
+      return
+    }
     ctx.subscribe(mapped, (event) => {
-      for (const hook of hooks.filter((item) => EVENT_MAP[item.type] === mapped).sort((a, b) => a.priority - b.priority)) {
-        const payload = facadeEvent(hook.type, event)
-        if (hook.owner && payload.source !== hook.owner && payload.target !== hook.owner && payload.unit !== hook.owner) continue
-        try { hook.fn(payload) } catch (cause) {
-          noteBlocked(`hook:${hook.type}:${cause instanceof Error ? cause.message : String(cause)}`)
-        }
-      }
+      runHooks(mapped, event.data)
     })
+  }
+
+  function runHooks(mapped: BattleEventType, data: Readonly<Record<string, unknown>>, setAmount?: (value: number) => void): void {
+    for (const hook of hooks.filter((item) => EVENT_MAP[item.type] === mapped).sort((a, b) => a.priority - b.priority)) {
+      const payload = facadeEvent(hook.type, data, setAmount)
+      if (hook.owner && payload.source !== hook.owner && payload.target !== hook.owner && payload.unit !== hook.owner) continue
+      try { hook.fn(payload) } catch (cause) {
+        noteBlocked(`hook:${hook.type}:${cause instanceof Error ? cause.message : String(cause)}`)
+      }
+    }
   }
 
   function ensureClock(): void {
@@ -458,7 +478,7 @@ function createFacade(ctx: ContentContext, shared: FacadeStore) {
     applyStatus(target: { id?: string } | null, statusId: string, opts: { duration?: number; value?: number } = {}) {
       if (!target?.id) return
       try {
-        ctx.applyStatus(target.id, statusId, {
+        ctx.applyEffect(target.id, statusId, {
           ...(opts.duration !== undefined ? { duration: opts.duration } : {}),
           ...(opts.value !== undefined ? { value: opts.value } : {}),
         })

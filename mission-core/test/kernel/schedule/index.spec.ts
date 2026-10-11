@@ -203,6 +203,7 @@ test("内置系统的执行顺序", () => {
     "schedule engine:schedule",
     "spawn engine:spawn",
     "cost cost",
+    "status engine:conditional-effects",
     "status engine:status-timers",
     "enemy block-before",
     "enemy engine:enemy-route",

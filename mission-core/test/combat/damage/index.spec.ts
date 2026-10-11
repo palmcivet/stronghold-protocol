@@ -192,29 +192,35 @@ test("元素伤害含 5% 下限，不吃通用脆弱，吃元素脆弱", () => {
   const battle = open(
     [ally("t", { attributes: { hp: 1000 } })],
     (ctx) => {
-      ctx.applyStatus("t", "fragile")
-      ctx.applyStatus("t", "elemental-fragile")
+      ctx.applyEffect("t", "double-taken")
+      ctx.applyEffect("t", "elemental-fragile")
       ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 100, kind: "physical" })
       ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 100, kind: "elemental" })
     },
     (ctx) => {
-      ctx.registerStatus({
-        id: "fragile",
-        tags: [],
+      ctx.registerEffect({
+        id: "double-taken",
+        grantsTags: [],
         modifiers: [{ attribute: "dmgTaken", op: "mul", value: 2 }],
         immunity: [],
         stackCap: 1,
         cancels: [],
         duration: 0,
+        instant: false,
+        period: 1,
+        stacking: "refresh",
       })
-      ctx.registerStatus({
+      ctx.registerEffect({
         id: "elemental-fragile",
-        tags: [],
+        grantsTags: [],
         modifiers: [{ attribute: "elementalTaken", op: "mul", value: 1.5 }],
         immunity: [],
         stackCap: 1,
         cancels: [],
         duration: 0,
+        instant: false,
+        period: 1,
+        stacking: "refresh",
       })
     },
   )
@@ -226,20 +232,23 @@ test("来源伤害乘算和伤害自带乘数", () => {
   const battle = open(
     [ally("s", { attributes: { hp: 100 } }), ally("t", { attributes: { hp: 1000 } })],
     (ctx) => {
-      ctx.applyStatus("s", "dealt")
+      ctx.applyEffect("s", "dealt")
       ctx.dealDamage({ sourceId: "s", targetId: "t", amount: 100, kind: "physical" })
       ctx.dealDamage({ sourceId: "s", targetId: "t", amount: 100, kind: "elemental" })
       ctx.dealDamage({ sourceId: "s", targetId: "t", amount: 40, kind: "true", mul: 2 })
     },
     (ctx) => {
-      ctx.registerStatus({
+      ctx.registerEffect({
         id: "dealt",
-        tags: [],
+        grantsTags: [],
         modifiers: [{ attribute: "dmgDealt", op: "mul", value: 2 }],
         immunity: [],
         stackCap: 1,
         cancels: [],
         duration: 0,
+        instant: false,
+        period: 1,
+        stacking: "refresh",
       })
     },
   )
@@ -467,25 +476,32 @@ test("首领限伤打开时超过阈值不扣生命，没打开时照常扣", ()
   expect(hpOf(openLimit)).toBe(100000)
 })
 
-test("hit 在减伤前可以改伤害，fatal 可以把生命留在 1", () => {
+test("hit 阶段的伤害修饰在减伤前改伤害，hit 事件带改后的数额；fatal 可以把生命留在 1", () => {
+  const seen: number[] = []
   const hit = open([ally("t", { attributes: { hp: 100, def: 0 } })], (ctx) => {
+    ctx.registerDamageModifier({
+      id: "halve",
+      stage: "hit",
+      priority: 0,
+      modify(change) {
+        change.amount = 50
+      },
+    })
     ctx.subscribe("hit", (event) => {
-      const data = event.data as { amount: number }
-      data.amount = 50
+      seen.push(event.data.amount)
     })
     ctx.subscribe("fatal", (event) => {
-      const data = event.data as { prevented: boolean }
-      data.prevented = true
+      event.data.prevented = true
     })
     ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 100, kind: "physical" })
   })
   hit.step()
   expect(hpOf(hit)).toBe(50)
+  expect(seen).toEqual([50])
 
   const saved = open([ally("t", { attributes: { hp: 30 } })], (ctx) => {
     ctx.subscribe("fatal", (event) => {
-      const data = event.data as { prevented: boolean }
-      data.prevented = true
+      event.data.prevented = true
     })
     ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 100, kind: "true" })
   })
@@ -510,19 +526,22 @@ test("治疗受乘算、禁疗和最大生命限制，溢出按 overheal 进护�
   const blocked = open(
     [ally("t", { attributes: { hp: 40, maxHp: 100 } })],
     (ctx) => {
-      ctx.applyStatus("t", "noHeal")
+      ctx.applyEffect("t", "noHeal")
       ctx.heal("t", 10)
       ctx.heal("t", 10, { self: true })
     },
     (ctx) => {
-      ctx.registerStatus({
+      ctx.registerEffect({
         id: "noHeal",
-        tags: [NO_HEAL],
+        grantsTags: [NO_HEAL],
         modifiers: [],
         immunity: [],
         stackCap: 1,
         cancels: [],
         duration: 0,
+        instant: false,
+        period: 1,
+        stacking: "refresh",
       })
     },
   )
@@ -533,28 +552,34 @@ test("治疗受乘算、禁疗和最大生命限制，溢出按 overheal 进护�
   const taken = open(
     [ally("s", { attributes: { hp: 100 } }), ally("t", { attributes: { hp: 40, maxHp: 100 } })],
     (ctx) => {
-      ctx.applyStatus("s", "heal-dealt")
-      ctx.applyStatus("t", "heal-taken")
+      ctx.applyEffect("s", "heal-dealt")
+      ctx.applyEffect("t", "heal-taken")
       ctx.heal("t", 10, { sourceId: "s" })
     },
     (ctx) => {
-      ctx.registerStatus({
+      ctx.registerEffect({
         id: "heal-dealt",
-        tags: [],
+        grantsTags: [],
         modifiers: [{ attribute: "healingDealt", op: "mul", value: 2 }],
         immunity: [],
         stackCap: 1,
         cancels: [],
         duration: 0,
+        instant: false,
+        period: 1,
+        stacking: "refresh",
       })
-      ctx.registerStatus({
+      ctx.registerEffect({
         id: "heal-taken",
-        tags: [],
+        grantsTags: [],
         modifiers: [{ attribute: "healingTaken", op: "mul", value: 2 }],
         immunity: [],
         stackCap: 1,
         cancels: [],
         duration: 0,
+        instant: false,
+        period: 1,
+        stacking: "refresh",
       })
     },
   )

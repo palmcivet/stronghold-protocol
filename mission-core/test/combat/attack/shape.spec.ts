@@ -87,7 +87,7 @@ test("溅射跳过没破隐的隐匿敌人，显形之后打得到", () => {
             slot: "schedule",
             priority: 0,
             run(runCtx) {
-              if (runCtx.tick() === 0) for (const status of statuses) runCtx.applyStatus("near", status)
+              if (runCtx.tick() === 0) for (const status of statuses) runCtx.applyEffect("near", status)
             },
           }),
         ),
@@ -175,7 +175,7 @@ test("弹射按距离跳，并给停顿", () => {
           run(runCtx) {
             if (runCtx.tick() !== 0) return
             const unit = engineOf(runCtx).world.units.get("e2")
-            pause = unit?.statuses.find((status) => status.id === "sluggish")?.remaining ?? 0
+            pause = unit?.effects.find((status) => status.id === "sluggish")?.remaining ?? 0
           },
         })
       }),

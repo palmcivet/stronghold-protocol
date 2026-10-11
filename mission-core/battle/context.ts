@@ -1,4 +1,4 @@
-import type { BattleEvent } from "#contract/event.js"
+import type { BattleEvent, InterceptEventType } from "#contract/event.js"
 import type { PhaseSlot } from "#contract/phase.js"
 import type { BattleResult } from "#contract/result.js"
 import type { TileCoord, TileSpec, UnitSide, UnitSpec } from "#contract/spec.js"
@@ -32,7 +32,7 @@ import { TICK } from "#kernel/tick/index.js"
 import { attributeOf, maxHpOf } from "#ability/effect/attribute.js"
 import { selectUnits, unitsInRange as rangeUnits } from "#combat/target/selector.js"
 import { addElement as chargeElement } from "#combat/element/index.js"
-import { applyStatus as giveStatus } from "#ability/effect/index.js"
+import { applyEffect as giveEffect, removeEffect as takeEffect } from "#ability/effect/index.js"
 import {
   advanceStartedTimers as advanceSlotTimers,
   advanceTimer as stepTimer,
@@ -46,11 +46,35 @@ export const RESULT = defineResource<BattleResult>("battle:result", () => ({ fin
 
 export function createContext(state: BattleWorld, registry: BattleRegistry): ContentContext {
   const ctx: ContentContext = {
-    registerStatus(definition) {
-      registry.registerStatus(definition)
+    registerAttribute(definition) {
+      registry.registerAttribute(definition)
+    },
+    registerEffect(definition) {
+      registry.registerEffect(definition)
+    },
+    registerStacking(definition) {
+      registry.registerStacking(definition)
+    },
+    registerCondition(definition) {
+      registry.registerCondition(definition)
+    },
+    registerSkillHook(definition) {
+      registry.registerSkillHook(definition)
     },
     registerDamageStep(definition) {
       registry.registerDamageStep(definition)
+    },
+    registerDamageModifier(definition) {
+      registry.registerDamageModifier(definition)
+    },
+    markExtensible(key) {
+      registry.markExtensible(key)
+    },
+    replace(key, definition) {
+      registry.replace(key, definition)
+    },
+    wrap(key, wrap) {
+      registry.wrap(key, wrap)
     },
     registerElement(definition) {
       registry.registerElement(definition)
@@ -91,8 +115,11 @@ export function createContext(state: BattleWorld, registry: BattleRegistry): Con
     loseHp(unitId, amount) {
       loseLife(state, registry, ctx, unitId, amount)
     },
-    applyStatus(unitId, statusId, application) {
-      giveStatus(state, registry, ctx, unitId, statusId, application)
+    applyEffect(unitId, effectId, application) {
+      giveEffect(state, registry, ctx, unitId, effectId, application)
+    },
+    removeEffect(unitId, effectId) {
+      takeEffect(state, registry, ctx, unitId, effectId)
     },
     spawnUnit(spec: UnitSpec) {
       if (!stands(state, registry, ctx, spec.id, spec.x, spec.y)) return
@@ -223,8 +250,8 @@ export function createContext(state: BattleWorld, registry: BattleRegistry): Con
       if (!state.units.has(unitId)) return
       setTargetPriority(state, unitId, priority)
     },
-    gainSp(unitId, skillId, amount) {
-      return gainSkillSp(state, unitId, skillId, amount, "grant")
+    gainSp(unitId, skillId, amount, options) {
+      return gainSkillSp(state, unitId, skillId, amount, options?.ignoreLock === true ? "unlocked" : "grant")
     },
     tile(x, y): TileSpec | null {
       return gridOf(state).at(x, y)
@@ -294,13 +321,11 @@ export function createContext(state: BattleWorld, registry: BattleRegistry): Con
       return state.spec.notes ?? EMPTY_FIELD
     },
 
-    revise(event: BattleEvent, revision: EventRevision) {
-      const data = event.data as Record<string, unknown>
-      if (revision.prevented !== undefined) data.prevented = revision.prevented
-      if (revision.cancel !== undefined) data.cancel = revision.cancel
-      if (revision.amount !== undefined) data.amount = revision.amount
-      if (revision.mul !== undefined) data.mul = revision.mul
-      if (revision.kind !== undefined) data.kind = revision.kind
+    revise(event: BattleEvent<InterceptEventType>, revision: EventRevision) {
+      const data = event.data as { prevented?: boolean; cancel?: boolean; keep?: boolean }
+      if (revision.prevented !== undefined && "prevented" in data) data.prevented = revision.prevented
+      if (revision.cancel !== undefined && "cancel" in data) data.cancel = revision.cancel
+      if (revision.keep !== undefined && "keep" in data) data.keep = revision.keep
     },
   }
   state.resources.access(ENGINE).set({ world: state, registry })

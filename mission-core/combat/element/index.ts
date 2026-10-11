@@ -94,6 +94,9 @@ export function addElement(
   if (charged === "burst") burstElement(state, registry, ctx, unitId, elementId, sourceId)
 }
 
+/** 内置元素，按官方先后。 */
+export const BUILTIN_ELEMENTS = ["burn", "neural", "apoptosis", "erosion", "necrosis"] as const
+
 export function registerBuiltinElements(state: BattleWorld, registry: BattleRegistry): void {
   const second = secondsToTicks(1)
   const strike = (
@@ -117,22 +120,25 @@ export function registerBuiltinElements(state: BattleWorld, registry: BattleRegi
     })
   }
   const arm = (ctx: ContentContext, unitId: string, statusId: string, seconds: number): void => {
-    ctx.applyStatus(unitId, statusId)
-    const status = requireUnit(state, unitId).statuses.find((item) => item.id === statusId)
+    ctx.applyEffect(unitId, statusId)
+    const status = requireUnit(state, unitId).effects.find((item) => item.id === statusId)
     if (!status) return
     status.permanent = !(seconds > 0)
     status.remaining = secondsToTicks(seconds)
   }
 
   // MARK: burn
-  registry.registerStatus({
+  registry.registerEffect({
     id: "element:burn-burst",
-    tags: [BURST_LOCK],
+    grantsTags: [BURST_LOCK],
     modifiers: [{ attribute: "res", op: "add", value: -ELEMENT.burn.ally.resDown }],
     immunity: [],
     stackCap: 1,
     cancels: [],
     duration: secondsToTicks(ELEMENT.burn.ally.duration),
+    instant: false,
+    period: 1,
+    stacking: "refresh",
   })
   registry.registerElement({
     id: "burn",
@@ -150,23 +156,29 @@ export function registerBuiltinElements(state: BattleWorld, registry: BattleRegi
   })
 
   // MARK: neural
-  registry.registerStatus({
+  registry.registerEffect({
     id: "element:neural-ally",
-    tags: [BURST_LOCK, STUN],
+    grantsTags: [BURST_LOCK, STUN],
     modifiers: [],
     immunity: [],
     stackCap: 1,
     cancels: ["attack"],
     duration: secondsToTicks(ELEMENT.neural.ally.duration),
+    instant: false,
+    period: 1,
+    stacking: "refresh",
   })
-  registry.registerStatus({
+  registry.registerEffect({
     id: "element:neural-enemy",
-    tags: [BURST_LOCK],
+    grantsTags: [BURST_LOCK],
     modifiers: [],
     immunity: [],
     stackCap: 1,
     cancels: [],
     duration: secondsToTicks(ELEMENT.neural.enemy.duration),
+    instant: false,
+    period: 1,
+    stacking: "refresh",
   })
   registry.registerElement({
     id: "neural",
@@ -177,7 +189,7 @@ export function registerBuiltinElements(state: BattleWorld, registry: BattleRegi
       const enemy = unit.side === "enemy"
       if (enemy) {
         arm(ctx, unitId, "element:neural-enemy", ELEMENT.neural.enemy.duration)
-        for (let stack = 0; stack < ELEMENT.neural.enemy.palsy; stack += 1) ctx.applyStatus(unitId, "palsy")
+        for (let stack = 0; stack < ELEMENT.neural.enemy.palsy; stack += 1) ctx.applyEffect(unitId, "palsy")
         if (hasHp(requireUnit(state, unitId))) {
           strike(ctx, sourceId, unitId, "neural", ELEMENT.neural.enemy.elemDamage, "elemental")
         }
@@ -191,17 +203,20 @@ export function registerBuiltinElements(state: BattleWorld, registry: BattleRegi
   })
 
   // MARK: apoptosis
-  registry.registerStatus({
+  registry.registerEffect({
     id: "element:apoptosis-ally",
-    tags: [BURST_LOCK, SILENCE, NO_SP],
+    grantsTags: [BURST_LOCK, SILENCE, NO_SP],
     modifiers: [],
     immunity: [],
     stackCap: 1,
     cancels: [],
     duration: secondsToTicks(ELEMENT.apoptosis.ally.duration),
+    instant: false,
+    period: 1,
+    stacking: "refresh",
     onTick(unitId, _stacks, ctx) {
       const unit = requireUnit(state, unitId)
-      const status = unit.statuses.find((item) => item.id === "element:apoptosis-ally")
+      const status = unit.effects.find((item) => item.id === "element:apoptosis-ally")
       if (!status) return
       status.pulse += 1
       if (status.pulse % second !== 0) return
@@ -209,17 +224,20 @@ export function registerBuiltinElements(state: BattleWorld, registry: BattleRegi
       strike(ctx, creditOf(state, unitId), unitId, "apoptosis", ELEMENT.apoptosis.ally.dps, damageKind(ELEMENT.apoptosis.ally.dpsType))
     },
   })
-  registry.registerStatus({
+  registry.registerEffect({
     id: "element:apoptosis-enemy",
-    tags: [BURST_LOCK],
+    grantsTags: [BURST_LOCK],
     modifiers: [],
     immunity: [],
     stackCap: 1,
     cancels: [],
     duration: secondsToTicks(ELEMENT.apoptosis.enemy.duration),
+    instant: false,
+    period: 1,
+    stacking: "refresh",
     onTick(unitId, _stacks, ctx) {
       const unit = requireUnit(state, unitId)
-      const status = unit.statuses.find((item) => item.id === "element:apoptosis-enemy")
+      const status = unit.effects.find((item) => item.id === "element:apoptosis-enemy")
       if (!status) return
       const duration = ELEMENT.apoptosis.enemy.duration
       const left = Math.max(0, status.remaining * TICK)
@@ -238,7 +256,7 @@ export function registerBuiltinElements(state: BattleWorld, registry: BattleRegi
       const unit = requireUnit(state, unitId)
       if (unit.side === "enemy") {
         arm(ctx, unitId, "element:apoptosis-enemy", ELEMENT.apoptosis.enemy.duration)
-        const status = requireUnit(state, unitId).statuses.find((item) => item.id === "element:apoptosis-enemy")
+        const status = requireUnit(state, unitId).effects.find((item) => item.id === "element:apoptosis-enemy")
         if (status) {
           status.runtimeModifiers = [{ attribute: "atk", op: "mul", value: 1 - ELEMENT.apoptosis.enemy.weaken }]
         }
@@ -249,23 +267,29 @@ export function registerBuiltinElements(state: BattleWorld, registry: BattleRegi
   })
 
   // MARK: erosion
-  registry.registerStatus({
+  registry.registerEffect({
     id: "element:erosion-burst",
-    tags: [BURST_LOCK],
+    grantsTags: [BURST_LOCK],
     modifiers: [],
     immunity: [],
     stackCap: 1,
     cancels: [],
     duration: secondsToTicks(ELEMENT.erosion.ally.duration),
+    instant: false,
+    period: 1,
+    stacking: "refresh",
   })
-  registry.registerStatus({
+  registry.registerEffect({
     id: "element:erosion-down",
-    tags: [],
+    grantsTags: [],
     modifiers: [],
     immunity: [],
     stackCap: 1_000_000,
     cancels: [],
     duration: 0,
+    instant: false,
+    period: 1,
+    stacking: "refresh",
   })
   registry.registerElement({
     id: "erosion",
@@ -276,8 +300,8 @@ export function registerBuiltinElements(state: BattleWorld, registry: BattleRegi
       const enemy = unit.side === "enemy"
       const side = enemy ? ELEMENT.erosion.enemy : ELEMENT.erosion.ally
       arm(ctx, unitId, "element:erosion-burst", side.duration)
-      ctx.applyStatus(unitId, "element:erosion-down")
-      const down = requireUnit(state, unitId).statuses.find((item) => item.id === "element:erosion-down")
+      ctx.applyEffect(unitId, "element:erosion-down")
+      const down = requireUnit(state, unitId).effects.find((item) => item.id === "element:erosion-down")
       if (down) down.runtimeModifiers = [{ attribute: "def", op: "add", value: -side.defDown }]
       if (!hasHp(requireUnit(state, unitId))) return
       if (enemy) strike(ctx, sourceId, unitId, "erosion", ELEMENT.erosion.enemy.elemDamage, "elemental")
@@ -286,17 +310,20 @@ export function registerBuiltinElements(state: BattleWorld, registry: BattleRegi
   })
 
   // MARK: necrosis
-  registry.registerStatus({
+  registry.registerEffect({
     id: "element:necrosis-burst",
-    tags: [BURST_LOCK],
+    grantsTags: [BURST_LOCK],
     modifiers: [{ attribute: "atk", op: "mul", value: 1 - ELEMENT.necrosis.atkDownPct }],
     immunity: [],
     stackCap: 1,
     cancels: [],
     duration: secondsToTicks(ELEMENT.necrosis.duration),
+    instant: false,
+    period: 1,
+    stacking: "refresh",
     onTick(unitId, _stacks, ctx) {
       const unit = requireUnit(state, unitId)
-      const status = unit.statuses.find((item) => item.id === "element:necrosis-burst")
+      const status = unit.effects.find((item) => item.id === "element:necrosis-burst")
       if (!status) return
       status.pulse += 1
       if (status.pulse % second !== 0) return

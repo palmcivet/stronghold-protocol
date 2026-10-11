@@ -15,7 +15,8 @@ export type {
   ChainHealShape,
   ProjectileKind,
   SplashShape,
-  SkillHook,
+  ConditionalEffectSpec,
+  SkillHooks,
   SkillModifier,
   SkillMoment,
   SkillOperation,
@@ -56,6 +57,7 @@ export type {
   NoticeEventType,
   ProjectileEvent,
   SkillEvent,
+  PalsyInterruptEvent,
   StatusEvent,
   UnitEvent,
 } from "#contract/event.js"
@@ -77,8 +79,13 @@ export {
 } from "#port/loadout.js"
 export type { LoadoutRequest, ResolvedRecordLoadout } from "#port/loadout.js"
 
-export { RegistrationConflictError, UnknownRegistrationError } from "#kernel/registry/error.js"
-export { MODIFIER_OPS, type ModifierOp } from "#port/definition.js"
+export { ExtensionRefusedError, RegistrationConflictError, UnknownRegistrationError } from "#kernel/registry/error.js"
+export { DAMAGE_STAGES, EXTENSIBLE_CONTRACTS, MODIFIER_OPS, type ModifierOp } from "#port/definition.js"
+export { defineExtensible, type ExtensibleKey, type ExtensibleOptions, type ExtensionKind, type ExtensionRecord } from "#kernel/registry/extensible.js"
+export { defineAttribute, MULTIPLIER_ATTRIBUTES } from "#ability/effect/attribute.js"
+export { defineEffect, type EffectOptions } from "#ability/effect/index.js"
+export { defineCondition, ENEMIES_IN_RANGE } from "#ability/effect/condition.js"
+export { STACKINGS } from "#ability/effect/stacking.js"
 export type {
   AttributeModifier,
   DamageInfo,
@@ -99,13 +106,26 @@ export type {
   ShiftInput,
   ShiftPlan,
   SkillTriggerDefinition,
-  StatusApplication,
-  StatusDefinition,
-  StatusIncoming,
+  AttributeDefinition,
+  ConditionDefinition,
+  DamageModifierDefinition,
+  DamageOrigin,
+  DamageStage,
+  EffectApplication,
+  EffectDefinition,
+  EffectIncoming,
+  EffectRecord,
+  EffectWait,
+  ExtensibleContract,
+  ExtensibleDefinitions,
+  HitChange,
+  HpChange,
+  SkillHookDefinition,
+  StackingDefinition,
   SystemOrderEntry,
   TimerDefinition,
 } from "#port/definition.js"
-export type { ContentContext, EventRevision, HealOptions, HitShape, UnitView } from "#port/context.js"
+export type { ContentContext, EventRevision, GainSpOptions, HealOptions, HitShape, UnitView } from "#port/context.js"
 export type { MissionModule, Registration } from "#port/module.js"
 export type { TimerState, TimerView } from "#kernel/timer/index.js"
 export { defineComponent, type ComponentAccess, type ComponentCodec, type ComponentKey, type ComponentOptions } from "#kernel/world/component.js"

@@ -108,7 +108,7 @@ test("攻速为 0 或非数、攻击间隔为 0 时，间隔按上下限与缺�
   expect(Number.isFinite(foe?.attributes.hp)).toBe(true)
 })
 
-test("叠加溢出的乘算修饰让属性退回缺省值（atk 是 0），不出现非有限值", () => {
+test("叠加溢出的乘算修饰让属性退回基础值（atk 是 10），不出现非有限值", () => {
   const seen: number[] = []
   const battle = createBattle(spec({ modules: ["script"], units: [ally("a", { attributes: { hp: 100, atk: 10, def: 0 } })] }), [
     script((ctx) => {
@@ -120,7 +120,7 @@ test("叠加溢出的乘算修饰让属性退回缺省值（atk 是 0），不�
     }),
   ])
   battle.step()
-  expect(seen).toEqual([0])
+  expect(seen).toEqual([10])
 })
 
 function ground(x: number, objective = false): TileSpec {

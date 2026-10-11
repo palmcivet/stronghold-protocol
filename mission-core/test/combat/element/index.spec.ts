@@ -1,5 +1,5 @@
 import { expect, test } from "vitest"
-import { createBattle, type ContentContext, type MissionModule, type UnitSpec } from "arknights-mission-core"
+import { createBattle, defineExtensible, type ContentContext, type MissionModule, type UnitSpec } from "arknights-mission-core"
 import { ally, spec } from "#test/fixture.js"
 
 test("元素槽按标识存放", () => {
@@ -7,7 +7,7 @@ test("元素槽按标识存放", () => {
   const module: MissionModule = {
     id: "elements",
     install(ctx) {
-      ctx.registerElement({
+      ctx.replace(defineExtensible("burn", { version: 1, contract: "element" }), {
         id: "burn",
         cap: 10,
         resistance: 0,
@@ -15,7 +15,7 @@ test("元素槽按标识存放", () => {
           bursts.push(unitId)
         },
       })
-      ctx.registerElement({
+      ctx.replace(defineExtensible("neural", { version: 1, contract: "element" }), {
         id: "neural",
         cap: 10,
         resistance: 20,
@@ -85,28 +85,34 @@ test("元素损伤不吃来源伤害乘算，只吃元素损伤倍率", () => {
   const battle = open(
     [ally("s", { attributes: { hp: 100 } }), ally("t", { side: "enemy", attributes: { hp: 5000 } })],
     (ctx) => {
-      ctx.applyStatus("s", "dealt")
-      ctx.applyStatus("t", "intake")
+      ctx.applyEffect("s", "dealt")
+      ctx.applyEffect("t", "intake")
       ctx.dealDamage({ sourceId: "s", targetId: "t", amount: 100, kind: "element", element: "burn" })
     },
     (ctx) => {
-      ctx.registerStatus({
+      ctx.registerEffect({
         id: "dealt",
-        tags: [],
+        grantsTags: [],
         modifiers: [{ attribute: "dmgDealt", op: "mul", value: 2 }],
         immunity: [],
         stackCap: 1,
         cancels: [],
         duration: 0,
+        instant: false,
+        period: 1,
+        stacking: "refresh",
       })
-      ctx.registerStatus({
+      ctx.registerEffect({
         id: "intake",
-        tags: [],
+        grantsTags: [],
         modifiers: [{ attribute: "elemTaken", op: "mul", value: 2 }],
         immunity: [],
         stackCap: 1,
         cancels: [],
         duration: 0,
+        instant: false,
+        period: 1,
+        stacking: "refresh",
       })
     },
   )
@@ -123,14 +129,14 @@ test("敌人灼燃蓄满后爆发 7000 元素伤害且不再进槽", () => {
       ctx.subscribe("fatal", (event) => {
         credits.push(String(event.data.creditId))
       })
-      ctx.applyStatus("s", "dealt")
+      ctx.applyEffect("s", "dealt")
       ctx.dealDamage({ sourceId: "s", targetId: "t", amount: 1000, kind: "element", element: "burn" })
       ctx.dealDamage({ sourceId: "s", targetId: "t", amount: 500, kind: "element", element: "neural" })
     },
     (ctx) => {
-      ctx.registerStatus({
+      ctx.registerEffect({
         id: "dealt",
-        tags: [],
+        grantsTags: [],
         modifiers: [
           { attribute: "dmgDealt", op: "mul", value: 2 },
           { attribute: "resIgnorePct", op: "add", value: 1 },
@@ -139,6 +145,9 @@ test("敌人灼燃蓄满后爆发 7000 元素伤害且不再进槽", () => {
         stackCap: 1,
         cancels: [],
         duration: 0,
+        instant: false,
+        period: 1,
+        stacking: "refresh",
       })
     },
   )
@@ -154,13 +163,13 @@ test("干员灼燃是无来源法术伤害，先降法抗", () => {
   const battle = open(
     [ally("s", { attributes: { hp: 100 } }), ally("t", { attributes: { hp: 5000, res: 50 } })],
     (ctx) => {
-      ctx.applyStatus("s", "dealt")
+      ctx.applyEffect("s", "dealt")
       ctx.dealDamage({ sourceId: "s", targetId: "t", amount: 1000, kind: "element", element: "burn" })
     },
     (ctx) => {
-      ctx.registerStatus({
+      ctx.registerEffect({
         id: "dealt",
-        tags: [],
+        grantsTags: [],
         modifiers: [
           { attribute: "dmgDealt", op: "mul", value: 2 },
           { attribute: "resIgnorePct", op: "add", value: 1 },
@@ -169,6 +178,9 @@ test("干员灼燃是无来源法术伤害，先降法抗", () => {
         stackCap: 1,
         cancels: [],
         duration: 0,
+        instant: false,
+        period: 1,
+        stacking: "refresh",
       })
     },
   )
@@ -311,12 +323,16 @@ test("填槽发 element-hit，不发 damaged；爆发发 element-burst", () => {
   expect(unitOf(bursting, "t").attributes.hp).toBe(13000)
 })
 
-test("element-hit 可改损伤，或把 kind 改成生命伤害", () => {
+test("element-hit 阶段的伤害修饰可改损伤，或把 kind 改成生命伤害", () => {
   const scaled = open([ally("t", { attributes: { hp: 500 } })], (ctx) => {
-    ctx.subscribe("element-hit", (event) => {
-      const data = event.data as { amount: number; mul: number }
-      data.amount = 40
-      data.mul = 2
+    ctx.registerDamageModifier({
+      id: "scale",
+      stage: "element-hit",
+      priority: 0,
+      modify(change) {
+        change.amount = 40
+        change.mul = 2
+      },
     })
     ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 100, kind: "element", element: "burn" })
   })
@@ -327,9 +343,13 @@ test("element-hit 可改损伤，或把 kind 改成生命伤害", () => {
 
   const turned: string[] = []
   const life = open([ally("t", { attributes: { hp: 100 } })], (ctx) => {
-    ctx.subscribe("element-hit", (event) => {
-      const data = event.data as { kind: string }
-      data.kind = "true"
+    ctx.registerDamageModifier({
+      id: "turn",
+      stage: "element-hit",
+      priority: 0,
+      modify(change) {
+        change.kind = "true"
+      },
     })
     for (const type of ["element-hit", "hit", "damaged", "element-burst"] as const) {
       ctx.subscribe(type, () => {
@@ -344,9 +364,13 @@ test("element-hit 可改损伤，或把 kind 改成生命伤害", () => {
   expect(turned).toEqual(["element-hit", "hit", "damaged"])
 
   const stopped = open([ally("t", { attributes: { hp: 500 } })], (ctx) => {
-    ctx.subscribe("element-hit", (event) => {
-      const data = event.data as { cancel: boolean }
-      data.cancel = true
+    ctx.registerDamageModifier({
+      id: "stop",
+      stage: "element-hit",
+      priority: 0,
+      modify(change) {
+        change.cancel = true
+      },
     })
     ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 100, kind: "element", element: "burn" })
   })

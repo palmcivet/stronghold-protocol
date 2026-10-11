@@ -20,7 +20,7 @@ test("停顿按汇总后的移速走，含 sluggish", () => {
         slot: "schedule",
         priority: 0,
         run(runCtx) {
-          if (runCtx.tick() === 0) runCtx.applyStatus("e", "sluggish")
+          if (runCtx.tick() === 0) runCtx.applyEffect("e", "sluggish")
         },
       })
     },

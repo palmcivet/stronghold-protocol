@@ -310,9 +310,9 @@ function targetDenied(unit: UnitState): boolean {
 
 function attackHeld(state: BattleWorld, registry: BattleRegistry, unit: UnitState): boolean {
   if (hasTag(unit, TREMBLE) && blockerOf(state, unit.id)) return true
-  for (const status of unit.statuses) {
+  for (const status of unit.effects) {
     if (status.dropped) continue
-    if (registry.requireStatus(status.id).cancels.includes("attack")) return true
+    if (registry.requireEffect(status.id).cancels.includes("attack")) return true
   }
   return false
 }

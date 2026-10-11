@@ -75,7 +75,7 @@ test("未知状态、选择器、计时器、元素和阶段槽被拒绝", () =>
         slot: "schedule",
         priority: 0,
         run(runCtx) {
-          expect(() => runCtx.applyStatus("a", "missing")).toThrow(UnknownRegistrationError)
+          expect(() => runCtx.applyEffect("a", "missing")).toThrow(UnknownRegistrationError)
           expect(() => runCtx.select("missing", [])).toThrow(UnknownRegistrationError)
           expect(() => runCtx.advanceTimer("a", "missing")).toThrow(UnknownRegistrationError)
           expect(() => runCtx.addElement("a", "missing", 1)).toThrow(UnknownRegistrationError)

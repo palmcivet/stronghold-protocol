@@ -14,7 +14,7 @@ import type {
   ProjectileLaunch,
   ProjectileView,
   ShiftInput,
-  StatusApplication,
+  EffectApplication,
 } from "#port/definition.js"
 
 export interface HealOptions {
@@ -57,13 +57,16 @@ export interface UnitView {
   readonly motion: Motion
 }
 
-/** 订阅者改一笔正在结算的事件。伤害管线在发出之后读这些字段。 */
+/** 订阅者对一笔可拦截事件的否决：fatal 的 prevented、attack 的 cancel、palsy-interrupt 的 keep。数值的修改走伤害修饰。 */
 export interface EventRevision {
   readonly prevented?: boolean
   readonly cancel?: boolean
-  readonly amount?: number
-  readonly mul?: number
-  readonly kind?: string
+  readonly keep?: boolean
+}
+
+export interface GainSpOptions {
+  /** 无视技力锁定（阻回与持续技能期间不加）。只给明确写明的例外使用。 */
+  readonly ignoreLock?: boolean
 }
 
 export interface ContentContext extends Registration {
@@ -71,7 +74,10 @@ export interface ContentContext extends Registration {
   heal(unitId: string, amount: number, options?: HealOptions): void
   /** 不减防御和法抗，不发 damaged。hitLimit 打开且 ceil(数额) 达到首领限伤时不扣生命。 */
   loseHp(unitId: string, amount: number): void
-  applyStatus(unitId: string, statusId: string, application?: StatusApplication): void
+  /** 施加效果。免疫、叠加策略不接受或时长不成立时不生效。 */
+  applyEffect(unitId: string, effectId: string, application?: EffectApplication): void
+  /** 取下这个效果的全部记录。不在身上时不做。 */
+  removeEffect(unitId: string, effectId: string): void
   /** 放入一个单位并发 spawn。kind 为 device 时就是装置。部署策略不让它站在那一格时不放。 */
   spawnUnit(spec: UnitSpec): void
   /** 单位离场且不再回来：放开阻挡，发 removed，从下一次快照起不再出现。记录留到战斗结束。 */
@@ -125,15 +131,15 @@ export interface ContentContext extends Registration {
   configureSkill(unitId: string, skillId: string, spec: { body?: string; ammo?: number; duration?: number }): void
   /** 攻击选目标时的优先规则。空字符串恢复默认。 */
   setAim(unitId: string, priority: string): void
-  /** 外界给予技力。阻回和持续技能期间不加。返回实际加上的数量。 */
-  gainSp(unitId: string, skillId: string, amount: number): number
+  /** 外界给予技力。阻回和持续技能期间不加，ignoreLock 时照加。返回实际加上的数量。 */
+  gainSp(unitId: string, skillId: string, amount: number, options?: GainSpOptions): number
   tile(x: number, y: number): TileSpec | null
   projectiles(): readonly ProjectileView[]
   /** 没有这个单位时返回 null。 */
   unit(unitId: string): UnitView | null
   /** 缺省时两边的单位都在名单里，顺序是入场顺序。 */
   units(side?: UnitSide): readonly string[]
-  /** 算上状态和具名修饰。没有这个单位时返回 0。maxHp 用最大生命，hp 用当前生命。 */
+  /** 算上效果和具名修饰。没有这个单位时返回 0。maxHp 用最大生命，hp 用当前生命。 */
   attribute(unitId: string, key: string): number
   /**
    * 按 key 写上一组属性修饰，同 key 再写会换掉上一组。
@@ -146,6 +152,6 @@ export interface ContentContext extends Registration {
   script(unitId: string): Readonly<Record<string, string | number | boolean>>
   /** 这场战斗的 notes。规格没写时是空记录。 */
   field(): Readonly<Record<string, unknown>>
-  /** 把 revision 里有的字段写进这次事件。伤害和致命结算会读到。 */
-  revise(event: BattleEvent, revision: EventRevision): void
+  /** 把 revision 里有的字段写进这次可拦截事件。发起方在分发后读到。 */
+  revise(event: BattleEvent<InterceptEventType>, revision: EventRevision): void
 }

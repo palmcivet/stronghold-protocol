@@ -62,12 +62,12 @@ test("可改写的事件在订阅者里也立即分发，发出者读到改写�
     install(ctx) {
       ctx.subscribe("damaged", (event, live) => {
         order.push(`damaged:${event.data.targetId}:${event.data.amount}`)
-        if (event.data.targetId === "foe") live.dealDamage({ sourceId: "a", targetId: "b", amount: 10, kind: "true" })
+        if (event.data.targetId === "foe") live.dealDamage({ sourceId: "a", targetId: "b", amount: 1000, kind: "true" })
         order.push("damaged-done")
       })
-      ctx.subscribe("hit", (event) => {
-        if (event.data.targetId === "b") event.data.amount = 4
-        order.push(`hit:${event.data.targetId}`)
+      ctx.subscribe("fatal", (event) => {
+        event.data.prevented = true
+        order.push(`fatal:${event.data.targetId}`)
       })
       ctx.registerSystem({
         id: "probe",
@@ -87,7 +87,8 @@ test("可改写的事件在订阅者里也立即分发，发出者读到改写�
     [probe],
   )
   battle.step()
-  expect(order).toEqual(["hit:foe", "damaged:foe:7", "hit:b", "damaged-done", "damaged:b:4", "damaged-done"])
+  expect(order).toEqual(["damaged:foe:7", "fatal:b", "damaged-done", "damaged:b:1000", "damaged-done"])
+  expect(battle.snapshot().units.find((unit) => unit.id === "b")?.attributes.hp).toBe(1)
 })
 
 test("声明为 Intercept 的事件同步分发，订阅者能改写数据；只读事件的数据不能改写", () => {

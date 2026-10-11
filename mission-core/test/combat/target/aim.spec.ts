@@ -111,14 +111,17 @@ test("atk_scale 走属性汇总", () => {
   const mod: MissionModule = {
     id: "mod",
     install(ctx) {
-      ctx.registerStatus({
+      ctx.registerEffect({
         id: "ammo-up",
-        tags: [],
+        grantsTags: [],
         modifiers: [{ attribute: "atk_scale", op: "mul", value: 2 }],
         immunity: [],
         stackCap: 1,
         cancels: [],
         duration: 0,
+        instant: false,
+        period: 1,
+        stacking: "refresh",
       })
       ctx.registerSystem({
         id: "mod",
@@ -148,7 +151,7 @@ test("atk_scale 走属性汇总", () => {
         priority: 0,
         run(runCtx) {
           if (runCtx.tick() !== 0) return
-          runCtx.applyStatus("a", "ammo-up")
+          runCtx.applyEffect("a", "ammo-up")
         },
       })
     },
@@ -209,7 +212,7 @@ test("治疗照常选中沉睡的友方；带不可选中的友方不选", () =>
         priority: 0,
         run(runCtx) {
           if (runCtx.tick() === 0) {
-            runCtx.applyStatus("asleep", "sleep", { duration: 5 })
+            runCtx.applyEffect("asleep", "sleep", { duration: 5 })
             runCtx.grantTag("veiled", UNTARGETABLE, "case")
             return
           }

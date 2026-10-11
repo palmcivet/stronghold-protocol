@@ -16,6 +16,7 @@ interface Battle {
   ledger(): BattleLedger
   systemOrder(): readonly SystemOrderEntry[]
   export(): WorldArchive
+  contentHash(): string
 }
 
 function runSteps(battle: Battle, steps: number): BattleResult
@@ -23,7 +24,9 @@ function runSteps(battle: Battle, steps: number): BattleResult
 
 `modules` 里每个 `id` 都要出现在 `spec.modules` 中，规格点了却没有传入的模块，创建失败。安装顺序按 `dependsOn`，不按数组顺序。依赖必须也在 `spec.modules` 里。模块 id 重复，或依赖成环，创建失败。
 
-内置的技能体、触发、选择器、计时器、状态、元素和伤害步骤在模块之前登记。同一个 id 再登记会换掉原来的定义。技能规格在模块安装之后检查。`deployStrategy` 不是 `null` 时，这个策略必须已经登记，否则拒绝创建。`deployModule` 登记的策略 id 是 `deploy`。
+内置的属性、叠加策略、条件、技能体、触发、选择器、计时器、效果、元素和伤害步骤在模块之前登记。同一个 id 再登记报 `RegistrationConflictError`。要换掉内置项，用标成可扩展的 id 调用 `replace` 或 `wrap`，见 [模块](./03-module.md#扩展)。规格在模块安装之后检查：必须是纯数据（函数、类实例、`Map` 等报出路径），引用的技能体、触发、技能钩子、标签、计时器、条件与效果都要已注册。
+
+`contentHash()` 是规格、按安装顺序的模块 id 与 `version`、替换链的摘要，16 位十六进制。同样的规格与模块得到同样的摘要，JSON 往返后的规格也一样。`deployStrategy` 不是 `null` 时，这个策略必须已经登记，否则拒绝创建。`deployModule` 登记的策略 id 是 `deploy`。
 
 `step` 在推进中（系统或订阅者里）再被调用时抛出错误，这一拍照常走完。
 
@@ -55,7 +58,7 @@ function runSteps(battle: Battle, steps: number): BattleResult
 | `schedule` | `engine:schedule` |
 | `spawn` | `engine:spawn` |
 | `cost` | `cost` |
-| `status` | `engine:status-timers` |
+| `status` | `engine:conditional-effects`、`engine:status-timers` |
 | `enemy` | `block-before`、`engine:enemy-route`、`leak`、`block-after`、`engine:enemy-attack` |
 | `ally` | `engine:ally-timers` |
 | `projectile` | `engine:projectile` |
@@ -66,13 +69,7 @@ function runSteps(battle: Battle, steps: number): BattleResult
 
 ## 属性汇总
 
-读取属性时用基础值，加上状态和正在生效的技能修饰。运算是 `add`、`percent`、`mul`：
-
-```text
-(基础 + 加算) × (1 + 百分比) × 乘算
-```
-
-`dmgDealt`、`dmgTaken` 这一类乘区没有基础值时从 1 起算，其余从 0 起算。当前生命是单位上存放的 `hp`，不走这条公式。最大生命用 `hp` 和 `maxHp` 的修饰一起算，基础取 `maxHp`，没有则取 `hp`。
+见 [效果与属性](./09-status.md#属性)。
 
 ## 快照
 
@@ -126,7 +123,7 @@ type BattleEvent<K extends BattleEventType = BattleEventType> = {
 }[K]
 ```
 
-`BattleEventMap` 是事件名到数据的表，模块经声明合并加入自己的事件。写成 `Intercept<数据>` 的事件可拦截：发出者用 `ctx.intercept`，订阅者按订阅顺序同步收到可写的 `data`，发出者在返回后读回改写。其余事件只读：用 `ctx.emit` 发出，`data` 是 `Readonly`；在分发中发出时排进队列，等最外层这一条分发完按先进先出分发，所以订阅者里再发事件不会压栈。
+`BattleEventMap` 是事件名到数据的表，模块经声明合并加入自己的事件。写成 `Intercept<数据>` 的事件可拦截，只用于否决与保留（`cancel`、`prevented`、`keep`），改数值走 [伤害修饰](./05-damage.md#伤害修饰)：发出者用 `ctx.intercept`，订阅者按订阅顺序同步收到可写的 `data`，发出者在返回后读回改写。其余事件只读：用 `ctx.emit` 发出，`data` 是 `Readonly`；在分发中发出时排进队列，等最外层这一条分发完按先进先出分发，所以订阅者里再发事件不会压栈。
 
 ```ts
 declare module "arknights-mission-core" {
@@ -148,9 +145,10 @@ declare module "arknights-mission-core" {
 | `downed` | | 生命到 0。有部署策略时 `data` 带落点坐标和 `canStand`。`kind` 是 `device` 的单位倒下就是被摧毁，随后送出 `removed` |
 | `removed` | | 单位离场且不再回来：装置被摧毁、敌人漏出、`removeUnit`。从下一次快照起不再出现，账本仍记着它 |
 | `attack` | 是 | 普攻出手之前。`cancel` 改成真时这一下不打出去 |
+| `palsy-interrupt` | 是 | 麻痹打断敌人普攻、用掉一层之前。`stacks` 是用掉之前的层数；`keep` 改成真时这一层留着。订阅者里敌人倒下时这次普攻同样结束 |
 | `attack-hit` | | 攻击出手。`data.unitId` 是攻击者 |
-| `hit` | 是 | `dealDamage` 进入步骤之前。处理函数可以改 `amount`、`kind`、`cancel`、`mul` |
-| `element-hit` | 是 | 元素进槽之前。处理函数可以改数额、乘数、种类和取消 |
+| `hit` | | `dealDamage` 进入步骤之前，`hit` 阶段的伤害修饰改写之后。数据是改写后的数额、种类与 `cancel` |
+| `element-hit` | | 元素进槽之前，`element-hit` 阶段的伤害修饰改写之后 |
 | `fatal` | 是 | 这一下会把生命扣到 0。`data.prevented = true` 时生命留在 1 和最大生命里较小的那个 |
 | `damaged` | | 生命已经写下。`amount` 是这一下的数额，`applied` 是实际扣掉的生命（结算前减结算后，不含溢出），`hp` 是结算后的生命 |
 | `loss` | | `loseHp` 扣了生命 |

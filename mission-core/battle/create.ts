@@ -27,11 +27,17 @@ import { armListedTimers } from "#unit/record/timer.js"
 import { unitCodec } from "#unit/record/archive.js"
 import { bindLedger, readLedger } from "#ledger/index.js"
 import { registerDamageSteps } from "#combat/damage/index.js"
-import { registerBuiltinElements } from "#combat/element/index.js"
+import { BUILTIN_ELEMENTS, registerBuiltinElements } from "#combat/element/index.js"
 import { registerAttackTimers } from "#combat/attack/index.js"
 import { bindIndependentTimers } from "#combat/attack/timing.js"
-import { registerStatusCatalog } from "#ability/effect/catalog.js"
-import { registerStatusTimer } from "#ability/effect/index.js"
+import { registerEffectCatalog } from "#ability/effect/catalog.js"
+import { registerEffectTimer } from "#ability/effect/index.js"
+import { registerBuiltinAttributes } from "#ability/effect/attribute.js"
+import { registerBuiltinStackings } from "#ability/effect/stacking.js"
+import { registerBuiltinConditions, registerConditionSystem } from "#ability/effect/condition.js"
+import { canonicalJson, hashText } from "#kernel/hash/index.js"
+import { defineExtensible } from "#kernel/registry/extensible.js"
+import { BUILTIN_SKILL_BODIES } from "#ability/skill/body.js"
 import { registerBuiltinSelectors } from "#combat/target/catalog.js"
 
 export interface Battle {
@@ -46,6 +52,8 @@ export interface Battle {
   systemOrder(): readonly SystemOrderEntry[]
   /** 世界的纯数据快照。用同样的规格与模块调用 createBattle(spec, modules, archive) 从这里继续。 */
   export(): WorldArchive
+  /** 内容摘要：规格、按安装顺序的模块 id 与版本、可扩展 id 的替换链。16 位十六进制。 */
+  contentHash(): string
 }
 
 /** 建一场战斗。给了 archive 时先照常建好，再把世界换成 archive 的状态，待取走的事件清空。 */
@@ -60,14 +68,19 @@ export function createBattle(spec: BattleSpec, modules: readonly MissionModule[]
   registry.registerTimer(counterTimer("trait", "ally", "count"))
   registry.registerTimer(elapsedTimer("redeploy", "redeploy"))
   registerAttackTimers(registry, state)
-  registerStatusTimer(registry, state)
-  registerStatusCatalog(state, registry)
+  registerBuiltinAttributes(registry)
+  registerBuiltinStackings(registry)
+  registerBuiltinConditions(registry)
+  registerEffectTimer(registry, state)
+  registerEffectCatalog(state, registry)
   registerBuiltinElements(state, registry)
   registerDamageSteps(state, registry)
+  markBuiltinExtensible(registry)
   const ctx = createContext(state, registry)
   registerBuiltinShifts(registry)
   registerEngineSystems(registry, state)
-  installModules(spec, modules, ctx)
+  registerConditionSystem(registry, state)
+  const installed = installModules(spec, modules, ctx, registry)
   registry.systemOrder()
   validateUnits(spec, registry)
   for (const unit of spec.units) grantSpecTags(registry, requireSpecUnit(state, unit), unit)
@@ -86,7 +99,17 @@ export function createBattle(spec: BattleSpec, modules: readonly MissionModule[]
   }
   armField(state, registry, ctx, true)
   const result = state.resources.access(RESULT)
-  const units = unitCodec(spec, registry)
+  const units = unitCodec(registry)
+  const hash = hashText(
+    canonicalJson(
+      {
+        spec,
+        modules: installed.map((module) => ({ id: module.id, version: module.version ?? "" })),
+        extensions: registry.extensions(),
+      },
+      "content",
+    ),
+  )
   if (archive) importWorld(state, archive, units)
   let stepping = false
   return {
@@ -121,6 +144,9 @@ export function createBattle(spec: BattleSpec, modules: readonly MissionModule[]
     export() {
       return exportWorld(state, units)
     },
+    contentHash() {
+      return hash
+    },
   }
 }
 
@@ -138,7 +164,12 @@ function requireSpecUnit(state: BattleWorld, spec: UnitSpec): UnitState {
   return unit
 }
 
-function installModules(spec: BattleSpec, modules: readonly MissionModule[], ctx: Registration): void {
+function installModules(
+  spec: BattleSpec,
+  modules: readonly MissionModule[],
+  ctx: Registration,
+  registry: BattleRegistry,
+): readonly MissionModule[] {
   const catalog = new Map<string, MissionModule>()
   for (const module of modules) {
     if (catalog.has(module.id)) throw new Error(`模块重复: ${module.id}`)
@@ -166,17 +197,42 @@ function installModules(spec: BattleSpec, modules: readonly MissionModule[], ctx
     ordered.push(module)
   }
   for (const id of spec.modules) visit(id)
-  for (const module of ordered) module.install(ctx)
+  for (const module of ordered) {
+    registry.installing(module.id)
+    module.install(ctx)
+  }
+  registry.installing("core")
+  return ordered
 }
 
-/** 开场与出场单位的技能体、技能触发和标签都要已注册。 */
+/** 内置技能体、伤害步骤与元素标成可扩展。技能触发、选择器、叠加策略与条件在注册时标记。 */
+function markBuiltinExtensible(registry: BattleRegistry): void {
+  for (const id of BUILTIN_ELEMENTS) registry.markExtensible(defineExtensible(id, { version: 1, contract: "element" }))
+  for (const id of BUILTIN_SKILL_BODIES) registry.markExtensible(defineExtensible(id, { version: 1, contract: "skill-body" }))
+  for (const step of registry.damageSteps()) registry.markExtensible(defineExtensible(step.id, { version: 1, contract: "damage-step" }))
+}
+
+/**
+ * 规格必须是纯数据，规格上的 id 都要已注册：技能体、技能触发、技能钩子、标签、计时器、条件与效果。
+ * 缺失时报 UnknownRegistrationError。
+ */
 function validateUnits(spec: BattleSpec, registry: BattleRegistry): void {
+  canonicalJson(spec, "spec")
   const units: UnitSpec[] = [...spec.units, ...spec.spawns.map((spawn) => spawn.unit)]
   for (const unit of units) {
+    const owner = `unit spec ${unit.id}`
     for (const skill of unit.skills) {
-      if (!registry.hasSkillBody(skill.body)) throw new UnknownRegistrationError("skill-body", skill.body)
+      if (!registry.hasSkillBody(skill.body)) throw new UnknownRegistrationError("skill-body", skill.body, owner)
       const trigger = normalizeTrigger(skill.trigger)
-      if (!registry.hasSkillTrigger(trigger)) throw new UnknownRegistrationError("skill-trigger", trigger)
+      if (!registry.hasSkillTrigger(trigger)) throw new UnknownRegistrationError("skill-trigger", trigger, owner)
+      for (const hookId of Object.values(skill.hooks ?? {})) {
+        if (hookId !== undefined) registry.requireSkillHook(hookId)
+      }
+    }
+    for (const timerId of unit.timers ?? []) registry.requireTimer(timerId)
+    for (const entry of unit.conditionalEffects ?? []) {
+      registry.requireCondition(entry.condition)
+      registry.requireEffect(entry.effect)
     }
     checkSpecTags(registry, unit)
   }

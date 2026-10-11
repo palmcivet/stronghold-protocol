@@ -1,10 +1,15 @@
 import type { PhaseSlot } from "#contract/phase.js"
-import type { AttackShape, TileCoord } from "#contract/spec.js"
+import type { AttackShape, SkillMoment, TileCoord } from "#contract/spec.js"
 import type { TimerDefinition as EntityTimer } from "#kernel/timer/index.js"
+import type { ExtensibleKey, ExtensionRecord } from "#kernel/registry/extensible.js"
 import type { TagKey } from "#kernel/world/tag.js"
 import type { ContentContext } from "#port/context.js"
 
-export const MODIFIER_OPS = ["add", "percent", "mul"] as const
+/**
+ * 修饰的聚合阶段，按这个顺序算：基础值 → 加值（add）→ 百分比（percent）→ 直接乘算（mul）→ 独立乘区（independent）。
+ * 独立乘区是官方写明与其他加成独立的系数，例如练度。
+ */
+export const MODIFIER_OPS = ["add", "percent", "mul", "independent"] as const
 
 export type ModifierOp = (typeof MODIFIER_OPS)[number]
 
@@ -14,25 +19,44 @@ export interface AttributeModifier {
   readonly value: number
 }
 
-/** 一次施加。缺省的持续时间用状态自己的时长。 */
-export interface StatusApplication {
-  /** 秒。缺省用状态定义上的时长。Infinity 表示一直持续。0 或负数这次施加不成立。 */
-  readonly duration?: number
-  /** 这次的强度。缺省用状态定义上的默认强度。 */
-  readonly value?: number
+/** 属性的定义。单位规格没写这个属性时用 base。 */
+export interface AttributeDefinition {
+  readonly id: string
+  readonly base: number
+  /** 聚合后的值夹在这个范围里。 */
+  readonly clamp?: { readonly min?: number; readonly max?: number }
 }
 
-/** 叠法看到的这一次施加，时长已经换成状态计时器的拍数。 */
-export interface StatusIncoming {
+/** 一次施加。缺省的持续时间用效果自己的时长。 */
+export interface EffectApplication {
+  /** 秒。缺省用效果定义上的时长。Infinity 表示一直持续。0 或负数这次施加不成立。 */
+  readonly duration?: number
+  /** 这次的强度。缺省用效果定义上的默认强度。 */
+  readonly value?: number
+  /** 取最高时拿来比较的强度，缺省用 value。效果本身仍按 value 生效。 */
+  readonly stackAs?: number
+}
+
+/** 叠加策略看到的这一次施加，时长已经换成效果计时器的拍数。 */
+export interface EffectIncoming {
   readonly ticks: number
   readonly permanent: boolean
   readonly value: number
+  /** 取最高时比较的强度。没有时用 value。 */
+  readonly stackAs: number | null
   /** 施加时的战场拍数。 */
   readonly at: number
 }
 
-/** 同名状态叠在一起时，叠法读写的那一条。 */
-export interface StatusRecord {
+/** 取最高的等待链上的一项：当前那一次结束后，按强度递减、到期递增依次接续。until 是战场拍数。 */
+export interface EffectWait {
+  readonly value: number
+  readonly stackAs: number | null
+  readonly until: number
+}
+
+/** 单位身上的一条效果，叠加策略读写的就是它。 */
+export interface EffectRecord {
   id: string
   stacks: number
   remaining: number
@@ -41,47 +65,76 @@ export interface StatusRecord {
   shieldHits: number
   runtimeModifiers: AttributeModifier[]
   pulse: number
+  /** 这次施加之前已经在身上。 */
   carried: boolean
+  /** 刷新前剩下的拍数。一直持续记成 Infinity。 */
   priorRemaining: number
+  /** 取最高、抵抗用的强度。没有时是 0。 */
   strength: number
+  /** 取最高时比较的强度。没有时用 strength。 */
+  stackAs: number | null
   dropped: boolean
-  /** 弱的一次等强的结束再续上。until 是战场拍数。 */
-  tail: { value: number; until: number } | null
+  /** 取最高的等待链。 */
+  waits: EffectWait[]
+  /** 条件效果挂上的这一条记的条件来源，其余是 null。 */
+  source: string | null
 }
 
-export interface StatusDefinition {
+export interface EffectDefinition {
   readonly id: string
-  /** 状态在身上时授予的标签，来源记为这个状态。 */
-  readonly tags: readonly TagKey[]
+  /** 效果在身上时授予的标签，来源记为这个效果。 */
+  readonly grantsTags: readonly TagKey[]
   readonly modifiers: readonly AttributeModifier[]
-  /** 身上已有这些状态时，挡住别的状态。名单用免疫名，例如冻结是 frozen。 */
+  /** 身上已有这些效果时，挡住别的效果。名单用免疫名，例如冻结是 frozen。 */
   // TRACE: source/immunity-names
   readonly immunity: readonly string[]
   /**
-   * 这个状态自己被挡住时，单位免疫名单里对应的名字。
-   * 与状态 id 可以不同，冻结的 id 是 freeze，免疫名是 frozen。
+   * 这个效果自己被挡住时，单位免疫名单里对应的名字。
+   * 与效果 id 可以不同，冻结的 id 是 freeze，免疫名是 frozen。
    */
   readonly immune?: string
   readonly stackCap: number
+  /** 施加时取消的计时器。 */
   readonly cancels: readonly string[]
-  /** 0 表示一直持续，直到被取下。正数是状态计时器推进的次数。 */
+  /** 0 表示一直持续，直到被取下。正数是效果计时器推进的次数。 */
   readonly duration: number
-  /** 缺省强度。慢速、脆弱这类同名取最高的状态用它。 */
+  /** 为真时只调用 onApply 并发 status，不留在身上。 */
+  readonly instant: boolean
+  /** onTick 每隔这么多拍调用一次。缺省 1。 */
+  readonly period: number
+  /** 叠加策略 id。 */
+  readonly stacking: string
+  /** 缺省强度。慢速、脆弱这类同名取最高的效果用它。 */
   readonly valued?: number
   /** 按这次的强度写出修饰。和 modifiers 同时存在时两边都会汇总。 */
   scale?(value: number): readonly AttributeModifier[]
-  /**
-   * 同名再施加时怎么叠。缺省是刷新时长并叠层。
-   * 返回 undefined 表示这次不生效。
-   */
-  overlap?(
-    statuses: StatusRecord[],
-    existing: StatusRecord | undefined,
-    incoming: StatusIncoming,
-    definition: StatusDefinition,
-  ): StatusRecord | undefined
   onApply?(unitId: string, stacks: number, ctx: ContentContext): void
   onTick?(unitId: string, stacks: number, ctx: ContentContext): void
+  /** 到期、被取下或条件不再成立而离开单位时。 */
+  onRemove?(unitId: string, ctx: ContentContext): void
+}
+
+/** 同名效果再施加时怎么叠。返回 undefined 表示这次不生效。 */
+export interface StackingDefinition {
+  readonly id: string
+  apply(
+    effects: EffectRecord[],
+    existing: EffectRecord | undefined,
+    incoming: EffectIncoming,
+    definition: EffectDefinition,
+  ): EffectRecord | undefined
+}
+
+/** 条件效果的条件。params 是规格里的纯数据。 */
+export interface ConditionDefinition {
+  readonly id: string
+  evaluate(unitId: string, params: Readonly<Record<string, unknown>>, ctx: ContentContext): boolean
+}
+
+/** 技能规格 hooks 里按 id 引用的回调。 */
+export interface SkillHookDefinition {
+  readonly id: string
+  run(moment: SkillMoment, ctx: ContentContext): void
 }
 
 export interface DamageInfo {
@@ -123,6 +176,52 @@ export interface DamageStepDefinition {
   readonly priority: number
   apply(info: DamageInfo, ctx: ContentContext, pass: DamagePass): void
 }
+
+/**
+ * 伤害修饰的阶段。每个阶段规定修饰能改什么：
+ * - `hit`：进入减伤之前，可以改数额、倍率、类型或取消；
+ * - `element-hit`：元素损伤进槽之前，可以改数额、倍率、类型或取消；
+ * - `hp`：护盾之后、扣生命之前，只能调低数额。流失与被护盾整段吸收的伤害不经过这一阶段。
+ */
+export const DAMAGE_STAGES = ["hit", "element-hit", "hp"] as const
+
+export type DamageStage = (typeof DAMAGE_STAGES)[number]
+
+/** 一次伤害的来龙去脉。 */
+export interface DamageOrigin {
+  readonly sourceId: string
+  /** 记功的单位。sourceless 时 sourceId 是空串，creditId 仍是出手者。 */
+  readonly creditId: string
+  readonly targetId: string
+  readonly sourceless: boolean
+  readonly element?: string
+  /** 这一击来自攻击计时。 */
+  readonly attack: boolean
+}
+
+/** hit 与 element-hit 阶段修饰可写的数据。非有限的数额或倍率不生效。 */
+export interface HitChange extends DamageOrigin {
+  amount: number
+  mul: number
+  kind: string
+  cancel: boolean
+}
+
+/** hp 阶段修饰可写的数据。数额只能调低：调高、负数以下的部分与非有限值都不生效。 */
+export interface HpChange extends DamageOrigin {
+  readonly kind: string
+  amount: number
+}
+
+interface DamageModifierBase {
+  readonly id: string
+  /** 同一阶段里的顺序。数字小的先执行，相同数字按注册先后。 */
+  readonly priority: number
+}
+
+export type DamageModifierDefinition =
+  | (DamageModifierBase & { readonly stage: "hit" | "element-hit"; modify(change: HitChange, ctx: ContentContext): void })
+  | (DamageModifierBase & { readonly stage: "hp"; modify(change: HpChange, ctx: ContentContext): void })
 
 export interface DamagePreview {
   readonly sourceId: string
@@ -169,7 +268,7 @@ export interface SkillBodyDefinition {
   readonly id: string
   cast(skill: SkillRuntime, spec: { readonly duration: number; readonly ammo: number }): void
   advance(skill: SkillRuntime, ctx: ContentContext): void
-  /** 释放、结束、每拍、命中。和单位技能规格上的回调一起被调用。 */
+  /** 释放、结束、每拍、命中。在技能规格 hooks 引用的技能钩子之后调用。 */
   onCast?(unitId: string, skillId: string, ctx: ContentContext): void
   onEnd?(unitId: string, skillId: string, ctx: ContentContext): void
   onTick?(unitId: string, skillId: string, ctx: ContentContext): void
@@ -273,11 +372,24 @@ export interface ProjectileView {
 }
 
 /** 本场注册的全部定义。内容经 Registration 写入，引擎按 id 读取。 */
-export interface BattleRegistry {
-  registerStatus(definition: StatusDefinition): void
-  requireStatus(id: string): StatusDefinition
+export interface BattleRegistry extends ExtensibleRegistry {
+  registerAttribute(definition: AttributeDefinition): void
+  /** 没有注册的属性返回 undefined。 */
+  findAttribute(id: string): AttributeDefinition | undefined
+  registerEffect(definition: EffectDefinition): void
+  requireEffect(id: string): EffectDefinition
+  hasEffect(id: string): boolean
+  registerStacking(definition: StackingDefinition): void
+  requireStacking(id: string): StackingDefinition
+  registerCondition(definition: ConditionDefinition): void
+  requireCondition(id: string): ConditionDefinition
+  registerSkillHook(definition: SkillHookDefinition): void
+  requireSkillHook(id: string): SkillHookDefinition
   registerDamageStep(definition: DamageStepDefinition): void
   damageSteps(): readonly DamageStepDefinition[]
+  registerDamageModifier(definition: DamageModifierDefinition): void
+  /** 这一阶段的修饰，按 priority 再按注册先后。 */
+  damageModifiers(stage: DamageStage): readonly DamageModifierDefinition[]
   registerElement(definition: ElementDefinition): void
   requireElement(id: string): ElementDefinition
   registerSelector(definition: SelectorDefinition): void
@@ -302,4 +414,45 @@ export interface BattleRegistry {
   registerTag(key: TagKey): void
   /** owner 写进未注册的报错，例如单位规格。 */
   requireTag(id: string, owner?: string): TagKey
+  /** 之后的 replace 与 wrap 记在这个模块名下。 */
+  installing(moduleId: string): void
+}
+
+// MARK: extensible
+
+/** 第一批开放替换的注册表，到各自的定义。 */
+export interface ExtensibleDefinitions {
+  "skill-trigger": SkillTriggerDefinition
+  "skill-body": SkillBodyDefinition
+  selector: SelectorDefinition
+  "damage-step": DamageStepDefinition
+  stacking: StackingDefinition
+  condition: ConditionDefinition
+  deploy: DeployStrategyDefinition
+  element: ElementDefinition
+}
+
+export type ExtensibleContract = keyof ExtensibleDefinitions
+
+export const EXTENSIBLE_CONTRACTS = [
+  "skill-trigger",
+  "skill-body",
+  "selector",
+  "damage-step",
+  "stacking",
+  "condition",
+  "deploy",
+  "element",
+] as const satisfies readonly ExtensibleContract[]
+
+/** 标记可扩展 id 并替换或包装它。只有标记过的 id 可以替换，版本要与标记时一致。 */
+export interface ExtensibleRegistry {
+  /** 标记一个已注册或将要注册的 id 可以替换。 */
+  markExtensible(key: ExtensibleKey<ExtensibleContract>): void
+  /** 换掉 key 指向的注册项。definition.id 必须等于 key.id。 */
+  replace<C extends ExtensibleContract>(key: ExtensibleKey<C>, definition: ExtensibleDefinitions[C]): void
+  /** 用 wrap 的返回值换掉 key 指向的注册项，wrap 拿到原来那项。 */
+  wrap<C extends ExtensibleContract>(key: ExtensibleKey<C>, wrap: (inner: ExtensibleDefinitions[C]) => ExtensibleDefinitions[C]): void
+  /** 按发生顺序的替换链。 */
+  extensions(): readonly ExtensionRecord[]
 }

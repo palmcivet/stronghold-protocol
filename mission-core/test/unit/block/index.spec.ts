@@ -100,7 +100,7 @@ test("眩晕会放开已经挡住的敌人", () => {
         slot: "ally",
         priority: 0,
         run(runCtx) {
-          if (runCtx.tick() === 0) runCtx.applyStatus("a", "stun", { duration: 5 })
+          if (runCtx.tick() === 0) runCtx.applyEffect("a", "stun", { duration: 5 })
         },
       })
     },

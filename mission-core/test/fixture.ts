@@ -41,5 +41,6 @@ export function ally(id: string, patch: Partial<UnitSpec> = {}): UnitSpec {
     ...(patch.timers ? { timers: patch.timers } : {}),
     ...(patch.owner !== undefined ? { owner: patch.owner } : {}),
     ...(patch.kind ? { kind: patch.kind } : {}),
+    ...(patch.conditionalEffects ? { conditionalEffects: patch.conditionalEffects } : {}),
   }
 }

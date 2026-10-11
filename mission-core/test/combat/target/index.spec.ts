@@ -131,9 +131,9 @@ test("飞行、隐匿、迷彩和范围效果按各自的筛选分开", () => {
         slot: "schedule",
         priority: 1,
         run(runCtx) {
-          runCtx.applyStatus("e", "stealth")
+          runCtx.applyEffect("e", "stealth")
           hidden = runCtx.unitsInRange("a", ["enemy", "stealth"])
-          runCtx.applyStatus("e", "reveal")
+          runCtx.applyEffect("e", "reveal")
           revealed = runCtx.unitsInRange("a", ["enemy", "stealth"])
         },
       })
@@ -162,7 +162,7 @@ test("飞行、隐匿、迷彩和范围效果按各自的筛选分开", () => {
         slot: "schedule",
         priority: 1,
         run(runCtx) {
-          runCtx.applyStatus("camou", "camou")
+          runCtx.applyEffect("camou", "camou")
           plain = runCtx.unitsInRange("e", ["ally", "camouflage"])
           area = runCtx.unitsInRange("e", ["ally", "area"])
         },
@@ -185,12 +185,12 @@ test("范围效果不选隐匿、不可选中、沉睡的单位，隐匿的挡�
         slot: "schedule",
         priority: 1,
         run(runCtx) {
-          runCtx.applyStatus("blocker", "stealth")
-          runCtx.applyStatus("hidden", "stealth")
+          runCtx.applyEffect("blocker", "stealth")
+          runCtx.applyEffect("hidden", "stealth")
           runCtx.grantTag("untargetable", UNTARGETABLE, "case")
-          runCtx.applyStatus("asleep", "sleep")
-          runCtx.applyStatus("lifted", "liftoff")
-          runCtx.applyStatus("camou", "camou")
+          runCtx.applyEffect("asleep", "sleep")
+          runCtx.applyEffect("lifted", "liftoff")
+          runCtx.applyEffect("camou", "camou")
           area = runCtx.unitsInRange("e", ["ally", "area"])
           all = runCtx.unitsInRange("e", "ally")
         },
@@ -229,8 +229,8 @@ test("没被挡的隐匿敌人和不可选中的敌人不被选中；被挡住�
         slot: "schedule",
         priority: 1,
         run(runCtx) {
-          for (const id of ["loose", "held", "shown"]) runCtx.applyStatus(id, "stealth")
-          runCtx.applyStatus("shown", "reveal")
+          for (const id of ["loose", "held", "shown"]) runCtx.applyEffect(id, "stealth")
+          runCtx.applyEffect("shown", "reveal")
           runCtx.grantTag("ghost", UNTARGETABLE, "case")
           picks.foes = runCtx.unitsInRange("a", ["enemy", "stealth", "untargetable"])
           picks.everyone = runCtx.unitsInRange("a", "enemy")
@@ -349,7 +349,7 @@ test("起飞的干员不被地面敌人选中，孤立友方不被友方选中",
         slot: "schedule",
         priority: 1,
         run(runCtx) {
-          runCtx.applyStatus("a", "liftoff")
+          runCtx.applyEffect("a", "liftoff")
           grounded = runCtx.unitsInRange("walker", ["ally", "liftoff"])
           flying = runCtx.unitsInRange("flyer", ["ally", "liftoff"])
         },
@@ -380,7 +380,7 @@ test("起飞的干员不被地面敌人选中，孤立友方不被友方选中",
         slot: "schedule",
         priority: 1,
         run(runCtx) {
-          runCtx.applyStatus("lone", "isolated")
+          runCtx.applyEffect("lone", "isolated")
           allies = runCtx.unitsInRange("a", ["ally", "isolated"])
         },
       })
