@@ -53,6 +53,7 @@
   },
   "scripts": {
     "build": "tsc -b",
+    "format": "biome check --write",
     "lint": "tsc --noEmit && tsc -p tsconfig.test.json --noEmit",
     "test": "vitest run",
     "extract": "node dist/script/extract.js",
@@ -63,6 +64,7 @@
     "arknights-assets-catalog": "workspace:*"
   },
   "devDependencies": {
+    "@biomejs/biome": "catalog:",
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",

@@ -5,11 +5,13 @@ packages:
   - "assets-extractor"
   - "deployment"
   - "deployment/client/config"
+  - "docs"
   - "mission-core"
   - "mission-renderer"
 
 catalog:
   "@types/node": ^26.6.4
+  "@biomejs/biome": ^2.5.15
   cross-env: ^10.1.0
   typescript: ^7.0.2
   vite: ^8.3.2

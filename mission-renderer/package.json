@@ -50,6 +50,7 @@
   },
   "scripts": {
     "build": "tsc -b",
+    "format": "biome check --write",
     "lint": "tsc --noEmit",
     "test": "vitest run"
   },
@@ -66,6 +67,7 @@
     "arknights-mission-core": "workspace:*"
   },
   "devDependencies": {
+    "@biomejs/biome": "catalog:",
     "@types/node": "catalog:",
     "@types/three": "^0.186.0",
     "typescript": "catalog:",

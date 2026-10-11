@@ -37,10 +37,12 @@
   },
   "scripts": {
     "build": "tsc -b",
+    "format": "biome check --write",
     "lint": "tsc --noEmit && tsc -p tsconfig.test.json --noEmit",
     "test": "vitest run"
   },
   "devDependencies": {
+    "@biomejs/biome": "catalog:",
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
