@@ -67,7 +67,7 @@ export function registerEngineSystems(registry: BattleRegistry, state: BattleWor
       for (const unit of state.units.values()) {
         if (advanceShift(state, registry, unit, TICK)) continue
         const speed = Math.max(0, attributeOf(unit, registry, "moveSpeed")) * MOVE_SCALE
-        advanceRoute(gridOf(state), unit, TICK, speed)
+        advanceRoute(state, gridOf(state), unit, TICK, speed)
       }
     },
   })

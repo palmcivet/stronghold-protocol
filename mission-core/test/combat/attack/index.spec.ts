@@ -308,7 +308,7 @@ test("不能打空的攻击不选飞行单位，隐匿要显形才打得到", ()
       modules: ["case"],
       tiles: lane,
       units: [
-        ally("a", { tags: ["canHitFly"], attributes: { hp: 100, atk: 10, def: 0 } }),
+        ally("a", { tags: ["can-hit-fly"], attributes: { hp: 100, atk: 10, def: 0 } }),
         ally("flyer", { side: "enemy", x: 1, y: 0, motion: "FLY", attributes: { hp: 40, def: 0 } }),
       ],
     }),

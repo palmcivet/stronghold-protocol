@@ -8,17 +8,26 @@ import { TICK } from "#kernel/tick/index.js"
 import type { UnitState } from "#unit/record/index.js"
 import { hasTag } from "#kernel/world/tag.js"
 import { BURST_LOCK, NO_SP, SILENCE, STUN } from "#port/tag.js"
+import { gaugesOf, peekGauges } from "#combat/element/gauge.js"
+import type { ComponentStore } from "#kernel/world/component.js"
 
 export function hasHp(unit: UnitState): boolean {
   return !unit.downed && (unit.attributes.hp ?? 0) > 0
 }
 
 /** 爆发冷却结束，这个单位每种元素槽都归零。 */
-export function clearElements(unit: UnitState): void {
-  for (const slot of unit.elements.values()) {
+export function clearElements(world: { readonly components: ComponentStore }, unitId: string): void {
+  const gauges = peekGauges(world, unitId)
+  if (!gauges) return
+  for (const slot of gauges.slots.values()) {
     slot.value = 0
     slot.locked = false
   }
+}
+
+/** 最近一次把元素槽打满的单位。没有时是空串。 */
+function creditOf(world: { readonly components: ComponentStore }, unitId: string): string {
+  return peekGauges(world, unitId)?.credit ?? ""
 }
 
 export type Charge = "burst" | "filled" | "refused"
@@ -33,13 +42,15 @@ export function chargeElement(
 ): Charge {
   const definition = registry.requireElement(elementId)
   const unit = requireUnit(state, unitId)
-  if (!hasHp(unit) || unit.bursting || hasTag(unit, BURST_LOCK)) return "refused"
+  if (!hasHp(unit) || peekGauges(state, unitId)?.bursting === true || hasTag(unit, BURST_LOCK)) return "refused"
   if (!(amount > 0) || !Number.isFinite(amount)) return "refused"
   const cap = gaugeCap(unit, definition.cap)
-  const existing = unit.elements.get(elementId)
-  const slot = existing ?? { value: 0, locked: false }
-  if (!existing) unit.elements.set(elementId, slot)
+  const slots = gaugesOf(state, unitId).slots
+  const existing = slots.get(elementId)
+  const slot = existing ?? { value: 0, locked: false, cap }
+  if (!existing) slots.set(elementId, slot)
   if (slot.locked) return "refused"
+  slot.cap = cap
   slot.value += amount
   if (slot.value < cap) return "filled"
   slot.value = cap
@@ -58,14 +69,15 @@ export function burstElement(
 ): void {
   const definition = registry.requireElement(elementId)
   const unit = requireUnit(state, unitId)
-  if (unit.bursting || hasTag(unit, BURST_LOCK)) return
-  unit.elementCredit = sourceId
-  unit.bursting = true
+  const gauges = gaugesOf(state, unitId)
+  if (gauges.bursting || hasTag(unit, BURST_LOCK)) return
+  gauges.credit = sourceId
+  gauges.bursting = true
   try {
     emit(state, "elementBurst", { sourceId, targetId: unitId, element: elementId })
     definition.onBurst?.(unitId, ctx, sourceId)
   } finally {
-    unit.bursting = false
+    gauges.bursting = false
   }
 }
 
@@ -194,7 +206,7 @@ export function registerBuiltinElements(state: BattleWorld, registry: BattleRegi
       status.pulse += 1
       if (status.pulse % second !== 0) return
       drainSkillSp(state, unitId, ELEMENT.apoptosis.ally.spLossPerSec)
-      strike(ctx, unit.elementCredit, unitId, "apoptosis", ELEMENT.apoptosis.ally.dps, damageKind(ELEMENT.apoptosis.ally.dpsType))
+      strike(ctx, creditOf(state, unitId), unitId, "apoptosis", ELEMENT.apoptosis.ally.dps, damageKind(ELEMENT.apoptosis.ally.dpsType))
     },
   })
   registry.registerStatus({
@@ -215,7 +227,7 @@ export function registerBuiltinElements(state: BattleWorld, registry: BattleRegi
       status.runtimeModifiers = [{ attribute: "atk", op: "mul", value: 1 - weaken }]
       status.pulse += 1
       if (status.pulse % second !== 0) return
-      strike(ctx, unit.elementCredit, unitId, "apoptosis", ELEMENT.apoptosis.enemy.elemDps, "elemental")
+      strike(ctx, creditOf(state, unitId), unitId, "apoptosis", ELEMENT.apoptosis.enemy.elemDps, "elemental")
     },
   })
   registry.registerElement({
@@ -288,7 +300,7 @@ export function registerBuiltinElements(state: BattleWorld, registry: BattleRegi
       if (!status) return
       status.pulse += 1
       if (status.pulse % second !== 0) return
-      strike(ctx, unit.elementCredit, unitId, "necrosis", ELEMENT.necrosis.dps, "true")
+      strike(ctx, creditOf(state, unitId), unitId, "necrosis", ELEMENT.necrosis.dps, "true")
     },
   })
   registry.registerElement({

@@ -45,7 +45,7 @@ test("取消前摇后命中不发生", () => {
   battle.step()
   battle.step()
   expect(hits).toEqual([])
-  expect(battle.snapshot().units[0]?.flags).toContain("stun")
+  expect(battle.snapshot().units[0]?.tags).toContain("stun")
 })
 
 test("没有取消时前摇结束后命中", () => {

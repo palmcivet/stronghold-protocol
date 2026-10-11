@@ -1,4 +1,4 @@
-import type { AttackClip, AttackShape, Direction, HitArea, Motion, SkillHook, SkillModifier, UnitKind, UnitSpec } from "#contract/spec.js"
+import type { Direction, HitArea, Motion, SkillHook, SkillModifier, UnitKind, UnitSpec } from "#contract/spec.js"
 import type { AttributeModifier, BattleRegistry, SkillRuntime } from "#port/definition.js"
 import type { ContentContext } from "#port/context.js"
 import { AIRBORNE } from "#port/tag.js"
@@ -14,17 +14,13 @@ import {
   type SkillOperation,
   type SpType,
 } from "#ability/skill/constants.js"
-import { compileRoute, type RouteRun } from "#field/grid/route.js"
+import { ROUTE, compileRoute } from "#field/grid/route.js"
 import { gridOf } from "#field/grid/index.js"
-
-/** 一段还在走的位移。落点在 landing，路径在 points。 */
-export interface ShiftRun {
-  readonly id: string
-  landingX: number
-  landingY: number
-  readonly points: { x: number; y: number }[]
-  index: number
-}
+import { ATTACK_PROFILE, profileFromSpec } from "#combat/attack/profile.js"
+import { BLOCK } from "#unit/block/hold.js"
+import { TARGET_PRIORITY } from "#combat/target/priority.js"
+import { HIT_LIMIT } from "#combat/damage/limit.js"
+import { IMMUNITY } from "#ability/effect/immunity.js"
 
 export interface StatusInstance {
   id: string
@@ -51,11 +47,6 @@ export function isFlying(unit: UnitState): boolean {
   if (unit.motion === "FLY") return true
   if (unit.side !== "enemy") return false
   return hasTag(unit, AIRBORNE)
-}
-
-export interface ElementSlot {
-  value: number
-  locked: boolean
 }
 
 export interface SkillInstance extends SkillRuntime {
@@ -99,20 +90,6 @@ export interface UnitState {
   /** 规格、状态、技能与模块按来源授予的标签。 */
   readonly tags: TagGrants
   readonly deployPositions: readonly string[]
-  /** 免疫名单。冻结写成 frozen，恐惧和战栗写成 feared，其余与状态 id 相同。 */
-  // TRACE: source/immunity-names
-  readonly immunity: ReadonlySet<string>
-  readonly attackClip: AttackClip | null
-  readonly attackShape: AttackShape | null
-  /** 已经飞出、还没回到手上的回旋物。计时器读这个数，攻击形状不因此停手。 */
-  boomerangsOut: number
-  /** 再部署清零回旋时加一。回程的世代对不上这个数时不改计数。 */
-  boomerangEpoch: number
-  /** 还没走完的推、拉、恐惧或诱导。倒地时先写到落点。 */
-  shiftRun: ShiftRun | null
-  readonly targetPriority: string
-  readonly blocking: string[]
-  blockedBy: string | null
   readonly aggroSeq: number
   readonly spawnSeq: number
   /** 放入时的格子。之后的坐标可以离开这里。 */
@@ -123,11 +100,7 @@ export interface UnitState {
   facing: Direction
   hitArea: HitArea | null
   motion: Motion
-  route: RouteRun | null
-  /** 路线消失。快照把它写成 hidden。 */
-  routeHidden: boolean
   readonly statuses: StatusInstance[]
-  readonly elements: Map<string, ElementSlot>
   readonly timers: Map<string, TimerState>
   /** 规格列出的独立计时器 id。 */
   readonly listedTimers: readonly string[]
@@ -135,27 +108,10 @@ export interface UnitState {
   readonly modifiers: Map<string, { modifiers: readonly AttributeModifier[]; remaining: number }>
   readonly script: Readonly<Record<string, string | number | boolean>>
   readonly base: Record<string, number>
-  hitLimit: boolean
-  /** 溢出治疗转成的护盾，上限是最大生命。 */
-  overhealShield: number
-  /** 正在结算的元素爆发。这段时间任何元素都不进槽。 */
-  bursting: boolean
-  /** 最近一次把元素槽打满的单位。爆发伤害的击杀记在它身上。 */
-  elementCredit: string
   fielded: boolean
   downed: boolean
-}
-
-function copyAttackShape(shape: AttackShape): AttackShape {
-  return {
-    ...(shape.damage ? { damage: shape.damage } : {}),
-    ...(shape.splash ? { splash: { ...shape.splash } } : {}),
-    ...(shape.bounce ? { bounce: { ...shape.bounce } } : {}),
-    ...(shape.chain ? { chain: { ...shape.chain } } : {}),
-    ...(shape.healCount !== undefined ? { healCount: shape.healCount } : {}),
-    ...(shape.lockRange === true ? { lockRange: true } : {}),
-    ...(shape.projectile ? { projectile: shape.projectile } : {}),
-  }
+  /** 每次部署加一。回旋物等按部署分代的记录读它。 */
+  deployEpoch: number
 }
 
 function createSkill(spec: UnitSpec["skills"][number]): SkillInstance {
@@ -217,15 +173,6 @@ export function createUnit(spec: UnitSpec, fielded: boolean, order: number): Uni
     attackRange: spec.attackRange.map((cell) => ({ x: cell.x, y: cell.y })),
     tags: createTagGrants(),
     deployPositions: [...spec.deployPositions],
-    immunity: new Set(spec.immunity ?? []),
-    attackClip: spec.attackClip ? { duration: spec.attackClip.duration, hit: spec.attackClip.hit } : null,
-    attackShape: spec.attackShape ? copyAttackShape(spec.attackShape) : null,
-    boomerangsOut: 0,
-    boomerangEpoch: 0,
-    shiftRun: null,
-    targetPriority: spec.targetPriority ?? "",
-    blocking: [...(spec.blocking ?? [])],
-    blockedBy: spec.blockedBy ?? null,
     aggroSeq: spec.aggroSeq ?? order,
     spawnSeq: order,
     homeX: Math.round(spec.x),
@@ -235,21 +182,15 @@ export function createUnit(spec: UnitSpec, fielded: boolean, order: number): Uni
     facing: spec.facing ?? "RIGHT",
     hitArea: spec.hitArea ?? null,
     motion: spec.motion ?? "WALK",
-    route: null,
-    routeHidden: false,
     statuses: [],
-    elements: new Map(),
     timers: new Map(),
     listedTimers: spec.timers ? [...spec.timers] : [],
     modifiers: new Map(),
     script: spec.script ? { ...spec.script } : {},
     base,
-    hitLimit: spec.hitLimit === true,
-    overhealShield: 0,
-    bursting: false,
-    elementCredit: "",
     fielded,
     downed: false,
+    deployEpoch: 0,
   }
 }
 
@@ -284,13 +225,28 @@ export function placeUnit(world: BattleWorld, registry: BattleRegistry, spec: Un
   return unit
 }
 
-/** 放入一个单位。规格的标签另由 grantSpecTags 授予。 */
+/** 放入一个单位，按规格建好路线、阻挡、攻击档案、索敌、限伤与免疫组件。规格的标签另由 grantSpecTags 授予。 */
 export function addUnit(world: BattleWorld, spec: UnitSpec, fielded: boolean): UnitState {
   if (world.units.has(spec.id)) throw new Error(`单位重复: ${spec.id}`)
   const unit = createUnit(spec, fielded, world.units.size + 1)
-  unit.route = compileRoute(spec.route ?? null, gridOf(world).rect)
+  const components = world.components
+  const route = compileRoute(spec.route ?? null, gridOf(world).rect)
+  if (route) components.access(ROUTE).set(spec.id, { run: route, hidden: false })
+  if (spec.blocking?.length || spec.blockedBy) {
+    components.access(BLOCK).set(spec.id, { blocking: [...(spec.blocking ?? [])], blockedBy: spec.blockedBy ?? null })
+  }
+  const profile = profileFromSpec(spec)
+  if (profile) components.access(ATTACK_PROFILE).set(spec.id, profile)
+  if (spec.targetPriority) components.access(TARGET_PRIORITY).set(spec.id, spec.targetPriority)
+  if (spec.hitLimit === true) components.access(HIT_LIMIT).set(spec.id, true)
+  if (spec.immunity?.length) components.access(IMMUNITY).set(spec.id, new Set(spec.immunity))
   world.units.set(spec.id, unit)
   return unit
+}
+
+/** 单位上场：部署世代加一。 */
+export function markDeployed(unit: UnitState): void {
+  unit.deployEpoch += 1
 }
 
 // MARK: tag
@@ -310,41 +266,26 @@ export function grantSpecTags(registry: BattleRegistry, unit: UnitState, spec: U
   for (const tag of spec.tags) grantTag(unit, registry.requireTag(tag, `unit spec ${spec.id}`), SPEC_SOURCE)
 }
 
-/** 规格写的标签 id，按规格顺序。 */
-export function specTagIds(unit: UnitState): readonly string[] {
-  return tagIdsOf(unit).spec
-}
-
 interface TagIds {
   readonly version: number
-  readonly spec: readonly string[]
-  readonly granted: readonly string[]
+  readonly sorted: readonly string[]
 }
 
 const tagIdCache = new WeakMap<TagGrants, TagIds>()
 
-/** 持有列表没变时返回上次算好的两份 id。 */
+/** 持有列表没变时返回上次排好的 id。 */
 function tagIdsOf(unit: UnitState): TagIds {
   const cached = tagIdCache.get(unit.tags)
   if (cached && cached.version === unit.tags.version) return cached
   const ids: TagIds = {
     version: unit.tags.version,
-    spec: Object.freeze(heldTagIds(unit, fromSpec)),
-    granted: Object.freeze(heldTagIds(unit, notFromSpec)),
+    sorted: Object.freeze(heldTagIds(unit, () => true).sort()),
   }
   tagIdCache.set(unit.tags, ids)
   return ids
 }
 
-function fromSpec(sourceId: string): boolean {
-  return sourceId === SPEC_SOURCE
-}
-
-function notFromSpec(sourceId: string): boolean {
-  return sourceId !== SPEC_SOURCE
-}
-
-/** 状态、技能与模块授予的标签 id，按第一次授予的顺序。 */
-export function grantedTagIds(unit: UnitState): readonly string[] {
-  return tagIdsOf(unit).granted
+/** 单位持有的全部标签 id，不分来源，按 id 排序。 */
+export function sortedTagIds(unit: UnitState): readonly string[] {
+  return tagIdsOf(unit).sorted
 }

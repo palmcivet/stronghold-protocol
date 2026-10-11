@@ -3,6 +3,7 @@ import type { StatusApplication, StatusDefinition, StatusIncoming } from "#port/
 import type { BattleRegistry } from "#port/definition.js"
 import { requireUnit, type BattleWorld } from "#unit/record/index.js"
 import { clearElements } from "#combat/element/index.js"
+import { overhealOf, setOverheal } from "#combat/damage/shield.js"
 import { immuneTo, refuseStatus, shortenControlled } from "#ability/effect/catalog.js"
 import { refreshTags } from "#ability/effect/tag.js"
 import { refreshOverlap } from "#ability/effect/stacking.js"
@@ -41,7 +42,7 @@ export function applyStatus(
   const definition = registry.requireStatus(statusId)
   for (const timerId of definition.cancels) registry.requireTimer(timerId)
   const unit = requireUnit(state, unitId)
-  if (immuneTo(registry, unit, statusId) || refuseStatus(unit, statusId)) return
+  if (immuneTo(state, registry, unit, statusId) || refuseStatus(unit, statusId)) return
   const span = spanOf(application?.duration, definition)
   if (!span) return
   const incoming: StatusIncoming = {
@@ -84,9 +85,9 @@ function tickStatuses(state: BattleWorld, registry: BattleRegistry, ctx: Content
   const overhealWas = current.some((status) => status.id === "overheal" && !status.dropped)
   unit.statuses.length = 0
   unit.statuses.push(...next)
-  if (overhealWas && !overhealLeft) clearOverhealShield(unit)
+  if (overhealWas && !overhealLeft) clearOverhealShield(state, unit)
   refreshTags(registry, unit)
-  if (locked && !hasTag(unit, BURST_LOCK)) clearElements(unit)
+  if (locked && !hasTag(unit, BURST_LOCK)) clearElements(state, unit.id)
 }
 
 function resumeTail(status: StatusInstance, definition: StatusDefinition, tick: number): boolean {
@@ -113,9 +114,9 @@ function spanOf(
   return { ticks: Math.max(1, Math.round(seconds / TICK)), permanent: false }
 }
 
-function clearOverhealShield(unit: UnitState): void {
-  const over = unit.overhealShield
-  unit.overhealShield = 0
+function clearOverhealShield(state: BattleWorld, unit: UnitState): void {
+  const over = overhealOf(state, unit.id)
+  if (over !== 0) setOverheal(state, unit.id, 0)
   if (!(over > 0)) return
   const pool = unit.attributes.shield ?? 0
   unit.attributes.shield = Math.max(0, pool - over)

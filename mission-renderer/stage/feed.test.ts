@@ -9,15 +9,20 @@ function unit(id: string, x: number): UnitSnapshot {
     kind: "operator",
     x,
     y: 0,
+    facing: "RIGHT",
+    height: 0,
     attributes: { hp: 1, maxHp: 1 },
-    flags: [],
-    attackRange: [],
     tags: [],
+    attackRange: [],
     deployPositions: [],
     elements: {},
     blocking: [],
     blockedBy: null,
-    boomerangsOut: 0,
+    skills: [],
+    shield: 0,
+    downed: false,
+    redeploy: null,
+    components: {},
   }
 }
 

@@ -8,6 +8,9 @@ import { emit } from "#kernel/event/index.js"
 import { requireUnit, type BattleWorld } from "#unit/record/index.js"
 import { attributeOf, carriesAttribute, maxHpOf } from "#ability/effect/attribute.js"
 import { burstElement, chargeElement, hasHp } from "#combat/element/index.js"
+import { peekGauges } from "#combat/element/gauge.js"
+import { hasHitLimit } from "#combat/damage/limit.js"
+import { overhealOf, setOverheal } from "#combat/damage/shield.js"
 import { isFlying, type UnitState } from "#unit/record/index.js"
 import { applyStatus } from "#ability/effect/index.js"
 import { hasTag } from "#kernel/world/tag.js"
@@ -36,8 +39,9 @@ export function registerDamageSteps(state: BattleWorld, registry: BattleRegistry
       }
       const definition = registry.requireElement(elementId)
       const unit = requireUnit(state, info.targetId)
-      const slot = unit.elements.get(elementId)
-      if (!hasHp(unit) || unit.bursting || hasTag(unit, BURST_LOCK) || slot?.locked) {
+      const gauges = peekGauges(state, unit.id)
+      const slot = gauges?.slots.get(elementId)
+      if (!hasHp(unit) || gauges?.bursting === true || hasTag(unit, BURST_LOCK) || slot?.locked) {
         info.amount = 0
         return
       }
@@ -113,7 +117,7 @@ export function registerDamageSteps(state: BattleWorld, registry: BattleRegistry
       if (skipHp(info)) return
       const target = requireUnit(state, info.targetId)
       if (countHit(target, info)) return
-      if (!target.hitLimit) return
+      if (!hasHitLimit(state, target.id)) return
       if (!(Math.ceil(info.amount) >= BOSS_HIT_LIMIT)) return
       info.amount = 0
       info.cancel = true
@@ -125,7 +129,7 @@ export function registerDamageSteps(state: BattleWorld, registry: BattleRegistry
     apply(info, _ctx, pass) {
       if (skipHp(info)) return
       const target = requireUnit(state, info.targetId)
-      info.amount = absorb(target, info.amount, !pass.preview)
+      info.amount = absorb(state, target, info.amount, !pass.preview)
     },
   })
   registry.registerDamageStep({
@@ -196,10 +200,11 @@ export function healUnit(
   const actual = Math.max(0, Math.min(healed, max - hp))
   unit.attributes.hp = Math.min(max, hp + actual)
   if (options?.overheal === true && healed > actual) {
-    const next = Math.min(max, unit.overhealShield + (healed - actual))
+    const over = overhealOf(state, unitId)
+    const next = Math.min(max, over + (healed - actual))
     const pool = unit.attributes.shield ?? 0
-    unit.attributes.shield = pool - unit.overhealShield + next
-    unit.overhealShield = next
+    unit.attributes.shield = pool - over + next
+    setOverheal(state, unitId, next)
     const duration = options.overhealDuration ?? Number.POSITIVE_INFINITY
     applyOverheal(state, registry, ctx, unitId, next, duration)
   }
@@ -232,7 +237,7 @@ export function loseLife(
 ): void {
   const unit = requireUnit(state, unitId)
   if (unit.downed || !(amount > 0) || !Number.isFinite(amount)) return
-  if (unit.hitLimit && Math.ceil(amount) >= BOSS_HIT_LIMIT) return
+  if (hasHitLimit(state, unitId) && Math.ceil(amount) >= BOSS_HIT_LIMIT) return
   applyLife(state, registry, ctx, unit, amount, "", false, false, "true", false)
 }
 
@@ -285,7 +290,7 @@ function applyLife(
   if (hp <= 0) knockDown(state, registry, ctx, unit.id)
 }
 
-function absorb(unit: UnitState, amount: number, commit: boolean): number {
+function absorb(state: BattleWorld, unit: UnitState, amount: number, commit: boolean): number {
   if (!(amount > 0)) return 0
   let rest = amount
   for (const status of unit.statuses) {
@@ -311,9 +316,10 @@ function absorb(unit: UnitState, amount: number, commit: boolean): number {
   if (rest > 0 && pool > 0) {
     const take = Math.min(pool, rest)
     if (commit) {
-      const combat = Math.max(0, pool - unit.overhealShield)
+      const over = overhealOf(state, unit.id)
+      const combat = Math.max(0, pool - over)
       const overTake = Math.max(0, take - combat)
-      unit.overhealShield = Math.max(0, unit.overhealShield - overTake)
+      if (over !== 0) setOverheal(state, unit.id, Math.max(0, over - overTake))
       unit.attributes.shield = pool - take
     }
     rest -= take

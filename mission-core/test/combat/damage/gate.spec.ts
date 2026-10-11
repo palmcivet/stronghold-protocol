@@ -140,7 +140,7 @@ test("命中回调里才起飞的伤害照常结算，回调里变成无敌则�
   })
   landed.step()
   expect(hpOf(landed, "t")).toBe(88)
-  expect(landed.snapshot().units.find((unit) => unit.id === "t")?.flags).toContain("liftoff")
+  expect(landed.snapshot().units.find((unit) => unit.id === "t")?.tags).toContain("liftoff")
 
   const stopped = open([ally("t", { attributes: { hp: 100 } })], (ctx) => {
     ctx.subscribe("hit", () => {

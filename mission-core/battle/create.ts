@@ -21,7 +21,7 @@ import { normalizeTrigger } from "#ability/skill/constants.js"
 import { registerBuiltinSkillBodies } from "#ability/skill/body.js"
 import { armField, bindSkillSignals, registerSkillTimers } from "#ability/skill/point.js"
 import { registerBuiltinSkillTriggers } from "#ability/skill/trigger.js"
-import { addUnit, checkSpecTags, grantSpecTags, type BattleWorld, type UnitState } from "#unit/record/index.js"
+import { addUnit, checkSpecTags, grantSpecTags, markDeployed, type BattleWorld, type UnitState } from "#unit/record/index.js"
 import { armListedTimers } from "#unit/record/timer.js"
 import { registerDamageSteps } from "#combat/damage/index.js"
 import { registerBuiltinElements } from "#combat/element/index.js"
@@ -66,7 +66,9 @@ export function createBattle(spec: BattleSpec, modules: readonly MissionModule[]
   openBattle(state, registry, ctx)
   if (spec.deployStrategy === null) {
     for (const unit of state.units.values()) {
-      if (unit.fielded) emit(state, "deploy", { unitId: unit.id })
+      if (!unit.fielded) continue
+      markDeployed(unit)
+      emit(state, "deploy", { unitId: unit.id })
     }
   }
   armField(state, registry, ctx, true)
@@ -79,7 +81,7 @@ export function createBattle(spec: BattleSpec, modules: readonly MissionModule[]
       state.tick += 1
     },
     snapshot() {
-      return readSnapshot(state.tick, state.units.values())
+      return readSnapshot(state, registry)
     },
     drainEvents() {
       return drainEvents(state.events)

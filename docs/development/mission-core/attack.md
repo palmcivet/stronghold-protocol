@@ -39,7 +39,7 @@ description: 攻击是单位身上的 attack 计时器。出手时按 attackShap
 
 状态定义的 `cancels` 含有 `attack` 时，施加会把阶段回到 `idle`，`elapsed` 和前摇进度归零，冷却保留。这类状态还在身上时，不再进入新的出手。眩晕和睡眠还会停住冷却。
 
-内置会取消攻击的状态：`stun`、`freeze`、`sleep`、`silence`、`fear`、`disarm`、`levitate`，以及 `element:neural-ally`。带 `noSp` 标签只停技力，不取消攻击。
+内置会取消攻击的状态：`stun`、`freeze`、`sleep`、`silence`、`fear`、`disarm`、`levitate`，以及 `element:neural-ally`。带 `no-sp` 标签只停技力，不取消攻击。
 
 `tremble` 不取消攻击计时器。`blockedBy` 有值的这一拍停在当前阶段、不出手，冷却仍减少。没有阻挡者时照常出手。
 
@@ -62,7 +62,7 @@ description: 攻击是单位身上的 attack 计时器。出手时按 attackShap
 | `lockRange` | 范围内每个可选目标立刻命中。和 `projectile` 一起写时也不飞弹。 |
 | `projectile` | 出手时 `launchProjectile`。速度见 `PROJECTILE_KIND_SPEEDS`：`arrow` 14、`bolt` 11、`orb` 10、`bomb` 8、`boomerang` 15，单位是格/秒。到达后才结算。`bomb` 带了溅射时，目标中途离场仍在最后坐标结算；其余种类目标离场则消掉。`boomerang` 再按 `BOOMERANG_RETURN_SPEED`（3.75）飞回，回程不造成伤害。投掷者已经离场则不再飞回。 |
 
-飞行中的回旋数量写在单位的 `boomerangsOut`，并抄进属性 `boomerangsOut`。能不能因此停手由 `readAttackTiming` 决定。
+飞行中的回旋数量写在回旋组件 `attack:boomerang`（`combat/attack/boomerang.ts`），并抄进属性 `boomerangsOut`；组件的 `view` 把它写进快照的 `components`。能不能因此停手由 `readAttackTiming` 决定。
 
 再加一种形状时，在 `AttackShape` 上加可选字段，并 `registerAttackResolver` 登记结算函数。新的投射物速度写进 `PROJECTILE_KIND_SPEEDS`，目标离场后是否仍落下写进 `PROJECTILE_RETAIN`，飞回速度写进 `PROJECTILE_RETURN_SPEEDS`。
 

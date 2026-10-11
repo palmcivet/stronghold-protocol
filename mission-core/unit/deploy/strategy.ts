@@ -3,7 +3,7 @@ import { landShift } from "#field/motion/index.js"
 import type { BattleRegistry } from "#port/definition.js"
 import { emit } from "#kernel/event/index.js"
 import { readTimer } from "#kernel/timer/index.js"
-import { requireUnit, type BattleWorld } from "#unit/record/index.js"
+import { markDeployed, requireUnit, type BattleWorld } from "#unit/record/index.js"
 import { startTimer } from "#unit/record/timer.js"
 
 export function openBattle(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext): void {
@@ -15,6 +15,7 @@ export function openBattle(state: BattleWorld, registry: BattleRegistry, ctx: Co
     if (fielded.has(unitId)) continue
     const unit = requireUnit(state, unitId)
     unit.fielded = true
+    markDeployed(unit)
     fielded.add(unitId)
     emit(state, "deploy", { unitId })
   }
@@ -23,7 +24,7 @@ export function openBattle(state: BattleWorld, registry: BattleRegistry, ctx: Co
 export function knockDown(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext, unitId: string): void {
   const unit = requireUnit(state, unitId)
   if (unit.downed) return
-  landShift(unit)
+  landShift(state, unit)
   unit.downed = true
   unit.fielded = false
   startTimer(state, registry, unitId, "redeploy")

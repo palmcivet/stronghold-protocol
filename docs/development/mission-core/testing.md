@@ -49,13 +49,13 @@ pnpm vitest run test/golden -u
 
 ## 性能观察
 
-`test/perf/golden.perf.ts` 把每个黄金场景从头推进 600 帧，重复 20 次取平均，打印每个场景与合计的毫秒数，不设门槛。它不在 `pnpm test` 里，在 `mission-core` 内单独运行：
+`perf/golden.bench.ts` 是 Vitest 的基准文件：每个黄金场景从头推进 600 帧算一次，用 `bench.compare` 交替各跑 20 次以上，打印每个场景的 hz、平均毫秒数与分位数，不设门槛。基准和用例共用 `vitest.config.ts`，按文件名区分：`*.bench.ts` 归 Vitest 的基准项目，`pnpm test`（`vitest run`）不跑它。在 `mission-core` 内单独运行：
 
 ```sh
 pnpm perf
 ```
 
-配置是 `vitest.perf.config.ts`，只收 `test/perf/**/*.perf.ts`。
+`pnpm perf` 是 `vitest bench --run --reporter=verbose`。`*.bench.ts` 不进构建（`tsconfig.json` 排除），类型检查走 `tsconfig.test.json`。基准经源码条件引用作战核心，模块导出的读取有一层包装，数字只用于前后对比。
 
 ## 路径别名
 

@@ -15,7 +15,8 @@ import {
   type TimerView,
 } from "arknights-mission-core"
 import { engineOf } from "#unit/record/index.js"
-import type { UnitState } from "#unit/record/index.js"
+import type { BattleWorld, UnitState } from "#unit/record/index.js"
+import { boomerangOf } from "#combat/attack/boomerang.js"
 import { ally, spec } from "#test/fixture.js"
 
 const body = { hp: 100, atk: 10, def: 0, aspd: 100, bat: 1 }
@@ -24,9 +25,15 @@ function steps(battle: { step(): void }, count: number): void {
   for (let index = 0; index < count; index += 1) battle.step()
 }
 
-function watch(ids: readonly string[]): { module: MissionModule; view: (id: string) => TimerView; unit: () => UnitState } {
+function watch(ids: readonly string[]): {
+  module: MissionModule
+  view: (id: string) => TimerView
+  unit: () => UnitState
+  world: () => BattleWorld
+} {
   const seen = new Map<string, TimerView>()
   let current: UnitState | undefined
+  let world: BattleWorld | undefined
   const module: MissionModule = {
     id: "watch",
     install(ctx) {
@@ -35,7 +42,8 @@ function watch(ids: readonly string[]): { module: MissionModule; view: (id: stri
         slot: "ally",
         priority: 10,
         run(runCtx) {
-          current = engineOf(runCtx).world.units.get("a")
+          world = engineOf(runCtx).world
+          current = world.units.get("a")
           for (const id of ids) seen.set(id, runCtx.timerView("a", id))
         },
       })
@@ -48,6 +56,10 @@ function watch(ids: readonly string[]): { module: MissionModule; view: (id: stri
       if (!current) throw new Error("unit was not watched")
       return current
     },
+    world: () => {
+      if (!world) throw new Error("unit was not watched")
+      return world
+    },
   }
 }
 
@@ -58,7 +70,7 @@ test("没有这些计时器时，出手次数是 1，可以攻击，伤害倍率
     [seen.module],
   )
   battle.step()
-  expect(readAttackTiming(seen.unit())).toEqual({ canAttack: true, hitCount: 1, damageScale: 1 })
+  expect(readAttackTiming(seen.world(), seen.unit())).toEqual({ canAttack: true, hitCount: 1, damageScale: 1 })
 })
 
 test("没有目标时按攻击间隔积一层，读取不消耗", () => {
@@ -71,9 +83,9 @@ test("没有目标时按攻击间隔积一层，读取不消耗", () => {
   expect(seen.view("charge").stored).toBe(0)
   steps(battle, 1)
   expect(seen.view("charge").stored).toBe(1)
-  const timing = readAttackTiming(seen.unit())
+  const timing = readAttackTiming(seen.world(), seen.unit())
   expect(timing.hitCount).toBe(2)
-  expect(readAttackTiming(seen.unit()).hitCount).toBe(2)
+  expect(readAttackTiming(seen.world(), seen.unit()).hitCount).toBe(2)
   expect(seen.unit().timers.get("charge")?.stored).toBe(1)
 })
 
@@ -261,7 +273,7 @@ test("出手后清掉充能并消耗一发", () => {
           if (runCtx.tick() !== 30) return
           const unit = engineOf(runCtx).world.units.get("a")
           if (!unit) return
-          const before = readAttackTiming(unit)
+          const before = readAttackTiming(engineOf(runCtx).world, unit)
           scale = before.damageScale
           hits = before.hitCount
           consumeAttackTiming(unit)
@@ -309,7 +321,7 @@ test("弹药打空后不能攻击，倍率回到 1，再过 1 秒开始装填", 
     [spend, seen.module],
   )
   steps(battle, 3)
-  expect(readAttackTiming(seen.unit())).toEqual({ canAttack: false, hitCount: 1, damageScale: 1 })
+  expect(readAttackTiming(seen.world(), seen.unit())).toEqual({ canAttack: false, hitCount: 1, damageScale: 1 })
   steps(battle, 57)
   expect(seen.view("ammo").ammo).toBe(0)
   steps(battle, 1)
@@ -359,9 +371,9 @@ test("回旋数量大于 0 时不能攻击，再部署后清零并补满弹药",
           if (runCtx.tick() !== 0) return
           const unit = engineOf(runCtx).world.units.get("a")
           if (!unit) return
-          unit.boomerangsOut = 2
+          boomerangOf(engineOf(runCtx).world, "a").out = 2
           unit.attributes.boomerangsOut = 2
-          blocked = !readAttackTiming(unit).canAttack
+          blocked = !readAttackTiming(engineOf(runCtx).world, unit).canAttack
           consumeAttackTiming(unit)
           runCtx.dealDamage({ sourceId: "a", targetId: "a", amount: 500, kind: "true" })
         },
@@ -389,7 +401,7 @@ test("回旋数量大于 0 时不能攻击，再部署后清零并补满弹药",
   expect(blocked).toBe(true)
   expect(seen.unit().attributes.boomerangsOut).toBe(0)
   expect(seen.unit().timers.get("ammo")?.ammo).toBe(AMMO_CAP)
-  expect(readAttackTiming(seen.unit()).canAttack).toBe(true)
+  expect(readAttackTiming(seen.world(), seen.unit()).canAttack).toBe(true)
 })
 
 test("新登记的计时器在友方槽按 timerRate 推进", () => {

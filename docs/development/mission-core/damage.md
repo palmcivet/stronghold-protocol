@@ -27,7 +27,7 @@ interface DamageInfo {
 
 `dealDamage(info)` 走伤害步骤。`kind` 收成 `physical`、`arts`、`true`、`elemental`、`element`。`phys` 记成 `physical`。
 
-目标不存在或已倒地时不进入步骤。进入之前，直接授予的 `invulnerable` 会挡下。沉睡会挡下，除非 `ignoreSleep`，或来源带有 `hitSleep`。起飞会挡下来源是地面敌人的一击，除非 `ignoreSelect`、`sourceless`，或来源自己在飞行。起飞只在命中事件之前查一次。
+目标不存在或已倒地时不进入步骤。进入之前，直接授予的 `invulnerable` 会挡下。沉睡会挡下，除非 `ignoreSleep`，或来源带有 `hit-sleep`。起飞会挡下来源是地面敌人的一击，除非 `ignoreSelect`、`sourceless`，或来源自己在飞行。起飞只在命中事件之前查一次。
 
 不是预览、且种类不是 `element` 时，先送出 `hit`。订阅者可以改 `amount`、`kind`、`cancel`、`mul`。`cancel` 为真则不再进入步骤。
 
@@ -49,7 +49,7 @@ interface DamageInfo {
 
 ### 元素进槽
 
-没有 `element` 标识时数额变成 0。目标没有生命、正在爆发、带 `burstLock`，或这个槽已锁定时，数额变成 0。不是预览时送出 `elementHit`。种类被改离 `element` 后会再送出 `hit`，后面的步骤按新种类继续。
+没有 `element` 标识时数额变成 0。目标没有生命、正在爆发、带 `burst-lock`，或这个槽已锁定时，数额变成 0。不是预览时送出 `elementHit`。种类被改离 `element` 后会再送出 `hit`，后面的步骤按新种类继续。
 
 否则按抗性收成进槽的量。单位带了 `elementRes` 就用它，没有则用元素定义上的 `resistance`。抗性按 0 到 100 的百分数，系数是 `max(0.05, 1 - 抗性 / 100)`。进槽量是数额 × 乘数 × `elemTaken` × 这个系数。预览不进槽。蓄满则爆发。
 
@@ -61,7 +61,7 @@ interface DamageInfo {
 
 减伤之后至少保留原伤害的 0.05。物理减去有效防御。法术按有效法抗的百分比减。`elemental` 按 `elementalRes` 减。真实和未知种类保持原值。穿透把这一击自己的无视和来源属性加在一起。`sourceless` 不用来源的穿透和乘区。
 
-带 `hitCount` 时，这一下变成 1，并跳过减伤、乘区和首领限伤。只带 `hitCountArts` 时，物理变成 0，其他种类变成 1。
+带 `hit-count` 时，这一下变成 1，并跳过减伤、乘区和首领限伤。只带 `hit-count-arts` 时，物理变成 0，其他种类变成 1。
 
 ### 乘区
 
@@ -99,7 +99,7 @@ interface DamagePreview {
 
 ## 治疗
 
-`heal(unitId, amount, options?)` 要求数额是正数。目标带 `noHeal` 时，只有 `self` 或来源就是目标才治。带 `healFree` 时，`regen` 或 `ignoreHealFree` 才治。治疗量是数额 × 来源的 `healingDealt` × 目标的 `healingTaken`。没有来源时 `healingDealt` 按 1。写回的生命不超过最大生命。`overheal` 把超出的部分转成护盾，这份护盾不超过最大生命，并施加 `overheal` 状态。`overhealDuration` 是秒，缺省一直留着。状态结束时，还没被打掉的这份护盾从单位上减去。送出 `heal`。
+`heal(unitId, amount, options?)` 要求数额是正数。目标带 `no-heal` 时，只有 `self` 或来源就是目标才治。带 `heal-free` 时，`regen` 或 `ignoreHealFree` 才治。治疗量是数额 × 来源的 `healingDealt` × 目标的 `healingTaken`。没有来源时 `healingDealt` 按 1。写回的生命不超过最大生命。`overheal` 把超出的部分转成护盾，这份护盾不超过最大生命，并施加 `overheal` 状态。`overhealDuration` 是秒，缺省一直留着。状态结束时，还没被打掉的这份护盾从单位上减去。送出 `heal`。
 
 ## 元素
 

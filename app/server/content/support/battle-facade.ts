@@ -1,5 +1,8 @@
 import {
+  DEVICE,
+  STEALTH,
   TICK,
+  TOKEN,
   defineResource,
   defineTag,
   type AttributeModifier,
@@ -73,11 +76,11 @@ interface Hook {
   fn: (ctx: unknown) => void
 }
 
-function kindOf(viewTags: readonly string[], script: Readonly<Record<string, string | number | boolean>>): string {
+function kindOf(ctx: ContentContext, id: string, script: Readonly<Record<string, string | number | boolean>>): string {
   if (typeof script.kind === "string") return script.kind
-  if (viewTags.includes("device")) return "device"
-  if (viewTags.includes("token")) return "token"
-  if (viewTags.includes("enemy")) return "enemy"
+  if (ctx.hasTag(id, DEVICE)) return "device"
+  if (ctx.hasTag(id, TOKEN)) return "token"
+  if (ctx.hasTag(id, ENEMY_TAG)) return "enemy"
   return "op"
 }
 
@@ -113,9 +116,10 @@ interface FacadeStore {
 const FACADE = defineResource<FacadeStore>("content:facade", () => ({}))
 
 /** Tags the match layer writes into unit specs. */
+const ENEMY_TAG: TagKey = defineTag("enemy", { meaning: "enemy from a wave" })
 const MATCH_TAGS: readonly TagKey[] = [
   defineTag("op", { meaning: "operator placed by a player" }),
-  defineTag("enemy", { meaning: "enemy from a wave" }),
+  ENEMY_TAG,
   defineTag("boss", { meaning: "boss enemy" }),
 ]
 
@@ -184,8 +188,8 @@ function createFacade(ctx: ContentContext, shared: FacadeStore) {
       get dir() { return read()?.facing ?? "RIGHT" },
       get tileR() { return Math.round(read()?.y ?? 0) },
       get tileC() { return Math.round(read()?.x ?? 0) },
-      get kind() { return kindOf(read()?.tags ?? [], script()) },
-      get hidden() { return read()?.flags.includes("stealth") === true || script().hidden === true },
+      get kind() { return kindOf(ctx, id, script()) },
+      get hidden() { return ctx.hasTag(id, STEALTH) || script().hidden === true },
       get ground() { return script().ground === true || script().position === "MELEE" && script().tileGround !== false },
       get ownerId() { return typeof script().ownerId === "string" ? script().ownerId : "p1" },
       get defId() { return typeof script().chessId === "string" ? script().chessId : id },

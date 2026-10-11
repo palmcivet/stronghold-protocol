@@ -42,7 +42,8 @@ pnpm test
 | id | 规则 | 位置 | 来源 | 依据 | 核对 |
 |---|---|---|---|---|---|
 | `source/deterministic-math` | `hypot`、`powi`、`sin`、`cos`、`atan2` 只用正确舍入的运算，各引擎逐位一致 | `kernel/math/hypot.ts`、`kernel/math/powi.ts`、`kernel/math/trig.ts` | 参考实现 `server/sim/detmath.js`，设计记录 0.2.2 §27.1；`sin`、`cos`、`atan2` 是 fdlibm 5.3 与 FreeBSD msun 的算法 | 规范允许 `Math.hypot` 等返回近似值，各引擎末位不同；逐位与参考实现一致（用例固定了同一组摘要） | 已按参考实现核对 |
-| `source/immunity-names` | 免疫名单用免疫名：冻结是 `frozen`，恐惧和战栗是 `feared`，其余与状态 id 相同 | `contract/spec.ts`（`UnitSpec.immunity`）、`unit/record/index.ts`、`port/content.ts`（`StatusDefinition.immunity`） | 参考实现 `server/sim/buffs.js` 状态表的 `immune` 字段 | 关卡与内容数据沿用这套名字，兼容层不必转换 | 未核对 |
+| `source/element-order` | 元素槽给画面的显示值取最满的一槽，一样满时按 `neural`、`erosion`、`burn`、`apoptosis`、`necrosis` 的先后取 | `combat/element/gauge.ts`（`ELEMENT_GAUGES` 的 view） | 参考实现 `server/sim/constants.js`（`ELEMENT_ORDER`）、`server/sim/damage.js`（`elementView`） | 官方元素 id 的先后；画面只显示一个元素图标 | 已按参考实现核对先后顺序 |
+| `source/immunity-names` | 免疫名单用免疫名：冻结是 `frozen`，恐惧和战栗是 `feared`，其余与状态 id 相同 | `contract/spec.ts`（`UnitSpec.immunity`）、`ability/effect/immunity.ts`、`port/definition.ts`（`StatusDefinition.immunity`） | 参考实现 `server/sim/buffs.js` 状态表的 `immune` 字段 | 关卡与内容数据沿用这套名字，兼容层不必转换 | 未核对 |
 | `source/loadout-compose` | 带模块的属性是无模块属性加模块的平加值并保留六位小数；天赋按序号覆盖，模块未写的键保留，其余追加，空占位丢弃 | `port/loadout.ts`（`composeStats`、`composeTalents`） | 参考实现 `tools/build-data.mjs`（`mergeTalentChanges`）、`shared/loadoutRecord.js` | 与数据构建时的合并规则一致，详情卡与战斗读到同一组数 | 未核对 |
 | `source/loadout-range` | 部署时的攻击范围：技能写明「被动效果：攻击范围扩大」用技能范围；精英且模块写明「攻击范围扩大」用模块范围；否则用记录范围；再加特性的永久攻击距离 | `port/loadout.ts`（`attackRangeGrid`） | 参考实现 `shared/loadoutRecord.js`，设计记录 DESIGN §16 | 官方技能与模块描述的文字约定 | 未核对 |
 | `source/range-extend` | 攻击距离增加 n 时，范围每一行在最远端外补上 1…⌊n⌋ 格，去重，丢弃无效项 | `port/loadout.ts`（`extendedGrid`） | 参考实现 `server/sim/targeting.js`（`absoluteRangeKeys`），设计记录 DESIGN §3 | 官方「攻击距离 +1」按行向前延伸 | 未核对 |

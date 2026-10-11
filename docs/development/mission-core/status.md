@@ -81,4 +81,4 @@ interface StatusDefinition {
 | `defDown` | 0.3 | `def` 乘 (1 − 强度) |
 | `resDown` | 20 | `res` 减强度 |
 
-`stun` 带 `stun` 与 `noBlock`，并取消攻击计时器。`sleep` 带 `sleep` 与 `noBlock`。`bind` 带 `bind` 与 `noMove`。会取消攻击的内置状态见 [攻击](./attack.md)。`tremble` 只带同名标签：被挡住时这一拍不出手，冷却仍减少。`stealthOff` 只带同名标签，隐匿不再挡住选择。`overheal` 不带标签，治疗溢出时写下它的时长，结束时去掉对应护盾。见 [伤害](./damage.md)。
+`stun` 带 `stun` 与 `no-block`，并取消攻击计时器。`sleep` 带 `sleep` 与 `no-block`。`bind` 带 `bind` 与 `no-move`。会取消攻击的内置状态见 [攻击](./attack.md)。`tremble` 只带同名标签：被挡住时这一拍不出手，冷却仍减少。`stealthOff` 只带 `stealth-off`，隐匿不再挡住选择。`overheal` 不带标签，治疗溢出时写下它的时长，结束时去掉对应护盾。见 [伤害](./damage.md)。

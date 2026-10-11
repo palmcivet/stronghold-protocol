@@ -18,6 +18,8 @@ export interface ComponentOptions<T> {
 export interface ComponentKey<T> {
   readonly id: string
   readonly options: ComponentOptions<T>
+  /** defineComponent 发的序号。存储按它直接找到表，不参与状态。 */
+  readonly slot: number
 }
 
 /** 一张组件表。entries 按第一次写入的顺序。 */
@@ -38,10 +40,11 @@ export interface ComponentStore {
 }
 
 const KEY_PATTERN = /^[^:\s]+:[^:\s]+$/
+let nextSlot = 0
 
 export function defineComponent<T>(id: string, options: ComponentOptions<T>): ComponentKey<T> {
   if (!KEY_PATTERN.test(id)) throw new Error(`component id must look like "module:name": ${id}`)
-  return Object.freeze({ id, options })
+  return Object.freeze({ id, options, slot: nextSlot++ })
 }
 
 interface Table {
@@ -52,6 +55,7 @@ interface Table {
 
 export function createComponentStore(): ComponentStore {
   const tables = new Map<string, Table>()
+  const bySlot: (Table | undefined)[] = []
 
   const accessOf = <T>(key: ComponentKey<T>, values: Map<string, T>): ComponentAccess<T> => ({
     get: (entityId) => values.get(entityId),
@@ -72,6 +76,8 @@ export function createComponentStore(): ComponentStore {
 
   return {
     access<T>(key: ComponentKey<T>): ComponentAccess<T> {
+      const known = bySlot[key.slot]
+      if (known) return known.access as ComponentAccess<T>
       const existing = tables.get(key.id)
       if (existing) {
         if (existing.key !== key) throw new Error(`component id is defined twice: ${key.id}`)
@@ -79,11 +85,13 @@ export function createComponentStore(): ComponentStore {
       }
       const values = new Map<string, T>()
       const access = accessOf(key, values)
-      tables.set(key.id, {
+      const table: Table = {
         key: key as ComponentKey<unknown>,
         values: values as Map<string, unknown>,
         access: access as ComponentAccess<unknown>,
-      })
+      }
+      tables.set(key.id, table)
+      bySlot[key.slot] = table
       return access
     },
     reset(entityId) {

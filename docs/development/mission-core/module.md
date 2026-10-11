@@ -84,9 +84,9 @@ interface DeployStrategyDefinition {
 
 内置模块 `deploy`（`deployModule`）登记同名策略。规格同时写 `modules: ["deploy"]` 和 `deployStrategy: "deploy"`。常量 `DEPLOY_STRATEGY` 与标签键 `TOKEN`、`DEFER_DEPLOY` 从包根导出。
 
-带 `token` 标签的是召唤物。带 `deferDeploy` 的是开战不上场的友方，它的初始格子留着。初始格子是放入时的坐标，之后 `displace` 可以离开，初始格子不变。
+带 `token` 标签的是召唤物。带 `defer-deploy` 的是开战不上场的友方，它的初始格子留着。初始格子是放入时的坐标，之后 `displace` 可以离开，初始格子不变。
 
-`opening` 先按放入顺序列出敌人，再列干员，再列召唤物。干员和召唤物按初始格子排：列号小的在前，同一列行号大的在前，再比 id。带 `deferDeploy` 的友方不在这份名单里。
+`opening` 先按放入顺序列出敌人，再列干员，再列召唤物。干员和召唤物按初始格子排：列号小的在前，同一列行号大的在前，再比 id。带 `defer-deploy` 的友方不在这份名单里。
 
 干员的倒地落点是当前坐标四舍五入后的格子。这个格子是另一名友方的初始格子，并且自己的初始格子 `canStand` 为真时，落点改回初始格子。召唤物和敌人留在倒下的格子。这条策略不读取推、拉或恐惧的落点。
 
@@ -110,7 +110,7 @@ interface DeployStrategyDefinition {
 
 `component(key)` 返回 `defineComponent` 定义的按单位组件表，`resource(key)` 返回 `defineResource` 定义的本场资源。`hasTag`、`grantTag`、`revokeTag`、`tagSources` 按 `defineTag` 的键查询和授予标签。见 [世界、组件、资源与标签](./world.md)。
 
-`unit(unitId)` 读一份视图。视图的 `tags` 是规格写的标签 id，`flags` 是状态、技能与模块授予的标签 id，都不含蕴含得到的标签。
+`unit(unitId)` 读一份视图：id、阵营、坐标、生命与最大生命、`alive`、`fielded`、`downed`、朝向、移动方式。视图不带标签，标签一律用 `hasTag(unitId, key)` 按键查（含蕴含得到的标签）；需要分来源时用 `tagSources(unitId, key)`。
 
 ## 随机数
 

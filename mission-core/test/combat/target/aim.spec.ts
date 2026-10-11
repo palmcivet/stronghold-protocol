@@ -127,7 +127,7 @@ test("atk_scale 走属性汇总", () => {
         run(runCtx) {
           const unit = engineOf(runCtx).world.units.get("a")
           if (!unit) return
-          scale = readAttackTiming(unit, engineOf(runCtx).registry).damageScale
+          scale = readAttackTiming(engineOf(runCtx).world, unit, engineOf(runCtx).registry).damageScale
         },
       })
     },

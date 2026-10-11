@@ -7,6 +7,8 @@ import { requireUnit, type BattleWorld, type UnitState } from "#unit/record/inde
 import { attackHasTarget } from "#combat/target/aim.js"
 import { attributeOf } from "#ability/effect/attribute.js"
 import { reached, READY_EPSILON, TICK } from "#kernel/tick/index.js"
+import { BOOMERANG, boomerangCount } from "#combat/attack/boomerang.js"
+import { routeHidden } from "#field/grid/route.js"
 
 /** 充能计时器 id。 */
 export const CHARGE_TIMER = "charge"
@@ -61,7 +63,7 @@ export function bindIndependentTimers(state: BattleWorld, registry: BattleRegist
     const unit = state.units.get(unitId)
     if (!unit) return
     refillAmmo(registry, unit)
-    resetBoomerang(unit)
+    resetBoomerang(state, unit)
   })
 }
 
@@ -80,10 +82,10 @@ export function clearAttackTargetThisTick(unit: UnitState): void {
 }
 
 /** 读攻击要用的持有状态。不消耗充能和弹药。传入 registry 时 atk_scale 走属性汇总。 */
-export function readAttackTiming(unit: UnitState, registry?: BattleRegistry): AttackTiming {
+export function readAttackTiming(state: BattleWorld, unit: UnitState, registry?: BattleRegistry): AttackTiming {
   const ammo = unit.timers.get(AMMO_TIMER)
   const ammoLeft = ammo ? number(ammo, "ammo") : null
-  const out = boomerangsOut(unit)
+  const out = boomerangsOut(state, unit)
   const canAttack = !(ammoLeft !== null && ammoLeft <= READY_EPSILON) && !(out > READY_EPSILON)
   const charge = unit.timers.get(CHARGE_TIMER)
   const stored = charge ? number(charge, "stored") : 0
@@ -139,7 +141,7 @@ function advanceCharge(
   timer: TimerState,
 ): void {
   const marked = takeTargetMark(unit)
-  if (!canAct(unit) || attackCooling(unit)) return
+  if (!canAct(state, unit) || attackCooling(unit)) return
   const hasTarget = marked !== undefined ? marked : attackHasTarget(state, registry, ctx, unit)
   if (hasTarget) return
   const cap = chargeCap(unit, registry)
@@ -227,7 +229,7 @@ function boomerangTimer(state: BattleWorld, registry: BattleRegistry): TimerDefi
     advance(timer, unitId) {
       const unit = requireUnit(state, unitId)
       timer.elapsed = number(timer, "elapsed") + independentDt(unit, registry)
-      timer.out = boomerangsOut(unit)
+      timer.out = boomerangsOut(state, unit)
     },
     cancel(timer) {
       timer.elapsed = 0
@@ -238,18 +240,20 @@ function boomerangTimer(state: BattleWorld, registry: BattleRegistry): TimerDefi
   }
 }
 
-function resetBoomerang(unit: UnitState): void {
-  if (!unit.timers.has(BOOMERANG_TIMER)) return
-  unit.boomerangEpoch += 1
-  unit.boomerangsOut = 0
+/** 上场时清零飞出的回旋物。还在飞的回程带着上一次部署的世代，回来时不再计数。 */
+function resetBoomerang(state: BattleWorld, unit: UnitState): void {
+  const record = state.components.access(BOOMERANG).get(unit.id)
+  if (!unit.timers.has(BOOMERANG_TIMER) && !record) return
+  if (record) record.out = 0
   unit.attributes[BOOMERANGS_OUT_ATTRIBUTE] = 0
   if (unit.base[BOOMERANGS_OUT_ATTRIBUTE] !== undefined) unit.base[BOOMERANGS_OUT_ATTRIBUTE] = 0
   const timer = unit.timers.get(BOOMERANG_TIMER)
   if (timer) timer.out = 0
 }
 
-function boomerangsOut(unit: UnitState): number {
-  const field = typeof unit.boomerangsOut === "number" && Number.isFinite(unit.boomerangsOut) ? unit.boomerangsOut : 0
+function boomerangsOut(state: BattleWorld, unit: UnitState): number {
+  const counted = boomerangCount(state, unit.id)
+  const field = Number.isFinite(counted) ? counted : 0
   const listed = unit.attributes[BOOMERANGS_OUT_ATTRIBUTE]
   const fromAttribute = typeof listed === "number" && Number.isFinite(listed) ? listed : 0
   return Math.max(0, field, fromAttribute)
@@ -261,8 +265,8 @@ function takeTargetMark(unit: UnitState): boolean | undefined {
   return peekAttackTargetThisTick(unit)
 }
 
-function canAct(unit: UnitState): boolean {
-  if (!unit.fielded || unit.downed || unit.routeHidden) return false
+function canAct(state: BattleWorld, unit: UnitState): boolean {
+  if (!unit.fielded || unit.downed || routeHidden(state, unit.id)) return false
   if ((unit.attributes.hp ?? 0) <= 0) return false
   return !hasTag(unit, CANNOT_ACT)
 }

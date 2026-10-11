@@ -12,8 +12,7 @@ export const CANNOT_ATTACK: TagKey = defineTag("cannot-attack", { meaning: "temp
 export const CANNOT_CAST: TagKey = defineTag("cannot-cast", { meaning: "cannot cast skills" })
 
 /** 不能自主移动。 */
-// TRACE: interim/snapshot-tag-names
-export const NO_MOVE: TagKey = defineTag("noMove", { meaning: "does not move on its own" })
+export const NO_MOVE: TagKey = defineTag("no-move", { meaning: "does not move on its own" })
 
 /** 眩晕：不能行动。眩晕的干员放开所挡的敌人，由眩晕状态另授 NO_BLOCK。 */
 export const STUN: TagKey = defineTag("stun", { meaning: "stunned", implies: [CANNOT_ACT] })
@@ -36,20 +35,17 @@ export const ATTRACT: TagKey = defineTag("attract", { meaning: "drawn toward a p
 export const TREMBLE: TagKey = defineTag("tremble", { meaning: "stops attacking while blocked" })
 
 /** 单位本身不普攻，技能按范围就绪释放。 */
-// TRACE: interim/snapshot-tag-names
-export const NO_ATTACK: TagKey = defineTag("noAttack", { meaning: "never makes normal attacks" })
+export const NO_ATTACK: TagKey = defineTag("no-attack", { meaning: "never makes normal attacks" })
 
 // MARK: block
 
 /** 不阻挡。 */
-// TRACE: interim/snapshot-tag-names
-export const NO_BLOCK: TagKey = defineTag("noBlock", { meaning: "does not block" })
+export const NO_BLOCK: TagKey = defineTag("no-block", { meaning: "does not block" })
 
 export const UNBLOCKABLE: TagKey = defineTag("unblockable", { meaning: "cannot be blocked" })
 
 /** 能挡住飞行单位。 */
-// TRACE: interim/snapshot-tag-names
-export const BLOCK_FLY: TagKey = defineTag("blockFly", { meaning: "blocks flying units" })
+export const BLOCK_FLY: TagKey = defineTag("block-fly", { meaning: "blocks flying units" })
 
 /** 装置。阻挡接触用装置半径，不看飞行半径。 */
 export const DEVICE: TagKey = defineTag("device", { meaning: "device; uses the device contact radius" })
@@ -79,8 +75,7 @@ export const STEALTH: TagKey = defineTag("stealth", { meaning: "stealthed" })
 export const REVEAL: TagKey = defineTag("reveal", { meaning: "revealed; stealth has no effect" })
 
 /** 解除阻挡后的破隐期：隐匿不再生效。 */
-// TRACE: interim/snapshot-tag-names
-export const STEALTH_OFF: TagKey = defineTag("stealthOff", { meaning: "stealth is suspended" })
+export const STEALTH_OFF: TagKey = defineTag("stealth-off", { meaning: "stealth is suspended" })
 
 /** 迷彩：不被敌方普通攻击选中，正在挡它的单位除外。范围效果不看迷彩。 */
 export const CAMOU: TagKey = defineTag("camou", { meaning: "camouflaged against enemy normal attacks" })
@@ -92,8 +87,7 @@ export const LIFTOFF: TagKey = defineTag("liftoff", { meaning: "out of reach of 
 export const ISOLATED: TagKey = defineTag("isolated", { meaning: "not chosen by allied selectors" })
 
 /** 普攻能打飞行单位。属性 canHitFly 大于 0 也算。 */
-// TRACE: interim/snapshot-tag-names
-export const CAN_HIT_FLY: TagKey = defineTag("canHitFly", { meaning: "normal attacks reach flying units" })
+export const CAN_HIT_FLY: TagKey = defineTag("can-hit-fly", { meaning: "normal attacks reach flying units" })
 
 // MARK: body
 
@@ -107,12 +101,10 @@ export const LEVITATE: TagKey = defineTag("levitate", { meaning: "levitated", im
 export const FLOAT: TagKey = defineTag("float", { meaning: "hovering", implies: [AIRBORNE] })
 
 /** 位移免疫。 */
-// TRACE: interim/snapshot-tag-names
-export const NO_DISPLACE: TagKey = defineTag("noDisplace", { meaning: "immune to forced movement" })
+export const NO_DISPLACE: TagKey = defineTag("no-displace", { meaning: "immune to forced movement" })
 
 /** 静态刚体：不被位移。 */
-// TRACE: interim/snapshot-tag-names
-export const STATIC_BODY: TagKey = defineTag("staticBody", { meaning: "static body; never displaced" })
+export const STATIC_BODY: TagKey = defineTag("static-body", { meaning: "static body; never displaced" })
 
 /** 不在场上可见。快照给路线消失的单位写上它。 */
 export const HIDDEN: TagKey = defineTag("hidden", { meaning: "not visible on the field" })
@@ -120,32 +112,25 @@ export const HIDDEN: TagKey = defineTag("hidden", { meaning: "not visible on the
 // MARK: damage
 
 /** 每下受击记 1 点，跳过减伤与乘区。 */
-// TRACE: interim/snapshot-tag-names
-export const HIT_COUNT: TagKey = defineTag("hitCount", { meaning: "each hit deals exactly one point" })
+export const HIT_COUNT: TagKey = defineTag("hit-count", { meaning: "each hit deals exactly one point" })
 
 /** 只按次数计法术伤害，物理照常结算。 */
-// TRACE: interim/snapshot-tag-names
-export const HIT_COUNT_ARTS: TagKey = defineTag("hitCountArts", { meaning: "each arts hit deals exactly one point" })
+export const HIT_COUNT_ARTS: TagKey = defineTag("hit-count-arts", { meaning: "each arts hit deals exactly one point" })
 
 /** 攻击者能打到沉睡的目标。 */
-// TRACE: interim/snapshot-tag-names
-export const HIT_SLEEP: TagKey = defineTag("hitSleep", { meaning: "hits sleeping targets" })
+export const HIT_SLEEP: TagKey = defineTag("hit-sleep", { meaning: "hits sleeping targets" })
 
 /** 不接受治疗。生命回复与指明忽略的治疗除外。 */
-// TRACE: interim/snapshot-tag-names
-export const HEAL_FREE: TagKey = defineTag("healFree", { meaning: "refuses healing" })
+export const HEAL_FREE: TagKey = defineTag("heal-free", { meaning: "refuses healing" })
 
 /** 禁疗。治疗来自自己时不拦。 */
-// TRACE: interim/snapshot-tag-names
-export const NO_HEAL: TagKey = defineTag("noHeal", { meaning: "cannot be healed by others" })
+export const NO_HEAL: TagKey = defineTag("no-heal", { meaning: "cannot be healed by others" })
 
 /** 元素损伤不累积、不爆发。撤销时清空元素槽。 */
-// TRACE: interim/snapshot-tag-names
-export const BURST_LOCK: TagKey = defineTag("burstLock", { meaning: "element damage neither builds up nor bursts" })
+export const BURST_LOCK: TagKey = defineTag("burst-lock", { meaning: "element damage neither builds up nor bursts" })
 
 /** 阻回：技力不自然回复，也不接受外界给予。 */
-// TRACE: interim/snapshot-tag-names
-export const NO_SP: TagKey = defineTag("noSp", { meaning: "skill points do not recover" })
+export const NO_SP: TagKey = defineTag("no-sp", { meaning: "skill points do not recover" })
 
 // MARK: deploy
 
@@ -153,8 +138,7 @@ export const NO_SP: TagKey = defineTag("noSp", { meaning: "skill points do not r
 export const TOKEN: TagKey = defineTag("token", { meaning: "summoned token; deployed after operators" })
 
 /** 开战不上场，初始格子留给它。 */
-// TRACE: interim/snapshot-tag-names
-export const DEFER_DEPLOY: TagKey = defineTag("deferDeploy", { meaning: "stays off the field at the opening" })
+export const DEFER_DEPLOY: TagKey = defineTag("defer-deploy", { meaning: "stays off the field at the opening" })
 
 /** 引擎认识的全部标签。每场战斗开始时注册。 */
 export const CORE_TAGS: readonly TagKey[] = [

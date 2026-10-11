@@ -26,7 +26,7 @@ const spec: BattleSpec = {
       attributes: { hp: 1000, maxHp: 1000, atk: 200, def: 0, aspd: 100, bat: 1 },
       skills: [],
       attackRange: [{ x: 1, y: 0 }],
-      tags: ["canHitFly"],
+      tags: ["can-hit-fly"],
       deployPositions: ["ground"],
     },
   ],

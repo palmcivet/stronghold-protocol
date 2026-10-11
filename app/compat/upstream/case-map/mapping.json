@@ -481,29 +481,35 @@
       "reason": "干员、敌人、盟约或真实关卡的内容用例，随内容模块改写"
     },
     "sim/downelem.test.js::a knocked-out operator is `down` until it redeploys: its timer, then waiting for the DP (no ally takes its tile); then back": {
-      "status": "pending",
-      "step": "ECS 3",
-      "reason": "倒下状态与快照视图"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/battle/snapshot.spec.ts::倒下的单位带再部署计时：先计时，到点后费用不够就停在满值等待，回来后清掉",
+        "mission-core/test/unit/deploy/board.spec.ts::自己的初始格子被占着就留在倒下的格子，倒地干员占着的格子不能站",
+        "mission-core/test/unit/redeploy/index.spec.ts::费用不够就继续等，够了的那一拍再回来"
+      ],
+      "reason": "next 的快照不单列 down 表，单位自带 downed 与 redeploy（已过秒数与总秒数）；计时、等费用、倒地格子不能站分别由快照与部署用例覆盖，fieldMeta 属于 app/server"
     },
     "sim/downelem.test.js::summons, devices, enemies, operators removed for good and the 突袭 retreat are never `down`; an operator forced out is (GitHub #60)": {
-      "status": "pending",
-      "step": "ECS 3",
-      "reason": "倒下状态与快照视图"
+      "status": "moved",
+      "owner": "app/server",
+      "reason": "mission-core 里生命归零的单位一律倒下；哪些单位永久移除、撤退与强制退场由对局与内容层决定"
     },
     "sim/downelem.test.js::carryState.down (联防): deployed with everyone, forced out at once — down on its tile without the knock-out hooks — then back after its timer": {
-      "status": "pending",
-      "step": "ECS 3",
-      "reason": "倒下状态与快照视图"
+      "status": "moved",
+      "owner": "app/server",
+      "reason": "联防的 carryState 与强制退场是对局层的规则"
     },
     "sim/downelem.test.js::carryState.down (联防): a redeploy-time effect that starts with the battle (机变 征召) covers the operator forced out": {
-      "status": "pending",
-      "step": "ECS 3",
-      "reason": "倒下状态与快照视图"
+      "status": "moved",
+      "owner": "app/server",
+      "reason": "联防的 carryState 与机变卡是对局层与内容的规则"
     },
     "sim/downelem.test.js::elementView: the fullest gauge (ties: the official element order), its cooldown while bursting, nothing when empty": {
-      "status": "pending",
-      "step": "ECS 3",
-      "reason": "倒下状态与快照视图"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/battle/snapshot.spec.ts::元素视图取最满的一槽，一样满按官方元素先后，爆发时锁住，没有槽时不出现"
+      ],
+      "reason": "元素组件的 view 给出最满一槽的比例，一样满按官方元素先后；爆发期间给出锁住的一槽，不带冷却结束时刻，填充比例不做百分取整"
     },
     "sim/engine-requests.test.js::baseRangeKeys: the initial range includes permanent rangeExtend (persist, never-expiring) — DEFAULT trigger sees the module tile": {
       "status": "pending",
@@ -2502,24 +2508,28 @@
       "reason": "计入总数的敌人与 resolved 账本"
     },
     "sim/hud-readouts.test.js::隐现 S2: b.snap `ammo` carries the whole rounds left and the 14-round magazine of the data; the tuple keeps its SP fraction": {
-      "status": "pending",
-      "step": "ECS 3",
-      "reason": "头顶条读数的快照视图"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/battle/snapshot.spec.ts::弹药技能持续时快照带剩余弹药与弹匣，其余时候是 null，技力照常给出"
+      ],
+      "reason": "技能快照的 ammo 给出向上取整的剩余弹药与弹匣，sp 照常给出；隐现的 14 发弹匣是内容数据，用 skill 场景的 3 发弹药技能代替"
     },
     "sim/hud-readouts.test.js::ammo rows: whole numbers (a fractional count rounds up), allies only, living deployed units only; an operator without an ammo skill is no ammoSkill": {
-      "status": "pending",
-      "step": "ECS 3",
-      "reason": "头顶条读数的快照视图"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/battle/snapshot.spec.ts::弹药技能持续时快照带剩余弹药与弹匣，其余时候是 null，技力照常给出"
+      ],
+      "reason": "剩余弹药向上取整，只在弹药技能持续且单位在场时给出，其余技能是 null；next 的快照不分阵营，只显示我方由画面决定"
     },
     "sim/hud-readouts.test.js::伺夜's automatic pack: b.snap `wolves` follows the 狼影 count (2 of 3, +1 per 25 s, one lost per lethal hit) and goes with the pack": {
-      "status": "pending",
-      "step": "ECS 3",
-      "reason": "头顶条读数的快照视图"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "伺夜的狼影是干员内容，读数由内容组件的 view 给出，随内容模块改写"
     },
     "sim/hud-readouts.test.js::伺夜's placed pack: b.snap `wolves` follows the 狼影 count (2 of 3, +1 per 25 s, one lost per lethal hit) and goes with the pack": {
-      "status": "pending",
-      "step": "ECS 3",
-      "reason": "头顶条读数的快照视图"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "伺夜的狼影是干员内容，读数由内容组件的 view 给出，随内容模块改写"
     },
     "sim/loadout-summons.test.js::two players in one field, same chess, different skills / modules: summons spawned mid-battle get each owner's variant": {
       "status": "moved",

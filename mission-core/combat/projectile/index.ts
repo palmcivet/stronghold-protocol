@@ -6,6 +6,7 @@ import type { BattleWorld } from "#unit/record/index.js"
 import { defineResource } from "#kernel/world/resource.js"
 import { TICK } from "#kernel/tick/index.js"
 import { hypot } from "#kernel/math/hypot.js"
+import { boomerangOf } from "#combat/attack/boomerang.js"
 
 /** 缺省飞行速度，格/秒。 */
 export const PROJECTILE_SPEED = 12
@@ -55,9 +56,9 @@ export function launchProjectile(state: BattleWorld, projectile: ProjectileLaunc
     age: 0,
     retain: projectile.retain === true,
     attack,
-    epoch: source?.boomerangEpoch ?? 0,
+    epoch: source?.deployEpoch ?? 0,
   })
-  if (attack?.leg === "out") noteBoomerang(state, projectile.sourceId, 1, source?.boomerangEpoch ?? 0)
+  if (attack?.leg === "out") noteBoomerang(state, projectile.sourceId, 1, source?.deployEpoch ?? 0)
 }
 
 export function projectileViews(state: BattleWorld): readonly ProjectileView[] {
@@ -174,7 +175,8 @@ function release(state: BattleWorld, projectile: ProjectileFlight, handedOff: bo
 function noteBoomerang(state: BattleWorld, unitId: string, delta: number, epoch: number): void {
   const unit = state.units.get(unitId)
   if (!unit) return
-  if (delta < 0 && unit.boomerangEpoch !== epoch) return
-  unit.boomerangsOut = Math.max(0, unit.boomerangsOut + delta)
-  unit.attributes.boomerangsOut = unit.boomerangsOut
+  if (delta < 0 && unit.deployEpoch !== epoch) return
+  const record = boomerangOf(state, unitId)
+  record.out = Math.max(0, record.out + delta)
+  unit.attributes.boomerangsOut = record.out
 }

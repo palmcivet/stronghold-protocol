@@ -3,7 +3,9 @@ import { CAMOU, CAN_HIT_FLY, ISOLATED, LIFTOFF, REVEAL, SLEEP, STEALTH, STEALTH_
 import { hasTag } from "#kernel/world/tag.js"
 import { bodyDist, bodyInKeys } from "#field/body/index.js"
 import { gridOf } from "#field/grid/index.js"
-import { remainingDistance } from "#field/grid/route.js"
+import { remainingDistance, routeHidden } from "#field/grid/route.js"
+import { blockerOf, blockingOf } from "#unit/block/hold.js"
+import { targetPriorityOf } from "#combat/target/priority.js"
 import { absoluteRangeTiles } from "#combat/target/selector.js"
 import { attributeOf, maxHpOf } from "#ability/effect/attribute.js"
 import { isFlying, type BattleWorld, type UnitState } from "#unit/record/index.js"
@@ -39,7 +41,7 @@ function filters(state: BattleWorld, registry: BattleRegistry): readonly Selecto
 function sideOf(state: BattleWorld, query: SelectorQuery, unitId: string, side: UnitState["side"]): boolean {
   const unit = state.units.get(unitId)
   const source = attacker(state, query)
-  if (!unit || !living(unit)) return false
+  if (!unit || !living(state, unit)) return false
   if (source && unit.id === source.id) return false
   return unit.side === side
 }
@@ -56,8 +58,8 @@ function visible(state: BattleWorld, query: SelectorQuery, unitId: string): bool
   const unit = state.units.get(unitId)
   if (!unit || !hidden(unit)) return true
   const source = attacker(state, query)
-  if (unit.side === "enemy") return unit.blockedBy !== null
-  return source !== null && source.blockedBy === unit.id
+  if (unit.side === "enemy") return blockerOf(state, unitId) !== null
+  return source !== null && blockerOf(state, source.id) === unit.id
 }
 
 /** 迷彩挡住敌方普通攻击，挡不住正在挡这个敌人的干员。 */
@@ -66,13 +68,13 @@ function plainAttackSees(state: BattleWorld, query: SelectorQuery, unitId: strin
   if (!unit || !hasTag(unit, CAMOU)) return true
   const source = attacker(state, query)
   if (!source || source.side !== "enemy") return true
-  return source.blockedBy === unit.id
+  return blockerOf(state, source.id) === unit.id
 }
 
 /** 范围效果不看迷彩，隐匿即使挡着施法者也不选。 */
 function areaSees(state: BattleWorld, query: SelectorQuery, unitId: string): boolean {
   const unit = state.units.get(unitId)
-  if (!unit || !living(unit)) return false
+  if (!unit || !living(state, unit)) return false
   if (hasTag(unit, UNTARGETABLE) || hasTag(unit, SLEEP)) return false
   if (hidden(unit)) return false
   return groundCanReach(state, query, unitId)
@@ -98,7 +100,7 @@ function insideRange(state: BattleWorld, registry: BattleRegistry, query: Select
   const source = attacker(state, query)
   const unit = state.units.get(unitId)
   if (!source || !unit) return false
-  if (source.blocking.includes(unitId) || unit.blockedBy === source.id) return true
+  if (blockingOf(state, source.id).includes(unitId) || blockerOf(state, unitId) === source.id) return true
   const grid = gridOf(state)
   return bodyInKeys(unit, absoluteRangeTiles(grid, source.id, state, registry), grid.rect)
 }
@@ -123,15 +125,17 @@ function blockRank(state: BattleWorld, query: SelectorQuery, unitId: string): nu
   const source = attacker(state, query)
   const unit = state.units.get(unitId)
   if (!source || !unit) return 1
-  if (source.side === "ally") return unit.blockedBy === source.id ? 0 : 1
-  return source.blockedBy === unit.id ? 0 : 1
+  if (source.side === "ally") return blockerOf(state, unitId) === source.id ? 0 : 1
+  return blockerOf(state, source.id) === unit.id ? 0 : 1
 }
 
 function priorityRank(state: BattleWorld, registry: BattleRegistry, query: SelectorQuery, unitId: string): number {
   const source = attacker(state, query)
   const unit = state.units.get(unitId)
-  if (!source || !unit || source.targetPriority === "") return 0
-  return priorityValue(state, registry, query, unit, source.targetPriority)
+  if (!source || !unit) return 0
+  const priority = targetPriorityOf(state, source.id)
+  if (priority === "") return 0
+  return priorityValue(state, registry, query, unit, priority)
 }
 
 function priorityValue(
@@ -165,7 +169,7 @@ function aggroOf(state: BattleWorld, unitId: string): number {
 function pathOf(state: BattleWorld, unitId: string): number {
   const unit = state.units.get(unitId)
   if (!unit) return 0
-  return remainingDistance(unit)
+  return remainingDistance(state, unit)
 }
 
 function ratioOf(state: BattleWorld, registry: BattleRegistry, unitId: string): number {
@@ -200,8 +204,8 @@ function attacker(state: BattleWorld, query: SelectorQuery): UnitState | null {
   return state.units.get(query.origin) ?? null
 }
 
-function living(unit: UnitState): boolean {
-  return unit.fielded && !unit.downed && !unit.routeHidden && (unit.attributes.hp ?? 0) > 0
+function living(state: BattleWorld, unit: UnitState): boolean {
+  return unit.fielded && !unit.downed && !routeHidden(state, unit.id) && (unit.attributes.hp ?? 0) > 0
 }
 
 /** 隐匿且没有显形、没有在破隐期。 */

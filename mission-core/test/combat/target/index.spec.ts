@@ -119,7 +119,7 @@ test("飞行、隐匿、迷彩和范围效果按各自的筛选分开", () => {
     ],
   })
   expect(query([attacker, ground, flyer], ["enemy", "fly"])).toEqual(["ground"])
-  expect(query([{ ...attacker, tags: ["canHitFly"] }, ground, flyer], ["enemy", "fly"])).toEqual(["ground", "flyer"])
+  expect(query([{ ...attacker, tags: ["can-hit-fly"] }, ground, flyer], ["enemy", "fly"])).toEqual(["ground", "flyer"])
 
   let hidden: readonly string[] = []
   let revealed: readonly string[] = []
@@ -297,7 +297,7 @@ test("阻挡优先只读已有关系，特殊优先级、仇恨、路程、生�
           { x: 1, y: 0 },
           { x: 2, y: 0 },
         ],
-        tags: ["canHitFly"],
+        tags: ["can-hit-fly"],
       }),
       ally("ground", { side: "enemy", x: 1, y: 0 }),
       ally("flyer", { side: "enemy", x: 2, y: 0, motion: "FLY" }),

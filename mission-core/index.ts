@@ -33,7 +33,7 @@ export type {
 export { ATTACK_DAMAGE_KINDS, DIRECTIONS, MOTIONS, PROJECTILE_KINDS, SKILL_OPERATIONS, SP_TYPES, UNIT_KINDS, UNIT_SIDES } from "#contract/spec.js"
 export type { BattleEvent } from "#contract/event.js"
 export type { BattleResult } from "#contract/result.js"
-export type { BattleSnapshot, UnitSnapshot } from "#contract/snapshot.js"
+export type { BattleSnapshot, RedeploySnapshot, SkillSnapshot, UnitSnapshot } from "#contract/snapshot.js"
 
 export { TICK } from "#kernel/tick/index.js"
 export { AUTO_OP_COOLDOWN } from "#ability/skill/constants.js"

@@ -21,7 +21,7 @@ export function pickBoard(
   const gridX = localX / tileSize - 0.5
   const gridY = rows - localY / tileSize - 0.5
   for (const unit of units) {
-    if (unit.flags.includes("hidden")) continue
+    if (unit.tags.includes("hidden")) continue
     if (Math.hypot(unit.x - gridX, unit.y - gridY) <= UNIT_REACH) return { type: "unit", unitId: unit.id }
   }
   const x = Math.floor(localX / tileSize)

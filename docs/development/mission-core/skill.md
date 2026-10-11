@@ -17,9 +17,9 @@ description: 技力、充能和触发在 skill-point 上走，技能体在 skill
 
 - 技能体是 `passive`
 - 正在持续的 `duration`、`ammo`、`toggle`
-- 单位带 `noSp`、路线隐藏、不在场、已倒地，或生命不大于 0
+- 单位带 `no-sp`、路线隐藏、不在场、已倒地，或生命不大于 0
 
-眩晕、冻结、浮空让单位不能行动，不暂停 `time` 的回复。`noSp` 挡住时间、攻击、受击和 `gainSp`。
+眩晕、冻结、浮空让单位不能行动，不暂停 `time` 的回复。`no-sp` 挡住时间、攻击、受击和 `gainSp`。
 
 技力攒到 `spCost` 得到一层，然后重新累计。层数已满时技力停在这一层的花费上。`spCost` 不大于 0 时直接给满层。
 
@@ -44,7 +44,7 @@ description: 技力、充能和触发在 skill-point 上走，技能体在 skill
 | `GDGLOW_SKILL_2` | 治疗技能看场上有没有生命未满的友方；否则看场上有没有可选的敌人，飞行也算 |
 | `NEVER` | 不满足。`MANUAL` 归一化成这个 id |
 
-`SP_FULL`、`SEARCH`、`CUSTOM_RANGE`、`SKILL_RANGE`、`GDGLOW_SKILL_2` 每个技力拍都问。`DEFAULT` 等这一拍的攻击会命中再问；单位带 `noAttack` 时不等攻击。`TAKE_DAMAGE` 在 `damaged` 时问。
+`SP_FULL`、`SEARCH`、`CUSTOM_RANGE`、`SKILL_RANGE`、`GDGLOW_SKILL_2` 每个技力拍都问。`DEFAULT` 等这一拍的攻击会命中再问；单位带 `no-attack` 时不等攻击。`TAKE_DAMAGE` 在 `damaged` 时问。
 
 治疗技能的 `triggerHpAtMost` 缺省是 1，也就是不满血即可。未知触发标识拒绝创建。
 
@@ -76,6 +76,6 @@ reg.registerSkillTrigger({
 
 `castSkill(unitId, skillId)` 不另问触发。有层数、在场、生命大于 0，且没有处在持续技能中时，消耗一层并释放。
 
-`gainSp(unitId, skillId, amount)` 从外界加技力。被动、正在持续的 `duration` / `ammo` / `toggle`、带 `noSp`、花费不大于 0，或层数和技力都已经满了时返回 0。否则返回传入的数量。
+`gainSp(unitId, skillId, amount)` 从外界加技力。被动、正在持续的 `duration` / `ammo` / `toggle`、带 `no-sp`、花费不大于 0，或层数和技力都已经满了时返回 0。否则返回传入的数量。
 
 技能修饰在技能生效期间参加属性汇总。快照叠这些修饰时跳过当前生命。持续结束时先跑 `onEnd`，再撤下修饰。

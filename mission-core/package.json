@@ -55,7 +55,8 @@
   "scripts": {
     "build": "tsc -b",
     "lint": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "perf": "vitest bench --run --reporter=verbose"
   },
   "devDependencies": {
     "@types/node": "catalog:",

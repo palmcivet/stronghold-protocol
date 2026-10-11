@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto"
-import { createBattle, type BattleSpec, type MissionModule } from "arknights-mission-core"
+import { createBattle, type BattleSnapshot, type BattleSpec, type MissionModule } from "arknights-mission-core"
 
 /** 每隔这么多拍记一次快照摘要。 */
 export const SNAPSHOT_INTERVAL = 30
@@ -38,6 +38,14 @@ export function digest(value: unknown): string {
   return createHash("sha256").update(canonical(value)).digest("hex").slice(0, 16)
 }
 
+/** 快照里计入状态的部分：去掉只给画面的 components。 */
+export function stateOf(snapshot: BattleSnapshot): unknown {
+  return {
+    tick: snapshot.tick,
+    units: snapshot.units.map(({ components: _components, ...unit }) => unit),
+  }
+}
+
 /** 推进 ticks 拍，记下每拍事件摘要、每 SNAPSHOT_INTERVAL 拍的快照摘要与最终结果。 */
 export function replay(scenario: Scenario): Replay {
   const battle = createBattle(scenario.spec(), scenario.modules())
@@ -46,13 +54,13 @@ export function replay(scenario: Scenario): Replay {
   for (let tick = 0; tick < scenario.ticks; tick += 1) {
     battle.step()
     events.push(digest(battle.drainEvents()))
-    if (tick % SNAPSHOT_INTERVAL === 0) snapshots.push(digest(battle.snapshot()))
+    if (tick % SNAPSHOT_INTERVAL === 0) snapshots.push(digest(stateOf(battle.snapshot())))
   }
   return {
     ticks: scenario.ticks,
     events,
     snapshots,
-    finalSnapshot: digest(battle.snapshot()),
+    finalSnapshot: digest(stateOf(battle.snapshot())),
     result: battle.result(),
   }
 }

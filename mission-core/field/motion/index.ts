@@ -10,7 +10,9 @@ import { attributeOf } from "#ability/effect/attribute.js"
 import { emit } from "#kernel/event/index.js"
 import { engineOf, requireUnit, type BattleWorld, type UnitState } from "#unit/record/index.js"
 import { attractPoints, fearReachableTiles, planFearMove } from "#field/motion/fear.js"
-import { MOVE_SCALE } from "#field/grid/route.js"
+import { MOVE_SCALE, ROUTE, replanRoute } from "#field/grid/route.js"
+import { SHIFT, shiftOf } from "#field/motion/shift.js"
+import { blockerOf } from "#unit/block/hold.js"
 import { hypot } from "#kernel/math/hypot.js"
 
 /** 推力距离。受力等级 ≤ −3 是 0，≥ 3 用 3 这一档。 */
@@ -53,7 +55,7 @@ export function registerBuiltinShifts(registry: BattleRegistry): void {
   registry.registerShift(attractShift())
 }
 
-/** 按标识执行一段位移。立刻完成的写下落点；还在走的记在单位上，倒地时先落到终点。 */
+/** 按标识执行一段位移。立刻完成的写下落点；还在走的记进位移组件，倒地时先落到终点。 */
 export function applyShift(
   state: BattleWorld,
   registry: BattleRegistry,
@@ -68,22 +70,22 @@ export function applyShift(
   const unit = requireUnit(state, unitId)
   if (definition.instant) {
     writeLanding(state, registry, ctx, unit, plan.x, plan.y)
-    unit.shiftRun = null
+    state.components.access(SHIFT).delete(unitId)
     return true
   }
-  unit.shiftRun = {
+  state.components.access(SHIFT).set(unitId, {
     id: definition.id,
     landingX: plan.x,
     landingY: plan.y,
     points: (plan.points ?? [{ x: plan.x, y: plan.y }]).map((point) => ({ x: point.x, y: point.y })),
     index: 0,
-  }
+  })
   return true
 }
 
 /** 恐惧和诱导还没走完时，先沿这段动作走，本拍不再沿路线。 */
-export function advanceShift(_state: BattleWorld, registry: BattleRegistry, unit: UnitState, dt: number): boolean {
-  const run = unit.shiftRun
+export function advanceShift(state: BattleWorld, registry: BattleRegistry, unit: UnitState, dt: number): boolean {
+  const run = shiftOf(state, unit.id)
   if (!run) return false
   const speed = Math.max(0, attributeOf(unit, registry, "moveSpeed")) * MOVE_SCALE
   let distance = speed * dt
@@ -106,19 +108,19 @@ export function advanceShift(_state: BattleWorld, registry: BattleRegistry, unit
     }
     moved = true
   }
-  if (moved && unit.route) unit.route.pts = null
-  if (run.index >= run.points.length) unit.shiftRun = null
+  if (moved) replanRoute(state, unit.id)
+  if (run.index >= run.points.length) state.components.access(SHIFT).delete(unit.id)
   return true
 }
 
 /** 倒地前先写到这段动作的终点，倒地落点读的就是这个坐标。 */
-export function landShift(unit: UnitState): void {
-  const run = unit.shiftRun
+export function landShift(state: BattleWorld, unit: UnitState): void {
+  const run = shiftOf(state, unit.id)
   if (!run) return
   unit.x = run.landingX
   unit.y = run.landingY
-  unit.shiftRun = null
-  if (unit.route) unit.route.pts = null
+  state.components.access(SHIFT).delete(unit.id)
+  replanRoute(state, unit.id)
 }
 
 // MARK: push
@@ -189,7 +191,7 @@ function fearShift(): ShiftDefinition {
       const sourceX = input.sourceX
       const sourceY = input.sourceY
       const self = hypot(unit.x - sourceX, unit.y - sourceY) <= 1e-9
-      const end = unit.route?.legs.find((leg) => leg.final)
+      const end = state.components.access(ROUTE).get(unitId)?.run?.legs.find((leg) => leg.final)
       const goal = end ? { x: end.x, y: end.y } : null
       const tiles = [
         ...fearReachableTiles(gridOf(state), unit.motion, unit.x, unit.y, sourceX, sourceY, self, goal),
@@ -229,7 +231,7 @@ function writeLanding(state: BattleWorld, registry: BattleRegistry, ctx: Content
   if (hypot(unit.x - x, unit.y - y) <= 1e-8) return
   unit.x = x
   unit.y = y
-  if (unit.route) unit.route.pts = null
+  replanRoute(state, unit.id)
   releaseBlock(state, unit, { registry, ctx })
   emit(state, "displace", { unitId: unit.id, x, y })
 }
@@ -325,8 +327,9 @@ function stopDistance(
 }
 
 function blockedByCenter(state: BattleWorld, unit: UnitState, centerX: number, centerY: number): boolean {
-  if (!unit.blockedBy) return false
-  const blocker = state.units.get(unit.blockedBy)
+  const blockerId = blockerOf(state, unit.id)
+  if (!blockerId) return false
+  const blocker = state.units.get(blockerId)
   if (!blocker) return false
   return hypot(blocker.x - centerX, blocker.y - centerY) <= 0.2
 }

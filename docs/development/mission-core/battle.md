@@ -66,21 +66,38 @@ interface BattleSnapshot {
 interface UnitSnapshot {
   id: string
   side: "ally" | "enemy"
+  kind: UnitKind
   x: number
   y: number
+  facing: Direction
+  height: number
   attributes: Readonly<Record<string, number>>
-  flags: readonly string[]
-  attackRange: readonly TileCoord[]
   tags: readonly string[]
+  attackRange: readonly TileCoord[]
   deployPositions: readonly string[]
   elements: Readonly<Record<string, number>>
   blocking: readonly string[]
   blockedBy: string | null
-  boomerangsOut: number
+  skills: readonly SkillSnapshot[]
+  shield: number
+  downed: boolean
+  redeploy: { elapsed: number; duration: number } | null
+  components: Readonly<Record<string, unknown>>
+}
+
+interface SkillSnapshot {
+  id: string
+  sp: number
+  spCost: number
+  charges: number
+  active: boolean
+  ammo: { left: number; max: number } | null
 }
 ```
 
-单位按 `id` 排序。属性抄单位上存放的数字，再叠正在生效的技能修饰。当前生命不叠技能修饰。状态带来的属性修饰在战斗读取属性时现算，不写进这份快照。`flags` 是状态、技能与模块授予的标签 id，排序后抄上，路线隐藏额外有 `hidden`。`tags` 是规格写的标签 id，按规格顺序。两者都不含蕴含得到的标签。元素槽按标识抄当前值。`blocking` 和 `blockedBy` 抄单位上已经写好的阻挡关系。`boomerangsOut` 是还没回到手上的回旋数量。快照不调用选择器。
+单位按 `id` 排序。属性抄单位上存放的数字，再叠正在生效的技能修饰。当前生命不叠技能修饰。状态带来的属性修饰在战斗读取属性时现算，不写进这份快照。`height` 是单位所在地块的高度，不在地块上时是 0。`tags` 是单位持有的标签 id，不分来源（规格、状态、技能与模块授予的合在一起），按 id 排序；路线隐藏额外有 `hidden`；不含蕴含得到的标签。元素槽按标识抄当前值。`blocking` 和 `blockedBy` 抄阻挡组件里已经写好的阻挡关系。`skills` 按单位的技能顺序给出技力、花费、层数和是否持续；弹药技能持续且单位在场时 `ammo` 是向上取整的剩余弹药与弹匣，其余时候是 `null`。`shield` 是护盾池与状态护盾的合计。倒下时 `redeploy` 是再部署计时已过的秒数与要等的秒数，没倒下时是 `null`。
+
+`components` 是带 `view` 的组件给画面的显示值，键是组件 id（见 [世界](./world.md#组件)）。它只给画面，不计入状态：黄金摘要先去掉它再算。快照不调用选择器。
 
 ## 事件
 
