@@ -1,13 +1,14 @@
 - [目标与前提](#目标与前提)
 - [分层与 ECS](#分层与-ecs)
+  - [引擎选库](#引擎选库)
 - [运行时框架](#运行时框架)
 - [模组模型](#模组模型)
-    - [数据、文案与资源层](#数据文案与资源层)
-    - [行为层](#行为层)
-    - [表现层](#表现层)
-    - [清单与握手](#清单与握手)
-    - [哈希锁定与自由内容](#哈希锁定与自由内容)
-    - [FEATURE 模组的落点](#feature-模组的落点)
+  - [数据、文案与资源层](#数据文案与资源层)
+  - [行为层](#行为层)
+  - [表现层](#表现层)
+  - [清单与握手](#清单与握手)
+  - [哈希锁定与自由内容](#哈希锁定与自由内容)
+  - [FEATURE 模组的落点](#feature-模组的落点)
 - [服务端下发界面](#服务端下发界面)
 - [前端](#前端)
 - [多语言](#多语言)
@@ -16,21 +17,21 @@
 - [探索项](#探索项)
 - [待决事项](#待决事项)
 
-本文汇总架构讨论中已经确定的方向。每节先写决定，再写简短理由；没有定论的放在「待决事项」。需求来源见 [FEATURE.md](FEATURE.md)。
+本文汇总架构讨论中已经确定的方向。每节先写决定，再写简短理由；没有定论的放在「待决事项」。需求来源是 FEATURE.md。
 
 ## 目标与前提
 
 - 这是一次重写。master（`legacy/`）只作为正确行为的参照和机制清单，不保留它的代码结构。
 - 作战机制引擎保持高扩展性：官方规则更新时，新机制通过注册接入，不改核心类型和分支。
 - 应用层支持类似游戏的模组系统。官方特性之外的需求都由模组实现。
-- 核心库（`mission-core`、`mission-renderer`、`assets-catalog`）保持简单，不引入额外运行时依赖，其他项目复用时不被迫带上框架。
+- 核心库（`mission-core`、`mission-renderer`、`assets-catalog`）保持简单，其他项目复用时不被迫带上框架。引擎层可以按「引擎选库」的原则使用契合的社区库，不拖入应用层框架。
 - 后端接口兼容 master，增加协商与扩展信道。
 - 资源按游戏的做法分包：基础包、赛季包、模组包各自下载、各自缓存，按内容哈希寻址。
 - 后端服务一次只启用一个赛季，启动时指定
 
 ## 分层与 ECS
 
-决定：任何一层都不引入 ECS 库，但借鉴思想。
+决定：借鉴 ECS 思想；可以使用 ECS 库，但 `mission-core` 评估后选择自建内核，renderer 的视图实体同样自建（理由见「引擎选库」）。
 
 `mission-core` 只借鉴 ECS 思想：
 
@@ -45,9 +46,45 @@
 
 `mission-renderer` 采用轻量 ECS 风格的视图层：每个单位一个视图对象，按特性注册视图系统（Spine 本体、血条、SP 与护盾、状态图标、朝向、离场淡出），特效按 kind 注册到特效表。Three 的场景图仍是显示树。
 
-`app/server` 的对局层不使用 ECS：休整、商店、经济是回合制规则，采用类型化钩子注册表和显式阶段状态机。`content/` 中带 `@ts-nocheck` 的 master 内容与 `content/support/legacy-battle.ts` 适配层，改写为类型化的 `MissionModule` 与对局钩子。
+`app/server` 的对局层不使用 ECS：休整、商店、经济是回合制规则，采用类型化钩子注册表和显式阶段状态机。`content/` 中带 `@ts-nocheck` 的 master 内容与 `content/support/battle-facade.ts` 适配层，改写为类型化的 `MissionModule` 与对局钩子。
 
-理由：单场战斗只有几十个单位，性能不是瓶颈；确定性、可读规则和零依赖更重要。真正的扩展压力来自干员、首领、召唤物的个别机制和大量特效种类，这需要类型化注册表与模块自有状态，而不是高性能实体数据库。
+理由：单场战斗只有几十个单位，性能不是瓶颈；确定性、可读规则和少依赖更重要。真正的扩展压力来自干员、首领、召唤物的个别机制和大量特效种类，这需要类型化注册表与模块自有状态，而不是高性能实体数据库。
+
+作战核心用内部可变的 `World`，只经 `Battle.step(inputs)` 修改，`export()`/`import()` 产出与恢复纯数据；「可复现与可测试」中不可变的 `step(state, input, env)` 指对局核心，作战核心不要求不可变状态。
+
+### 引擎选库
+
+决定：引擎层（`mission-core`、`mission-renderer`）可以用社区库减少工作量，前提是库足够契合；不契合时自建，不为用库而改领域模型。契合的标准：
+
+- 确定性（只对 `mission-core`）：不读时钟、不用 `Math.random`、不依赖近似 `Math.*` 或对象键插入以外的顺序；同一输入在 Node 与浏览器上逐位一致。
+- 可摇树（ESM、`sideEffects: false`），体积小，依赖少；没有全局副作用（不改原型、不注册全局单例）。
+- 仍在维护（近一年有发布或提交），自带 TypeScript 类型，浏览器与 Node 都能运行。
+- 许可证与 GPL-3.0-or-later 兼容（MIT、ISC、Apache-2.0、MPL-2.0 可以；附加限制的许可证由用户决定）。
+- 不拖入应用层框架（React、Effect、Cordis 等）；`mission-renderer` 的 `three` 是对等依赖，不算新增。
+- 优先轻量库；新增依赖在提交说明与文档中写明用途与替代方案，并经黄金回放验证。
+
+候选库评估（版本与维护情况查于 2026-10-10）：
+
+| 用途 | 候选 | 结论 | 理由 |
+|---|---|---|---|
+| 核心 ECS | bitECS 0.4.0（MPL-2.0） | 不用 | 面向大量实体的数值 SoA，字符串与对象组件、导出导入和模块自有状态都要绕路；单场只有几十个单位 |
+| 核心 ECS | miniplex 2.0.0（MIT） | 不用 | 对象实体、查询简单，但不提供稳定序与序列化；需要的部分自建只有一两百行 |
+| 核心 ECS | Becsy 0.16.1（MIT） | 不用 | 面向多线程与装饰器，体量和约束都超出需要 |
+| 核心 ECS | Koota 0.6.6（ISC） | 不用 | 偏 React 生态，0.x 接口仍在变 |
+| 视图层实体 | miniplex / Koota | 自建 | 视图实体是 `Map` 加几个系统函数；查询变多时再按本原则评估 miniplex |
+| 确定性数学 | `@stdlib/math-base-special-*`（Apache-2.0） | 不用 | 实测 `sin`、`cos` 约 46% 输入与 master 不逐位一致，共 164 个依赖；已移植 master 的确定性数学 |
+| 定点数 | decimal.js、big.js | 不用 | 改成定点数要重写全部数值；已用正确舍入运算保证确定性 |
+| 种子 PRNG | pure-rand、seedrandom | 自建 | 随机流算法决定黄金摘要，换算法会改变全部回放 |
+| 类型化事件 | nanoevents、mitt、emittery | 核心自建；renderer 可用 nanoevents | 核心要 FIFO 重入、拍号日志与稳定顺序 |
+| 对象池 | 无合适的通用库 | 自建 | 按特效种类分池，几十行 |
+| 数据结构 | mnemonist（MIT） | 暂不用 | 目前只需数组与 `Map` |
+| Spine 运行时 | `@pixi-spine/runtime-3.8`、`@pixi-spine/base` 4.0.6 | 用（可替换） | 能读 3.8 数据；只做骨骼与动画计算，Three 网格适配自建并藏在骨骼端口后 |
+| Spine 运行时 | `@esotericsoftware/spine-threejs` 4.x | 不能直接用 | 资源是 Spine 3.8 |
+| 规格与对照表校验 | valibot（MIT） | 用（规格入口与工具） | 与叶子库选型一致，可摇树 |
+| 属性测试 | fast-check（MIT） | 用（开发依赖） | 适合拍对齐、叠加顺序、导出导入往返等不变量 |
+| 补间 | @tweenjs/tween.js（MIT） | 暂不用 | 滑行、淡出公式简单；需要时间线编排时再引入 |
+
+Spine 依赖：`mission-renderer` 用 pixi-spine 3.8 的运行时部分，以及它声明的对等依赖 `@pixi/core`、`@pixi/display`、`@pixi/graphics`、`@pixi/mesh`、`@pixi/mesh-extras`、`@pixi/sprite`（7.4.3，与 `assets-extractor` 一致）。只有 `actor/skeleton/` 可以引用这些包，只做骨骼与动画计算，不创建 Pixi 渲染器、显示对象与纹理（依赖扫描用例锁定）。代价：压缩后约 422 KB（gzip 约 122 KB），`@pixi/core` 导入时注册全局扩展、摇树不掉，不满足「无全局副作用」，因 3.8 资源暂无更好选择作为已知例外接受。
 
 ## 运行时框架
 
@@ -58,7 +95,7 @@
 - `ModContext` 的形状对齐 Cordis：`ctx.on`、自动释放的 `ctx.effect`、`inject`、事件分发模式 `emit`、`parallel`、`serial`、`bail`（用于否决意图）、`waterfall`（用于变换）。日后若需要 Cordis 的加载器或服务依赖等待，可在 `ModContext` 之后替换实现，模组代码不变。
 - 叶子库使用社区方案：`valibot`（Standard Schema）用于消息、配置与清单校验，`zustand` 用于客户端状态。
 - 服务端不做热重载：配置写在 YAML，修改后重启。同一进程里有多场进度不同的对局，热重载会带来状态迁移与资源泄漏的复杂度。
-- 每场对局在开局时绑定一份不可变的 `ContentSnapshot`：数据包、文案、模组集合与哈希、作战模块、对局钩子、配置、`contentHash`。
+- 每场对局在开局时绑定一份不可变的 `ContentSnapshot`：数据包、文案、模组集合与哈希、作战模块、对局钩子、配置、`contentHash`。创建房间时不绑定，因为建房不算作战。
 - 暂不考虑平滑重启和优雅关闭
     - 服务器主拥有最高管理权
     - 服务器启动后不应热重载，同一时刻可能有多个对局，热更新会增加大量复杂度
@@ -110,7 +147,7 @@
 | `entries` | `server`、`client`、`battle` 入口 |
 | `assets` | 资源覆盖、文案、默认按键 |
 
-握手：`hello` 与 `welcome` 增加 `ext` 字段。客户端发送 `{ client, build, protocol, caps, localMods }`；服务端回复 `{ protocol, seasonId, contentHash, dataHash, mods: [{ id, version, hash, sides, scope, url, config }], roles }`。master 服务端忽略未知字段；`welcome` 没有 `ext` 时，客户端进入兼容模式，只运行基础内容与本地外观模组。`room.state` 携带房间启用的模组与配置，开局后固定。`b.start` 的规格携带 `contentHash`。
+握手：`hello` 与 `welcome` 增加 `ext` 字段。客户端发送 `{ client, build, protocol, caps, localMods }`；服务端回复 `{ protocol, seasonId, contentHash, dataHash, mods: [{ id, version, hash, sides, scope, url, config }], roles }`。master 服务端忽略未知字段；`welcome` 没有 `ext` 时，客户端进入兼容模式，只运行基础内容与本地外观模组。`ext` 以后还会携带赛季包与资源清单的地址，字段尚未设计。`room.state` 携带房间启用的模组与配置，开局后固定。`b.start` 的规格携带 `contentHash`。
 
 ### 哈希锁定与自由内容
 
@@ -172,7 +209,6 @@ N 人联机涉及 `MAX_SEATS`、棋盘几何与波次表，作为核心特性设
 - 回退链：玩家语言、基础语言、语言包声明的回退、模组默认语言、源文本。
 - 其他模组的翻译包是不含代码的 `lang` 包，提供目标模组命名空间下的键。
 - 服务端消息为 `{ key, params }`。连接 master 服务端时，用中文 msgid 到新键的对照表翻译 `{ text, msgid, params }`，查不到时显示 `text`。对照表由新目录的 `source` 生成。
-- 迁移：`legacy/public/i18n/en.json` 按 msgid 映射到新键；`ja`、`ko`、`zh-TW` 为机器翻译，重新生成。
 
 ## 可复现与可测试
 
@@ -244,7 +280,6 @@ flowchart LR
 
 ## 待决事项
 
-- 内容快照的绑定时机：本文写开局时绑定；remaining.md 写创建房间时固定 `seasonId + contentHash`。
 - 日后 P2P 的信任细节：主机分发模组，信任锚转移到主机；对等端如何校验 `contentHash` 与固定哈希。
 - 客户端战报的信任策略：抽样重算还是始终重算，以及是否把战报全部写入记录。
 - 聊天模组的治理钩子：服务端过滤、限流、静音与举报，由服务器主负责。

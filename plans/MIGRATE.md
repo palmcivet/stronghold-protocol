@@ -13,20 +13,21 @@
   - [共享逻辑](#共享逻辑)
   - [开发工具](#开发工具)
 - [按架构重做](#按架构重做)
+- [后端判定与数据来源](#后端判定与数据来源)
 - [不迁移](#不迁移)
 - [0.2.x 功能清单](#02x-功能清单)
 - [依赖其他域](#依赖其他域)
 - [测试迁移](#测试迁移)
 - [验收](#验收)
 
-本文是 `app/client` 从 master（0.2.1；参考副本放在 `app/compat/upstream/repo/`，不入库，由用户放入）迁移的指南。架构方向见 [ARCH.md](ARCH.md)，需求见 [FEATURE.md](FEATURE.md)，其他域的剩余工作见 [remaining.md](REMAIN.md)。
+本文是 `app/client` 从 master 0.2.1 迁移的指南。
 
 ## 范围与原则
 
 - 迁移对象是 master 的浏览器客户端：`public/js/`、`public/css/`、`public/i18n/`、`public/index.html`、`public/dev/`，以及客户端用到的 `shared/` 模块。
-- master 只作为行为参照，按 [ARCH.md](ARCH.md) 重写，不保留 Preact、htm 与全局 store 的结构。
-- 客户端只使用 `app/contract` 的形状。连接 upstream 后端时，数据与战斗经 `app/compat/upstream` 转换（[remaining.md](REMAIN.md) 第 2、3 节），其他目录不出现 master 格式。
-- 资源只经资源键（`AssetKey`）与 `resource/` 申请，不解析地址。`app/client/resource` 的叠加、缓存与兼容模式见 [资源从哪里来](../docs/alliance/data/03-resource.md#客户端加载)。
+- master 只作为行为参照，按 ARCH.md 重写，不保留 Preact、htm 与全局 store 的结构。
+- 客户端只使用 `app/contract` 的形状。连接 upstream 后端时，数据与战斗经 `app/compat/upstream` 转换，其他目录不出现 master 格式。
+- 资源只经资源键（`AssetKey`）与 `resource/` 申请，不解析地址。`app/client/resource` 的叠加、缓存与兼容模式见 「alliance/data 文档中的资源从哪里来（客户端加载）」。
 - 目录与文件用名词、kebab-case：`preparation` 不写成 `prepare` 或 `prep`，`panel` 不写成 `hud`，`observation` 不写成 `observe`。
 - 浏览器里的卫戍界面从 `shell/` 露出全局 API，供 `deployment` 的页面脚本和社区外壳调用：加入房间、提交意图、读取当前视图。外壳由社区实现。
 
@@ -54,7 +55,7 @@ app/client/
   test/           多文件参与的用例
 ```
 
-`store/`、`intent/`、`part/`、`theme/`、`primitive/`、`text/`、`mod/` 对应 ARCH 的[客户端数据流](ARCH.md#客户端数据流)、[表现层](ARCH.md#表现层)、[前端](ARCH.md#前端)、[多语言](ARCH.md#多语言)与[服务端下发界面](ARCH.md#服务端下发界面)。样式跟它所服务的屏幕或组件放在一起。
+`store/`、`intent/`、`part/`、`theme/`、`primitive/`、`text/`、`mod/` 按 ARCH.md 的客户端设计实现。样式跟它所服务的屏幕或组件放在一起。
 
 ## master 源码对照
 
@@ -80,7 +81,7 @@ app/client/
 
 | master | 去向 | 做法 |
 |---|---|---|
-| `public/js/net.js` | `connection/` | 连接、重连、请求 id、发送意图。握手时按 [remaining.md](REMAIN.md) 第 3 节判定后端类型，决定是否启用兼容层 |
+| `public/js/net.js` | `connection/` | 连接、重连、请求 id、发送意图。握手时判定后端类型，决定是否启用兼容层 |
 | `public/js/store.js` | `store/` | 拆成按领域的 `zustand` 仓库与选择器。它是界面状态，权威记录在服务端 |
 | `public/js/screens/game/early.js` | `playback/` | 中途进入战场时需要重放的事件 |
 
@@ -99,7 +100,7 @@ app/client/
 | 结算 | `screens/result.js`、`ui/gameLogic/result.js` |
 | 对局 | `screens/game.js` 中处于对局阶段的部分，`screens/game/overlays.js`（对局结束板、单人暂停板） |
 
-`screens/game.js` 按阶段兼管简报、策略、对局与结算。拆开后，对局屏幕只把休整、常驻界面、战场与播放装到同一页。每个屏幕由部件 id 组成，布局是数据（[表现层](ARCH.md#表现层)）。
+`screens/game.js` 按阶段兼管简报、策略、对局与结算。拆开后，对局屏幕只把休整、常驻界面、战场与播放装到同一页。每个屏幕由部件 id 组成，布局是数据。
 
 ### preparation
 
@@ -139,15 +140,14 @@ app/client/
 
 ### audio 与 resource
 
-- `audio/` 是 `public/js/audio.js` 的混音与界面音效，只接收资源句柄与音效线索。音效线索按清单 `refs`（`sfx`、`voice`、`bgm`）映射到 `audio:` 键，经 `assets-catalog` 的音频缓存加载（[缓存](../docs/assets-catalog/05-cache.md#音频)）；`public/js/media.js` 的 `/media/` 无扩展名地址策略不保留，音频与其他资源用同一路径格式。
-- `resource/` 接收了 `public/js/assets.js` 的资源生命周期：清单叠加与重试、图片缓存、预加载组、句柄释放与本地覆盖清单，见 [资源从哪里来](../docs/alliance/data/03-resource.md#客户端加载)。哪个屏幕何时预加载哪一组由界面迁移决定；清单的 `preloadGroup` 现在都为 `null`。
+- `audio/` 是 `public/js/audio.js` 的混音与界面音效，只接收资源句柄与音效线索。音效线索按清单 `refs`（`sfx`、`voice`、`bgm`）映射到 `audio:` 键，经 `assets-catalog` 的音频缓存加载（「assets-catalog 文档中的缓存（音频）」）；`public/js/media.js` 的 `/media/` 无扩展名地址策略不保留，音频与其他资源用同一路径格式。
+- `resource/` 接收了 `public/js/assets.js` 的资源生命周期：清单叠加与重试、图片缓存、预加载组、句柄释放与本地覆盖清单，见 「alliance/data 文档中的资源从哪里来（客户端加载）」。哪个屏幕何时预加载哪一组由界面迁移决定；清单的 `preloadGroup` 现在都为 `null`。
 - `public/js/data.js` 的数据懒加载改为按握手下发的 `seasonId` 与数据地址读取赛季包与文案（房间视图带赛季 id）；本地化的游戏数据由 `text/` 的 `data:` 键提供。
 
 ### text
 
-- `shared/i18n.js`、`shared/i18nPacks.js`、`shared/i18nData.js`、`shared/packs.js` 的客户端部分、`public/js/ui/lang.js`、`public/i18n/*.json`，按 [多语言](ARCH.md#多语言) 重做为命名空间键。
+- `shared/i18n.js`、`shared/i18nPacks.js`、`shared/i18nData.js`、`shared/packs.js` 的客户端部分、`public/js/ui/lang.js`、`public/i18n/*.json`，按 ARCH.md 的多语言设计重做为命名空间键。
 - `en.json` 按 msgid 映射到新键；`ja`、`ko`、`zh-TW` 为机器翻译，重新生成。
-- 服务器播报按玩家语言显示：连接 master 服务端时，用 msgid 对照表翻译 `{ text, msgid, params }`。
 
 ### 共享逻辑
 
@@ -156,42 +156,53 @@ app/client/
 | `shared/protocol.js`、`shared/constants.js` | 已在 `app/contract` |
 | `shared/highGround.js` | 已在 `app/contract`（`meleeOnHighGround`） |
 | `shared/standIn.js`、`shared/diy.js`、`shared/loadoutRecord.js`、`shared/bandBonds.js` | 两端共用的纯逻辑，放进 `app/contract`；服务端已有的实现一并收拢 |
-| `shared/media.js` | 不迁移：next 的资源路径格式统一，不保留 `/media/` 无扩展名音频路由；master 的 `/media/` 只在连接 master 时由兼容层使用，见 [地址](../docs/assets-catalog/03-address.md) |
+| `shared/media.js` | 不迁移：next 的资源路径格式统一，不保留 `/media/` 无扩展名音频路由；master 的 `/media/` 只在连接 master 时由兼容层使用，见 「assets-catalog 文档中的地址」 |
 
 ### 开发工具
 
 - `public/dev/game-mock.*`：带模拟服务端的对局界面夹具，改为 `app/client` 的开发页，同时作为组件测试的夹具来源。
-- `public/dev/recordings/*.json`：作为画面回放的帧流夹具（[可复现与可测试](ARCH.md#可复现与可测试)）。
+- `public/dev/recordings/*.json`：作为画面回放的帧流夹具。
 - `public/dev/uikit.html`：改为 `primitive/` 的组件展示页。
 - `public/dev/render-demo.*`：战场画面部分属于 renderer 的示例；休整拖放部分并入开发页。
 
 ## 按架构重做
 
-- 框架：React 19 与 TSX，无障碍组件用 React Aria；模组经 SDK 的 `htm` 编写（[前端](ARCH.md#前端)）。
-- 状态：`zustand` 仓库与选择器；30 Hz 的作战数据留在 React 之外。
-- 意图：所有 `g.*`、`room.*` 与扩展消息经意图总线发出，界面不直接调用连接。
-- 部件：每个界面组件按 id 注册，通过 `<Part id>` 渲染，带错误边界与安全模式（[表现层](ARCH.md#表现层)、[服务端下发界面](ARCH.md#服务端下发界面)）。
-- 样式：设计令牌编译为 CSS 自定义属性，`@layer reset, tokens, base, components, mods, overrides`，普通 CSS 或 CSS Modules。
-- 多语言：命名空间键与预编译 ICU（[多语言](ARCH.md#多语言)）。
-- 资源：资源键（`AssetKey`）与 `resource/`，见 [资源从哪里来](../docs/alliance/data/03-resource.md)。
-- 模组：`mod/` 实现客户端 `ModContext`、Service Worker 完整性校验、进入时确认与按服务端划分的存储。
-- 握手：`hello` 发送 `ext`，按 `welcome` 的 `ext` 决定模组集合与兼容模式（[清单与握手](ARCH.md#清单与握手)）。
+框架（React 19、React Aria）、状态（`zustand`）、意图总线、部件注册、样式与设计令牌、多语言、模组宿主与握手都按 ARCH.md 实现。迁移时额外守住：所有 `g.*`、`room.*` 与扩展消息经意图总线发出，界面不直接调用连接；`mod/` 实现客户端 `ModContext`、Service Worker 完整性校验、进入时确认与按服务端划分的存储。
+
+## 后端判定与数据来源
+
+`connection/` 在 `hello` 中发送 `ext`，按 `welcome` 是否带 `ext` 判定后端类型（`ext` 的字段见 ARCH.md）。判定依据是 `ext`，不是握手是否失败：master 对 `hello` 会正常回 `welcome`，只是忽略未知字段、不带 `ext`。
+
+- `welcome` 带 `ext`：next 后端。按 `ext` 下发的 `seasonId`、`contentHash` 与地址读取赛季包并校验，不自行选择赛季，不经兼容层。
+- `welcome` 不带 `ext`：兼容模式，视为 upstream 后端，数据与战斗经兼容层。
+
+兼容模式的数据来源由客户端配置选择，默认使用 (a)：
+
+- (a) 后端基址下的 `/data/<file>.json`，经兼容层读取。这是 upstream 后端的权威数据。资源由兼容层生成 upstream 清单，可选把 next 基础包放在其下作回退。
+- (b) 客户端配置的固定赛季包地址，指向 next 发布的 packet，不经兼容层；资源直接加载 next 的基础包与赛季包。规则数据可能与 upstream 后端不同，分歧用兼容层的一致性对拍记录。
+
+资源的图层顺序见「alliance/compat 文档中的连接 master 后端」。
+
+能力标记：
+
+- 不用 `PROTOCOL_VERSION` 区分能力：两边都是 1，无法识别 `room.diy` 之类的缺口。
+- next 后端的能力集由 `welcome.ext` 得出；兼容模式以 master 0.2.1 的能力集为准，例如自选编队可用。
+- 不支持的功能隐藏入口，不报错。
 
 ## 不迁移
 
-- `public/js/ui/compat.js` 的旧浏览器补丁：浏览器基线由 browserslist 处理（[前端](ARCH.md#前端)）。
-- `public/js/ui/assetUrls.js`：由 `assets-catalog` 的解析器取代（[解析](../docs/assets-catalog/04-resolver.md)）。
+- `public/js/ui/compat.js` 的旧浏览器补丁：浏览器基线由 browserslist 处理。
+- `public/js/ui/assetUrls.js`：由 `assets-catalog` 的解析器取代（「assets-catalog 文档中的解析」）。
 - `public/js/render/app/pixi.js` 与所有 Pixi 依赖。
 - `public/js/render/tiles.js` 等二维棋盘。
-- `public/js/render/boardArt.js`：棋盘图集由 `app/data` 的 `compile:derive` 派生为 `json:board/<theme>/tiles`（[编译](../docs/alliance/data/02-compiler.md#派生文件)）。
+- `public/js/render/boardArt.js`：棋盘图集由 `app/data` 的 `compile:derive` 派生为 `json:board/<theme>/tiles`（「alliance/data 文档中的编译（派生文件）」）。
 - master 的 `theme` / `fx` 材质表：master 只加载、不使用。
-- 备用模型与别名染色（master `ALIAS_TINT`）：是否保留见 [remaining.md](REMAIN.md) 第 10 节。
 
 ## 0.2.x 功能清单
 
 以下是 master 0.2.x 新增、迁移时要覆盖的界面能力：
 
-- 干员调配、干员持有、自选编队（0.2.0），依赖服务端的 `room.ownership`、`room.diy` 与 `backups.json`（[remaining.md](REMAIN.md) 第 1 节）。
+- 干员调配、干员持有、自选编队（0.2.0），依赖服务端的 `room.ownership`、`room.diy` 与 `backups.json`。
 - 补位替身的标记与模型。
 - 观众席位与观战界面，联防与首领双人场地指定观看对象（`g.watch.playerId`）。
 - 多语言：英文、日文、韩文、繁中，语言包与后备语言，各语言字体。
@@ -200,14 +211,8 @@ app/client/
 
 ## 依赖其他域
 
-- 服务端补位、自选编队与 `g.watch.playerId`：[remaining.md](REMAIN.md) 第 1 节。
-- 兼容层 `app/compat/upstream`：第 2 节。
-- 后端判定、赛季与数据地址、能力标记：第 3 节。
-- `welcome` 的 `seasonId`、`contentHash` 与 `ext`、对局事件契约：第 5 节与 [清单与握手](ARCH.md#清单与握手)。
-- 事件命名统一：第 6 节。
-- renderer 的单位、特效、Spine 画面，以及宿主接口（`calculateBoardTransform` 导出、指针事件流、快照到 renderer 输入的转换）：第 7 节；renderer 资源端口见 [资源端口](../docs/mission-renderer/05-port.md)。
-- 资源的静态发布：[REMAIN.md](REMAIN.md) 第 9 节「资源发布」；资源的其余遗留：第 8 节。
-- 静态站点与 vendor：第 9 节。
+- 服务端的补位、自选编队、`g.watch.playerId` 与握手 `ext`，兼容层，资源的静态发布与 vendor：REMAIN.md。
+- renderer 的替身、头顶条、特效种类，以及舞台接线：REMAIN-ECS.md。
 
 ## 测试迁移
 
@@ -218,8 +223,8 @@ app/client/
 - 资源生命周期：`test/render/assets.test.js` 中 `createAssets store` 的一组已改写为 `app/client/resource/store.test.ts`。
 - 表情：`test/ui/emotes.test.js`、`test/ui/emotes.e2e.test.js`。
 - 依赖全局 `PIXI` 的 `unloadSpineData`、`loadImageElement`、`loadSpineData`，以及 `test/assets.test.js` 中依赖 `@pixi/core`、`@pixi-spine/base` 的「每个 Spine 按客户端加载」用例，不迁移。
-- `test/render/board3d-extract.test.js` 引用的 `public/js/render/board3d/load.js` 与 `tools/vendor.mjs` 已不在仓库中；棋盘场景在 `mission-renderer/stage/ground/terrain`，vendor 在 `deployment/client/vendor`。
-- 测试方法按 [可复现与可测试](ARCH.md#可复现与可测试)：仓库与选择器用录制的帧流测试，组件用 Testing Library 按语义查询测试，播放用 `mission-core` 帧时钟与 renderer 本地喂数配合假时钟测试。
+- `test/render/board3d-extract.test.js` 引用的 `public/js/render/board3d/load.js` 与 `tools/vendor.mjs` 已不在仓库中；棋盘场景在 `mission-renderer/ground`，vendor 在 `deployment/client/vendor`。
+- 测试方法按 ARCH.md 的客户端测试约定。
 
 ## 验收
 
