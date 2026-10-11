@@ -1,4 +1,4 @@
-import { UnknownRegistrationError } from "#kernel/registry/error.js"
+import { RegistrationConflictError, UnknownRegistrationError } from "#kernel/registry/error.js"
 
 export interface Identified {
   readonly id: string
@@ -11,7 +11,7 @@ export interface Table<T extends Identified> {
   require(id: string): T
 }
 
-/** 记下注册先后的表。同 id 再注册换掉原来那项，并按这次注册重新计先后。 */
+/** 记下注册先后的表。同 id 再注册换掉原来那项并按这次注册重新计先后，建表时给了 unique 则报冲突。 */
 export interface OrderedTable<T extends Identified> extends Table<T> {
   /** 先按建表时给的 compare，再按注册先后。两次注册之间返回同一个数组。 */
   ordered(): readonly T[]
@@ -34,17 +34,22 @@ export function createTable<T extends Identified>(registry: string): Table<T> {
   }
 }
 
-/** compare 缺省时只按注册先后。 */
-export function createOrderedTable<T extends Identified>(
-  registry: string,
-  compare?: (left: T, right: T) => number,
-): OrderedTable<T> {
+export interface OrderedTableOptions<T> {
+  /** 先按它排，相同时按注册先后。缺省只按注册先后。 */
+  readonly compare?: (left: T, right: T) => number
+  /** 为真时同 id 再注册报 RegistrationConflictError。缺省换掉原来那项。 */
+  readonly unique?: boolean
+}
+
+export function createOrderedTable<T extends Identified>(registry: string, options: OrderedTableOptions<T> = {}): OrderedTable<T> {
+  const { compare, unique = false } = options
   let order = 0
   let version = 0
   let sorted: readonly T[] | null = null
   const entries = new Map<string, { item: T; order: number }>()
   return {
     register(item) {
+      if (unique && entries.has(item.id)) throw new RegistrationConflictError(registry, item.id)
       order += 1
       version += 1
       sorted = null

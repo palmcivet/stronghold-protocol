@@ -1,15 +1,16 @@
 import { PHASE_SLOTS } from "#contract/phase.js"
 import type { BattleEvent } from "#contract/event.js"
-import type { BattleResult } from "#contract/result.js"
+import type { BattleLedger, BattleResult } from "#contract/result.js"
 import type { BattleSnapshot } from "#contract/snapshot.js"
 import type { BattleSpec, UnitSpec } from "#contract/spec.js"
 import type { MissionModule, Registration } from "#port/module.js"
-import type { BattleRegistry } from "#port/definition.js"
+import type { BattleRegistry, SystemOrderEntry } from "#port/definition.js"
 import { CORE_TAGS } from "#port/tag.js"
 import { UnknownRegistrationError } from "#kernel/registry/error.js"
 import { drainEvents, emit } from "#kernel/event/index.js"
 import { counterTimer, elapsedTimer } from "#kernel/timer/index.js"
 import { createWorld } from "#kernel/world/index.js"
+import { exportWorld, importWorld, type WorldArchive } from "#kernel/world/archive.js"
 import { registerBuiltinShifts } from "#field/motion/index.js"
 
 import { RESULT, createContext } from "#battle/context.js"
@@ -23,6 +24,8 @@ import { armField, bindSkillSignals, registerSkillTimers } from "#ability/skill/
 import { registerBuiltinSkillTriggers } from "#ability/skill/trigger.js"
 import { addUnit, checkSpecTags, grantSpecTags, markDeployed, type BattleWorld, type UnitState } from "#unit/record/index.js"
 import { armListedTimers } from "#unit/record/timer.js"
+import { unitCodec } from "#unit/record/archive.js"
+import { bindLedger, readLedger } from "#ledger/index.js"
 import { registerDamageSteps } from "#combat/damage/index.js"
 import { registerBuiltinElements } from "#combat/element/index.js"
 import { registerAttackTimers } from "#combat/attack/index.js"
@@ -32,13 +35,21 @@ import { registerStatusTimer } from "#ability/effect/index.js"
 import { registerBuiltinSelectors } from "#combat/target/catalog.js"
 
 export interface Battle {
+  /** 推进一拍。推进中（系统或订阅者里）再调用会报错，保证每拍的顺序确定。 */
   step(): void
   snapshot(): BattleSnapshot
   drainEvents(): readonly BattleEvent[]
   result(): BattleResult
+  /** 按单位 owner 记的账。 */
+  ledger(): BattleLedger
+  /** 全部系统的执行顺序。 */
+  systemOrder(): readonly SystemOrderEntry[]
+  /** 世界的纯数据快照。用同样的规格与模块调用 createBattle(spec, modules, archive) 从这里继续。 */
+  export(): WorldArchive
 }
 
-export function createBattle(spec: BattleSpec, modules: readonly MissionModule[]): Battle {
+/** 建一场战斗。给了 archive 时先照常建好，再把世界换成 archive 的状态，待取走的事件清空。 */
+export function createBattle(spec: BattleSpec, modules: readonly MissionModule[], archive?: WorldArchive): Battle {
   const state = createState(spec)
   const registry = createRegistry()
   for (const key of CORE_TAGS) registry.registerTag(key)
@@ -57,12 +68,14 @@ export function createBattle(spec: BattleSpec, modules: readonly MissionModule[]
   registerBuiltinShifts(registry)
   registerEngineSystems(registry, state)
   installModules(spec, modules, ctx)
+  registry.systemOrder()
   validateUnits(spec, registry)
   for (const unit of spec.units) grantSpecTags(registry, requireSpecUnit(state, unit), unit)
   if (spec.deployStrategy !== null) registry.requireDeployStrategy(spec.deployStrategy)
   bindSkillSignals(state, registry, ctx)
   for (const unit of state.units.values()) armListedTimers(state, registry, unit)
   bindIndependentTimers(state, registry, ctx)
+  bindLedger(state, ctx)
   openBattle(state, registry, ctx)
   if (spec.deployStrategy === null) {
     for (const unit of state.units.values()) {
@@ -73,12 +86,21 @@ export function createBattle(spec: BattleSpec, modules: readonly MissionModule[]
   }
   armField(state, registry, ctx, true)
   const result = state.resources.access(RESULT)
+  const units = unitCodec(spec, registry)
+  if (archive) importWorld(state, archive, units)
+  let stepping = false
   return {
     step() {
-      for (const slot of PHASE_SLOTS) {
-        for (const system of registry.systemsIn(slot)) system.run(ctx)
+      if (stepping) throw new Error("step called while the battle is stepping")
+      stepping = true
+      try {
+        for (const slot of PHASE_SLOTS) {
+          for (const system of registry.systemsIn(slot)) system.run(ctx)
+        }
+        state.tick += 1
+      } finally {
+        stepping = false
       }
-      state.tick += 1
     },
     snapshot() {
       return readSnapshot(state, registry)
@@ -89,6 +111,15 @@ export function createBattle(spec: BattleSpec, modules: readonly MissionModule[]
     result() {
       const current = result.ensure()
       return { finished: current.finished, winner: current.winner }
+    },
+    ledger() {
+      return readLedger(state)
+    },
+    systemOrder() {
+      return registry.systemOrder()
+    },
+    export() {
+      return exportWorld(state, units)
     },
   }
 }

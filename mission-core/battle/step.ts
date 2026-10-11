@@ -20,19 +20,33 @@ export interface ScheduledCallback {
 }
 
 /** 内容排下的回调，按排入顺序。 */
-export const SCHEDULE = defineResource<ScheduledCallback[]>("battle:schedule", () => [])
+export const SCHEDULE = defineResource<ScheduledCallback[]>("battle:schedule", () => [], {
+  codec: {
+    encode(callbacks) {
+      if (callbacks.length > 0) throw new Error(`scheduled callbacks are functions and cannot be exported: ${callbacks.length}`)
+      return []
+    },
+    decode: () => [],
+  },
+})
 
 /** 已经出场的规格出场项下标。 */
-export const SPAWNED = defineResource<Set<number>>("battle:spawned", () => new Set())
+export const SPAWNED = defineResource<Set<number>>("battle:spawned", () => new Set(), {
+  codec: {
+    encode: (indices) => [...indices],
+    decode: (data) => new Set(data as readonly number[]),
+  },
+})
 
 export function registerEngineSystems(registry: BattleRegistry, state: BattleWorld): void {
-  const scheduled = state.resources.access(SCHEDULE).ensure()
-  const spawned = state.resources.access(SPAWNED).ensure()
+  const schedule = state.resources.access(SCHEDULE)
+  const spawns = state.resources.access(SPAWNED)
   registry.registerSystem({
     id: "engine:schedule",
     slot: "schedule",
     priority: 0,
     run(runCtx) {
+      const scheduled = schedule.ensure()
       const due: ScheduledCallback[] = []
       for (let index = scheduled.length - 1; index >= 0; index -= 1) {
         const callback = scheduled[index]
@@ -49,6 +63,7 @@ export function registerEngineSystems(registry: BattleRegistry, state: BattleWor
     slot: "spawn",
     priority: 0,
     run(runCtx) {
+      const spawned = spawns.ensure()
       state.spec.spawns.forEach((spawn, index) => {
         if (spawn.atTick !== state.tick || spawned.has(index)) return
         spawned.add(index)

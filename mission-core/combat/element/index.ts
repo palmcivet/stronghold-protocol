@@ -74,7 +74,7 @@ export function burstElement(
   gauges.credit = sourceId
   gauges.bursting = true
   try {
-    emit(state, "elementBurst", { sourceId, targetId: unitId, element: elementId })
+    emit(state, "element-burst", { sourceId, targetId: unitId, element: elementId })
     definition.onBurst?.(unitId, ctx, sourceId)
   } finally {
     gauges.bursting = false

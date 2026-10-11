@@ -32,6 +32,13 @@ const VIEW_ORDER: readonly string[] = ["neural", "erosion", "burn", "apoptosis",
 export const ELEMENT_GAUGES = defineComponent<ElementGauges>("element:gauges", {
   create: () => ({ slots: new Map(), bursting: false, credit: "" }),
   view: viewGauges,
+  codec: {
+    encode: (gauges) => ({ slots: [...gauges.slots.entries()], bursting: gauges.bursting, credit: gauges.credit }),
+    decode(data) {
+      const saved = data as { slots: readonly (readonly [string, ElementSlot])[]; bursting: boolean; credit: string }
+      return { slots: new Map(saved.slots), bursting: saved.bursting, credit: saved.credit }
+    },
+  },
 })
 
 export function gaugesOf(world: { readonly components: ComponentStore }, unitId: string): ElementGauges {

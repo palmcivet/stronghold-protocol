@@ -41,9 +41,13 @@ pnpm vitest run test/golden -u
 
 `test/trace.spec.ts` 检查 `// TRACE: <种类>/<名字>` 标记与注释、测试名、报错文案，规则与标记表见[追溯标记](../trace.md)。
 
-## 内核边界扫描
+## 边界扫描
 
-`test/boundary.spec.ts` 读取 `kernel/` 下的源码（测试文件除外），`import` 的目标只能是 `#kernel/` 或 `#contract/`，否则报出文件与目标。
+`test/boundary.spec.ts` 读取 `kernel/` 下的源码（测试文件除外），`import` 的目标只能是 `#kernel/` 或 `#contract/`，否则报出文件与目标。它还读取全部引擎源码的记号，名字或字符串按驼峰与连字符拆词后出现 `player…`、或以 `room` 开头时失败：核心只认单位的 `owner`，玩家与房间在 app/server。同一文件还在编译期检查事件表：事件名、cue 种类，以及事件数据里向下 4 层的字段名（数组看元素）都不能含 player 或以 room 开头，经声明合并加入同一程序的事件一并检查，有违规时 `tsc -p tsconfig.test.json` 报出字段名。
+
+## 导出与导入
+
+`test/battle/archive.spec.ts` 让每个黄金场景推进一半后 `export()`，经 JSON 往返（非有限数换成标记再换回）后 `createBattle(spec, modules, archive)` 继续推进，事件摘要、快照摘要、结果与账本都要与不中断推进一致。
 
 三个扫描共用 `test/source.ts` 列出包内源码；确定性扫描与追溯扫描另用它切分记号，跳过空白与注释。
 

@@ -1,5 +1,5 @@
 import { expect, test } from "vitest"
-import { blockModule, createBattle, type MissionModule, type TileSpec } from "arknights-mission-core"
+import { blockModule, createBattle, UNBLOCKABLE, type MissionModule, type TileSpec } from "arknights-mission-core"
 import { ally, spec } from "#test/fixture.js"
 
 function lane(): TileSpec[] {
@@ -154,4 +154,39 @@ test("没装阻挡模块时，规格里写好的阻挡关系保持不变", () =>
   expect(battle.snapshot().units.find((unit) => unit.id === "a")?.blocking).toEqual(["e"])
   expect(battle.snapshot().units.find((unit) => unit.id === "e")).toMatchObject({ blockedBy: "a", x: 0.3 })
   expect(battle.drainEvents().some((event) => event.type === "blocked" || event.type === "unblocked")).toBe(false)
+})
+
+test("被挡住的敌人得到不可阻挡标签后放开，继续沿路线走", () => {
+  const grant: MissionModule = {
+    id: "grant",
+    install(ctx) {
+      ctx.registerSystem({
+        id: "grant",
+        slot: "finale",
+        priority: 0,
+        run(runCtx) {
+          if (runCtx.tick() === 1) runCtx.grantTag("near", UNBLOCKABLE, "buff")
+        },
+      })
+    },
+  }
+  const battle = createBattle(
+    spec({
+      modules: ["block", "grant"],
+      tiles: lane(),
+      units: [
+        ally("a", { attributes: { hp: 100, blockCnt: 1 } }),
+        ally("near", { side: "enemy", x: 0.4, y: 0, attributes: { hp: 50, moveSpeed: 2, blockWeight: 1 }, route }),
+      ],
+    }),
+    [blockModule, grant],
+  )
+  battle.step()
+  battle.step()
+  expect(battle.snapshot().units.find((unit) => unit.id === "near")).toMatchObject({ blockedBy: "a", x: 0.4 })
+  for (let tick = 0; tick < 10; tick += 1) battle.step()
+  const near = battle.snapshot().units.find((unit) => unit.id === "near")
+  expect(near?.blockedBy).toBeNull()
+  expect(near?.x ?? 0).toBeGreaterThan(0.4)
+  expect(battle.snapshot().units.find((unit) => unit.id === "a")?.blocking).toEqual([])
 })

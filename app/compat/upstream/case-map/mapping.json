@@ -446,14 +446,17 @@
       ]
     },
     "sim/displace-fx.test.js::a displacement puts a `displace` fx into the event stream the client receives": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "displace 事件的 keepFacing、duration"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/motion/index.spec.ts::displace 带位移时长与是否保持朝向：推拉保持朝向，显式关掉或直接移动不保持"
+      ],
+      "reason": "核心发带 duration、keepFacing 的 displace 事件；线路上的 fx 形状由兼容层转换"
     },
     "sim/displace-fx.test.js::directional and radial pushes and hook pulls preserve facing; explicit overrides and raw moves do not": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "displace 事件的 keepFacing、duration"
+      "status": "covered",
+      "next": [
+        "mission-core/test/field/motion/index.spec.ts::displace 带位移时长与是否保持朝向：推拉保持朝向，显式关掉或直接移动不保持"
+      ]
     },
     "sim/docs-examples.test.js::SIM.md §10: 隐现 S2 fires 14 shots then ends": {
       "status": "moved",
@@ -1386,38 +1389,38 @@
     },
     "sim/feedback2-enemy-attack-stand.test.js::data: every enemy with a real attack clip carries it as attackAnim (the clip the client plays, its length and strike frame)": {
       "status": "pending",
-      "step": "ECS 4",
-      "reason": "攻击后摇站定的显示元数据"
+      "step": "ECS 6",
+      "reason": "攻击后摇站定改变敌人移动，站定行为与快照 stand/standCut 视图一起在步骤 6 做"
     },
     "sim/feedback2-enemy-attack-stand.test.js::隐形弩手 with an operator in range stands for its 1.0 s Attack clip at every attack (0.533 s wind-up + 0.467 s), then walks": {
       "status": "pending",
-      "step": "ECS 4",
-      "reason": "攻击后摇站定的显示元数据"
+      "step": "ECS 6",
+      "reason": "攻击后摇站定改变敌人移动，站定行为与快照 stand/standCut 视图一起在步骤 6 做"
     },
     "sim/feedback2-enemy-attack-stand.test.js::the stand shortens with the clip when the attacks come quicker than the clip: an enemy attacking every 1 s with a 2 s clip never walks while it has a target": {
       "status": "pending",
-      "step": "ECS 4",
-      "reason": "攻击后摇站定的显示元数据"
+      "step": "ECS 6",
+      "reason": "攻击后摇站定改变敌人移动，站定行为与快照 stand/standCut 视图一起在步骤 6 做"
     },
     "sim/feedback2-enemy-attack-stand.test.js::a 「不停止移动」 attacker (attackMoves) keeps walking through its attacks": {
       "status": "pending",
-      "step": "ECS 4",
-      "reason": "攻击后摇站定的显示元数据"
+      "step": "ECS 6",
+      "reason": "攻击后摇站定改变敌人移动，站定行为与快照 stand/standCut 视图一起在步骤 6 做"
     },
     "sim/feedback2-enemy-attack-stand.test.js::no attack clip known: ATTACK_PAUSE after the strike and no wind-up stand; a stun cuts a stand short": {
       "status": "pending",
-      "step": "ECS 4",
-      "reason": "攻击后摇站定的显示元数据"
+      "step": "ECS 6",
+      "reason": "攻击后摇站定改变敌人移动，站定行为与快照 stand/standCut 视图一起在步骤 6 做"
     },
     "sim/feedback2-enemy-attack-stand.test.js::a ranged enemy with a target in range on a WAIT checkpoint leaves when the wait (and its current clip) is over, as without a target": {
       "status": "pending",
-      "step": "ECS 4",
-      "reason": "攻击后摇站定的显示元数据"
+      "step": "ECS 6",
+      "reason": "攻击后摇站定改变敌人移动，站定行为与快照 stand/standCut 视图一起在步骤 6 做"
     },
     "sim/feedback2-enemy-attack-stand.test.js::DISAPPEAR / APPEAR legs proceed while an enemy stands for its attacks; leaving the field ends the stand": {
       "status": "pending",
-      "step": "ECS 4",
-      "reason": "攻击后摇站定的显示元数据"
+      "step": "ECS 6",
+      "reason": "攻击后摇站定改变敌人移动，站定行为与快照 stand/standCut 视图一起在步骤 6 做"
     },
     "sim/feedback2-forced-exit-down.test.js::史尔特尔 after 余烬 lies down on her tile (b.snap down, field meta) and redeploys there after 70 s — no kill": {
       "status": "moved",
@@ -1996,34 +1999,36 @@
       "reason": "干员、敌人、盟约或真实关卡的内容用例，随内容模块改写"
     },
     "sim/feedback5-counters-any-damage.test.js::the 巢涌者 never attacks — its pulse is the only damage it deals (the operators take it)": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "受击计数与事件"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "巢涌者的脉冲是敌人内容，随内容模块改写"
     },
     "sim/feedback5-counters-any-damage.test.js::菲莱 S2 冥河诅咒: the pulse sets off her blast (every 2 s at most) — until 0.2.0 it never did": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "受击计数与事件"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "菲莱 S2 是干员内容，随内容模块改写"
     },
     "sim/feedback5-counters-any-damage.test.js::星熊 S2 荆棘, 泡泡 “挨打” (+ 尖刺盾), 余 S1, 玛恩纳 无动于衷: each answers the pulse": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "受击计数与事件"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "星熊、泡泡、余、玛恩纳的反击是干员内容，随内容模块改写"
     },
     "sim/feedback5-counters-any-damage.test.js::刺玫 S2 荆藤庇荫: a pulse on her protégé is answered (the counter names the protégé for her trait heal)": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "受击计数与事件"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "刺玫 S2 是干员内容，随内容模块改写"
     },
     "sim/feedback5-counters-any-damage.test.js::自选 年 S2 铜印 and 斩业星熊 S1 恶业苦果 answer the pulse too": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "受击计数与事件"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "年 S2、斩业星熊 S1 是干员内容，随内容模块改写"
     },
     "sim/feedback5-counters-any-damage.test.js::never a 流失: an enemy's HP loss on 星熊 sets no 荆棘 off; another counter / reflection does not either": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "受击计数与事件"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/damage/index.spec.ts::流失不减防御和法抗，不发 damaged"
+      ],
+      "reason": "核心里流失只发 loss、不发 damaged，订阅 damaged 的反击不会被流失触发；具体干员随内容模块改写"
     },
     "sim/feedback5-enemy-swing.test.js::attackWindup: the clip's strike frame, shortened with the clip when the attacks come quicker than it; 0 with no clip": {
       "status": "pending",
@@ -2145,13 +2150,13 @@
     },
     "sim/feedback5-hpdamage-hook.test.js::hpDamage: after the shields, before the HP loss — a handler lowers what reaches the HP; a raise is ignored": {
       "status": "pending",
-      "step": "ECS 4",
-      "reason": "伤害管线在护盾之后、扣血之前的钩子"
+      "step": "ECS 5",
+      "reason": "修饰管线将规定钩子的约束，例如钩子只能调低伤害"
     },
     "sim/feedback5-hpdamage-hook.test.js::hpDamage: no call for a 流失 nor for a hit the shields take whole; without a handler nothing changes": {
       "status": "pending",
-      "step": "ECS 4",
-      "reason": "伤害管线在护盾之后、扣血之前的钩子"
+      "step": "ECS 5",
+      "reason": "修饰管线将规定钩子的约束，例如钩子只能调低伤害"
     },
     "sim/feedback5-kjerag-cold.test.js::谢拉格 wind alone: below 50 layers it never freezes (each 20 + 0.1·L s cold ends before the next gust)": {
       "status": "moved",
@@ -2478,34 +2483,45 @@
       "reason": "依赖 master 的真实数据与随机整场；next 的确定性由黄金回放与属性测试保证"
     },
     "sim/hud-capsule-resolved.test.js::官方例子: 开局 0/3 → 漏一个 1/3 → 打死一个 2/3 → 打死会分裂的 3/3 (分裂子体不进胶囊)": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "计入总数的敌人与 resolved 账本"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ledger/index.spec.ts::resolved 只数计入总数的敌人：漏一个、打死一个、打死会分裂的，分裂子体与不计数的出场项不动它"
+      ],
+      "reason": "核心账本按出场项的 inTotal 计数；用通用敌人代替官方例子里的真实敌人"
     },
     "sim/hud-capsule-resolved.test.js::磨砻 4 个全被击倒 → 胶囊 4/4；它们 8 个子体全漏 → leakedInTotal 仍 0、counted 口径的 LP 照扣 min(10, 8) = 8": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "计入总数的敌人与 resolved 账本"
+      "status": "moved",
+      "owner": "app/server",
+      "reason": "磨砻的 LP 扣减是对局层规则，随 app/server 迁移；leakedInTotal 的口径见 mission-core 账本用例"
     },
     "sim/hud-capsule-resolved.test.js::分裂子体被击倒: 胶囊数字不动，`killed` 仍按 counted 口径 +1 (master 的击杀语义不变)": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "计入总数的敌人与 resolved 账本"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ledger/index.spec.ts::resolved 只数计入总数的敌人：漏一个、打死一个、打死会分裂的，分裂子体与不计数的出场项不动它"
+      ],
+      "reason": "运行中 spawnUnit 放出的分裂子体不计入总数；master 的 killed 口径由 app/server 汇总"
     },
     "sim/hud-capsule-resolved.test.js::枯朽萃聚使徒: 召唤出的枯朽之种出生 / 被击倒 / 漏掉都不动胶囊，本体照旧结算 (悬赏口径不变)": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "计入总数的敌人与 resolved 账本"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ledger/index.spec.ts::resolved 只数计入总数的敌人：漏一个、打死一个、打死会分裂的，分裂子体与不计数的出场项不动它"
+      ],
+      "reason": "召唤出的单位不在出场项里，不计入总数；用通用敌人代替枯朽萃聚使徒"
     },
     "sim/hud-capsule-resolved.test.js::Boss 召唤物 (假想敌：管的余音) 出生 / 被击倒 / 漏掉都不动胶囊；Boss 死后 resolved === total": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "计入总数的敌人与 resolved 账本"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ledger/index.spec.ts::resolved 只数计入总数的敌人：漏一个、打死一个、打死会分裂的，分裂子体与不计数的出场项不动它"
+      ],
+      "reason": "inTotal: false 的出场项与运行中放出的单位不动 resolved；用通用敌人代替 Boss 与召唤物"
     },
     "sim/hud-capsule-resolved.test.js::kept honest: a helper enemy record the tests build is a scheduled enemy (inTotal) while spawnEnemy is not": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "计入总数的敌人与 resolved 账本"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ledger/index.spec.ts::resolved 只数计入总数的敌人：漏一个、打死一个、打死会分裂的，分裂子体与不计数的出场项不动它",
+        "mission-core/test/ledger/index.spec.ts::漏出记给漏出的单位，计入总数的敌人才算进 resolved"
+      ],
+      "reason": "出场项默认计入总数，运行中 spawnUnit 放出的不计入"
     },
     "sim/hud-readouts.test.js::隐现 S2: b.snap `ammo` carries the whole rounds left and the 14-round magazine of the data; the tuple keeps its SP fraction": {
       "status": "rewritten",
@@ -2667,13 +2683,13 @@
     },
     "sim/palsy-trigger.test.js::palsyTrigger: one event per interrupted attack, before the stack is used; no event without 麻痹": {
       "status": "pending",
-      "step": "ECS 4",
-      "reason": "麻痹打断的事件"
+      "step": "ECS 5",
+      "reason": "麻痹打断的事件随步骤 5 的效果系统定"
     },
     "sim/palsy-trigger.test.js::palsyTrigger: `keep` leaves the stack; a handler that kills the enemy ends its turn": {
       "status": "pending",
-      "step": "ECS 4",
-      "reason": "麻痹打断的事件"
+      "step": "ECS 5",
+      "reason": "麻痹打断的事件随步骤 5 的效果系统定"
     },
     "sim/pathing-blockable.test.js::equal-length lanes: the road (blockable) lane wins over the floor lane whichever side it is on": {
       "status": "pending",
@@ -3844,179 +3860,195 @@
       "reason": "干员、敌人、盟约或真实关卡的内容用例，随内容模块改写"
     },
     "sim/robustness.test.js::forceEnd from a hook mid-step: the step stops there and the result is never mutated afterwards": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "moved",
+      "owner": "app/server",
+      "reason": "钩子里 forceEnd 是 master 脚本接口，由 facade 处理；核心的 finish 只写结果"
     },
     "sim/robustness.test.js::forceEnd from battleStart / deploy hooks and from a scheduled callback never throws": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "moved",
+      "owner": "app/server",
+      "reason": "battleStart、deploy 钩子与延时回调里的 forceEnd 是 facade 的接口"
     },
     "sim/robustness.test.js::step() called re-entrantly from a hook is a no-op": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "not-migrated",
+      "reason": "推进中再调用 step 报错，保证每拍的顺序确定（master 静默忽略）；由 mission-core/test/battle/guard.spec.ts「推进中再调用 step 报错，这一拍照常走完」锁定"
     },
     "sim/robustness.test.js::a flood of engine errors force-ends the battle as a timeout (never throws out of step)": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "moved",
+      "owner": "app/server",
+      "reason": "核心不吞异常；内容脚本抛错时保护对局、按超时结束是 facade 与 app/server 的职责"
     },
     "sim/robustness.test.js::hook recursion is cut at MAX_HOOK_DEPTH deterministically (no stack overflow)": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/kernel/event/index.spec.ts::订阅者里发的事件排队，等当前事件分发完按先进先出分发"
+      ],
+      "reason": "订阅者里发的只读事件进先进先出队列，不再压栈，也就没有深度上限"
     },
     "sim/robustness.test.js::hit-count units keep the original DamageInfo: a self-excluding bonus-on-damaged handler never recurses": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "多段攻击与 damaged 加伤的内容脚本，随内容模块改写"
     },
     "sim/robustness.test.js::recursion through content callbacks (skill onEnd → activate → onEnd …) is cut by the same depth guard": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "技能 onEnd 与 activate 的回调是 master 内容脚本接口，由 facade 处理"
     },
     "sim/robustness.test.js::a leak hook that spawns an instantly-leaking enemy cannot loop inside one tick": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/battle/guard.spec.ts::泄漏时再放一个站在保护目标上的敌人，它下一拍才泄漏，同一拍里不循环"
+      ],
+      "reason": "leak 系统先取这一拍开始时的名单，订阅者放进的单位下一拍才处理"
     },
     "sim/robustness.test.js::runaway spawning is capped at MAX_ALIVE_ENEMIES living enemies (spawnEnemy returns null beyond)": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "moved",
+      "owner": "app/server",
+      "reason": "MAX_ALIVE_ENEMIES 的上限在 spawnEnemy（facade）上，核心不限制单位数"
     },
     "sim/robustness.test.js::re-entrant kills/retreats/redeploys inside buff ticks, expiry and death hooks keep state consistent": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "buff 计时与死亡钩子里的重入是 master 内容脚本接口，由 facade 处理"
     },
     "sim/robustness.test.js::spGain handlers that change the SP cost mid-gain never leave sp above the new cost (stale-cost re-entrancy)": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "spGain 钩子是 master 内容脚本接口，由 facade 处理"
     },
     "sim/robustness.test.js::hit handlers see their own changes: invulnerability or fragile granted in `hit` applies to that same hit": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "covered",
+      "next": [
+        "mission-core/test/combat/damage/gate.spec.ts::命中回调里才起飞的伤害照常结算，回调里变成无敌则取消"
+      ]
     },
     "sim/robustness.test.js::a skill onEnd that redeploys its unit during death is refused (no ghost unit outside the occupancy map)": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "技能 onEnd 里再部署是 master 内容脚本接口，由 facade 处理"
     },
     "sim/robustness.test.js::DP flags and time limits: undefined/NaN/0 never poison DP or make a normal round endless": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "moved",
+      "owner": "app/server",
+      "reason": "费用旗标与时限来自房间设置，由 app/server 校验"
     },
     "sim/robustness.test.js::unit input rows/cols given as strings deploy correctly (no \"10\"+-7 concatenation); junk tiles are skipped": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "moved",
+      "owner": "app/server",
+      "reason": "行列字符串是 master 线路与关卡输入，由 app/server 规范化；核心规格是带类型的数字"
     },
     "sim/robustness.test.js::kill handlers that write NaN / huge / negative hp: revive clamps to maxHp, otherwise the unit dies with hp 0": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/damage/index.spec.ts::hit 在减伤前可以改伤害，fatal 可以把生命留在 1"
+      ],
+      "reason": "fatal 的订阅者只能把 prevented 改成真，不能直接写生命；留下的生命由核心夹到 min(1, 最大生命)"
     },
     "sim/robustness.test.js::a nested kill inside kill handlers: a later handler writing hp cannot leave a dead unit with hp > 0": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "kill 钩子里的嵌套击杀是 master 内容脚本接口，由 facade 处理"
     },
     "sim/robustness.test.js::a heal hook that kills its target: the heal is dropped (no dead unit with hp > 0)": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "heal 钩子是 master 内容脚本接口；核心的 heal 是只读事件，在回复之后发出"
     },
     "sim/robustness.test.js::helpers validate their inputs: spawnDevice / relocate / spawnToken / spawnEnemy / projectiles / skills": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "spawnDevice、relocate、spawnToken、spawnEnemy 等辅助函数是 facade 的接口"
     },
     "sim/robustness.test.js::malformed kits (junk range grids, mods, talents, trait) never raise engine errors": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "畸形的干员数据由内容模块与 app/server 校验"
     },
     "sim/robustness.test.js::stat aggregation never produces non-finite stats (overflowing stacked multipliers fall back to base)": {
       "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "step": "ECS 5",
+      "reason": "按 master，非有限的属性退回基础值，属于步骤 5 的属性系统"
     },
     "sim/robustness.test.js::zero / junk attack intervals from data never yield NaN or 0-length cooldowns": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/battle/guard.spec.ts::攻速为 0 或非数、攻击间隔为 0 时，间隔按上下限与缺省值取有限值，照常出手"
+      ],
+      "reason": "攻速按上下限夹住，非数取 100，攻击间隔 bat 不大于 0 时取 1"
     },
     "sim/robustness.test.js::broken shared boss pool (NaN hp) never leaks NaN into the boss unit": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "moved",
+      "owner": "app/server",
+      "reason": "共享 Boss 血池在 app/server，随对局层迁移"
     },
     "sim/robustness.test.js::route legs outside the field rect are clamped: a flyer finishes its route instead of hovering at the border": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/battle/guard.spec.ts::路线点在场地之外时夹到场地边上，飞行敌人走完路线并泄漏，不悬停在边界"
+      ],
+      "reason": "路线点在 compileRoute 里夹到场地边上"
     },
     "sim/robustness.test.js::crates blocking every path: attackers break through, harmless walkers time out (battle always terminates)": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "箱子堵路的场景用真实关卡数据，随内容模块改写"
     },
     "sim/robustness.test.js::empty routes / no goal tile: enemies leak immediately instead of wandering; spawns on an occupied tile get blocked": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "not-migrated",
+      "reason": "没有路线的敌人是不合法的内容，不是正常玩法；核心让它原地不动、不算泄漏，由 mission-core/test/unit/leak/index.spec.ts「终点不是保护目标时只停住，不泄漏」与 field/grid「没有连通的地面路线时返回空」锁定"
     },
     "sim/robustness.test.js::an enemy that turns unblockable through a plain buff walks on": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/unit/block/index.spec.ts::被挡住的敌人得到不可阻挡标签后放开，继续沿路线走"
+      ],
+      "reason": "得到不可阻挡标签的敌人在下一次阻挡检查时放开"
     },
     "sim/robustness.test.js::a single-target projectile whose target dies mid-flight fizzles without errors": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "covered",
+      "next": [
+        "mission-core/test/combat/projectile/index.spec.ts::同一格上当拍命中；目标已经倒地则飞出去之前消掉",
+        "mission-core/test/combat/attack/shape.spec.ts::箭按种类速度飞到后才结算，目标中途离场则消掉"
+      ]
     },
     "sim/robustness.test.js::an enemy shot in flight at an operator that dies and is redeployed at once fizzles (new life, new target)": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/attack/shape.spec.ts::箭按种类速度飞到后才结算，目标中途离场则消掉"
+      ],
+      "reason": "目标离场时投射物即消掉，不等再部署"
     },
     "sim/robustness.test.js::hooks and periodic timers owned by removed enemies/tokens are released at step end; their own death/leak handlers still fire": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "被移除单位持有的钩子与周期计时是 facade 的接口"
     },
     "sim/robustness.test.js::client event buffer stays bounded when nobody drains": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "not-migrated",
+      "reason": "核心不丢事件，事件留到调用方取走，回放才完整；app/server 每拍取走。由 mission-core/test/battle/guard.spec.ts「没人取走时事件一直留着，取走时一条不少」锁定"
     },
     "sim/robustness.test.js::chaos fuzz: content abusing every helper from every hook never breaks invariants or the engine (real data)": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "用真实数据的混沌测试随内容模块与 facade 改写"
     },
     "sim/robustness.test.js::determinism: identical event streams regardless of battle order / interleaving (real data, with chaos content)": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/battle/guard.spec.ts::同一份规格建的几场交替推进，与各自单独推进一致",
+        "mission-core/test/golden/replay.spec.ts::golden replay > ${scenario.name} replays identically"
+      ],
+      "reason": "没有模块级可变状态：同一份规格建的几场交替推进与各自推进一致；黄金场景重放一致"
     },
     "sim/robustness.test.js::determinism: shared defs are frozen — a kit that mutates its blackboard / range cannot leak into later battles": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "干员数据冻结是内容数据的规则，随内容模块改写"
     },
     "sim/robustness.test.js::performance: heavy 2-player boss field (18 ops, ~130 enemies alive) averages < 0.5 ms/tick (best of 3)": {
-      "status": "pending",
-      "step": "ECS 4",
-      "reason": "钩子、事件与结束时机"
+      "status": "not-migrated",
+      "reason": "性能不设通过门槛，改为 mission-core 的 pnpm perf 基准（perf/golden.bench.ts）在每一步前后对比"
     },
     "sim/skills.test.js::deployment duration: synchronous start, one charge, countdown, carry and fresh redeployment": {
       "status": "pending",

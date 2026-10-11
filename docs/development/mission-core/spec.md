@@ -50,6 +50,8 @@ interface TileSpec {
 interface UnitSpec {
   id: string
   side: "ally" | "enemy"
+  owner?: string
+  kind?: "operator" | "enemy" | "token" | "device"
   attributes: Readonly<Record<string, number>>
   skills: readonly SkillSpec[]
   attackRange: readonly TileCoord[]
@@ -74,6 +76,8 @@ interface UnitSpec {
 ```
 
 `attributes` 是调用方已经算好的基础值。当前生命读 `hp`。引擎会读的键还有 `maxHp`、`atk`、`def`、`res`、`aspd`、`bat`、`batPct`、`spRecovery`、`moveSpeed`、`massLevel`、`redeployMul`、`rangeExtend`、`timerRate`、`times`、`ammoMax`、`atk_scale`、`taunt`，以及伤害和治疗乘区。再部署读 `cost` 和 `respawnTime`（秒），没写或不是非负有限数时按 0。阻挡读 `blockCnt` 和 `blockWeight`：没写 `blockCnt` 时按 1，没写 `blockWeight` 时按 1。战斗读取属性时再叠状态和正在生效的技能修饰，见 [战斗](./battle.md)。`cost` 和 `respawnTime` 按单位上存放的数字读，不走这层汇总。`taunt` 是选择器里的嘲讽键。
+
+`owner` 是记账的归属 id，对核心不透明，账本按它分行，缺省时只计入全场合计，见 [战斗](./battle.md#账本)。`kind` 缺省时友方是 `operator`、敌方是 `enemy`；`device` 是装置，倒下就被移除。
 
 `facing` 缺省 `RIGHT`。`motion` 缺省 `WALK`。`attackRange` 和技能的 `triggerRange` 都按面向 `RIGHT` 填写，`x` 是列偏移，`y` 是行偏移，使用时转到单位朝向。
 
@@ -133,7 +137,10 @@ interface SkillSpec {
 interface SpawnSpec {
   atTick: number
   unit: UnitSpec
+  inTotal?: boolean
 }
 ```
+
+敌方的出场项缺省计入账本的总数，`inTotal: false` 时不计入（召唤物、分裂子体一类）。
 
 到达该拍时单位放入、标成在场。友方有技能时开始技力和技能体计时，并送出 `spawn`。这次开始不加手动技能的 3 秒操作冷却。

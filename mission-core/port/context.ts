@@ -1,5 +1,5 @@
 import type { PhaseSlot } from "#contract/phase.js"
-import type { BattleEvent } from "#contract/event.js"
+import type { BattleEvent, EventData, InterceptEventType, NoticeEventType } from "#contract/event.js"
 import type { Direction, Motion, TileSpec, UnitSide, UnitSpec } from "#contract/spec.js"
 import type { Random } from "#kernel/random/index.js"
 import type { TimerView } from "#kernel/timer/index.js"
@@ -72,7 +72,10 @@ export interface ContentContext extends Registration {
   /** 不减防御和法抗，不发 damaged。hitLimit 打开且 ceil(数额) 达到首领限伤时不扣生命。 */
   loseHp(unitId: string, amount: number): void
   applyStatus(unitId: string, statusId: string, application?: StatusApplication): void
+  /** 放入一个单位并发 spawn。kind 为 device 时就是装置。部署策略不让它站在那一格时不放。 */
   spawnUnit(spec: UnitSpec): void
+  /** 单位离场且不再回来：放开阻挡，发 removed，从下一次快照起不再出现。记录留到战斗结束。 */
+  removeUnit(unitId: string): void
   displace(unitId: string, x: number, y: number): void
   /** 推、拉、恐惧或诱导。未知标识拒绝。移不动时返回 false。 */
   shift(actionId: string, unitId: string, input?: ShiftInput): boolean
@@ -84,7 +87,10 @@ export interface ContentContext extends Registration {
   /** 加上费用，结果不超过该阵营的上限。 */
   addCost(side: UnitSide, amount: number): void
   costOf(side: UnitSide): number
-  emit(type: string, data: Readonly<Record<string, unknown>>): void
+  /** 发只读事件。订阅者里发出时等当前事件分发完再分发。 */
+  emit<K extends NoticeEventType>(type: K, data: EventData<K>): void
+  /** 发可拦截的事件：订阅者立即同步改写 data，返回后读回。 */
+  intercept<K extends InterceptEventType>(type: K, data: EventData<K>): void
   readonly random: Random
   hitRect(unitId: string): HitShape
   unitsInRange(unitId: string, selectorId: string | readonly string[]): readonly string[]

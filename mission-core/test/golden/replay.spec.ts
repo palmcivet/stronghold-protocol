@@ -7,7 +7,7 @@ const EXERCISED: Readonly<Record<string, readonly string[]>> = {
   "attack-shape": ["hit", "damaged", "heal"],
   projectile: ["projectile", "damaged"],
   status: ["status", "damaged"],
-  element: ["elementHit", "elementBurst"],
+  element: ["element-hit", "element-burst"],
   motion: ["displace", "status"],
   block: ["blocked", "damaged"],
   skill: ["skill-start", "skill-end", "ammo-used"],

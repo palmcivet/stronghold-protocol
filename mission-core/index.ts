@@ -31,8 +31,35 @@ export type {
   UnitSpec,
 } from "#contract/spec.js"
 export { ATTACK_DAMAGE_KINDS, DIRECTIONS, MOTIONS, PROJECTILE_KINDS, SKILL_OPERATIONS, SP_TYPES, UNIT_KINDS, UNIT_SIDES } from "#contract/spec.js"
-export type { BattleEvent } from "#contract/event.js"
-export type { BattleResult } from "#contract/result.js"
+export type {
+  AmmoUsedEvent,
+  AttackEvent,
+  BattleEvent,
+  BattleEventMap,
+  BattleEventType,
+  BlockEvent,
+  CostEvent,
+  CueEvent,
+  CueMap,
+  DamagedEvent,
+  DisplaceEvent,
+  DownedEvent,
+  ElementBurstEvent,
+  ElementHitEvent,
+  EventData,
+  FatalEvent,
+  HealEvent,
+  HitEvent,
+  Intercept,
+  InterceptEventType,
+  LossEvent,
+  NoticeEventType,
+  ProjectileEvent,
+  SkillEvent,
+  StatusEvent,
+  UnitEvent,
+} from "#contract/event.js"
+export type { BattleLedger, BattleResult, LedgerRow } from "#contract/result.js"
 export type { BattleSnapshot, RedeploySnapshot, SkillSnapshot, UnitSnapshot } from "#contract/snapshot.js"
 
 export { TICK } from "#kernel/tick/index.js"
@@ -50,7 +77,7 @@ export {
 } from "#port/loadout.js"
 export type { LoadoutRequest, ResolvedRecordLoadout } from "#port/loadout.js"
 
-export { UnknownRegistrationError } from "#kernel/registry/error.js"
+export { RegistrationConflictError, UnknownRegistrationError } from "#kernel/registry/error.js"
 export { MODIFIER_OPS, type ModifierOp } from "#port/definition.js"
 export type {
   AttributeModifier,
@@ -75,6 +102,7 @@ export type {
   StatusApplication,
   StatusDefinition,
   StatusIncoming,
+  SystemOrderEntry,
   TimerDefinition,
 } from "#port/definition.js"
 export type { ContentContext, EventRevision, HealOptions, HitShape, UnitView } from "#port/context.js"

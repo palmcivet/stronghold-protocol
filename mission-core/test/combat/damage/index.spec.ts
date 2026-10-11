@@ -3,6 +3,12 @@ import { NO_HEAL } from "#port/tag.js"
 import { createBattle, type ContentContext, type MissionModule, type UnitSpec } from "arknights-mission-core"
 import { ally, spec } from "#test/fixture.js"
 
+declare module "arknights-mission-core" {
+  interface BattleEventMap {
+    preview: { readonly amount: number; readonly steps: string }
+  }
+}
+
 function steps(): MissionModule {
   return {
     id: "steps",
@@ -296,7 +302,7 @@ test("预览和正式结算在闪避概率为 0 时同一个数，预览不改�
   const previewEvents = battle.drainEvents().map((event) => event.type)
   expect(previewEvents).not.toContain("damaged")
   expect(previewEvents).not.toContain("hit")
-  expect(previewEvents).not.toContain("elementHit")
+  expect(previewEvents).not.toContain("element-hit")
   expect(previewEvents).not.toContain("fatal")
   battle.step()
   expect(hpOf(battle)).toBe(155)
@@ -351,7 +357,7 @@ test("预览不掷闪避，正式结算仍用本场随机数", () => {
   const previewEvents = withPreview.drainEvents().map((event) => event.type)
   expect(previewEvents).not.toContain("hit")
   expect(previewEvents).not.toContain("damaged")
-  expect(previewEvents).not.toContain("elementHit")
+  expect(previewEvents).not.toContain("element-hit")
   withPreview.step()
   const straight = createBattle(spec(seeded), [direct])
   straight.step()

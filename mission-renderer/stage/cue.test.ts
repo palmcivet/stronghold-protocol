@@ -5,8 +5,9 @@ import { audioCueFor, effectCueFor } from "./cue.js"
 
 const asset: AssetKey = "audio:sfx/battle/b_hit"
 
+/** 只带部分字段的事件：audioCueFor 与 effectCueFor 按字段是否存在读取。 */
 function event(type: string, data: Readonly<Record<string, unknown>> = {}): BattleEvent {
-  return { tick: 1, type, data }
+  return { tick: 1, type, data } as BattleEvent
 }
 
 function unitOf(id: string, kind: UnitSnapshot["kind"]): UnitSnapshot {
@@ -40,7 +41,7 @@ describe("audio cues", () => {
       eventType: "damaged",
       unitId: "guard",
     })
-    expect(audioCueFor(event("elementHit"))?.type).toBe("element")
+    expect(audioCueFor(event("element-hit"))?.type).toBe("element")
     expect(audioCueFor(event("status"))?.type).toBe("status")
     expect(audioCueFor(event("projectile"))?.type).toBe("projectile")
     expect(audioCueFor(event("leak"))?.type).toBe("leak")

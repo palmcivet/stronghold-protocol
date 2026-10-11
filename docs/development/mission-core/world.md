@@ -80,13 +80,15 @@ const tally: MissionModule = {
 ```ts
 import { defineResource } from "arknights-mission-core"
 
-const LEDGER = defineResource<{ kills: number }>("ledger:kills", () => ({ kills: 0 }))
+const TALLY = defineResource<{ kills: number }>("tally:kills", () => ({ kills: 0 }))
 
 // 在系统或订阅者里
-ctx.resource(LEDGER).ensure().kills += 1
+ctx.resource(TALLY).ensure().kills += 1
 ```
 
-`ctx.resource(key)` 返回 `get`、`ensure`、`set`、`delete`。内置的地图（`field:grid`）、投射物（`combat:projectiles`）、费用（`economy:cost`）、内容排下的回调（`battle:schedule`）、已出场的刷出项（`battle:spawned`）和结果（`battle:result`）都是资源。
+`ctx.resource(key)` 返回 `get`、`ensure`、`set`、`delete`。内置的地图（`field:grid`）、投射物（`combat:projectiles`）、费用（`economy:cost`）、内容排下的回调（`battle:schedule`）、已出场的刷出项（`battle:spawned`）、结果（`battle:result`）和账本（`ledger:book`）都是资源。
+
+`defineResource(id, create, options)` 的 `options.codec` 是 `encode` / `decode(data, spec)`，缺省时值本身就是纯数据；`options.transient` 为真的资源不导出也不导入，建战斗时重新放好（`core:engine` 指回本场的世界与注册表）。
 
 ## 标签
 
@@ -177,3 +179,19 @@ ctx.revokeTag(unitId, CHARMED, "mark:charm")
 沉睡蕴含 `cannot-act`、`no-block`、`unblockable`：不能行动、不阻挡、不被阻挡。其余由各处查 `sleep`：选择器的 `sleep` 一项与范围效果去掉沉睡的单位，治疗的名单不带 `sleep` 一项，照常选中沉睡的友方；伤害挡下打向沉睡目标的一击，忽略沉睡的伤害与带 `hit-sleep` 的攻击者照常命中。眩晕的状态另授 `no-block`，被眩晕的干员放开所挡的敌人。
 
 `CORE_TAGS` 列出全部核心标签。
+
+## 导出与导入
+
+`exportWorld` 把世界写成纯数据：拍数、随机流状态（`random.state()`，导入时 `random.restore`）、按入场顺序的单位记录、组件表和资源。组件与资源有 `codec` 时先 `encode`，再检查只剩普通对象、数组、字符串、布尔、`null` 与数字，否则报出路径；结果深拷贝，和世界不共享对象。`importWorld` 反过来写回，规格、注册、订阅与 transient 资源不变，待取走的事件清空。系统与订阅者每次运行时经 `ensure` 取资源，不留导入前的旧值。
+
+不是纯数据、带 `codec` 的组件与资源：
+
+| id | 值 | 编码 |
+| --- | --- | --- |
+| `effect:immunity` | `Set` | 数组 |
+| `element:gauges` | 各槽的 `Map` | 按槽的数组 |
+| `field:grid` | 网格对象 | 障碍位与网格版本号；导入时按规格重建再恢复 |
+| `battle:spawned` | `Set` | 数组 |
+| `battle:schedule` | 回调列表 | 还有没执行的回调时导出报错，空列表导出为空 |
+
+单位记录由 `unit/record/archive.ts` 编码：`Map` 写成数组，技能的钩子不导出，导入时按规格的技能重新挂上；运行中放入、规格里找不到的单位带钩子时报错。`grid:route` 本身是纯数据，路线里的网格版本号随 `field:grid` 一起恢复。

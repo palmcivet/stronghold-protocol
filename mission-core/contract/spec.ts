@@ -163,6 +163,8 @@ export interface AttackShape {
 export interface UnitSpec {
   readonly id: string
   readonly side: UnitSide
+  /** 记账的归属 id，对核心不透明。账本按它分行；缺省时只计入全场。 */
+  readonly owner?: string
   /** 缺省时，友方是 operator，敌方是 enemy。 */
   readonly kind?: UnitKind
   readonly attributes: UnitAttributes
@@ -204,6 +206,8 @@ export interface UnitSpec {
 export interface SpawnSpec {
   readonly atTick: number
   readonly unit: UnitSpec
+  /** 敌方出场项是否计入本场敌人总数（账本的 total 与 resolved）。缺省 true。 */
+  readonly inTotal?: boolean
 }
 
 /** 一个阵营的费用池。回复是每游戏秒，上限在加费和自然回复时夹住。 */

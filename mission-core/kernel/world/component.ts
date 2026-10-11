@@ -37,14 +37,25 @@ export interface ComponentStore {
   reset(entityId: string): void
   /** 这个实体上带 view 的组件的显示值，按组件第一次使用的顺序。 */
   views(entityId: string): Readonly<Record<string, unknown>>
+  /** 全部组件表，按组件第一次使用的顺序；有 codec 的值先 encode。 */
+  export(): ComponentTables
+  /** 清空现有的表，再按导出的数据重建；有 codec 的值先 decode。未定义的组件 id 报错。 */
+  import(tables: ComponentTables): void
 }
+
+/** 导出的组件表：组件 id 到按写入顺序的 [实体 id, 值]。 */
+export type ComponentTables = Readonly<Record<string, readonly (readonly [string, unknown])[]>>
 
 const KEY_PATTERN = /^[^:\s]+:[^:\s]+$/
 let nextSlot = 0
+/** 已定义的组件，按 id。导入时按 id 找回键。同一 id 再定义时记最后一次。 */
+const defined = new Map<string, ComponentKey<unknown>>()
 
 export function defineComponent<T>(id: string, options: ComponentOptions<T>): ComponentKey<T> {
   if (!KEY_PATTERN.test(id)) throw new Error(`component id must look like "module:name": ${id}`)
-  return Object.freeze({ id, options, slot: nextSlot++ })
+  const key: ComponentKey<T> = Object.freeze({ id, options, slot: nextSlot++ })
+  defined.set(id, key as ComponentKey<unknown>)
+  return key
 }
 
 interface Table {
@@ -74,7 +85,7 @@ export function createComponentStore(): ComponentStore {
     entries: () => [...values.entries()],
   })
 
-  return {
+  const store: ComponentStore = {
     access<T>(key: ComponentKey<T>): ComponentAccess<T> {
       const known = bySlot[key.slot]
       if (known) return known.access as ComponentAccess<T>
@@ -108,5 +119,26 @@ export function createComponentStore(): ComponentStore {
       }
       return shown
     },
+    export() {
+      const out: Record<string, (readonly [string, unknown])[]> = {}
+      for (const table of tables.values()) {
+        const codec = table.key.options.codec
+        const rows: (readonly [string, unknown])[] = []
+        for (const [entityId, value] of table.values) rows.push([entityId, codec ? codec.encode(value) : value])
+        out[table.key.id] = rows
+      }
+      return out
+    },
+    import(data) {
+      for (const table of tables.values()) table.values.clear()
+      for (const [id, rows] of Object.entries(data)) {
+        const key = tables.get(id)?.key ?? defined.get(id)
+        if (!key) throw new Error(`component is not defined: ${id}`)
+        const access = store.access(key)
+        const codec = key.options.codec
+        for (const [entityId, value] of rows) access.set(entityId, codec ? codec.decode(value) : value)
+      }
+    },
   }
+  return store
 }

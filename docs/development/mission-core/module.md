@@ -54,7 +54,7 @@ const module: MissionModule = {
 
 规格点了没有传入的模块，或依赖不在规格名单里，`registry` 是 `module`。
 
-`subscribe(type, handler)` 返回取消订阅的函数。处理函数收到事件和 `ContentContext`，在事件送出时立刻调用，缓冲里仍保留这条事件，直到 `drainEvents`。
+`subscribe(type, handler)` 返回取消订阅的函数。处理函数收到事件和 `ContentContext`，缓冲里仍保留这条事件，直到 `drainEvents`。可拦截的事件（`BattleEventMap` 里写成 `Intercept<数据>`）在 `ctx.intercept` 时同步分发，处理函数拿到可写的 `data`；只读事件用 `ctx.emit` 发出，处理函数里再发的只读事件排队，等当前这条分发完按先进先出分发。见 [战斗](./battle.md#事件)。
 
 `registerDamageStep` 的 `priority` 小的先执行。换掉同名步骤后按新的优先级重排。内置步骤见 [伤害](./damage.md)。
 
@@ -63,9 +63,15 @@ interface PhaseSystem {
   id: string
   slot: PhaseSlot
   priority: number
+  /** 同槽里要排在它后面的系统 id。 */
+  before?: readonly string[]
+  /** 同槽里要排在它前面的系统 id。 */
+  after?: readonly string[]
   run(ctx: ContentContext): void
 }
 ```
+
+系统 id 在一场战斗里唯一，重复登记时创建失败。顺序规则与 `systemOrder()` 见 [战斗](./battle.md#阶段槽)。
 
 计时器登记后，要用 `startTimer(unitId, timerId)` 才开始推进。规格 `timers` 里列出的 id，引擎自己启动。定义上的 `sides` 不包含这个单位的阵营时，`startTimer` 不启动，视图保持未开始。`advanceTimer` 推进一份，还没开始会失败。`timerView` 没开始时是 `{ started: false }`。攻击视图有 `phase`、`elapsed`。技力视图有 `phase`、`elapsed`、`sp`、`charges`、`active`、`activations`。`charge` 有 `stored`、`elapsed`。`ammo` 有 `ammo`、`elapsed`。`boomerang` 有 `out`、`elapsed`。出手要读的 `readAttackTiming` 见 [计时](./timer.md)。
 
@@ -100,7 +106,7 @@ interface DeployStrategyDefinition {
 
 `dealDamage`、`previewDamage`、`loseHp`、`heal`、`addElement` 见 [伤害](./damage.md)。`applyStatus` 见 [状态](./status.md)。`unitsInRange`、`select`、`hitRect` 见 [选择器](./selector.md)。`shouldCast`、`castSkill`、`gainSp` 见 [技能](./skill.md)。
 
-`spawnUnit(spec)` 放入单位并标成在场，授予规格标签，送出 `spawn`。它不装技能计时。规格里有未注册的标签时抛出 `UnknownRegistrationError`。规格写了部署策略时，`canStand` 为假就不放入。`displace(unitId, x, y)` 改坐标，清掉这条路线已经算好的路径，送出 `displace`。同样，有部署策略且 `canStand` 为假时坐标不动。`shift` 见 [费用、阻挡与投射物](./field.md)。`setObstacle(x, y, on, kind?)` 在格子上摆障碍，`kind` 缺省 `block`，也可以是 `crate`。
+`spawnUnit(spec)` 放入单位并标成在场，授予规格标签，送出 `spawn`。`kind: "device"` 时放入的是装置，倒下就是被摧毁并被移除。`removeUnit(unitId)` 让单位离场且不再回来，送出 `removed`，下一次快照起不再出现。它不装技能计时。规格里有未注册的标签时抛出 `UnknownRegistrationError`。规格写了部署策略时，`canStand` 为假就不放入。`displace(unitId, x, y)` 改坐标，清掉这条路线已经算好的路径，送出 `displace`。同样，有部署策略且 `canStand` 为假时坐标不动。`shift` 见 [费用、阻挡与投射物](./field.md)。`setObstacle(x, y, on, kind?)` 在格子上摆障碍，`kind` 缺省 `block`，也可以是 `crate`。
 
 `launchProjectile` 从来源单位的坐标发出一发，送出 `projectile`。可选 `speed` 是格/秒，缺省 `PROJECTILE_SPEED`（12）。`projectiles()` 读出仍在飞的那些，带当前 `x`、`y`。投射物槽里朝目标飞；目标已离场则消掉，不结算。`retain` 为真时落到最后坐标再结算。没有 `attack` 时到达后按 `amount` 造成 `physical` 伤害。超过 `PROJECTILE_MAX_AGE`（10 秒）仍未飞到，就落在目标当前位置并结算。普攻只在 `attackShape.projectile` 上写了种类时改走投射物。
 

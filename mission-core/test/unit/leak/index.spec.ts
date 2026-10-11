@@ -22,7 +22,7 @@ function watch(seen: string[][]): MissionModule {
   }
 }
 
-test("敌人走到保护目标上就离场并发泄漏，不判胜负", () => {
+test("敌人走到保护目标上就发泄漏并移除，不判胜负", () => {
   const seen: string[][] = []
   const battle = createBattle(
     spec({
@@ -41,9 +41,11 @@ test("敌人走到保护目标上就离场并发泄漏，不判胜负", () => {
   )
   battle.step()
   expect(seen).toEqual([[]])
-  expect(battle.snapshot().units.find((unit) => unit.id === "runner")).toMatchObject({ x: 1, y: 0 })
-  expect(battle.drainEvents().filter((event) => event.type === "leak").map((event) => event.data)).toEqual([
-    { unitId: "runner" },
+  expect(battle.snapshot().units.map((unit) => unit.id)).toEqual(["guard"])
+  const leaving = battle.drainEvents().filter((event) => event.type === "leak" || event.type === "removed")
+  expect(leaving.map((event) => [event.type, event.data])).toEqual([
+    ["leak", { unitId: "runner" }],
+    ["removed", { unitId: "runner" }],
   ])
   expect(battle.result()).toEqual({ finished: false, winner: null })
   battle.step()

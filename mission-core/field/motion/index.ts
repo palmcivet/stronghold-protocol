@@ -69,7 +69,7 @@ export function applyShift(
   if (!plan) return false
   const unit = requireUnit(state, unitId)
   if (definition.instant) {
-    writeLanding(state, registry, ctx, unit, plan.x, plan.y)
+    writeLanding(state, registry, ctx, unit, plan.x, plan.y, input.keepFacing !== false)
     state.components.access(SHIFT).delete(unitId)
     return true
   }
@@ -227,13 +227,21 @@ function movable(state: BattleWorld, unitId: string): UnitState | null {
   return unit
 }
 
-function writeLanding(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext, unit: UnitState, x: number, y: number): void {
+function writeLanding(
+  state: BattleWorld,
+  registry: BattleRegistry,
+  ctx: ContentContext,
+  unit: UnitState,
+  x: number,
+  y: number,
+  keepFacing: boolean,
+): void {
   if (hypot(unit.x - x, unit.y - y) <= 1e-8) return
   unit.x = x
   unit.y = y
   replanRoute(state, unit.id)
   releaseBlock(state, unit, { registry, ctx })
-  emit(state, "displace", { unitId: unit.id, x, y })
+  emit(state, "displace", { unitId: unit.id, x, y, duration: 0, keepFacing })
 }
 
 function forceLevel(unit: UnitState, registry: BattleRegistry, force: number): { level: number } {

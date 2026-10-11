@@ -12,3 +12,16 @@ export class UnknownRegistrationError extends Error {
     this.owner = owner
   }
 }
+
+/** 同一张表里同一个 id 注册了两次，而这张表不允许替换。 */
+export class RegistrationConflictError extends Error {
+  readonly registry: string
+  readonly id: string
+
+  constructor(registry: string, id: string) {
+    super(`${registry} 重复注册: ${id}`)
+    this.name = "RegistrationConflictError"
+    this.registry = registry
+    this.id = id
+  }
+}
