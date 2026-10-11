@@ -53,7 +53,7 @@ test("溅射打中半径内的人，圈外不动", () => {
         ally("a", {
           attributes: { hp: 100, atk: 40, def: 0 },
           attackShape: { damage: "arts", splash: { radius: 1.1 } },
-          tags: ["canHitFly"],
+          tags: ["can-hit-fly"],
         }),
         ally("e", { side: "enemy", x: 1, y: 0, attributes: { hp: 200, maxHp: 200, def: 0, res: 0 } }),
         ally("near", { side: "enemy", x: 1, y: 1, attributes: { hp: 200, maxHp: 200, def: 0, res: 0 } }),
@@ -135,7 +135,7 @@ test("只打地面时跳过飞行单位", () => {
       units: [
         ally("a", {
           attributes: { hp: 100, atk: 30, def: 0 },
-          tags: ["canHitFly"],
+          tags: ["can-hit-fly"],
           attackShape: { splash: { radius: 1.1, groundOnly: true } },
         }),
         ally("e", { side: "enemy", x: 1, y: 0, attributes: { hp: 100, def: 0 } }),
@@ -391,10 +391,10 @@ test("回旋飞出后结算，飞回不造成伤害，离场则丢失", () => {
   )
   for (let step = 0; step < 4; step += 1) battle.step()
   expect(hpOf(battle, "e")).toBe(175)
-  expect(battle.snapshot().units.find((unit) => unit.id === "a")?.boomerangsOut).toBe(1)
+  expect(battle.snapshot().units.find((unit) => unit.id === "a")?.components["attack:boomerang"]).toEqual({ out: 1 })
   for (let step = 0; step < 16; step += 1) battle.step()
   expect(hpOf(battle, "e")).toBe(175)
-  expect(battle.snapshot().units.find((unit) => unit.id === "a")?.boomerangsOut).toBe(0)
+  expect(battle.snapshot().units.find((unit) => unit.id === "a")?.components["attack:boomerang"]).toEqual({ out: 0 })
   expect(battle.snapshot().units.find((unit) => unit.id === "a")?.attributes.boomerangsOut).toBe(0)
   expect(shots.some((id) => id.endsWith(":return"))).toBe(true)
 
@@ -431,6 +431,6 @@ test("回旋飞出后结算，飞回不造成伤害，离场则丢失", () => {
   )
   for (let step = 0; step < 8; step += 1) gone.step()
   expect(hpOf(gone, "e")).toBe(175)
-  expect(gone.snapshot().units.find((unit) => unit.id === "a")?.boomerangsOut).toBe(0)
+  expect(gone.snapshot().units.find((unit) => unit.id === "a")?.components["attack:boomerang"]).toEqual({ out: 0 })
   expect(lost.some((id) => id.endsWith(":return"))).toBe(false)
 })

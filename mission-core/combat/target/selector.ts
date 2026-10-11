@@ -6,6 +6,7 @@ import type { ContentContext } from "#port/context.js"
 import type { BattleRegistry, SelectorDefinition, SelectorQuery } from "#port/definition.js"
 import { requireUnit, type BattleWorld, type UnitState } from "#unit/record/index.js"
 import { attributeOf } from "#ability/effect/attribute.js"
+import { BLOCK, blockingOf } from "#unit/block/hold.js"
 
 /** 按给出的顺序叠筛选和排序。单个字符串和一条只含它的名单相同。 */
 export function selectUnits(
@@ -78,9 +79,10 @@ export function unitsInRange(
     if (unit.id === origin.id) continue
     if (bodyInKeys(unit, keys, grid.rect)) add(unit.id)
   }
-  for (const id of origin.blocking) add(id)
+  for (const id of blockingOf(state, origin.id)) add(id)
+  const blocks = state.components.access(BLOCK)
   for (const unit of state.units.values()) {
-    if (unit.blockedBy === origin.id) add(unit.id)
+    if (blocks.get(unit.id)?.blockedBy === origin.id) add(unit.id)
   }
   return selectUnits(registry, ctx, selectorId, inside, { origin: unitId })
 }

@@ -5,6 +5,7 @@ import { requireUnit, type BattleWorld } from "#unit/record/index.js"
 import { attributeOf } from "#ability/effect/attribute.js"
 import { TICK } from "#kernel/tick/index.js"
 import type { StatusInstance, UnitState } from "#unit/record/index.js"
+import { immunityOf } from "#ability/effect/immunity.js"
 import {
   COLD_ASPD,
   COLD_FREEZE_DURATION,
@@ -58,10 +59,10 @@ export function refuseStatus(unit: UnitState, statusId: string): boolean {
 }
 
 /** 单位的免疫名单或身上状态的 immunity 挡住这个状态。 */
-export function immuneTo(registry: BattleRegistry, unit: UnitState, statusId: string): boolean {
+export function immuneTo(state: BattleWorld, registry: BattleRegistry, unit: UnitState, statusId: string): boolean {
   const incoming = registry.requireStatus(statusId)
   const key = incoming.immune
-  if (key && unit.immunity.has(key)) return true
+  if (key && immunityOf(state, unit.id).has(key)) return true
   for (const status of unit.statuses) {
     if (status.dropped) continue
     const definition = registry.requireStatus(status.id)
@@ -246,7 +247,7 @@ function definitions(state: BattleWorld, registry: BattleRegistry): readonly Sta
 function freezeFromCold(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext, unitId: string): void {
   const unit = requireUnit(state, unitId)
   const cold = unit.statuses.find((item) => item.id === "cold")
-  if (!cold?.carried || immuneTo(registry, unit, "freeze")) return
+  if (!cold?.carried || immuneTo(state, registry, unit, "freeze")) return
   const incoming = cold.permanent ? Number.POSITIVE_INFINITY : cold.remaining
   const spans = [cold.priorRemaining, incoming].filter(
     (time) => time === Number.POSITIVE_INFINITY || (Number.isFinite(time) && time > 0),

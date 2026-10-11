@@ -13,16 +13,16 @@ import { launchProjectile as storeProjectile, projectileViews } from "#combat/pr
 import { SCHEDULE } from "#battle/step.js"
 import {
   ENGINE,
-  grantedTagIds,
   placeUnit,
   requireUnit,
-  specTagIds,
   type BattleWorld,
 } from "#unit/record/index.js"
 import { emit as publish, subscribe } from "#kernel/event/index.js"
 import { defineResource } from "#kernel/world/resource.js"
 import { grantTag, hasTag, revokeTag, tagSources } from "#kernel/world/tag.js"
 import { gridOf } from "#field/grid/index.js"
+import { replanRoute, routeHidden } from "#field/grid/route.js"
+import { setTargetPriority } from "#combat/target/priority.js"
 import { activateSkill, configureSkill as writeSkill, gainSkillSp, readySkill as fillSkill } from "#ability/skill/point.js"
 import { shouldCast as askTrigger } from "#ability/skill/trigger.js"
 import { bodyRect, normHitArea } from "#field/body/index.js"
@@ -102,7 +102,7 @@ export function createContext(state: BattleWorld, registry: BattleRegistry): Con
       const unit = requireUnit(state, unitId)
       unit.x = x
       unit.y = y
-      if (unit.route) unit.route.pts = null
+      replanRoute(state, unitId)
       publish(state, "displace", { unitId, x, y })
     },
     shift(actionId, unitId, input) {
@@ -209,10 +209,8 @@ export function createContext(state: BattleWorld, registry: BattleRegistry): Con
       writeSkill(state, unitId, skillId, spec)
     },
     setAim(unitId, priority) {
-      const unit = state.units.get(unitId)
-      if (!unit) return
-      const aim = unit as { targetPriority: string }
-      aim.targetPriority = priority
+      if (!state.units.has(unitId)) return
+      setTargetPriority(state, unitId, priority)
     },
     gainSp(unitId, skillId, amount) {
       return gainSkillSp(state, unitId, skillId, amount, "grant")
@@ -234,13 +232,11 @@ export function createContext(state: BattleWorld, registry: BattleRegistry): Con
         y: unit.y,
         hp,
         maxHp: maxHpOf(unit, registry),
-        alive: unit.fielded && !unit.downed && hp > 0 && !unit.routeHidden,
+        alive: unit.fielded && !unit.downed && hp > 0 && !routeHidden(state, unitId),
         fielded: unit.fielded,
         downed: unit.downed,
-        tags: specTagIds(unit),
         facing: unit.facing,
         motion: unit.motion,
-        flags: grantedTagIds(unit),
       }
     },
     units(side) {

@@ -41,6 +41,7 @@ export type HitShape =
   | { readonly kind: "rect"; readonly x: number; readonly y: number; readonly w: number; readonly h: number }
 
 /** 单位在内容脚本里能读到的样子。 */
+/** 单位的只读视图。标签不在视图里，用 `hasTag` 按键查，需要分来源时用 `tagSources`。 */
 export interface UnitView {
   readonly id: string
   readonly side: UnitSide
@@ -52,12 +53,8 @@ export interface UnitView {
   readonly alive: boolean
   readonly fielded: boolean
   readonly downed: boolean
-  /** 规格写的标签 id。 */
-  readonly tags: readonly string[]
   readonly facing: Direction
   readonly motion: Motion
-  /** 状态、技能和模块授予的标签 id。 */
-  readonly flags: readonly string[]
 }
 
 /** 订阅者改一笔正在结算的事件。伤害管线在发出之后读这些字段。 */

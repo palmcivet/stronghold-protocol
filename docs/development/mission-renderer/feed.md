@@ -47,7 +47,7 @@ stage.update(deltaSeconds)
 - 只在 `b` 中出现的单位，原样返回。
 - 只在 `a` 中出现的单位，在 `alpha < 1` 时仍保留，用 `a` 的状态。这让刚离场的单位不会在一帧内消失。
 
-返回值中的 `snapshot` 是 `b`，标记（`flags`）和属性（`attributes`）都取自它。
+返回值中的 `snapshot` 是 `b`，标签（`tags`）和属性（`attributes`）都取自它。
 
 舞台只把 `sample().units` 写入 `view.units`。舞台不读取 `moving` 集合。
 

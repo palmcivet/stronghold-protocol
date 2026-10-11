@@ -9,6 +9,7 @@ import { refreshTags } from "#ability/effect/tag.js"
 import { hasTag } from "#kernel/world/tag.js"
 import { CANNOT_ACT, CANNOT_CAST, NO_ATTACK, NO_SP } from "#port/tag.js"
 import { startTimer } from "#unit/record/timer.js"
+import { routeHidden } from "#field/grid/route.js"
 import { timerNumber, timerText } from "#kernel/timer/index.js"
 import { reached, TICK } from "#kernel/tick/index.js"
 import { AUTO_OP_COOLDOWN, isInstantBody, isTickRule, isTimedBody } from "#ability/skill/constants.js"
@@ -130,7 +131,7 @@ export function advanceSkillPoint(
 ): void {
   const unit = requireUnit(state, unitId)
   const time = state.tick * TICK
-  for (const skill of unit.skills) recoverTime(registry, unit, skill)
+  for (const skill of unit.skills) recoverTime(state, registry, unit, skill)
   if (canAct(unit)) {
     for (const skill of unit.skills) {
       if (skill.pending && skill.triggerAllies && skill.trigger !== "SKILL_RANGE" && !allyTriggerMet(state, registry, unitId, skill.id)) {
@@ -282,10 +283,10 @@ function consider(
   activateSkill(state, registry, ctx, unit.id, skill.id, "DEFAULT")
 }
 
-function recoverTime(registry: BattleRegistry, unit: UnitState, skill: SkillInstance): void {
+function recoverTime(state: BattleWorld, registry: BattleRegistry, unit: UnitState, skill: SkillInstance): void {
   if (skill.spType !== "time" || skill.body === "passive") return
   if (skill.active && isTimedBody(skill.body)) return
-  if (hasTag(unit, NO_SP) || unit.routeHidden || !unit.fielded || unit.downed) return
+  if (hasTag(unit, NO_SP) || routeHidden(state, unit.id) || !unit.fielded || unit.downed) return
   if ((unit.attributes.hp ?? 0) <= 0) return
   const rate = attributeOf(unit, registry, "spRecovery")
   if (rate > 0) gain(unit, skill, rate * TICK, "time")

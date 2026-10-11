@@ -15,6 +15,9 @@ import {
   registerIndependentTimers,
 } from "#combat/attack/timing.js"
 import { countdown, reached, READY_EPSILON, TICK } from "#kernel/tick/index.js"
+import { attackProfileOf } from "#combat/attack/profile.js"
+import { routeHidden } from "#field/grid/route.js"
+import { blockerOf } from "#unit/block/hold.js"
 
 /** 攻速下限。 */
 export const ASPD_MIN = 20
@@ -56,8 +59,8 @@ export function advanceAttack(
   timer: TimerState,
 ): void {
   const unit = requireUnit(state, unitId)
-  const timing = attackTiming(unit, registry)
-  const stunned = clockStopped(unit)
+  const timing = attackTiming(state, unit, registry)
+  const stunned = clockStopped(state, unit)
   const held = attackHeld(state, registry, unit)
   if (text(timer, "phase") === "windup") {
     advanceWindup(state, registry, ctx, unit, timer, timing, stunned, held)
@@ -78,9 +81,9 @@ export function attackWillHit(
   unit: UnitState,
 ): boolean {
   const timer = unit.timers.get("attack")
-  if (!timer || clockStopped(unit) || attackHeld(state, registry, unit)) return false
-  if (!readAttackTiming(unit, registry).canAttack) return false
-  const timing = attackTiming(unit, registry)
+  if (!timer || clockStopped(state, unit) || attackHeld(state, registry, unit)) return false
+  if (!readAttackTiming(state, unit, registry).canAttack) return false
+  const timing = attackTiming(state, unit, registry)
   if (!hasTarget(state, registry, ctx, unit)) return false
   if (text(timer, "phase") === "windup") {
     if (number(timer, "lead") === 1) return reached(number(timer, "elapsed") + TICK, timing.wind)
@@ -168,7 +171,7 @@ function readyToSwing(
   timer: TimerState,
   timing: AttackTiming,
 ): boolean {
-  if (targetDenied(unit) || !readAttackTiming(unit, registry).canAttack) return false
+  if (targetDenied(unit) || !readAttackTiming(state, unit, registry).canAttack) return false
   if (!reached(timing.wind, number(timer, "cooldown"))) return false
   return hasTarget(state, registry, ctx, unit)
 }
@@ -209,7 +212,7 @@ function strike(
   timer: TimerState,
   timing: AttackTiming,
 ): void {
-  const swing = readAttackTiming(unit, registry)
+  const swing = readAttackTiming(state, unit, registry)
   if (!swing.canAttack) {
     timer.phase = "idle"
     timer.elapsed = 0
@@ -264,9 +267,9 @@ interface AttackTiming {
   readonly rest: number
 }
 
-function attackTiming(unit: UnitState, registry: BattleRegistry): AttackTiming {
+function attackTiming(state: BattleWorld, unit: UnitState, registry: BattleRegistry): AttackTiming {
   const interval = attackInterval(unit, registry)
-  const clip = unit.attackClip
+  const clip = attackProfileOf(state, unit.id).clip
   if (!clip || !(clip.duration > 0)) return { interval, wind: 0, rest: ATTACK_PAUSE }
   const speed = interval > 0 && interval < clip.duration ? clip.duration / interval : 1
   const hit = Number.isFinite(clip.hit) ? Math.min(clip.duration, Math.max(0, clip.hit)) : clip.duration / 2
@@ -304,8 +307,8 @@ function targetDenied(unit: UnitState): boolean {
   return peekAttackTargetThisTick(unit) === false
 }
 
-function attackHeld(_state: BattleWorld, registry: BattleRegistry, unit: UnitState): boolean {
-  if (hasTag(unit, TREMBLE) && unit.blockedBy) return true
+function attackHeld(state: BattleWorld, registry: BattleRegistry, unit: UnitState): boolean {
+  if (hasTag(unit, TREMBLE) && blockerOf(state, unit.id)) return true
   for (const status of unit.statuses) {
     if (status.dropped) continue
     if (registry.requireStatus(status.id).cancels.includes("attack")) return true
@@ -313,8 +316,8 @@ function attackHeld(_state: BattleWorld, registry: BattleRegistry, unit: UnitSta
   return false
 }
 
-function clockStopped(unit: UnitState): boolean {
-  if (!unit.fielded || unit.downed || unit.routeHidden || (unit.attributes.hp ?? 0) <= 0) return true
+function clockStopped(state: BattleWorld, unit: UnitState): boolean {
+  if (!unit.fielded || unit.downed || (unit.attributes.hp ?? 0) <= 0 || routeHidden(state, unit.id)) return true
   return hasTag(unit, CANNOT_ACT)
 }
 
@@ -327,7 +330,7 @@ function deliver(
   amount: number,
   hitCount: number,
 ): void {
-  const shape = attacker.attackShape
+  const shape = attackProfileOf(state, attacker.id).shape
   if (shape?.projectile && shape.lockRange !== true) {
     const back = returnSpeedOf(shape.projectile)
     ctx.launchProjectile({

@@ -13,22 +13,27 @@ const transform: BoardTransform = {
   worldHeight: 64,
 }
 
-function unit(id: string, x: number, y: number, flags: readonly string[] = []): UnitSnapshot {
+function unit(id: string, x: number, y: number, tags: readonly string[] = []): UnitSnapshot {
   return {
     id,
     side: "ally",
     kind: "operator",
     x,
     y,
+    facing: "RIGHT",
+    height: 0,
     attributes: { hp: 1, maxHp: 1 },
-    flags,
+    tags,
     attackRange: [],
-    tags: [],
     deployPositions: [],
     elements: {},
     blocking: [],
     blockedBy: null,
-    boomerangsOut: 0,
+    skills: [],
+    shield: 0,
+    downed: false,
+    redeploy: null,
+    components: {},
   }
 }
 

@@ -9,6 +9,7 @@ import { CAN_HIT_FLY, NO_HEAL, REVEAL, STEALTH, STEALTH_OFF, UNTARGETABLE } from
 import { isFlying, type UnitState } from "#unit/record/index.js"
 import { hypot } from "#kernel/math/hypot.js"
 import { powi } from "#kernel/math/powi.js"
+import { routeHidden } from "#field/grid/route.js"
 
 /** 治疗链在主目标周围找下一名友方的半径，格。 */
 export const CHAIN_HEAL_RADIUS = 2.5
@@ -90,10 +91,6 @@ export function retainOnMiss(shape: AttackShape): boolean {
   return false
 }
 
-export function boomerangsOut(unit: { boomerangsOut: number }): number {
-  return unit.boomerangsOut
-}
-
 // MARK: strike
 
 function resolveStrike(
@@ -105,13 +102,13 @@ function resolveStrike(
   const targetId = impact.targetId
   if (!targetId) return
   const target = state.units.get(targetId)
-  if (!present(target)) return
+  if (!present(state, target)) return
   const hits = Math.max(0, Math.floor(impact.hitCount))
   const amount = scaled(impact.amount * primaryFactor(impact.shape))
   const damage = damageOf(impact.shape)
   for (let hit = 0; hit < hits; hit += 1) {
     const current = state.units.get(targetId)
-    if (!present(current)) return
+    if (!present(state, current)) return
     pay(ctx, impact.sourceId, targetId, amount, damage)
   }
 }
@@ -160,14 +157,14 @@ function resolveBounce(
   const pause = finite(bounce.pause, 0)
   const damage = damageOf(impact.shape)
   const seen = new Set<string>([start.id])
-  if (pause > 0 && present(start)) ctx.applyStatus(start.id, "sluggish", { duration: pause })
+  if (pause > 0 && present(state, start)) ctx.applyStatus(start.id, "sluggish", { duration: pause })
   let prev = start
   for (let jump = 1; jump < count; jump += 1) {
     const next = nearest(state, attacker, prev, radius, seen)
     if (!next) return
     seen.add(next.id)
     pay(ctx, impact.sourceId, next.id, scaled(impact.amount * powi(1 - falloff, jump)), damage)
-    if (pause > 0 && present(state.units.get(next.id))) ctx.applyStatus(next.id, "sluggish", { duration: pause })
+    if (pause > 0 && present(state, state.units.get(next.id))) ctx.applyStatus(next.id, "sluggish", { duration: pause })
     prev = next
   }
 }
@@ -235,8 +232,8 @@ function finite(value: number | undefined, fallback: number): number {
   return value !== undefined && Number.isFinite(value) ? value : fallback
 }
 
-function present(unit: UnitState | undefined): unit is UnitState {
-  return unit !== undefined && unit.fielded && !unit.downed && !unit.routeHidden && (unit.attributes.hp ?? 0) > 0
+function present(state: BattleWorld, unit: UnitState | undefined): unit is UnitState {
+  return unit !== undefined && unit.fielded && !unit.downed && !routeHidden(state, unit.id) && (unit.attributes.hp ?? 0) > 0
 }
 
 function hitsFlying(unit: UnitState): boolean {
@@ -247,8 +244,8 @@ function opposing(side: UnitState["side"]): UnitState["side"] {
   return side === "ally" ? "enemy" : "ally"
 }
 
-function selectable(unit: UnitState, attacker: UnitState): boolean {
-  if (!present(unit) || unit.id === attacker.id) return false
+function selectable(state: BattleWorld, unit: UnitState, attacker: UnitState): boolean {
+  if (!present(state, unit) || unit.id === attacker.id) return false
   if (hasTag(unit, UNTARGETABLE)) return false
   if (hasTag(unit, STEALTH) && !hasTag(unit, REVEAL) && !hasTag(unit, STEALTH_OFF)) return false
   return unit.side === opposing(attacker.side)
@@ -264,7 +261,7 @@ function around(
 ): UnitState[] {
   const found: UnitState[] = []
   for (const unit of state.units.values()) {
-    if (!selectable(unit, attacker)) continue
+    if (!selectable(state, unit, attacker)) continue
     const distance = measure === "centre" ? hypot(unit.x - x, unit.y - y) : bodyDist(unit, x, y)
     if (distance <= radius + 1e-9) found.push(unit)
   }
@@ -282,7 +279,7 @@ function nearest(
   let best: UnitState | null = null
   let bestDist = Infinity
   for (const unit of state.units.values()) {
-    if (seen.has(unit.id) || !selectable(unit, attacker)) continue
+    if (seen.has(unit.id) || !selectable(state, unit, attacker)) continue
     if (!hitsFlying(attacker) && isFlying(unit)) continue
     const distance = bodyDist(unit, prev.x, prev.y)
     if (distance > radius + 1e-9) continue
@@ -306,7 +303,7 @@ function lowestAlly(
   let bestRatio = Infinity
   for (const unit of state.units.values()) {
     if (seen.has(unit.id) || unit.side !== attacker.side) continue
-    if (!present(unit) || hasTag(unit, NO_HEAL)) continue
+    if (!present(state, unit) || hasTag(unit, NO_HEAL)) continue
     if (!injured(unit, registry)) continue
     const distance = hypot(unit.x - prev.x, unit.y - prev.y)
     if (distance > radius + 1e-9) continue

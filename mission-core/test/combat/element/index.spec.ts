@@ -195,8 +195,8 @@ test("干员神经爆发是 1000 真实伤害并带眩晕", () => {
   battle.step()
   const target = unitOf(battle, "t")
   expect(target.attributes.hp).toBe(4000)
-  expect(target.flags).toContain("stun")
-  expect(target.flags).toContain("burstLock")
+  expect(target.tags).toContain("stun")
+  expect(target.tags).toContain("burst-lock")
 })
 
 test("干员侵蚀先降防御再造成 800 物理伤害", () => {

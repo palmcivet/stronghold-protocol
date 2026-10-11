@@ -16,15 +16,20 @@ function unitOf(id: string, kind: UnitSnapshot["kind"]): UnitSnapshot {
     kind,
     x: 0,
     y: 0,
+    facing: "RIGHT",
+    height: 0,
     attributes: { hp: 0, maxHp: 1 },
-    flags: ["downed"],
-    attackRange: [],
     tags: [],
+    attackRange: [],
     deployPositions: [],
     elements: {},
     blocking: [],
     blockedBy: null,
-    boomerangsOut: 0,
+    skills: [],
+    shield: 0,
+    downed: true,
+    redeploy: null,
+    components: {},
   }
 }
 

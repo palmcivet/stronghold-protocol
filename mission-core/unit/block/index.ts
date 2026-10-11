@@ -10,6 +10,8 @@ import { allowsGround } from "#field/grid/pass.js"
 import { applyStatus } from "#ability/effect/index.js"
 import { attributeOf, carriesAttribute } from "#ability/effect/attribute.js"
 import { isFlying, type UnitState } from "#unit/record/index.js"
+import { routeHidden } from "#field/grid/route.js"
+import { blockOf, blockerOf, blockingOf } from "#unit/block/hold.js"
 
 /** 地面单位的阻挡接触半径，格。 */
 export const BLOCK_RADIUS = 0.70709997
@@ -38,13 +40,14 @@ export function releaseBlock(
   enemy: UnitState,
   hook?: { registry: BattleRegistry; ctx: ContentContext },
 ): void {
-  const blockerId = enemy.blockedBy
+  const held = blockOf(state, enemy.id)
+  const blockerId = held.blockedBy
   if (!blockerId) return
-  enemy.blockedBy = null
-  const blocker = state.units.get(blockerId)
-  if (blocker) {
-    const index = blocker.blocking.indexOf(enemy.id)
-    if (index >= 0) blocker.blocking.splice(index, 1)
+  held.blockedBy = null
+  if (state.units.has(blockerId)) {
+    const blocking = blockOf(state, blockerId).blocking
+    const index = blocking.indexOf(enemy.id)
+    if (index >= 0) blocking.splice(index, 1)
   }
   emit(state, "unblocked", { blockerId, enemyId: enemy.id })
   if (hook) restoreStealth(state, hook.registry, hook.ctx, enemy)
@@ -54,8 +57,10 @@ export function releaseBlock(
 export function maintainBlocks(state: BattleWorld, registry: BattleRegistry, ctx?: ContentContext): void {
   const hook = ctx ? { registry, ctx } : undefined
   for (const unit of state.units.values()) {
-    if (unit.side !== "enemy" || !unit.blockedBy) continue
-    const blocker = state.units.get(unit.blockedBy)
+    if (unit.side !== "enemy") continue
+    const blockerId = blockerOf(state, unit.id)
+    if (!blockerId) continue
+    const blocker = state.units.get(blockerId)
     if (!blocker || !keepsBlock(state, unit, blocker, registry)) releaseBlock(state, unit, hook)
   }
   for (const unit of state.units.values()) {
@@ -63,11 +68,11 @@ export function maintainBlocks(state: BattleWorld, registry: BattleRegistry, ctx
     enforceCapacity(state, registry, unit, hook)
   }
   for (const unit of state.units.values()) {
-    if (unit.blockedBy || !canBeBlocked(unit)) continue
+    if (blockerOf(state, unit.id) || !canBeBlocked(state, unit)) continue
     const blocker = pickBlocker(state, registry, unit)
     if (!blocker) continue
-    unit.blockedBy = blocker.id
-    blocker.blocking.push(unit.id)
+    blockOf(state, unit.id).blockedBy = blocker.id
+    blockOf(state, blocker.id).blocking.push(unit.id)
     emit(state, "blocked", { blockerId: blocker.id, enemyId: unit.id })
   }
 }
@@ -88,17 +93,17 @@ export const blockModule: MissionModule = {
 // MARK: rule
 
 function keepsBlock(state: BattleWorld, enemy: UnitState, blocker: UnitState, registry: BattleRegistry): boolean {
-  return canBeBlocked(enemy) && canBlock(blocker, registry) && reaches(state, blocker, enemy)
+  return canBeBlocked(state, enemy) && canBlock(state, blocker, registry) && reaches(state, blocker, enemy)
 }
 
-function canBeBlocked(unit: UnitState): boolean {
-  if (unit.side !== "enemy" || !unit.fielded || unit.downed || unit.routeHidden) return false
+function canBeBlocked(state: BattleWorld, unit: UnitState): boolean {
+  if (unit.side !== "enemy" || !unit.fielded || unit.downed || routeHidden(state, unit.id)) return false
   if (hasTag(unit, UNBLOCKABLE)) return false
   return true
 }
 
-function canBlock(unit: UnitState, registry: BattleRegistry): boolean {
-  if (unit.side !== "ally" || !unit.fielded || unit.downed || unit.routeHidden) return false
+function canBlock(state: BattleWorld, unit: UnitState, registry: BattleRegistry): boolean {
+  if (unit.side !== "ally" || !unit.fielded || unit.downed || routeHidden(state, unit.id)) return false
   if (hasTag(unit, NO_BLOCK)) return false
   return blockCount(unit, registry) > COUNT_EPSILON
 }
@@ -153,9 +158,9 @@ function blockWeight(unit: UnitState, registry: BattleRegistry): number {
 
 function usedWeight(state: BattleWorld, registry: BattleRegistry, blocker: UnitState): number {
   let used = 0
-  for (const id of blocker.blocking) {
+  for (const id of blockingOf(state, blocker.id)) {
     const enemy = state.units.get(id)
-    if (!enemy || enemy.blockedBy !== blocker.id) continue
+    if (!enemy || blockerOf(state, id) !== blocker.id) continue
     used += blockWeight(enemy, registry)
   }
   return used
@@ -171,21 +176,22 @@ function enforceCapacity(
   blocker: UnitState,
   hook?: { registry: BattleRegistry; ctx: ContentContext },
 ): void {
-  if (!canBlock(blocker, registry)) {
-    for (const id of [...blocker.blocking]) {
+  if (!canBlock(state, blocker, registry)) {
+    for (const id of [...blockingOf(state, blocker.id)]) {
       const enemy = state.units.get(id)
-      if (enemy && enemy.blockedBy === blocker.id) releaseBlock(state, enemy, hook)
+      if (enemy && blockerOf(state, id) === blocker.id) releaseBlock(state, enemy, hook)
     }
     return
   }
-  let guard = blocker.blocking.length
+  const blocking = blockingOf(state, blocker.id)
+  let guard = blocking.length
   while (guard > 0 && usedWeight(state, registry, blocker) > blockCount(blocker, registry) + COUNT_EPSILON) {
     guard -= 1
-    const id = blocker.blocking[blocker.blocking.length - 1]
+    const id = blocking[blocking.length - 1]
     if (!id) break
     const enemy = state.units.get(id)
-    if (!enemy || enemy.blockedBy !== blocker.id) {
-      blocker.blocking.pop()
+    if (!enemy || blockerOf(state, id) !== blocker.id) {
+      blockOf(state, blocker.id).blocking.pop()
       continue
     }
     releaseBlock(state, enemy, hook)
@@ -197,7 +203,7 @@ function pickBlocker(state: BattleWorld, registry: BattleRegistry, enemy: UnitSt
   let chosen: UnitState | null = null
   let best = Infinity
   for (const unit of state.units.values()) {
-    if (!canBlock(unit, registry) || !reaches(state, unit, enemy) || !inContact(unit, enemy)) continue
+    if (!canBlock(state, unit, registry) || !reaches(state, unit, enemy) || !inContact(unit, enemy)) continue
     if (!hasRoom(state, registry, unit, weight)) continue
     const dx = enemy.x - unit.x
     const dy = enemy.y - unit.y

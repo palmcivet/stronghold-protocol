@@ -121,7 +121,7 @@ test("消失后再出现会改站位", () => {
   battle.step()
   const unit = battle.snapshot().units.find((item) => item.id === "hider")
   expect(unit).toMatchObject({ x: 3, y: 0 })
-  expect(unit?.flags).not.toContain("hidden")
+  expect(unit?.tags).not.toContain("hidden")
 })
 
 test("路线消失在状态刷新之后仍留在快照里", () => {
@@ -167,15 +167,15 @@ test("路线消失在状态刷新之后仍留在快照里", () => {
     [module],
   )
   battle.step()
-  expect(battle.snapshot().units.find((item) => item.id === "hider")?.flags).toContain("hidden")
+  expect(battle.snapshot().units.find((item) => item.id === "hider")?.tags).toContain("hidden")
   battle.step()
   const hidden = battle.snapshot().units.find((item) => item.id === "hider")
-  expect(hidden?.flags).toContain("hidden")
-  expect(hidden?.flags).toContain("marked")
+  expect(hidden?.tags).toContain("hidden")
+  expect(hidden?.tags).toContain("marked")
   expect(hidden?.x).toBe(0)
   battle.step()
   const shown = battle.snapshot().units.find((item) => item.id === "hider")
-  expect(shown?.flags).not.toContain("hidden")
+  expect(shown?.tags).not.toContain("hidden")
   expect(shown).toMatchObject({ x: 3, y: 0 })
 })
 

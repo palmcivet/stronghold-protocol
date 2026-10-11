@@ -4,6 +4,8 @@ import type { FlowField, FieldGrid } from "#field/grid/index.js"
 import type { GridPoint } from "#field/grid/sight.js"
 import type { UnitState } from "#unit/record/index.js"
 import { hypot } from "#kernel/math/hypot.js"
+import { defineComponent, type ComponentStore } from "#kernel/world/component.js"
+import { blockerOf } from "#unit/block/hold.js"
 
 /** 每秒移动格数 = moveSpeed × MOVE_SCALE。 */
 export const MOVE_SCALE = 0.5
@@ -23,6 +25,29 @@ export interface RouteRun {
   ptIdx: number
   version: number
   waitLeft: number | null
+}
+
+/** 敌人的路线进度与路线消失。快照把消失写成 hidden 标签。 */
+export interface RouteState {
+  run: RouteRun | null
+  hidden: boolean
+}
+
+export const ROUTE = defineComponent<RouteState>("grid:route", { create: () => ({ run: null, hidden: false }) })
+
+export function routeOf(world: { readonly components: ComponentStore }, unitId: string): RouteState {
+  return world.components.access(ROUTE).ensure(unitId)
+}
+
+/** 走到路线的消失段、还没到出现段。 */
+export function routeHidden(world: { readonly components: ComponentStore }, unitId: string): boolean {
+  return world.components.access(ROUTE).get(unitId)?.hidden === true
+}
+
+/** 路线改了，下一拍重新规划这一段。 */
+export function replanRoute(world: { readonly components: ComponentStore }, unitId: string): void {
+  const run = world.components.access(ROUTE).get(unitId)?.run
+  if (run) run.pts = null
 }
 
 export function compileRoute(route: RouteSpec | null, rect: GridRect): RouteRun | null {
@@ -55,9 +80,7 @@ function legField(grid: FieldGrid, x: number, y: number, key: number): FlowField
   return null
 }
 
-function planLeg(grid: FieldGrid, unit: UnitState, leg: RouteLeg): void {
-  const route = unit.route
-  if (!route) return
+function planLeg(grid: FieldGrid, unit: UnitState, route: RouteRun, leg: RouteLeg): void {
   let points: GridPoint[]
   if (unit.motion === "FLY") {
     points = [{ x: leg.x, y: leg.y }]
@@ -90,9 +113,17 @@ function planLeg(grid: FieldGrid, unit: UnitState, leg: RouteLeg): void {
 }
 
 /** 敌人沿路线推进 dt 秒。飞行直飞检查点，地面走平滑流场。已经有阻挡者时这一拍停住。 */
-export function advanceRoute(grid: FieldGrid, unit: UnitState, dt: number, tilesPerSecond?: number): void {
-  const route = unit.route
-  if (!route || unit.side !== "enemy" || !unit.fielded || unit.downed || unit.blockedBy) return
+export function advanceRoute(
+  world: { readonly components: ComponentStore },
+  grid: FieldGrid,
+  unit: UnitState,
+  dt: number,
+  tilesPerSecond?: number,
+): void {
+  if (unit.side !== "enemy" || !unit.fielded || unit.downed) return
+  const state = world.components.access(ROUTE).get(unit.id)
+  const route = state?.run
+  if (!state || !route || blockerOf(world, unit.id)) return
   let budget = dt
   let guard = 16
   while (budget > 1e-9 && guard > 0) {
@@ -112,7 +143,7 @@ export function advanceRoute(grid: FieldGrid, unit: UnitState, dt: number, tiles
       continue
     }
     if (leg.t === "disappear") {
-      unit.routeHidden = true
+      state.hidden = true
       route.legIdx += 1
       route.pts = null
       continue
@@ -120,19 +151,19 @@ export function advanceRoute(grid: FieldGrid, unit: UnitState, dt: number, tiles
     if (leg.t === "appear") {
       unit.x = leg.x
       unit.y = leg.y
-      unit.routeHidden = false
+      state.hidden = false
       route.legIdx += 1
       route.pts = null
       continue
     }
-    if (!route.pts || route.version !== grid.version) planLeg(grid, unit, leg)
+    if (!route.pts || route.version !== grid.version) planLeg(grid, unit, route, leg)
     const speed = tilesPerSecond ?? (unit.attributes.moveSpeed ?? 0) * MOVE_SCALE
     if (!(speed > 0)) return
     let distance = speed * budget
     let steps = 64
     while (distance > 1e-9 && steps > 0) {
       steps -= 1
-      if (!route.pts || route.version !== grid.version) planLeg(grid, unit, leg)
+      if (!route.pts || route.version !== grid.version) planLeg(grid, unit, route, leg)
       if (!route.pts || route.ptIdx >= route.pts.length) break
       const point = route.pts[route.ptIdx]
       if (!point) break
@@ -163,8 +194,8 @@ export function advanceRoute(grid: FieldGrid, unit: UnitState, dt: number, tiles
 }
 
 /** 沿还没走完的移动段量到终点的路程。没有路线时是 0。 */
-export function remainingDistance(unit: UnitState): number {
-  const route = unit.route
+export function remainingDistance(world: { readonly components: ComponentStore }, unit: UnitState): number {
+  const route = world.components.access(ROUTE).get(unit.id)?.run
   if (!route) return 0
   let total = 0
   let x = unit.x

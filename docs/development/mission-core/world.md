@@ -21,6 +21,8 @@ interface World<E extends { id: string }> {
 
 作战核心用的是 `World<UnitState>`。`kernel/` 只引用 `contract/` 与 `kernel/` 自己，单位记录、注册表和内置规则都在领域组里。
 
+单位记录（`unit/record/`）只放各机制共用的事实：身份、阵营与种类、坐标与朝向、受击范围、移动方式、属性与基础值、状态与修饰、技能、计时器、标签、在场与倒下、`deployEpoch`、脚本参数。`deployEpoch` 每次部署（开场上场与再部署）加一，回旋物的世代读它。只有一种机制用的数据放在那个机制的组件里，见下面的内置组件表。
+
 ## 组件
 
 组件是按单位存的一张表。`defineComponent` 返回键，id 写成 `模块id:名字`。
@@ -53,6 +55,23 @@ const tally: MissionModule = {
 | `codec` | 可选的 `encode` / `decode`，把值换成纯数据。缺省时值本身就是纯数据 |
 
 `ctx.component(key)` 返回这张表：`get`、`ensure`、`set`、`delete`，以及按第一次写入顺序列出的 `entries()`。同一 id 定义了两个不同的键时，第一次使用就报错。
+
+带 `view` 的组件，每个持有它的单位在快照的 `components` 里有一项，键是组件 id，值是 `view` 的返回值，按组件第一次使用的顺序。这一栏只给画面，不计入状态。
+
+内置组件：
+
+| id | 所在 | 内容 | view |
+| --- | --- | --- | --- |
+| `attack:profile` | `combat/attack/profile.ts` | 规格的 `attackClip`、`attackShape`，放入时建，只读 | 无 |
+| `attack:boomerang` | `combat/attack/boomerang.ts` | 还没回到手上的回旋数量 | `{ out }` |
+| `block:hold` | `unit/block/hold.ts` | `blocking`、`blockedBy` | 无（快照另有 `blocking`、`blockedBy`） |
+| `target:priority` | `combat/target/priority.ts` | 规格或 `setAim` 写的索敌优先 | 无 |
+| `damage:hit-limit` | `combat/damage/limit.ts` | 规格打开的首领限伤 | 无 |
+| `damage:overheal-shield` | `combat/damage/shield.ts` | 治疗溢出转成的护盾 | 无 |
+| `effect:immunity` | `ability/effect/immunity.ts` | 规格的免疫名单 | 无 |
+| `element:gauges` | `combat/element/gauge.ts` | 各元素槽的值、上限、锁定，爆发中，最近打满的来源 | 最满的一槽 `{ element, ratio, locked }`，没有非空槽时是 `null` |
+| `motion:shift` | `field/motion/shift.ts` | 正在走的强制位移 | 无 |
+| `grid:route` | `field/grid/route.ts` | 敌人的路线进度与路线消失 | 无（快照的 `tags` 写 `hidden`） |
 
 ## 资源
 
@@ -114,7 +133,7 @@ ctx.revokeTag(unitId, CHARMED, "mark:charm")
 | `CANNOT_ACT` | `cannot-act` | 不能普攻、不能放技能 |
 | `CANNOT_ATTACK` | `cannot-attack` | 状态持续期间不能普攻 |
 | `CANNOT_CAST` | `cannot-cast` | 不能放技能 |
-| `NO_MOVE` | `noMove` | 不能自主移动 |
+| `NO_MOVE` | `no-move` | 不能自主移动 |
 | `STUN` | `stun` | 眩晕，蕴含 `cannot-act` |
 | `FREEZE` | `freeze` | 冻结 |
 | `COLD` | `cold` | 寒冷，再次寒冷会冻结 |
@@ -124,37 +143,37 @@ ctx.revokeTag(unitId, CHARMED, "mark:charm")
 | `FEAR` | `fear` | 恐惧 |
 | `ATTRACT` | `attract` | 诱导 |
 | `TREMBLE` | `tremble` | 战栗：被阻挡时停止普攻 |
-| `NO_ATTACK` | `noAttack` | 单位本身不普攻 |
-| `NO_BLOCK` | `noBlock` | 不阻挡 |
+| `NO_ATTACK` | `no-attack` | 单位本身不普攻 |
+| `NO_BLOCK` | `no-block` | 不阻挡 |
 | `UNBLOCKABLE` | `unblockable` | 不被阻挡 |
-| `BLOCK_FLY` | `blockFly` | 能挡住飞行单位 |
+| `BLOCK_FLY` | `block-fly` | 能挡住飞行单位 |
 | `DEVICE` | `device` | 装置，阻挡接触用装置半径 |
 | `UNTARGETABLE` | `untargetable` | 不被选择器与普攻选中 |
 | `INVULNERABLE` | `invulnerable` | 不受伤害 |
 | `SLEEP` | `sleep` | 沉睡，见下文 |
 | `STEALTH` | `stealth` | 隐匿：未破隐时不被普攻与范围效果选中 |
 | `REVEAL` | `reveal` | 显形：隐匿不再生效 |
-| `STEALTH_OFF` | `stealthOff` | 破隐期：隐匿不再生效 |
+| `STEALTH_OFF` | `stealth-off` | 破隐期：隐匿不再生效 |
 | `CAMOU` | `camou` | 迷彩：不被敌方普通攻击选中，正在挡它的单位除外 |
 | `LIFTOFF` | `liftoff` | 起飞：敌方地面单位不能选中、不能命中 |
 | `ISOLATED` | `isolated` | 孤立：不被友方选择器选中 |
-| `CAN_HIT_FLY` | `canHitFly` | 普攻能打飞行单位 |
+| `CAN_HIT_FLY` | `can-hit-fly` | 普攻能打飞行单位 |
 | `AIRBORNE` | `airborne` | 视为空中，敌人带着它算空中单位 |
 | `LEVITATE` | `levitate` | 浮空，蕴含 `airborne` |
 | `FLOAT` | `float` | 近地悬浮，蕴含 `airborne` |
-| `NO_DISPLACE` | `noDisplace` | 位移免疫 |
-| `STATIC_BODY` | `staticBody` | 静态刚体：不被位移 |
+| `NO_DISPLACE` | `no-displace` | 位移免疫 |
+| `STATIC_BODY` | `static-body` | 静态刚体：不被位移 |
 | `HIDDEN` | `hidden` | 不在场上可见，快照给路线消失的单位写上它 |
-| `HIT_COUNT` | `hitCount` | 每下受击记 1 点，跳过减伤与乘区 |
-| `HIT_COUNT_ARTS` | `hitCountArts` | 只按次数计法术伤害 |
-| `HIT_SLEEP` | `hitSleep` | 攻击者能打到沉睡的目标 |
-| `HEAL_FREE` | `healFree` | 不接受治疗，生命回复与指明忽略的除外 |
-| `NO_HEAL` | `noHeal` | 禁疗，来自自己的治疗除外 |
-| `BURST_LOCK` | `burstLock` | 元素损伤不累积、不爆发 |
-| `NO_SP` | `noSp` | 阻回：技力不自然回复，也不接受外界给予 |
+| `HIT_COUNT` | `hit-count` | 每下受击记 1 点，跳过减伤与乘区 |
+| `HIT_COUNT_ARTS` | `hit-count-arts` | 只按次数计法术伤害 |
+| `HIT_SLEEP` | `hit-sleep` | 攻击者能打到沉睡的目标 |
+| `HEAL_FREE` | `heal-free` | 不接受治疗，生命回复与指明忽略的除外 |
+| `NO_HEAL` | `no-heal` | 禁疗，来自自己的治疗除外 |
+| `BURST_LOCK` | `burst-lock` | 元素损伤不累积、不爆发 |
+| `NO_SP` | `no-sp` | 阻回：技力不自然回复，也不接受外界给予 |
 | `TOKEN` | `token` | 召唤物，开战排在干员后面 |
-| `DEFER_DEPLOY` | `deferDeploy` | 开战不上场，初始格子留给它 |
+| `DEFER_DEPLOY` | `defer-deploy` | 开战不上场，初始格子留给它 |
 
-沉睡蕴含 `cannot-act`、`noBlock`、`unblockable`：不能行动、不阻挡、不被阻挡。其余由各处查 `sleep`：选择器的 `sleep` 一项与范围效果去掉沉睡的单位，治疗的名单不带 `sleep` 一项，照常选中沉睡的友方；伤害挡下打向沉睡目标的一击，忽略沉睡的伤害与带 `hitSleep` 的攻击者照常命中。眩晕的状态另授 `noBlock`，被眩晕的干员放开所挡的敌人。
+沉睡蕴含 `cannot-act`、`no-block`、`unblockable`：不能行动、不阻挡、不被阻挡。其余由各处查 `sleep`：选择器的 `sleep` 一项与范围效果去掉沉睡的单位，治疗的名单不带 `sleep` 一项，照常选中沉睡的友方；伤害挡下打向沉睡目标的一击，忽略沉睡的伤害与带 `hit-sleep` 的攻击者照常命中。眩晕的状态另授 `no-block`，被眩晕的干员放开所挡的敌人。
 
 `CORE_TAGS` 列出全部核心标签。

@@ -1,6 +1,7 @@
 import { expect, test } from "vitest"
 import { createBattle, redeployModule, type MissionModule } from "arknights-mission-core"
 import { engineOf } from "#unit/record/index.js"
+import { boomerangOf } from "#combat/attack/boomerang.js"
 import { ally, spec } from "#test/fixture.js"
 
 test("再部署清掉的回旋数，不会被还在飞的回程写回去", () => {
@@ -31,9 +32,10 @@ test("再部署清掉的回旋数，不会被还在飞的回程写回去", () =>
         priority: 1,
         run(runCtx) {
           if (runCtx.tick() !== 1) return
-          const unit = engineOf(runCtx).world.units.get("a")
+          const world = engineOf(runCtx).world
+          const unit = world.units.get("a")
           if (!unit) return
-          unit.boomerangsOut = 4
+          boomerangOf(world, "a").out = 4
           unit.attributes.boomerangsOut = 4
         },
       })
@@ -65,5 +67,5 @@ test("再部署清掉的回旋数，不会被还在飞的回程写回去", () =>
     [rig, redeployModule],
   )
   for (let step = 0; step < 50; step += 1) battle.step()
-  expect(battle.snapshot().units.find((unit) => unit.id === "a")?.boomerangsOut).toBe(4)
+  expect(battle.snapshot().units.find((unit) => unit.id === "a")?.components["attack:boomerang"]).toEqual({ out: 4 })
 })

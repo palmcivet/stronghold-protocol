@@ -48,7 +48,7 @@ test("沉睡的敌人立刻放开，原地不动，阻挡位让给下一个；�
   expect(unitOf(battle, "second")?.blockedBy).toBe("a")
   expect(unitOf(battle, "a")?.blocking).toEqual(["second"])
   run(battle, 40)
-  expect(unitOf(battle, "first")?.flags).not.toContain("sleep")
+  expect(unitOf(battle, "first")?.tags).not.toContain("sleep")
   expect(unitOf(battle, "first")?.blockedBy).toBeNull()
   expect(unitOf(battle, "a")?.blocking).toEqual(["second"])
 })
@@ -105,10 +105,10 @@ function reblockWhileHeld(held: "freeze" | "stun"): void {
   run(battle, 5)
   expect(unitOf(battle, "plain")?.blockedBy).toBeNull()
   battle.step()
-  expect(unitOf(battle, "plain")?.flags).toContain(held)
+  expect(unitOf(battle, "plain")?.tags).toContain(held)
   expect(unitOf(battle, "plain")?.blockedBy).toBe("a")
   expect(unitOf(battle, "hidden")?.blockedBy).toBe("b")
-  expect(unitOf(battle, "hidden")?.flags).toContain("stealth")
+  expect(unitOf(battle, "hidden")?.tags).toContain("stealth")
 }
 
 test("freeze 中的敌人旁边新放下的干员当场挡住它，挡住后隐匿的敌人能被打到", () => reblockWhileHeld("freeze"))
@@ -140,7 +140,7 @@ function blockWhenSlotFrees(held: "bind" | "stun" | "freeze"): void {
   run(battle, 3)
   expect(unitOf(battle, "held")?.blockedBy).toBeNull()
   battle.step()
-  expect(unitOf(battle, "held")?.flags).toContain(held)
+  expect(unitOf(battle, "held")?.tags).toContain(held)
   expect(unitOf(battle, "held")?.blockedBy).toBe("a")
 }
 

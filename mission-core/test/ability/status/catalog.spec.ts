@@ -22,7 +22,7 @@ function open(units: UnitSpec[], run: (ctx: ContentContext) => void, prepare?: M
 }
 
 function flagsOf(battle: ReturnType<typeof createBattle>, id: string): readonly string[] {
-  return battle.snapshot().units.find((unit) => unit.id === id)?.flags ?? []
+  return battle.snapshot().units.find((unit) => unit.id === id)?.tags ?? []
 }
 
 function swing(ctx: ContentContext, unitId: string): void {
@@ -56,9 +56,9 @@ test("目录状态写上对应旗标", () => {
     "isolated",
     "levitate",
     "liftoff",
-    "noBlock",
-    "noDisplace",
-    "noMove",
+    "no-block",
+    "no-displace",
+    "no-move",
     "sleep",
     "stealth",
     "stun",
@@ -75,7 +75,7 @@ test("飞行单位不被浮空，地面单位会被浮空", () => {
     },
   )
   battle.step()
-  expect(flagsOf(battle, "ground")).toEqual(["levitate", "noDisplace", "stun", "unblockable"])
+  expect(flagsOf(battle, "ground")).toEqual(["levitate", "no-displace", "stun", "unblockable"])
   expect(flagsOf(battle, "flyer")).toEqual([])
 })
 
@@ -170,7 +170,7 @@ test("眩晕和缴械取消攻击", () => {
   battle.step()
   battle.step()
   expect(hits).toEqual(["open"])
-  expect(flagsOf(battle, "stun")).toEqual(["noBlock", "stun"])
+  expect(flagsOf(battle, "stun")).toEqual(["no-block", "stun"])
   expect(flagsOf(battle, "disarm")).toEqual(["disarm"])
 })
 
