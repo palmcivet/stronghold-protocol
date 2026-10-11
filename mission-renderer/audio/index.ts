@@ -1,6 +1,6 @@
 import type { AssetKey } from "arknights-assets-catalog"
 import type { BattleEvent, UnitSnapshot } from "arknights-mission-core"
-import type { MissionAudioCue } from "#contract/event.js"
+import type { MissionAudioCue } from "#contract/audio.js"
 
 export type EffectAudioFor = (
   event: BattleEvent,

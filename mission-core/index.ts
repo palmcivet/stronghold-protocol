@@ -175,6 +175,7 @@ export {
   NO_BLOCK,
   NO_DISPLACE,
   NO_HEAL,
+  NO_ALLY_HEAL,
   ALLY_TARGET,
   NO_SP,
   REVEAL,

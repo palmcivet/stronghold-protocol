@@ -1,10 +1,5 @@
 import type { AssetKey } from "arknights-assets-catalog"
 
-export type MissionPointerHit =
-  | { readonly type: "unit"; readonly unitId: string }
-  | { readonly type: "tile"; readonly x: number; readonly y: number }
-  | { readonly type: "empty" }
-
 export interface MissionAudioCue {
   readonly type:
     | "attack"

@@ -36,6 +36,7 @@ function copyAttackShape(shape: AttackShape): AttackShape {
     ...(shape.lockRange === true ? { lockRange: true } : {}),
     ...(shape.blockTargets === true ? { blockTargets: true } : {}),
     ...(shape.filters && shape.filters.length > 0 ? { filters: [...shape.filters] } : {}),
+    ...(shape.healThrough !== undefined ? { healThrough: shape.healThrough } : {}),
     ...(shape.projectile ? { projectile: shape.projectile } : {}),
   }
 }

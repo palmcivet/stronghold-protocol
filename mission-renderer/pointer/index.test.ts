@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import type { UnitSnapshot } from "arknights-mission-core"
-import type { BoardTransform } from "./projection.js"
-import { pickBoard } from "./pointer.js"
+import type { BoardTransform } from "#runtime/camera/index.js"
+import { pickBoard } from "#pointer/index.js"
 
 const transform: BoardTransform = {
   x: 0,

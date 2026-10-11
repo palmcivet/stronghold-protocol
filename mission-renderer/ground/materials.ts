@@ -26,7 +26,7 @@ import {
   type Side,
   type WebGLRenderer,
 } from "three"
-import { ORIGINIUM, type Vec3 } from "./palette.js"
+import { ORIGINIUM, type Vec3 } from "#ground/palette.js"
 
 export interface FocusUniforms {
   readonly uFocus: { value: Vector4 }

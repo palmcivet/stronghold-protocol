@@ -8,16 +8,16 @@ import type {
   MissionUpdateMode,
   MissionView,
 } from "#contract/view.js"
-import type { MissionAudioCue } from "#contract/event.js"
-import { effectCueFor } from "./cue.js"
-import { createLocalFeed, type LocalFeed } from "./feed.js"
-import { createTerrainStage } from "./ground/terrain/stage.js"
-import type { TerrainMode, TerrainStage, TerrainStageOptions } from "./ground/terrain/stage.js"
-import { pickBoard } from "./pointer.js"
-import { calculateBoardTransform, type BoardTransform } from "./projection.js"
+import type { MissionAudioCue } from "#contract/audio.js"
+import { effectCueFor } from "#audio/index.js"
+import { createLocalFeed, type LocalFeed } from "#runtime/feed/index.js"
+import { createTerrainStage } from "#ground/index.js"
+import type { TerrainMode, TerrainStage, TerrainStageOptions } from "#ground/index.js"
+import { pickBoard } from "#pointer/index.js"
+import { calculateBoardTransform, type BoardTransform } from "#runtime/camera/index.js"
 
-export type { TerrainPackRequest, TerrainResourcePort, TerrainStage, TerrainStageOptions } from "./ground/terrain/stage.js"
-export { TERRAIN_GATE_NODES, TERRAIN_IMAGE_SLOTS, TERRAIN_MESH_SLOTS } from "./ground/terrain/stage.js"
+export type { TerrainPackRequest, TerrainResourcePort, TerrainStage, TerrainStageOptions } from "#ground/index.js"
+export { TERRAIN_GATE_NODES, TERRAIN_IMAGE_SLOTS, TERRAIN_MESH_SLOTS } from "#ground/index.js"
 
 export type MissionBoard = MissionStage & {
   readonly terrain: TerrainStage | null

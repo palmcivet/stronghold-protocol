@@ -4,8 +4,7 @@ import type { BattleRegistry } from "#port/definition.js"
 import type { BattleWorld } from "#unit/record/index.js"
 import { selectUnits, unitsInRange } from "#combat/target/selector.js"
 import { maxHpOf } from "#ability/effect/attribute.js"
-import { hasTag } from "#kernel/world/tag.js"
-import { NO_HEAL } from "#port/tag.js"
+import { healBlocked } from "#combat/damage/heal.js"
 import type { UnitState } from "#unit/record/index.js"
 import { attackProfileOf } from "#combat/attack/profile.js"
 import { routeHidden } from "#field/grid/route.js"
@@ -80,8 +79,8 @@ function pickHeals(
 ): readonly string[] {
   const shape = attackProfileOf(state, unit.id).shape
   const query = [unit.side, "untargetable", "isolated", "range", "hp-ratio", "spawn", ...(shape?.filters ?? [])]
-  const found = unitsInRange(state, registry, ctx, unit.id, query).filter((id) => healable(state, registry, unit, id))
-  if (healable(state, registry, unit, unit.id)) found.push(unit.id)
+  const found = unitsInRange(state, registry, ctx, unit.id, query).filter((id) => healable(state, registry, ctx, unit, id))
+  if (healable(state, registry, ctx, unit, unit.id)) found.push(unit.id)
   const ordered = selectUnits(registry, ctx, ["hp-ratio", "spawn"], found, { origin: null })
   if (shape?.lockRange === true) return ordered
   const count = shape?.healCount
@@ -89,9 +88,9 @@ function pickHeals(
   return ordered.slice(0, limit)
 }
 
-function healable(state: BattleWorld, registry: BattleRegistry, healer: UnitState, unitId: string): boolean {
+function healable(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext, healer: UnitState, unitId: string): boolean {
   const unit = state.units.get(unitId)
   if (!unit || !unit.fielded || unit.downed || routeHidden(state, unitId) || (unit.attributes.hp ?? 0) <= 0) return false
-  if (unit.id !== healer.id && hasTag(unit, NO_HEAL)) return false
+  if (healBlocked(state, registry, ctx, healer.id, unit)) return false
   return (unit.attributes.hp ?? 0) + 1e-6 < maxHpOf(unit, registry)
 }

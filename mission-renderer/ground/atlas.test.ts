@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { resolveUvTable, surfaceUV, TERRAIN_SURFACES } from "./atlas.js"
+import { resolveUvTable, surfaceUV, TERRAIN_SURFACES } from "#ground/atlas.js"
 
 describe("terrain atlas", () => {
   it("maps a surface rectangle into texture coordinates", () => {

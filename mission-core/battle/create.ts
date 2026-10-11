@@ -239,6 +239,7 @@ function validateUnits(spec: BattleSpec, registry: BattleRegistry): void {
     }
     for (const timerId of unit.timers ?? []) registry.requireTimer(timerId)
     for (const selectorId of unit.attackShape?.filters ?? []) registry.requireSelector(selectorId)
+    if (unit.attackShape?.healThrough !== undefined) registry.requireSelector(unit.attackShape.healThrough)
     for (const entry of unit.conditionalEffects ?? []) {
       registry.requireCondition(entry.condition)
       registry.requireEffect(entry.effect)

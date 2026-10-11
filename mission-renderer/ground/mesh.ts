@@ -1,5 +1,5 @@
-import { surfaceUV, uvAt, type TerrainSurface } from "./atlas.js"
-import type { TerrainGeometry, Vec3 } from "./layout.js"
+import { surfaceUV, uvAt, type TerrainSurface } from "#ground/atlas.js"
+import type { TerrainGeometry, Vec3 } from "#ground/layout.js"
 
 /** A parsed Wavefront OBJ: `v` / `vt` / `vn` corners de-duplicated into one index buffer. */
 export interface ParsedMesh {

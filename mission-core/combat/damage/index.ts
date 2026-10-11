@@ -15,6 +15,7 @@ import { overhealOf, setOverheal } from "#combat/damage/shield.js"
 import { isFlying, type UnitState } from "#unit/record/index.js"
 import { applyEffect, removeEffect } from "#ability/effect/index.js"
 import { hasTag } from "#kernel/world/tag.js"
+import { healBlocked, healsThrough } from "#combat/damage/heal.js"
 import {
   BURST_LOCK,
   HEAL_FREE,
@@ -23,7 +24,6 @@ import {
   HIT_SLEEP,
   INVULNERABLE,
   LIFTOFF,
-  NO_HEAL,
   SLEEP,
 } from "#port/tag.js"
 
@@ -195,8 +195,9 @@ export function healUnit(
   const unit = requireUnit(state, unitId)
   if (unit.downed || !(amount > 0) || !Number.isFinite(amount)) return
   const self = options?.self === true || options?.sourceId === unitId
-  if (!self && hasTag(unit, NO_HEAL)) return
-  if (hasTag(unit, HEAL_FREE) && options?.regen !== true && options?.ignoreHealFree !== true) return
+  if (!self && healBlocked(state, registry, ctx, options?.sourceId, unit)) return
+  const through = !self && healsThrough(state, registry, ctx, options?.sourceId, unitId)
+  if (hasTag(unit, HEAL_FREE) && options?.regen !== true && options?.ignoreHealFree !== true && !through) return
   const source = options?.sourceId ? findUnit(state, options.sourceId) : null
   const dealt = source ? attributeOf(source, registry, "healingDealt") : 1
   let healed = amount * dealt * attributeOf(unit, registry, "healingTaken")

@@ -1,9 +1,9 @@
 import type { MissionMap } from "#contract/view.js"
-import { orientSurface, sideRect, surfaceUV, uvAt, type TerrainSurface, type TerrainUvTable } from "./atlas.js"
-import { cellKey, classifyCells, type TerrainCell, type TerrainCells } from "./cells.js"
-import { BACKDROP, BASIN, BEVEL, CLIFF, PANEL, PLATFORM_DEVICE_HEIGHT, type Vec3 } from "./palette.js"
+import { orientSurface, sideRect, surfaceUV, uvAt, type TerrainSurface, type TerrainUvTable } from "#ground/atlas.js"
+import { cellKey, classifyCells, type TerrainCell, type TerrainCells } from "#ground/cells.js"
+import { BACKDROP, BASIN, BEVEL, CLIFF, PANEL, PLATFORM_DEVICE_HEIGHT, type Vec3 } from "#ground/palette.js"
 
-export type { Vec3 } from "./palette.js"
+export type { Vec3 } from "#ground/palette.js"
 
 export interface TerrainGeometry {
   readonly position: Float32Array

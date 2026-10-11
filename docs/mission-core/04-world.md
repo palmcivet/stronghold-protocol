@@ -170,7 +170,8 @@ ctx.revokeTag(unitId, CHARMED, "mark:charm")
 | `HIT_COUNT_ARTS` | `hit-count-arts` | 只按次数计法术伤害 |
 | `HIT_SLEEP` | `hit-sleep` | 攻击者能打到沉睡的目标 |
 | `HEAL_FREE` | `heal-free` | 不接受治疗，生命回复与指明忽略的除外 |
-| `NO_HEAL` | `no-heal` | 禁疗，来自自己的治疗除外 |
+| `NO_HEAL` | `no-heal` | 禁疗，来自自己的治疗除外；治疗者的 `attackShape.healThrough` 可以穿过 |
+| `NO_ALLY_HEAL` | `no-ally-heal` | 不能被友方治疗，来自自己的治疗除外；`healThrough` 穿不过 |
 | `ALLY_TARGET` | `ally-target` | 友方目标：同阵营的普攻也选它，排在敌人之后 |
 | `BURST_LOCK` | `burst-lock` | 元素损伤不累积、不爆发 |
 | `NO_SP` | `no-sp` | 阻回：技力不自然回复，也不接受外界给予 |

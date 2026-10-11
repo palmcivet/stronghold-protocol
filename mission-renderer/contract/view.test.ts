@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import type { MissionStageCommand, MissionView, MissionPointerHit } from "./view.js"
+import type { MissionStageCommand, MissionView, MissionPointerHit } from "#contract/view.js"
 
 describe("mission renderer contract", () => {
   it("represents all stage inputs without app-specific fields", () => {

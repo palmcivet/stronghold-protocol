@@ -132,6 +132,9 @@ export const HEAL_FREE: TagKey = defineTag("heal-free", { meaning: "refuses heal
 /** 禁疗。治疗来自自己时不拦。 */
 export const NO_HEAL: TagKey = defineTag("no-heal", { meaning: "cannot be healed by others" })
 
+/** 不能被友方治疗，attackShape.healThrough 也穿不过。治疗来自自己时不拦。 */
+export const NO_ALLY_HEAL: TagKey = defineTag("no-ally-heal", { meaning: "cannot be healed by allies, with no exception" })
+
 /** 友方目标：同阵营的普攻在范围里也选它，排在所有敌人之后。 */
 export const ALLY_TARGET: TagKey = defineTag("ally-target", { meaning: "selected by allied normal attacks after every enemy" })
 
@@ -195,6 +198,7 @@ export const CORE_TAGS: readonly TagKey[] = [
   HIT_SLEEP,
   HEAL_FREE,
   NO_HEAL,
+  NO_ALLY_HEAL,
   ALLY_TARGET,
   BURST_LOCK,
   NO_SP,

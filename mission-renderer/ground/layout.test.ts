@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest"
 import type { MissionMap } from "#contract/view.js"
-import { resolveUvTable } from "./atlas.js"
-import type { BoardTile } from "./cells.js"
-import { buildTerrainLayout, overlayQuads } from "./layout.js"
+import { resolveUvTable } from "#ground/atlas.js"
+import type { BoardTile } from "#ground/cells.js"
+import { buildTerrainLayout, overlayQuads } from "#ground/layout.js"
 
 const uv = resolveUvTable(null)
 

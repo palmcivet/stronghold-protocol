@@ -1,15 +1,15 @@
 import type { Scene } from "three"
 import { OrthographicCamera, WebGLRenderer } from "three"
 import type { MissionCamera, MissionMap } from "#contract/view.js"
-import { createTerrainScene, type TerrainFocusRect, type TerrainScene } from "./scene.js"
-import { loadTerrainPack, type TerrainPack, type TerrainPackRequest, type TerrainResourcePort } from "./pack.js"
-import type { TerrainLayout } from "./layout.js"
-import type { WebGLContextEvent, WebGLSurface } from "./webgl.js"
+import { createTerrainScene, type TerrainFocusRect, type TerrainScene } from "#ground/scene.js"
+import { loadTerrainPack, type TerrainPack, type TerrainPackRequest, type TerrainResourcePort } from "#ground/pack.js"
+import type { TerrainLayout } from "#ground/layout.js"
+import type { WebGLContextEvent, WebGLSurface } from "#ground/webgl.js"
 
-export type { TerrainPackRequest, TerrainResourcePort } from "./pack.js"
-export { TERRAIN_GATE_NODES, TERRAIN_IMAGE_SLOTS, TERRAIN_MESH_SLOTS } from "./pack.js"
-export type { TerrainGateSlot, TerrainImageSlot, TerrainMeshSlot } from "./pack.js"
-export { createTerrainScene, TERRAIN_LIGHTING, gatePulse, type TerrainFocusRect, type TerrainScene } from "./scene.js"
+export type { TerrainPackRequest, TerrainResourcePort } from "#ground/pack.js"
+export { TERRAIN_GATE_NODES, TERRAIN_IMAGE_SLOTS, TERRAIN_MESH_SLOTS } from "#ground/pack.js"
+export type { TerrainGateSlot, TerrainImageSlot, TerrainMeshSlot } from "#ground/pack.js"
+export { createTerrainScene, TERRAIN_LIGHTING, gatePulse, type TerrainFocusRect, type TerrainScene } from "#ground/scene.js"
 
 export type TerrainMode = "terrain" | "hidden"
 

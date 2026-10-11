@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { calculateBoardTransform } from "./projection.js"
+import { calculateBoardTransform } from "#runtime/camera/index.js"
 
 describe("mission projection", () => {
   it("fits the complete map when no camera is provided", () => {

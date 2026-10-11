@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from "vitest"
 import { DataTexture } from "three"
 import type { AssetKey } from "arknights-assets-catalog"
 import type { MissionMap } from "#contract/view.js"
-import { createTerrainStage, type TerrainRenderView, type TerrainResourcePort } from "./stage.js"
-import type { WebGLContextEvent } from "./webgl.js"
+import { createTerrainStage, type TerrainRenderView, type TerrainResourcePort } from "#ground/index.js"
+import type { WebGLContextEvent } from "#ground/webgl.js"
 
 const map: MissionMap = {
   cols: 3,

@@ -1,5 +1,5 @@
 import type { BattleEvent, BattleSnapshot, TileCoord } from "arknights-mission-core"
-import type { MissionCamera, MissionMap } from "./view.js"
+import type { MissionCamera, MissionMap } from "#contract/view.js"
 
 /**
  * `external`: snapshots and events apply as they are pushed. `local`: a local simulation pushes a frame every

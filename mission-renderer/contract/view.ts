@@ -1,9 +1,9 @@
 import type { BattleEvent, BattleSnapshot, TileCoord, TileSpec, UnitSnapshot } from "arknights-mission-core"
-import type { MissionStageCommand, MissionUpdateMode } from "./command.js"
-import type { MissionPointerHit } from "./event.js"
+import type { MissionStageCommand, MissionUpdateMode } from "#contract/command.js"
+import type { MissionPointerHit } from "#contract/pointer.js"
 
-export type { MissionStageCommand, MissionUpdateMode } from "./command.js"
-export type { MissionPointerHit } from "./event.js"
+export type { MissionStageCommand, MissionUpdateMode } from "#contract/command.js"
+export type { MissionPointerHit } from "#contract/pointer.js"
 
 export interface MissionMap {
   readonly cols: number

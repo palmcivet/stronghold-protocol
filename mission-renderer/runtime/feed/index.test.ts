@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { TICK, type BattleEvent, type BattleSnapshot, type UnitSnapshot } from "arknights-mission-core"
-import { createLocalFeed } from "./feed.js"
+import { createLocalFeed } from "#runtime/feed/index.js"
 
 function unit(id: string, x: number): UnitSnapshot {
   return {

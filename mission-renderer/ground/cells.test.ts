@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import type { MissionMap } from "#contract/view.js"
-import { cellKey, classifyCells, glyphOf, type BoardTile } from "./cells.js"
+import { cellKey, classifyCells, glyphOf, type BoardTile } from "#ground/cells.js"
 
 const tile = { height: 0, deployable: true, walkableBy: ["ground"] }
 

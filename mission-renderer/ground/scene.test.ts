@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest"
 import { DataTexture } from "three"
 import type { MissionMap } from "#contract/view.js"
-import { resolveUvTable } from "./atlas.js"
-import type { BoardTile } from "./cells.js"
-import { createTerrainScene, gatePulse } from "./scene.js"
-import type { TerrainPack } from "./pack.js"
+import { resolveUvTable } from "#ground/atlas.js"
+import type { BoardTile } from "#ground/cells.js"
+import { createTerrainScene, gatePulse } from "#ground/scene.js"
+import type { TerrainPack } from "#ground/pack.js"
 
 function texture(): DataTexture {
   return new DataTexture(new Uint8Array([8, 8, 8, 255]), 1, 1)

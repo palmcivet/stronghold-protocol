@@ -5,11 +5,12 @@ import { bodyDist } from "#field/body/index.js"
 import type { BattleWorld } from "#unit/record/index.js"
 import { maxHpOf } from "#ability/effect/attribute.js"
 import { hasTag } from "#kernel/world/tag.js"
-import { CAN_HIT_FLY, NO_HEAL, REVEAL, STEALTH, STEALTH_OFF, UNTARGETABLE } from "#port/tag.js"
+import { CAN_HIT_FLY, REVEAL, STEALTH, STEALTH_OFF, UNTARGETABLE } from "#port/tag.js"
 import { isFlying, type UnitState } from "#unit/record/index.js"
 import { hypot } from "#kernel/math/hypot.js"
 import { powi } from "#kernel/math/powi.js"
 import { routeHidden } from "#field/grid/route.js"
+import { healBlocked } from "#combat/damage/heal.js"
 
 /** 治疗链缺省的跳跃范围：上一个人所在格子周围这么多格（切比雪夫距离）。 */
 export const CHAIN_HEAL_REACH = 1
@@ -189,7 +190,7 @@ function resolveChain(
   const seen = new Set<string>([start.id])
   let prev = start
   for (let jump = 1; jump < count; jump += 1) {
-    const next = lowestAlly(state, registry, attacker, prev, radius, seen)
+    const next = lowestAlly(state, registry, ctx, attacker, prev, radius, seen)
     if (!next) return
     seen.add(next.id)
     pay(ctx, impact.sourceId, next.id, scaled(impact.amount * powi(1 - falloff, jump)), "heal")
@@ -294,6 +295,7 @@ function nearest(
 function lowestAlly(
   state: BattleWorld,
   registry: BattleRegistry,
+  ctx: ContentContext,
   attacker: UnitState,
   prev: UnitState,
   radius: number | null,
@@ -303,7 +305,7 @@ function lowestAlly(
   let bestRatio = Infinity
   for (const unit of state.units.values()) {
     if (seen.has(unit.id) || unit.side !== attacker.side) continue
-    if (!present(state, unit) || hasTag(unit, NO_HEAL)) continue
+    if (!present(state, unit) || healBlocked(state, registry, ctx, attacker.id, unit)) continue
     if (!chainReach(prev, unit, radius)) continue
     // 满血的也能跳，按比例自然排在受伤的后面；同比例时最晚部署的在前
     const ratio = hpRatio(unit, registry)

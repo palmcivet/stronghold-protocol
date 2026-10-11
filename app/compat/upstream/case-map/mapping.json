@@ -2475,9 +2475,12 @@
       "reason": "效果定义 shieldType（步骤 6 补上）"
     },
     "sim/feedback5-o16-engine.test.js::profile healThrough: the healer selects and heals the ally it names through its 禁疗 (noHeal / healFree); others do not, and a profile noHeal still stops it": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "类型护盾与穿禁疗治疗的引擎机制"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/damage/heal-through.spec.ts::治疗者的 healThrough 选中并治疗它认的禁疗友方，不认的照旧跳过；没写时谁也不治",
+        "mission-core/test/combat/damage/heal-through.spec.ts::穿过 no-heal 与 heal-free 只对这个治疗者有效；no-ally-heal 谁也穿不过，来自自己的生命回复照常"
+      ],
+      "reason": "profile 的 healThrough 函数改为注册的选择器 id attackShape.healThrough；profile noHeal 改为标签 no-ally-heal"
     },
     "sim/feedback5-o23-engine.test.js::ally targets: none registered ⇒ nobody selects an ally; registered ⇒ the attackers whose range holds it select it, after every enemy": {
       "status": "rewritten",

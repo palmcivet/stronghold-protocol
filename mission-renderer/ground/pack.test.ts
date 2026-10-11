@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 import { DataTexture } from "three"
 import type { AssetKey } from "arknights-assets-catalog"
-import { loadTerrainPack, TERRAIN_GATE_NODES, type TerrainResourcePort } from "./pack.js"
+import { loadTerrainPack, TERRAIN_GATE_NODES, type TerrainResourcePort } from "#ground/pack.js"
 
 const diffuse: AssetKey = "texture:map/autochess/TX_autochessi_D"
 const gate: AssetKey = "model:map/fx/gate_end"

@@ -164,6 +164,8 @@ export interface AttackShape {
   readonly blockTargets?: boolean
   /** 普攻选目标时追加的筛选器 id（registerSelector 注册的 filter）。不过筛的单位不当普攻目标，也不让 DEFAULT 触发。 */
   readonly filters?: readonly string[]
+  /** 治疗攻击穿过禁疗的筛选器 id（registerSelector 注册的 filter）。过筛的友方，这个单位的治疗与治疗选择不看 no-heal、heal-free；no-ally-heal 照样拦。 */
+  readonly healThrough?: string
   readonly projectile?: ProjectileKind
 }
 

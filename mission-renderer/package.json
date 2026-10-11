@@ -18,13 +18,25 @@
       "source": "./contract/*.ts",
       "default": "./dist/contract/*.js"
     },
-    "#stage/*.js": {
-      "source": "./stage/*.ts",
-      "default": "./dist/stage/*.js"
-    },
     "#port/*.js": {
       "source": "./port/*.ts",
       "default": "./dist/port/*.js"
+    },
+    "#runtime/*.js": {
+      "source": "./runtime/*.ts",
+      "default": "./dist/runtime/*.js"
+    },
+    "#ground/*.js": {
+      "source": "./ground/*.ts",
+      "default": "./dist/ground/*.js"
+    },
+    "#pointer/*.js": {
+      "source": "./pointer/*.ts",
+      "default": "./dist/pointer/*.js"
+    },
+    "#audio/*.js": {
+      "source": "./audio/*.ts",
+      "default": "./dist/audio/*.js"
     }
   },
   "scripts": {

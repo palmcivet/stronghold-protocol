@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import type { AssetKey } from "arknights-assets-catalog"
 import type { BattleEvent, UnitSnapshot } from "arknights-mission-core"
-import { audioCueFor, effectCueFor } from "./cue.js"
+import { audioCueFor, effectCueFor } from "#audio/index.js"
 
 const asset: AssetKey = "audio:sfx/battle/b_hit"
 

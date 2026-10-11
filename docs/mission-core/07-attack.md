@@ -67,18 +67,19 @@ description: 攻击是单位身上的 attack 计时器。出手时按 attackShap
 | --- | --- |
 | `splash` | 以落点为圆心，按站位中心量半径。`othersOnly` 为真时主目标吃未乘倍率的一击，其他人吃 `scale`（缺省 1）。为假时圈内每个人，包括主目标，只吃 `scale`。`groundOnly` 跳过飞行单位。攻击者打不到飞行单位时，溅射也不打。 |
 | `bounce` | 从主目标再跳到附近的对方单位。`count` 含主目标。第 k 跳的倍率是 `(1 - falloff) ^ k`。`pause` 大于 0 时，主目标和每一跳获得这么多秒的 `sluggish`。 |
-| `chain` | 从主目标再治疗附近的同阵营。每一跳从上一个治到的人出发，缺省找它所在格子周围 3×3（`CHAIN_HEAL_REACH` 为 1，切比雪夫距离），写了 `radius` 时按直线距离。跳过已经治过的、带 `no-heal` 的；生命比例最低的在前，满血的也能跳（白治一下，链从它接着跳），比例相同时最晚部署（`aggroSeq` 大）的在前。`count` 含主目标，衰减和弹射同一写法。 |
+| `chain` | 从主目标再治疗附近的同阵营。每一跳从上一个治到的人出发，缺省找它所在格子周围 3×3（`CHAIN_HEAL_REACH` 为 1，切比雪夫距离），写了 `radius` 时按直线距离。跳过已经治过的、带 `no-heal`（`healThrough` 认的除外）或 `no-ally-heal` 的；生命比例最低的在前，满血的也能跳（白治一下，链从它接着跳），比例相同时最晚部署（`aggroSeq` 大）的在前。`count` 含主目标，衰减和弹射同一写法。 |
 | `healCount` | 同时治疗这么多个受伤的同阵营单位。没写时是 1。 |
 | `lockRange` | 范围内每个可选目标立刻命中。和 `projectile` 一起写时也不飞弹。 |
 | `blockTargets` | 一次攻击的目标数等于阻挡数（`blockCnt` 汇总值，不足 1 按 1），从选择器链的前面取，链里 `block` 把阻挡的敌人排在前面。`lockRange` 同时写时以 `lockRange` 为准。 |
 | `filters` | 普攻选目标时追加在选择器链末尾的筛选器 id，用 `registerSelector` 注册（`kind: "filter"`），`query.origin` 是攻击者。不过筛的单位不当普攻目标，自己挡着的也不打（阻挡照常）；技能的基础策略（`DEFAULT`、`SEARCH`、`ACTIVE_RANGE`）同样跳过它。治疗攻击也追加。开场时没注册的 id 报 `UnknownRegistrationError`。 |
+| `healThrough` | 穿过禁疗的筛选器 id，用 `registerSelector` 注册（`kind: "filter"`），`query.origin` 是治疗者。过筛的友方带 `no-heal` 时仍是这个单位的治疗目标与治疗链的落点，它的治疗（含技能里以它为来源的 `heal`）也不看 `no-heal` 与 `heal-free`。别的治疗者照旧被拦；`no-ally-heal` 谁也穿不过。开场时没注册的 id 报 `UnknownRegistrationError`。 |
 | `projectile` | 出手时 `launchProjectile`。速度见 `PROJECTILE_KIND_SPEEDS`：`arrow` 14、`bolt` 11、`orb` 10、`bomb` 8、`boomerang` 15，单位是格/秒。到达后才结算。`bomb` 带了溅射时，目标中途离场仍在最后坐标结算；其余种类目标离场则消掉。`boomerang` 再按 `BOOMERANG_RETURN_SPEED`（3.75）飞回，回程不造成伤害。投掷者已经离场则不再飞回。 |
 
 飞行中的回旋数量写在回旋组件 `attack:boomerang`（`combat/attack/boomerang.ts`），并抄进属性 `boomerangsOut`；组件的 `view` 把它写进快照的 `components`。能不能因此停手由 `readAttackTiming` 决定。
 
 再加一种形状时，在 `AttackShape` 上加可选字段，并 `registerAttackResolver` 登记结算函数。新的投射物速度写进 `PROJECTILE_KIND_SPEEDS`，目标离场后是否仍落下写进 `PROJECTILE_RETAIN`，飞回速度写进 `PROJECTILE_RETURN_SPEEDS`。
 
-友方的链是 `foe`、`fly`、`stealth`、`sleep`、`untargetable`、`isolated`、`range`、`ally-target`、`block`、`priority`、`taunt`、`remaining`、`distance`、`spawn`。`foe` 是敌人，加上带 `ally-target` 标签的友方；`ally-target` 排序把这些友方放到所有敌人之后。没有单位带这个标签时与只选敌人相同。打它们是普通的攻击（近战当场命中，远程飞投射物）；不在场时不选。治疗攻击的链不变。
+友方的链是 `foe`、`fly`、`stealth`、`sleep`、`untargetable`、`isolated`、`range`、`ally-target`、`block`、`priority`、`taunt`、`remaining`、`distance`、`spawn`。`foe` 是敌人，加上带 `ally-target` 标签的友方；`ally-target` 排序把这些友方放到所有敌人之后。没有单位带这个标签时与只选敌人相同。打它们是普通的攻击（近战当场命中，远程飞投射物）；不在场时不选。治疗攻击的链不变，带 `ally-target` 的友方照常是治疗目标与治疗链的落点。
 
 敌人的链是 `ally`、`sleep`、`stealth`、`camouflage`、`liftoff`、`untargetable`、`isolated`、`range`、`block`、`priority`、`taunt`、`aggro`、`distance`。
 

@@ -11,7 +11,7 @@ import {
   type PackFile,
   type PackManifest,
 } from "arknights-assets-catalog"
-import { createRendererResourcePort, type RendererResourceLoaders } from "./resource.js"
+import { createRendererResourcePort, type RendererResourceLoaders } from "#port/resource.js"
 
 const ORIGIN = "https://cdn.example"
 const HASH = "e3".repeat(32)

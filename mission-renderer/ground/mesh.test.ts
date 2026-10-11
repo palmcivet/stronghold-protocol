@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
-import type { TerrainGeometry } from "./layout.js"
-import { boxGeometry, parseObj, placeBoardMesh } from "./mesh.js"
+import type { TerrainGeometry } from "#ground/layout.js"
+import { boxGeometry, parseObj, placeBoardMesh } from "#ground/mesh.js"
 
 const TRIANGLE = `
 v 0 1 0

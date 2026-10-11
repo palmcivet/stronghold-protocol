@@ -15,12 +15,18 @@ description: arknights-mission-renderer 把战斗快照和事件画成三维战�
 mission-renderer/
   contract/       视图命令、拾取结果、音效线索、地图与相机类型
   port/           资源端口：向资源目录申请图片、Spine、模型的句柄
-  stage/          舞台入口，以及它使用的喂数、音效、拾取、投影
-    ground/
-      terrain/    三维地面：场景、材质、布局、地形资源包
+  runtime/
+    stage/        舞台入口：组装与命令分发
+    feed/         快照缓冲与本地喂数
+    camera/       投影与相机
+  ground/         三维地面：场景、材质、布局、地形资源包
+  pointer/        拾取
+  audio/          事件到音效线索
 ```
 
-`contract/` 的类型是对外的输入输出。`stage/` 的 `createMissionStage` 把它们串起来。`port/` 是唯一向外要资源的地方。
+`contract/` 的类型是对外的输入输出。`runtime/stage/` 的 `createMissionStage` 把它们串起来。`port/` 是唯一向外要资源的地方。
+
+每个顶层目录有一个路径别名（`#contract/*.js`、`#port/*.js`、`#runtime/*.js`、`#ground/*.js`、`#pointer/*.js`、`#audio/*.js`），包内用别名引用，不写相对路径。
 
 ## 快速开始
 

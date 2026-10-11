@@ -2,7 +2,7 @@ export {
   createRendererResourcePort,
   type RendererResourceLoaders,
   type RendererResourcePort,
-} from "./port/resource.js"
+} from "#port/resource.js"
 
 export type {
   MissionCamera,
@@ -12,13 +12,13 @@ export type {
   MissionStageCommand,
   MissionUpdateMode,
   MissionView,
-} from "./contract/view.js"
-export type { MissionAudioCue } from "./contract/event.js"
+} from "#contract/view.js"
+export type { MissionAudioCue } from "#contract/audio.js"
 export {
   createMissionStage,
   type MissionBoard,
   type MissionStageOptions,
-} from "./stage/stage.js"
+} from "#runtime/stage/index.js"
 export {
   TERRAIN_GATE_NODES,
   TERRAIN_IMAGE_SLOTS,
@@ -26,11 +26,11 @@ export {
   createTerrainStage,
   type TerrainMode,
   type TerrainPackRequest,
-} from "./stage/ground/terrain/stage.js"
-export { audioCueFor, effectCueFor } from "./stage/cue.js"
+} from "#ground/index.js"
+export { audioCueFor, effectCueFor } from "#audio/index.js"
 export {
   createLocalFeed,
   type FeedSample,
   type LocalFeed,
   type LocalFeedOptions,
-} from "./stage/feed.js"
+} from "#runtime/feed/index.js"

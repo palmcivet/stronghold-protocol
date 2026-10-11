@@ -1,6 +1,6 @@
 import type { TileCoord, UnitSnapshot } from "arknights-mission-core"
 import type { MissionPointerHit } from "#contract/view.js"
-import type { BoardTransform } from "./projection.js"
+import type { BoardTransform } from "#runtime/camera/index.js"
 
 const UNIT_REACH = 0.4
 

@@ -121,7 +121,7 @@ interface DamagePreview {
 
 ## 治疗
 
-`heal(unitId, amount, options?)` 要求数额是正数。目标带 `no-heal` 时，只有 `self` 或来源就是目标才治。带 `heal-free` 时，`regen` 或 `ignoreHealFree` 才治。治疗量是数额 × 来源的 `healingDealt` × 目标的 `healingTaken`。没有来源时 `healingDealt` 按 1。写回的生命不超过最大生命。`overheal` 把超出的部分转成护盾，这份护盾不超过最大生命，并施加 `overheal` 状态。`overhealDuration` 是秒，缺省一直留着。状态结束时，还没被打掉的这份护盾从单位上减去。送出 `heal`。
+`heal(unitId, amount, options?)` 要求数额是正数。目标带 `no-heal` 或 `no-ally-heal` 时，只有 `self` 或来源就是目标才治。带 `heal-free` 时，`regen` 或 `ignoreHealFree` 才治。来源的 `attackShape.healThrough` 认这个目标时，`no-heal` 与 `heal-free` 都不拦它，`no-ally-heal` 照样拦（见 [攻击](./07-attack.md)）。治疗量是数额 × 来源的 `healingDealt` × 目标的 `healingTaken`。没有来源时 `healingDealt` 按 1。写回的生命不超过最大生命。`overheal` 把超出的部分转成护盾，这份护盾不超过最大生命，并施加 `overheal` 状态。`overhealDuration` 是秒，缺省一直留着。状态结束时，还没被打掉的这份护盾从单位上减去。送出 `heal`。
 
 ## 元素
 

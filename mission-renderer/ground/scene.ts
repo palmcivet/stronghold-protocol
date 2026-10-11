@@ -18,7 +18,7 @@ import {
   type WebGLRenderer,
 } from "three"
 import type { MissionMap } from "#contract/view.js"
-import { surfaceUV, type TerrainSurface, type TerrainUvTable } from "./atlas.js"
+import { surfaceUV, type TerrainSurface, type TerrainUvTable } from "#ground/atlas.js"
 
 import {
   backdropGeometry,
@@ -29,7 +29,7 @@ import {
   smogCards,
   type TerrainGeometry,
   type TerrainLayout,
-} from "./layout.js"
+} from "#ground/layout.js"
 import {
   boardMaterial,
   dashTexture,
@@ -48,10 +48,10 @@ import {
   waterMaterial,
   type BoardTextures,
   type FocusUniforms,
-} from "./materials.js"
-import { boxGeometry, boxProjectUv, objToBoard, placeBoardMesh, terrainGeometryOf, type BoardPlacement, type ParsedMesh } from "./mesh.js"
-import { BACKDROP, PLATFORM_DEVICE_HEIGHT } from "./palette.js"
-import type { TerrainGateSlot, TerrainPack, TerrainProp } from "./pack.js"
+} from "#ground/materials.js"
+import { boxGeometry, boxProjectUv, objToBoard, placeBoardMesh, terrainGeometryOf, type BoardPlacement, type ParsedMesh } from "#ground/mesh.js"
+import { BACKDROP, PLATFORM_DEVICE_HEIGHT } from "#ground/palette.js"
+import type { TerrainGateSlot, TerrainPack, TerrainProp } from "#ground/pack.js"
 
 /** Lighting rig tuned against the official screenshots: bright tops, darker sides, soft shadows. */
 export const TERRAIN_LIGHTING = Object.freeze({

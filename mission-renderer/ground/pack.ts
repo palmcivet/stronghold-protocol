@@ -1,8 +1,8 @@
 import type { AssetKey } from "arknights-assets-catalog"
 import type { Object3D, Texture } from "three"
 import type { RendererAssetKind, RendererResourcePort } from "#port/resource.js"
-import { resolveUvTable, type TerrainUvTable } from "./atlas.js"
-import { isParsedMesh, parseObj, type ParsedMesh } from "./mesh.js"
+import { resolveUvTable, type TerrainUvTable } from "#ground/atlas.js"
+import { isParsedMesh, parseObj, type ParsedMesh } from "#ground/mesh.js"
 
 /** Official board atlas slots (master board3d/load.js PACK_IMAGES). The diffuse slot `D` is required. */
 export const TERRAIN_IMAGE_SLOTS = [

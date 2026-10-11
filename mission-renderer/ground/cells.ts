@@ -1,6 +1,6 @@
 import type { TileSpec } from "arknights-mission-core"
 import type { MissionMap } from "#contract/view.js"
-import { RAISED_GLYPH_HEIGHT, TILE_HEIGHT, type Vec3 } from "./palette.js"
+import { RAISED_GLYPH_HEIGHT, TILE_HEIGHT, type Vec3 } from "#ground/palette.js"
 
 /** A board tile plus the glyph, device and surface the ground reads when a map carries them. */
 export type BoardTile = TileSpec & {
