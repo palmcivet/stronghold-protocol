@@ -5,7 +5,7 @@ import { SyntaxKind } from "typescript/unstable/ast"
 import { PACKAGE_ROOT, packageSources, significant, tokenize, type SourceToken } from "#test/source.js"
 
 const REPOSITORY_ROOT = join(PACKAGE_ROOT, "..")
-const TRACE_TABLE = join(REPOSITORY_ROOT, "docs/development/trace.md")
+const TRACE_TABLE = join(REPOSITORY_ROOT, "docs/mission-core/14-trace.md")
 const PLANS = join(REPOSITORY_ROOT, "plans")
 const PACKAGE_SECTION = "mission-core"
 
