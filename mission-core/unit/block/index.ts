@@ -141,7 +141,7 @@ function restoreStealth(state: BattleWorld, registry: BattleRegistry, ctx: Conte
 }
 
 /** 没写 blockCnt 时按 1。写了就走属性汇总。 */
-function blockCount(unit: UnitState, registry: BattleRegistry): number {
+export function blockCount(unit: UnitState, registry: BattleRegistry): number {
   if (!carriesAttribute(unit, registry, "blockCnt")) return 1
   const value = attributeOf(unit, registry, "blockCnt")
   if (!Number.isFinite(value) || value < 0) return 0

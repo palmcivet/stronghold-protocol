@@ -9,6 +9,7 @@ test("元素槽按标识存放", () => {
     install(ctx) {
       ctx.replace(defineExtensible("burn", { version: 1, contract: "element" }), {
         id: "burn",
+        order: 2,
         cap: 10,
         resistance: 0,
         onBurst(unitId) {
@@ -17,6 +18,7 @@ test("元素槽按标识存放", () => {
       })
       ctx.replace(defineExtensible("neural", { version: 1, contract: "element" }), {
         id: "neural",
+        order: 0,
         cap: 10,
         resistance: 20,
       })
@@ -72,8 +74,8 @@ test("元素槽按注册抗性摄入，100% 抗性落到 5%", () => {
       ctx.dealDamage({ sourceId: "t", targetId: "t", amount: 100, kind: "element", element: "sealed" })
     },
     (ctx) => {
-      ctx.registerElement({ id: "brine", cap: 1000, resistance: 50 })
-      ctx.registerElement({ id: "sealed", cap: 1000, resistance: 100 })
+      ctx.registerElement({ id: "brine", order: 10, cap: 1000, resistance: 50 })
+      ctx.registerElement({ id: "sealed", order: 11, cap: 1000, resistance: 100 })
     },
   )
   battle.step()

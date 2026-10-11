@@ -9,12 +9,12 @@ import type {
 } from "#port/definition.js"
 
 /** 内置叠加策略。refresh 是缺省。 */
-export const STACKINGS = ["refresh", "stack", "independent", "strongest"] as const
+export const STACKINGS = ["refresh", "extend", "stack", "independent", "strongest", "keep"] as const
 
 const STRENGTH_EPSILON = 1e-12
 
 export function registerBuiltinStackings(registry: BattleRegistry): void {
-  for (const definition of [refreshStacking, stackStacking, independentStacking, strongestStacking]) {
+  for (const definition of [refreshStacking, extendStacking, stackStacking, independentStacking, strongestStacking, keepStacking]) {
     registry.registerStacking(definition)
     registry.markExtensible(defineExtensible(definition.id, { version: 1, contract: "stacking" }))
   }
@@ -35,6 +35,21 @@ export const refreshStacking: StackingDefinition = {
   },
 }
 
+/** 时长取剩余与这次中更长的，层数加 1 直到上限。 */
+export const extendStacking: StackingDefinition = {
+  id: "extend",
+  apply(effects, existing, incoming, definition) {
+    if (!existing) return push(effects, blank(definition, incoming, 1))
+    existing.carried = true
+    existing.priorRemaining = existing.permanent ? Number.POSITIVE_INFINITY : existing.remaining
+    existing.pulse = 0
+    if (existing.stacks < definition.stackCap) existing.stacks += 1
+    if (incoming.permanent || (!existing.permanent && incoming.ticks > existing.remaining)) writeSpan(existing, incoming)
+    writeScale(existing, definition, incoming.value)
+    return existing
+  },
+}
+
 /** 按 value 加层（缺省 1），总数不超过上限，时长不变。强度记成层数。 */
 export const stackStacking: StackingDefinition = {
   id: "stack",
@@ -50,10 +65,22 @@ export const stackStacking: StackingDefinition = {
   },
 }
 
-/** 每次施加各自一条，各算各的时长。 */
+/** 每次施加各自一条，各算各的时长；同时最多 stackCap 条，满了先去掉最早的那条。 */
 export const independentStacking: StackingDefinition = {
   id: "independent",
   apply(effects, _existing, incoming, definition) {
+    if (definition.stackCap < 1) return undefined
+    const same = effects.filter((effect) => effect.id === definition.id && !effect.dropped && effect.source === null)
+    for (const oldest of same.slice(0, Math.max(0, same.length - definition.stackCap + 1))) effects.splice(effects.indexOf(oldest), 1)
+    return push(effects, blank(definition, incoming, 1))
+  },
+}
+
+/** 已经在身上时这次施加不生效，留着原来的。 */
+export const keepStacking: StackingDefinition = {
+  id: "keep",
+  apply(effects, existing, incoming, definition) {
+    if (existing) return undefined
     return push(effects, blank(definition, incoming, 1))
   },
 }

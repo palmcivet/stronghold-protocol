@@ -30,6 +30,7 @@ function unitOf(id: string, kind: UnitSnapshot["kind"]): UnitSnapshot {
     shield: 0,
     downed: true,
     redeploy: null,
+    unbalanceUntil: null,
     components: {},
   }
 }

@@ -1,6 +1,6 @@
 import { defineExtensible } from "#kernel/registry/extensible.js"
 import type { BattleRegistry, SelectorDefinition, SelectorQuery } from "#port/definition.js"
-import { CAMOU, CAN_HIT_FLY, ISOLATED, LIFTOFF, REVEAL, SLEEP, STEALTH, STEALTH_OFF, UNTARGETABLE } from "#port/tag.js"
+import { ALLY_TARGET, CAMOU, CAN_HIT_FLY, ISOLATED, LIFTOFF, REVEAL, SLEEP, STEALTH, STEALTH_OFF, UNTARGETABLE } from "#port/tag.js"
 import { hasTag } from "#kernel/world/tag.js"
 import { bodyDist, bodyInKeys } from "#field/body/index.js"
 import { gridOf } from "#field/grid/index.js"
@@ -25,6 +25,7 @@ function filters(state: BattleWorld, registry: BattleRegistry): readonly Selecto
   return [
     keep("enemy", (unitId, query) => sideOf(state, query, unitId, "enemy")),
     keep("ally", (unitId, query) => sideOf(state, query, unitId, "ally")),
+    keep("foe", (unitId, query) => foeOf(state, query, unitId)),
     keep("fly", (unitId, query) => allowsFly(state, query, unitId)),
     keep("stealth", (unitId, query) => visible(state, query, unitId)),
     keep("camouflage", (unitId, query) => plainAttackSees(state, query, unitId)),
@@ -43,6 +44,20 @@ function sideOf(state: BattleWorld, query: SelectorQuery, unitId: string, side: 
   if (!unit || !living(state, unit)) return false
   if (source && unit.id === source.id) return false
   return unit.side === side
+}
+
+/** 对面阵营的单位；攻击者同阵营里带 ally-target 的也算。 */
+function foeOf(state: BattleWorld, query: SelectorQuery, unitId: string): boolean {
+  const unit = state.units.get(unitId)
+  const source = attacker(state, query)
+  if (!unit || !source || !living(state, unit) || unit.id === source.id) return false
+  return unit.side !== source.side || hasTag(unit, ALLY_TARGET)
+}
+
+function foeRank(state: BattleWorld, query: SelectorQuery, unitId: string): number {
+  const unit = state.units.get(unitId)
+  const source = attacker(state, query)
+  return unit && source && unit.side === source.side ? 1 : 0
 }
 
 function allowsFly(state: BattleWorld, query: SelectorQuery, unitId: string): boolean {
@@ -100,6 +115,7 @@ function insideRange(state: BattleWorld, registry: BattleRegistry, query: Select
   const unit = state.units.get(unitId)
   if (!source || !unit) return false
   if (blockingOf(state, source.id).includes(unitId) || blockerOf(state, unitId) === source.id) return true
+  if (blockerOf(state, source.id) === unitId) return true
   const grid = gridOf(state)
   return bodyInKeys(unit, absoluteRangeTiles(grid, source.id, state, registry), grid.rect)
 }
@@ -108,6 +124,7 @@ function insideRange(state: BattleWorld, registry: BattleRegistry, query: Select
 
 function sorts(state: BattleWorld, registry: BattleRegistry): readonly SelectorDefinition[] {
   return [
+    order("ally-target", (left, right, query) => foeRank(state, query, left) - foeRank(state, query, right)),
     order("block", (left, right, query) => blockRank(state, query, left) - blockRank(state, query, right)),
     order("priority", (left, right, query) => priorityRank(state, registry, query, left) - priorityRank(state, registry, query, right)),
     order("taunt", (left, right) => tauntOf(state, registry, right) - tauntOf(state, registry, left)),
@@ -124,8 +141,11 @@ function blockRank(state: BattleWorld, query: SelectorQuery, unitId: string): nu
   const source = attacker(state, query)
   const unit = state.units.get(unitId)
   if (!source || !unit) return 1
-  if (source.side === "ally") return blockerOf(state, unitId) === source.id ? 0 : 1
-  return blockerOf(state, source.id) === unit.id ? 0 : 1
+  if (source.side !== "ally") return blockerOf(state, source.id) === unit.id ? 0 : 1
+  // 优先攻击空中单位的（速射手）范围里的飞行敌人和自己挡着的敌人同级，再由 priority 把飞行的排前
+  // TRACE: source/fly-over-block
+  if (targetPriorityOf(state, source.id) === "fly" && isFlying(unit)) return 0
+  return blockerOf(state, unitId) === source.id ? 0 : 1
 }
 
 function priorityRank(state: BattleWorld, registry: BattleRegistry, query: SelectorQuery, unitId: string): number {
@@ -168,7 +188,7 @@ function aggroOf(state: BattleWorld, unitId: string): number {
 function pathOf(state: BattleWorld, unitId: string): number {
   const unit = state.units.get(unitId)
   if (!unit) return 0
-  return remainingDistance(state, unit)
+  return remainingDistance(state, unit, gridOf(state))
 }
 
 function ratioOf(state: BattleWorld, registry: BattleRegistry, unitId: string): number {

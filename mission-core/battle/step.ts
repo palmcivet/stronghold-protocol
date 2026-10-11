@@ -3,11 +3,16 @@ import type { BattleRegistry } from "#port/definition.js"
 import { advanceShift } from "#field/motion/index.js"
 import { advanceProjectiles } from "#combat/projectile/index.js"
 import { armUnit } from "#ability/skill/point.js"
-import { attributeOf } from "#ability/effect/attribute.js"
+import { attributeOf, maxHpOf } from "#ability/effect/attribute.js"
 import { clearAttackTargetThisTick } from "#combat/attack/timing.js"
-import { MOVE_SCALE, advanceRoute } from "#field/grid/route.js"
+import { MOVE_SCALE, advanceRoute, routeHidden } from "#field/grid/route.js"
+import { hasTag } from "#kernel/world/tag.js"
+import { ATTRACT, CANNOT_ACT, FEAR } from "#port/tag.js"
+import { attackStanding, settleStands } from "#combat/attack/stand.js"
+import { settleUnbalance } from "#field/motion/unbalance.js"
+import { attackWillWind } from "#combat/attack/index.js"
 import { gridOf } from "#field/grid/index.js"
-import { placeUnit, type BattleWorld } from "#unit/record/index.js"
+import { placeUnit, unbalanced, type BattleWorld } from "#unit/record/index.js"
 import { advanceStartedTimers, advanceTimer, armListedTimers } from "#unit/record/timer.js"
 import { emit } from "#kernel/event/index.js"
 import { readTimer } from "#kernel/timer/index.js"
@@ -78,11 +83,18 @@ export function registerEngineSystems(registry: BattleRegistry, state: BattleWor
     id: "engine:enemy-route",
     slot: "enemy",
     priority: 0,
-    run() {
+    run(runCtx) {
+      settleStands(state)
       for (const unit of state.units.values()) {
+        settleUnbalance(state, unit)
+        // 晕眩等无法行动时恐惧与诱导的位移也停下
+        if (hasTag(unit, CANNOT_ACT) && !routeHidden(state, unit.id)) continue
         if (advanceShift(state, registry, unit, TICK)) continue
         const speed = Math.max(0, attributeOf(unit, registry, "moveSpeed")) * MOVE_SCALE
-        advanceRoute(state, gridOf(state), unit, TICK, speed)
+        // 诱导还在时走到诱导点就停在那里等，诱导结束才接着沿路线；没有来源的恐惧没有可达地块，留在原格
+        const standing =
+          unbalanced(state, unit) || hasTag(unit, ATTRACT) || hasTag(unit, FEAR) || attackStanding(state, unit, () => attackWillWind(state, registry, runCtx, unit))
+        advanceRoute(state, gridOf(state), unit, TICK, speed, standing)
       }
     },
   })
@@ -138,6 +150,15 @@ export function registerEngineSystems(registry: BattleRegistry, state: BattleWor
           if (timed.remaining <= 0) unit.modifiers.delete(key)
         }
       }
+    },
+  })
+  registry.registerSystem({
+    id: "engine:max-hp",
+    slot: "finale",
+    priority: 1001,
+    run() {
+      // 这一拍里没人读过的最大生命变化，在拍末结算比例，快照看到的生命已经跟上
+      for (const unit of state.units.values()) maxHpOf(unit, registry)
     },
   })
 }

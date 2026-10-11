@@ -586,3 +586,43 @@ test("治疗受乘算、禁疗和最大生命限制，溢出按 overheal 进护�
   taken.step()
   expect(hpOf(taken)).toBe(80)
 })
+
+test("闪避用本场的种子随机数：同一种子同样的命中数，五成闪避约一半命中；canDodge 为假时必中", () => {
+  const run = (seed: number): { hits: number; forced: number } => {
+    let hits = 0
+    let forced = 0
+    const module: MissionModule = {
+      id: "case",
+      install(ctx) {
+        ctx.registerSystem({
+          id: "case",
+          slot: "schedule",
+          priority: 1,
+          run(runCtx) {
+            if (runCtx.tick() !== 0) return
+            const read = () => runCtx.unit("t")?.hp ?? 0
+            for (let index = 0; index < 400; index += 1) {
+              const before = read()
+              runCtx.dealDamage({ sourceId: "t", targetId: "t", amount: 100, kind: "physical" })
+              if (read() < before) hits += 1
+            }
+            const before = read()
+            runCtx.dealDamage({ sourceId: "t", targetId: "t", amount: 100, kind: "physical", canDodge: false })
+            forced = before - read()
+          },
+        })
+      },
+    }
+    const battle = createBattle(
+      spec({ seed, modules: ["case"], units: [ally("t", { attributes: { hp: 1e7, def: 0, dodgePhys: 0.5 } })] }),
+      [module],
+    )
+    battle.step()
+    return { hits, forced }
+  }
+  const first = run(9)
+  expect(run(9)).toEqual(first)
+  expect(first.hits).toBeGreaterThan(150)
+  expect(first.hits).toBeLessThan(250)
+  expect(first.forced).toBe(100)
+})

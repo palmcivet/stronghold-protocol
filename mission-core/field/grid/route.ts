@@ -119,6 +119,7 @@ export function advanceRoute(
   unit: UnitState,
   dt: number,
   tilesPerSecond?: number,
+  standing = false,
 ): void {
   if (unit.side !== "enemy" || !unit.fielded || unit.downed) return
   const state = world.components.access(ROUTE).get(unit.id)
@@ -152,10 +153,13 @@ export function advanceRoute(
       unit.x = leg.x
       unit.y = leg.y
       state.hidden = false
+      // 出现是强制切换状态机，结束失衡
+      unit.unbalanceUntil = null
       route.legIdx += 1
       route.pts = null
       continue
     }
+    if (standing) return
     if (!route.pts || route.version !== grid.version) planLeg(grid, unit, route, leg)
     const speed = tilesPerSecond ?? (unit.attributes.moveSpeed ?? 0) * MOVE_SCALE
     if (!(speed > 0)) return
@@ -193,8 +197,11 @@ export function advanceRoute(
   }
 }
 
-/** 沿还没走完的移动段量到终点的路程。没有路线时是 0。 */
-export function remainingDistance(world: { readonly components: ComponentStore }, unit: UnitState): number {
+/**
+ * 沿还没走完的移动段量到终点的路程。这一段按已经规划的路点量；之后的地面段按平滑流场的长度，飞行段量直线；
+ * 出现段把起点挪到出现的位置。没有路线时是 0。
+ */
+export function remainingDistance(world: { readonly components: ComponentStore }, unit: UnitState, grid: FieldGrid): number {
   const route = world.components.access(ROUTE).get(unit.id)?.run
   if (!route) return 0
   let total = 0
@@ -202,7 +209,13 @@ export function remainingDistance(world: { readonly components: ComponentStore }
   let y = unit.y
   for (let index = route.legIdx; index < route.legs.length; index += 1) {
     const leg = route.legs[index]
-    if (!leg || leg.t !== "move") continue
+    if (!leg) continue
+    if (leg.t === "appear") {
+      x = leg.x
+      y = leg.y
+      continue
+    }
+    if (leg.t !== "move") continue
     if (index === route.legIdx && route.pts && route.ptIdx < route.pts.length) {
       for (let pointIndex = route.ptIdx; pointIndex < route.pts.length; pointIndex += 1) {
         const point = route.pts[pointIndex]
@@ -213,9 +226,22 @@ export function remainingDistance(world: { readonly components: ComponentStore }
       }
       continue
     }
-    total += hypot(leg.x - x, leg.y - y)
+    total += index === route.legIdx ? hypot(leg.x - x, leg.y - y) : legLength(grid, unit, x, y, leg)
     x = leg.x
     y = leg.y
   }
   return total
+}
+
+/** 从路点 (x, y) 走到这一段终点的长度：地面按平滑流场，飞行或起点在格子外时量直线。 */
+function legLength(grid: FieldGrid, unit: UnitState, x: number, y: number, leg: RouteLeg): number {
+  const straight = hypot(leg.x - x, leg.y - y)
+  if (unit.motion === "FLY") return straight
+  const tileX = Math.round(x)
+  const tileY = Math.round(y)
+  if (!grid.inBounds(tileX, tileY)) return straight
+  const key = grid.key(tileX, tileY)
+  const field = legField(grid, leg.x, leg.y, key)
+  const length = field ? grid.fieldLength(field, key) : Infinity
+  return Number.isFinite(length) ? length : straight
 }

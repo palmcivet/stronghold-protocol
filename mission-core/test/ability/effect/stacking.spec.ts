@@ -9,32 +9,39 @@ interface Application {
   readonly stackAs?: number
   /** 这一拍改为取下效果。 */
   readonly remove?: boolean
+  /** 在 ally 槽（效果槽之后）施加，缺省在 schedule 槽（效果槽之前）。 */
+  readonly late?: boolean
 }
 
-/** 按计划在 schedule 槽施加 fragile，每拍在 finale 槽记下 dmgTaken。 */
+/** 按计划在 schedule 或 ally 槽施加 fragile，每拍在 finale 槽记下 dmgTaken。 */
 function run(plan: readonly Application[], steps: number, effectId = "fragile", attribute = "dmgTaken"): number[] {
   const seen: number[] = []
   const module: MissionModule = {
     id: "case",
     install(ctx) {
-      ctx.registerSystem({
-        id: "apply",
-        slot: "schedule",
-        priority: 1,
-        run(runCtx) {
-          for (const entry of plan) {
-            if (entry.tick !== runCtx.tick()) continue
-            if (entry.remove === true) runCtx.removeEffect("e", effectId)
-            else {
-              runCtx.applyEffect("e", effectId, {
-                value: entry.value,
-                duration: entry.ticks * TICK,
-                ...(entry.stackAs !== undefined ? { stackAs: entry.stackAs } : {}),
-              })
+      for (const [slot, late] of [
+        ["schedule", false],
+        ["ally", true],
+      ] as const) {
+        ctx.registerSystem({
+          id: `apply-${slot}`,
+          slot,
+          priority: 1,
+          run(runCtx) {
+            for (const entry of plan) {
+              if (entry.tick !== runCtx.tick() || (entry.late === true) !== late) continue
+              if (entry.remove === true) runCtx.removeEffect("e", effectId)
+              else {
+                runCtx.applyEffect("e", effectId, {
+                  value: entry.value,
+                  duration: entry.ticks * TICK,
+                  ...(entry.stackAs !== undefined ? { stackAs: entry.stackAs } : {}),
+                })
+              }
             }
-          }
-        },
-      })
+          },
+        })
+      }
       ctx.registerSystem({
         id: "read",
         slot: "finale",
@@ -51,6 +58,16 @@ function run(plan: readonly Application[], steps: number, effectId = "fragile", 
   )
   for (let step = 0; step < steps; step += 1) battle.step()
   return seen
+}
+
+/** 读数变化的拍与变化后的增伤值。 */
+function changes(seen: readonly number[]): [number, number][] {
+  const result: [number, number][] = []
+  seen.forEach((value, tick) => {
+    const rounded = Math.round((value - 1) * 1e9) / 1e9
+    if (tick === 0 || rounded !== result[result.length - 1]?.[1]) result.push([tick, rounded])
+  })
+  return result
 }
 
 const ORDERS = [
@@ -158,4 +175,67 @@ test("removeEffect 连等待链一起取下，之后的新施加单独计时", (
   expect(seen[1]).toBeCloseTo(1.1, 9)
   expect(seen[63]).toBe(1)
   expect(seen.slice(63).every((value) => value === 1)).toBe(true)
+})
+
+test.each([
+  {
+    name: "效果槽之前施加",
+    plan: [
+      { tick: 0, value: 0.8, ticks: 60 },
+      { tick: 0, value: 0.6, ticks: 150 },
+      { tick: 0, value: 0.3, ticks: 300 },
+    ],
+    expected: [
+      [0, 0.8],
+      [59, 0.6],
+      [150, 0.3],
+      [300, 0],
+    ],
+  },
+  {
+    name: "效果槽之后施加",
+    plan: [
+      { tick: 0, value: 0.8, ticks: 60, late: true },
+      { tick: 0, value: 0.6, ticks: 150, late: true },
+      { tick: 0, value: 0.3, ticks: 300, late: true },
+    ],
+    expected: [
+      [0, 0.8],
+      [60, 0.6],
+      [150, 0.3],
+      [300, 0],
+    ],
+  },
+  {
+    name: "接管、插入与同强度延长交错",
+    plan: [
+      { tick: 0, value: 0.3, ticks: 100 },
+      { tick: 10, value: 0.8, ticks: 30, late: true },
+      { tick: 20, value: 0.5, ticks: 200 },
+      { tick: 50, value: 0.5, ticks: 250, late: true },
+      { tick: 60, value: 0.2, ticks: 400 },
+    ],
+    expected: [
+      [0, 0.3],
+      [10, 0.8],
+      [40, 0.5],
+      [300, 0.2],
+    ],
+  },
+  {
+    name: "stackAs 排序",
+    plan: [
+      { tick: 0, value: 0.1, stackAs: 0.9, ticks: 60 },
+      { tick: 5, value: 0.2, stackAs: 0.8, ticks: 150, late: true },
+      { tick: 5, value: 0.3, ticks: 300 },
+    ],
+    expected: [
+      [0, 0.1],
+      [59, 0.2],
+      [155, 0.3],
+      [305, 0],
+    ],
+  },
+])("等待链逐拍接续：$name", ({ plan, expected }) => {
+  expect(changes(run(plan, 360))).toEqual(expected)
 })

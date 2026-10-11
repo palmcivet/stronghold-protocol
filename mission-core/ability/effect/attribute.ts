@@ -10,6 +10,8 @@ export function defineAttribute(id: string, options: { readonly base: number; re
   return { id, base: options.base, ...(options.clamp ? { clamp: { ...options.clamp } } : {}) }
 }
 
+const MAX_HP_EPSILON = 1e-9
+
 /** 基础值从 1 开始的乘数属性。 */
 export const MULTIPLIER_ATTRIBUTES: readonly AttributeDefinition[] = [
   "dmgDealt",
@@ -25,8 +27,12 @@ export const MULTIPLIER_ATTRIBUTES: readonly AttributeDefinition[] = [
   "healingTaken",
 ].map((id) => defineAttribute(id, { base: 1 }))
 
+/** 重量。推拉的受力等级与浮空、缚地减半都读修饰之后的值，不低于 0。 */
+export const MASS_LEVEL = defineAttribute("massLevel", { base: 0, clamp: { min: 0 } })
+
 export function registerBuiltinAttributes(registry: BattleRegistry): void {
   for (const definition of MULTIPLIER_ATTRIBUTES) registry.registerAttribute(definition)
+  registry.registerAttribute(MASS_LEVEL)
 }
 
 interface ModSum {
@@ -39,13 +45,14 @@ interface ModSum {
 
 /**
  * 属性的当前值：基础值 → 加值 → 百分比 → 直接乘算 → 独立乘区，再按定义夹住。
- * 基础值取单位规格，规格没写时取属性定义（未注册的属性是 0）。结果不是有限数时退回基础值。
+ * 基础值取单位规格；规格没写时取调用方给的 assumed，再没有时取属性定义（未注册的属性是 0）。
+ * 结果不是有限数时退回基础值。
  */
-export function attributeOf(unit: UnitState, registry: BattleRegistry, key: string): number {
+export function attributeOf(unit: UnitState, registry: BattleRegistry, key: string, assumed?: number): number {
   if (key === "dodgePhys" || key === "dodgeArts") return dodgeOf(unit, registry, key)
   const definition = registry.findAttribute(key)
   const fallback = definition?.base ?? 0
-  const base = unit.base[key] ?? fallback
+  const base = unit.base[key] ?? assumed ?? fallback
   const mods = sumMods(unit, registry, key)
   let value = (base + mods.add) * (1 + mods.percent) * mods.mul * mods.independent
   if (!Number.isFinite(value)) value = Number.isFinite(base) ? base : fallback
@@ -60,8 +67,27 @@ export function carriesAttribute(unit: UnitState, registry: BattleRegistry, key:
   return unit.base[key] !== undefined || sumMods(unit, registry, key).touched
 }
 
-/** 最大生命。hp 与 maxHp 的修饰都算在内，当前生命不参与。 */
+/**
+ * 最大生命。hp 与 maxHp 的修饰都算在内，当前生命不参与。
+ * 这是最大生命自己的规则：读到的值和上一次结算的不同时，在场单位的当前生命按比例缩放，夹在 0 到新上限之间，不取整。
+ * 结算发生在拍内第一次读到最大生命时，没人读时在拍末。
+ */
+// TRACE: assumed/max-hp-ratio
 export function maxHpOf(unit: UnitState, registry: BattleRegistry): number {
+  const value = maxHpValue(unit, registry)
+  const seen = unit.maxHpSeen
+  unit.maxHpSeen = value
+  if (!(seen > 0) || Math.abs(seen - value) <= MAX_HP_EPSILON) return value
+  // 只有在场的单位跟着缩放；不在场、倒下的只记下新上限
+  if (!unit.fielded || unit.downed) return value
+  const hp = unit.attributes.hp ?? 0
+  const scaled = hp * (value / seen)
+  unit.attributes.hp = Math.min(value, Math.max(0, Number.isFinite(scaled) ? scaled : value))
+  return value
+}
+
+/** 不结算比例的最大生命，给快照这类不能改状态的读法。 */
+export function maxHpValue(unit: UnitState, registry: BattleRegistry): number {
   const hp = sumMods(unit, registry, "hp")
   const max = sumMods(unit, registry, "maxHp")
   const base = unit.base.maxHp ?? unit.base.hp ?? 1

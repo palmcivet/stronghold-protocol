@@ -4,16 +4,18 @@ import type { BattleRegistry } from "#port/definition.js"
 import { releaseBlock } from "#unit/block/index.js"
 import { gridOf, type FieldGrid } from "#field/grid/index.js"
 import { hasTag } from "#kernel/world/tag.js"
-import { NO_DISPLACE, STATIC_BODY } from "#port/tag.js"
+import { ATTRACT, NO_DISPLACE, STATIC_BODY } from "#port/tag.js"
 import { directionVector } from "#field/direction/index.js"
 import { attributeOf } from "#ability/effect/attribute.js"
 import { emit } from "#kernel/event/index.js"
-import { engineOf, requireUnit, type BattleWorld, type UnitState } from "#unit/record/index.js"
+import { engineOf, requireUnit, unbalanced, type BattleWorld, type UnitState } from "#unit/record/index.js"
 import { attractPoints, fearReachableTiles, planFearMove } from "#field/motion/fear.js"
 import { MOVE_SCALE, ROUTE, replanRoute } from "#field/grid/route.js"
 import { SHIFT, shiftOf } from "#field/motion/shift.js"
 import { blockerOf } from "#unit/block/hold.js"
 import { hypot } from "#kernel/math/hypot.js"
+import { cutStand } from "#combat/attack/stand.js"
+import { UNBALANCE_MIN, pullUnbalance, pushUnbalance, unbalanceUnit } from "#field/motion/unbalance.js"
 
 /** 推力距离。受力等级 ≤ −3 是 0，≥ 3 用 3 这一档。 */
 export const PUSH_TILES: Readonly<Record<number, number>> = Object.freeze({
@@ -69,10 +71,13 @@ export function applyShift(
   if (!plan) return false
   const unit = requireUnit(state, unitId)
   if (definition.instant) {
-    writeLanding(state, registry, ctx, unit, plan.x, plan.y, input.keepFacing !== false)
+    const moved = hypot(unit.x - plan.x, unit.y - plan.y) > 1e-8
+    writeLanding(state, registry, ctx, unit, plan.x, plan.y, input.keepFacing !== false, plan.unbalance ?? 0)
     state.components.access(SHIFT).delete(unitId)
-    return true
+    if (plan.unbalance !== undefined) unbalanceUnit(state, unit, plan.unbalance)
+    return moved
   }
+  if (plan.unbalance !== undefined) unbalanceUnit(state, unit, plan.unbalance)
   state.components.access(SHIFT).set(unitId, {
     id: definition.id,
     landingX: plan.x,
@@ -87,6 +92,12 @@ export function applyShift(
 export function advanceShift(state: BattleWorld, registry: BattleRegistry, unit: UnitState, dt: number): boolean {
   const run = shiftOf(state, unit.id)
   if (!run) return false
+  // 诱导结束（attract 标签没了）时还没走完的诱导位移作废，接着沿路线
+  if (run.id === SHIFT_ATTRACT && !hasTag(unit, ATTRACT)) {
+    state.components.access(SHIFT).delete(unit.id)
+    return false
+  }
+  if (unbalanced(state, unit)) return true
   const speed = Math.max(0, attributeOf(unit, registry, "moveSpeed")) * MOVE_SCALE
   let distance = speed * dt
   let moved = false
@@ -131,11 +142,14 @@ function pushShift(): ShiftDefinition {
     instant: true,
     plan(unitId, input, ctx) {
       const { world: state, registry } = engineOf(ctx)
+      const still = staticBody(state, unitId)
+      if (still) return staticForce(still, forceLevel(still, registry, input.force ?? 0).level, false)
       const unit = movable(state, unitId)
       if (!unit) return null
       const level = forceLevel(unit, registry, input.force ?? 0)
       const aimed = aimPush(unit, input, level.level)
       if (!aimed) return null
+      const hold = pushUnbalance(aimed.level)
       const table = input.effect === true ? PUSH_TILES_EFFECT : PUSH_TILES
       let distance = pushDistance(table, aimed.level)
       let ux = aimed.x
@@ -148,7 +162,11 @@ function pushShift(): ShiftDefinition {
         const gap = hypot(unit.x - fromX, unit.y - fromY)
         distance = Math.min(distance, Math.max(0, gap - PULL_STOP_RADIUS))
       }
-      return slide(gridOf(state), unit, ux, uy, distance)
+      // 墙让滑动在第一步就停下时按失衡硬直的保底
+      const landing = slide(gridOf(state), unit, ux, uy, distance)
+      if (!(hold > 0)) return landing
+      if (!landing) return { x: unit.x, y: unit.y, unbalance: UNBALANCE_MIN }
+      return { ...landing, unbalance: hold }
     },
   }
 }
@@ -159,23 +177,32 @@ function pullShift(): ShiftDefinition {
     instant: true,
     plan(unitId, input, ctx) {
       const { world: state, registry } = engineOf(ctx)
-      const unit = movable(state, unitId)
-      if (!unit || input.toX === undefined || input.toY === undefined) return null
+      if (input.toX === undefined || input.toY === undefined) return null
       const centerX = input.centerX ?? input.toX
       const centerY = input.centerY ?? input.toY
+      const still = staticBody(state, unitId)
+      if (still) {
+        if (blockedByCenter(state, still, centerX, centerY)) return null
+        return staticForce(still, forceLevel(still, registry, input.force ?? 0).level, true)
+      }
+      const unit = movable(state, unitId)
+      if (!unit) return null
       if (blockedByCenter(state, unit, centerX, centerY)) return null
+      // 失衡持续整个作用时间，急停之后也一样
+      const hold = pullUnbalance(forceLevel(unit, registry, input.force ?? 0).level)
+      if (!(hold > 0)) return null
       const dx = input.toX - unit.x
       const dy = input.toY - unit.y
       const distance = hypot(dx, dy)
-      if (!(distance > 1e-6)) return null
+      if (!(distance > 1e-6)) return { x: unit.x, y: unit.y, unbalance: hold }
       const ux = dx / distance
       const uy = dy / distance
       const full = stopDistance(unit.x, unit.y, ux, uy, distance, centerX, centerY, PULL_STOP_RADIUS)
       const level = forceLevel(unit, registry, input.force ?? 0).level
       const travel =
         level >= 0 ? full : level === -1 ? Math.min(full, PULL_WEAK_SHARE * distance) : level === -2 ? Math.min(full, PULL_CRAWL) : 0
-      if (!(travel > 1e-6)) return null
-      return slide(gridOf(state), unit, ux, uy, travel)
+      const landing = travel > 1e-6 ? slide(gridOf(state), unit, ux, uy, travel) : null
+      return { ...(landing ?? { x: unit.x, y: unit.y }), unbalance: hold }
     },
   }
 }
@@ -220,6 +247,21 @@ function attractShift(): ShiftDefinition {
 
 // MARK: motion
 
+/**
+ * 静态刚体（不是位移免疫）：受力不动，但受力等级不低于 −2 时照样失衡——推是瞬间的，按保底；拉按作用时间，不短于保底。
+ */
+function staticBody(state: BattleWorld, unitId: string): UnitState | null {
+  const unit = state.units.get(unitId)
+  if (!unit || unit.side !== "enemy" || !unit.fielded || unit.downed) return null
+  if (hasTag(unit, NO_DISPLACE) || !hasTag(unit, STATIC_BODY)) return null
+  return unit
+}
+
+function staticForce(unit: UnitState, level: number, pull: boolean): ShiftPlan | null {
+  if (level < -2) return null
+  return { x: unit.x, y: unit.y, unbalance: pull ? Math.max(UNBALANCE_MIN, pullUnbalance(level)) : UNBALANCE_MIN }
+}
+
 function movable(state: BattleWorld, unitId: string): UnitState | null {
   const unit = state.units.get(unitId)
   if (!unit || unit.side !== "enemy" || !unit.fielded || unit.downed) return null
@@ -235,13 +277,16 @@ function writeLanding(
   x: number,
   y: number,
   keepFacing: boolean,
+  duration: number,
 ): void {
   if (hypot(unit.x - x, unit.y - y) <= 1e-8) return
   unit.x = x
   unit.y = y
   replanRoute(state, unit.id)
+  cutStand(state, unit.id)
   releaseBlock(state, unit, { registry, ctx })
-  emit(state, "displace", { unitId: unit.id, x, y, duration: 0, keepFacing })
+  // 画面的滑动时长就是失衡的秒数
+  emit(state, "displace", { unitId: unit.id, x, y, duration, keepFacing })
 }
 
 function forceLevel(unit: UnitState, registry: BattleRegistry, force: number): { level: number } {
@@ -271,8 +316,10 @@ function aimPush(
     let ux = dir.x
     let uy = dir.y
     let next = level
-    const aligned = reach > 1e-6 && vx * ux + vy * uy >= reach * Math.SQRT1_2
-    if (input.fixed !== true && (reach < PUSH_DIRECTIONAL_MIN_DIST || !aligned)) {
+    // 修正只在给了起点时看：离起点太近，或（没有 fixedAngle 时）和方向夹角超过 45°
+    const given = input.fromX !== undefined && input.fromY !== undefined
+    const aligned = input.fixedAngle === true || (reach > 1e-6 && vx * ux + vy * uy >= reach * Math.SQRT1_2)
+    if (given && input.fixed !== true && (reach < PUSH_DIRECTIONAL_MIN_DIST || !aligned)) {
       next -= 2
       if (reach > 1e-6) {
         ux = vx / reach

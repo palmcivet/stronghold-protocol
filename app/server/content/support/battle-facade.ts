@@ -155,6 +155,7 @@ function createFacade(ctx: ContentContext, shared: FacadeStore) {
   const subscribed = new Set<string>()
   const proxies = new Map<string, Record<string, unknown>>()
   let clock = false
+  let effectStage = false
 
   const field = (): Record<string, unknown> => {
     const notes = ctx.field()
@@ -346,6 +347,8 @@ function createFacade(ctx: ContentContext, shared: FacadeStore) {
       source, target, unit: target, amount, type: dmg.type, dmg,
       skill: target && typeof target.skill === "object" ? target.skill : null,
       left: typeof data.left === "number" ? data.left : undefined,
+      status: typeof data.statusId === "string" ? data.statusId : undefined,
+      entered: data.entered === true,
       t: ctx.tick() * TICK,
       setAmount,
     }
@@ -370,6 +373,44 @@ function createFacade(ctx: ContentContext, shared: FacadeStore) {
     }
     ctx.subscribe(mapped, (event) => {
       runHooks(mapped, event.data)
+    })
+  }
+
+  /** beforeStatus 钩子挂在核心的 effect 阶段修饰上，排在内置的抵抗与重量减半之前，时长按秒给出。 */
+  function ensureEffectStage(): void {
+    if (effectStage) return
+    effectStage = true
+    ctx.registerDamageModifier({
+      id: "content-facade-before-status",
+      stage: "effect",
+      priority: 0,
+      modify(change) {
+        const payload = {
+          source: change.sourceId ? unitProxy(change.sourceId) : null,
+          target: unitProxy(change.unitId),
+          status: change.effectId,
+          duration: change.permanent ? Number.POSITIVE_INFINITY : change.ticks * TICK,
+          value: change.value,
+          cancel: false,
+        }
+        const start = payload.duration
+        for (const hook of hooks.filter((item) => item.type === "beforeStatus").sort((a, b) => a.priority - b.priority)) {
+          if (hook.owner && payload.source !== hook.owner && payload.target !== hook.owner) continue
+          try { hook.fn(payload) } catch (cause) {
+            noteBlocked(`hook:beforeStatus:${cause instanceof Error ? cause.message : String(cause)}`)
+          }
+        }
+        if (payload.cancel === true) change.cancel = true
+        const duration = Number(payload.duration)
+        if (duration === Number.POSITIVE_INFINITY) change.permanent = true
+        else if (Number.isFinite(duration) && duration !== start) {
+          if (duration > 0) {
+            change.permanent = false
+            change.ticks = Math.max(1, Math.round(duration / TICK))
+          } else change.cancel = true
+        }
+        if (typeof payload.value === "number" && Number.isFinite(payload.value)) change.value = payload.value
+      },
     })
   }
 
@@ -423,6 +464,7 @@ function createFacade(ctx: ContentContext, shared: FacadeStore) {
     },
     on(type: string, fn: (payload: unknown) => void, opts: { priority?: number; owner?: unknown } = {}) {
       if (type === "tick" || type === "battleStart") ensureClock()
+      else if (type === "beforeStatus") ensureEffectStage()
       else if (EVENT_MAP[type]) ensureMapped(type)
       const hook: Hook = { type, priority: opts.priority ?? 0, owner: opts.owner ?? null, fn }
       hooks.push(hook)
@@ -475,12 +517,13 @@ function createFacade(ctx: ContentContext, shared: FacadeStore) {
       if (!target?.id) return
       ctx.loseHp(target.id, amount)
     },
-    applyStatus(target: { id?: string } | null, statusId: string, opts: { duration?: number; value?: number } = {}) {
+    applyStatus(target: { id?: string } | null, statusId: string, opts: { duration?: number; value?: number; source?: { id?: string } | null } = {}) {
       if (!target?.id) return
       try {
         ctx.applyEffect(target.id, statusId, {
           ...(opts.duration !== undefined ? { duration: opts.duration } : {}),
           ...(opts.value !== undefined ? { value: opts.value } : {}),
+          ...(typeof opts.source?.id === "string" ? { sourceId: opts.source.id } : {}),
         })
       } catch (cause) {
         noteBlocked(`status.${statusId}:${cause instanceof Error ? cause.message : "failed"}`)

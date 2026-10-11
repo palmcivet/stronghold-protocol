@@ -1,13 +1,26 @@
 import { SKILL_OPERATIONS, SP_TYPES, type SkillOperation, type SpType } from "#contract/spec.js"
+import { defineAttribute } from "#ability/effect/attribute.js"
 
 /** 自动操作冷却，秒。开战部署和每次手动技能释放之后开始计算。 */
 export const AUTO_OP_COOLDOWN = 3
 
 export type { SkillOperation, SpType }
 
+/** 技力消耗的倍率属性，缺省 1。 */
+export const SP_COST_MUL = "spCostMul"
+
+/** 技力消耗的加值属性，缺省 0，加在倍率之后。 */
+export const SP_COST_FLAT = "spCostFlat"
+
+export const SKILL_ATTRIBUTES = [
+  defineAttribute(SP_COST_MUL, { base: 1, clamp: { min: 0 } }),
+  defineAttribute(SP_COST_FLAT, { base: 0 }),
+] as const
+
 export const BUILTIN_SKILL_TRIGGERS = [
   "DEFAULT",
   "SKILL_RANGE",
+  "ACTIVE_RANGE",
   "TAKE_DAMAGE",
   "SP_FULL",
   "CUSTOM_RANGE",
@@ -16,7 +29,7 @@ export const BUILTIN_SKILL_TRIGGERS = [
   "NEVER",
 ] as const
 
-const TICK_RULES = new Set<string>(["SP_FULL", "SEARCH", "CUSTOM_RANGE", "SKILL_RANGE", "GDGLOW_SKILL_2"])
+const TICK_RULES = new Set<string>(["SP_FULL", "SEARCH", "CUSTOM_RANGE", "SKILL_RANGE", "ACTIVE_RANGE", "GDGLOW_SKILL_2"])
 
 export function isSpType(value: string): value is SpType {
   return (SP_TYPES as readonly string[]).includes(value)

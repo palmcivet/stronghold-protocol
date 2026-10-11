@@ -9,7 +9,7 @@ description: createBattle 创建一场战斗，step 按十个阶段槽推进，s
 function createBattle(spec: BattleSpec, modules: readonly MissionModule[], archive?: WorldArchive): Battle
 
 interface Battle {
-  step(): void
+  step(inputs?: readonly BattleInput[]): void
   snapshot(): BattleSnapshot
   drainEvents(): readonly BattleEvent[]
   result(): BattleResult
@@ -29,6 +29,23 @@ function runSteps(battle: Battle, steps: number): BattleResult
 `contentHash()` 是规格、按安装顺序的模块 id 与 `version`、替换链的摘要，16 位十六进制。同样的规格与模块得到同样的摘要，JSON 往返后的规格也一样。`deployStrategy` 不是 `null` 时，这个策略必须已经登记，否则拒绝创建。`deployModule` 登记的策略 id 是 `deploy`。
 
 `step` 在推进中（系统或订阅者里）再被调用时抛出错误，这一拍照常走完。
+
+## 玩家输入
+
+```ts
+type BattleInput =
+  | { type: "retreat"; unitId: string }
+  | { type: "redeploy"; unitId: string; tile?: TileCoord }
+  | { type: "cast"; unitId: string; skillId: string }
+```
+
+`step(inputs)` 在这一拍的第一个阶段槽之前按提交顺序执行输入。接受的送出 `input`，拒绝的送出 `input-refused`（带 `reason`），世界不变。世界里不记输入，`export()` 只导出当前状态；回放要的输入日志由调用方保存，按拍重新提交。输入只对友方单位生效，否则是 `not-ally`；单位不存在或已移除是 `unknown-unit`；形状不对是 `bad-input`。
+
+- `retreat`：撤下在场的单位，与内容命令 `retreatUnit` 同一段实现，见 [模块](./03-module.md#命令和查询)。在场才行（`not-fielded`）。
+- `redeploy`：等待再部署的单位（`not-waiting`）计时走完（`not-ready`）、`tile`（缺省是等待时的坐标）站得住（`tile-blocked`）、费用够（`no-cost`）时这一拍回来。费用是单位的 `cost`，等待是再部署计时，输入里不能改；改规则走内容命令 `redeployUnit`。
+- `cast`：等于 `castSkill`，放不出是 `cannot-cast`。
+
+部署干员等其余玩家操作还没有做成输入。
 
 `runSteps` 连续调用 `step`，然后返回 `result`。`createFrameClock()` 按帧累积秒数。`advance(battle, frameSeconds, speed?)` 把 `frameSeconds × speed` 换成拍，`speed` 缺省 1。每走完一拍就把这一拍的事件放进单独的一组。不满一拍的余数留到下一次。一帧最多补 `FRAME_CATCHUP`（150）拍。
 
@@ -111,7 +128,7 @@ interface SkillSnapshot {
 }
 ```
 
-单位按 `id` 排序。属性抄单位上存放的数字，再叠正在生效的技能修饰。当前生命不叠技能修饰。状态带来的属性修饰在战斗读取属性时现算，不写进这份快照。`height` 是单位所在地块的高度，不在地块上时是 0。`tags` 是单位持有的标签 id，不分来源（规格、状态、技能与模块授予的合在一起），按 id 排序；路线隐藏额外有 `hidden`；不含蕴含得到的标签。元素槽按标识抄当前值。`blocking` 和 `blockedBy` 抄阻挡组件里已经写好的阻挡关系。`skills` 按单位的技能顺序给出技力、花费、层数和是否持续；弹药技能持续且单位在场时 `ammo` 是向上取整的剩余弹药与弹匣，其余时候是 `null`。`shield` 是护盾池与状态护盾的合计。倒下时 `redeploy` 是再部署计时已过的秒数与要等的秒数，没倒下时是 `null`。
+单位按 `id` 排序。属性抄单位上存放的数字，再叠正在生效的技能修饰。当前生命不叠技能修饰。状态带来的属性修饰在战斗读取属性时现算，不写进这份快照。`height` 是单位所在地块的高度，不在地块上时是 0。`tags` 是单位持有的标签 id，不分来源（规格、状态、技能与模块授予的合在一起），按 id 排序；路线隐藏额外有 `hidden`；不含蕴含得到的标签。元素槽按标识抄当前值。`blocking` 和 `blockedBy` 抄阻挡组件里已经写好的阻挡关系。`skills` 按单位的技能顺序给出技力、花费、层数和是否持续；弹药技能持续且单位在场时 `ammo` 是向上取整的剩余弹药与弹匣，其余时候是 `null`。`shield` 是护盾池与状态护盾的合计。倒下时 `redeploy` 是再部署计时已过的秒数与要等的秒数，没倒下时是 `null`。`unbalanceUntil` 是失衡结束的拍（不含），没有失衡时是 `null`，见 [费用、阻挡与投射物](./11-field.md#失衡)。
 
 `components` 是带 `view` 的组件给画面的显示值，键是组件 id（见 [世界](./04-world.md#组件)）。它只给画面，不计入状态：黄金摘要先去掉它再算。快照不调用选择器。
 
@@ -142,18 +159,21 @@ declare module "arknights-mission-core" {
 | --- | --- | --- |
 | `spawn` | | 刷出槽放入单位，或 `spawnUnit` |
 | `deploy` | | 部署策略让单位上场，或再部署回到场上 |
+| `retreat` | | 单位被撤下（`retreat` 输入或 `retreatUnit`），开始再部署计时。不算倒下，账本不记 |
+| `input` | | 这一拍开始时接受的玩家输入 |
+| `input-refused` | | 这一拍开始时拒绝的玩家输入与 `reason` |
 | `downed` | | 生命到 0。有部署策略时 `data` 带落点坐标和 `canStand`。`kind` 是 `device` 的单位倒下就是被摧毁，随后送出 `removed` |
 | `removed` | | 单位离场且不再回来：装置被摧毁、敌人漏出、`removeUnit`。从下一次快照起不再出现，账本仍记着它 |
-| `attack` | 是 | 普攻出手之前。`cancel` 改成真时这一下不打出去 |
+| `attack` | 是 | 普攻出手之前（包括 `forceAttack`）。`cancel` 改成真时这一下不打出去；`noAmmo` 改成真时这一下不用掉弹药 |
 | `palsy-interrupt` | 是 | 麻痹打断敌人普攻、用掉一层之前。`stacks` 是用掉之前的层数；`keep` 改成真时这一层留着。订阅者里敌人倒下时这次普攻同样结束 |
-| `attack-hit` | | 攻击出手。`data.unitId` 是攻击者 |
+| `attack-hit` | | 攻击出手。`data.unitId` 是攻击者；这一下不用掉弹药时带 `noAmmo: true` |
 | `hit` | | `dealDamage` 进入步骤之前，`hit` 阶段的伤害修饰改写之后。数据是改写后的数额、种类与 `cancel` |
 | `element-hit` | | 元素进槽之前，`element-hit` 阶段的伤害修饰改写之后 |
 | `fatal` | 是 | 这一下会把生命扣到 0。`data.prevented = true` 时生命留在 1 和最大生命里较小的那个 |
 | `damaged` | | 生命已经写下。`amount` 是这一下的数额，`applied` 是实际扣掉的生命（结算前减结算后，不含溢出），`hp` 是结算后的生命 |
 | `loss` | | `loseHp` 扣了生命 |
 | `heal` | | 治疗写下生命或护盾 |
-| `displace` | | 坐标被改了。`duration` 是位移秒数，`keepFacing` 为真时画面保持原朝向：推和拉缺省保持，`keepFacing: false` 或直接 `displace` 不保持 |
+| `displace` | | 坐标被改了。`duration` 是位移秒数（推和拉是这次失衡的秒数，画面按它滑动；直接 `displace` 是 0），`keepFacing` 为真时画面保持原朝向：推和拉缺省保持，`keepFacing: false` 或直接 `displace` 不保持 |
 | `projectile` | | `launchProjectile` 发出一发，开始飞行 |
 | `cost` | | 费用池的数字变了。`data.side` 是阵营，`data.value` 是新的数量 |
 | `leak` | | 敌人站上保护目标，随后 `removed`。`data.unitId` 是这名敌人 |

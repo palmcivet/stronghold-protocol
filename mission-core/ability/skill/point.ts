@@ -13,9 +13,16 @@ import { startTimer } from "#unit/record/timer.js"
 import { routeHidden } from "#field/grid/route.js"
 import { timerNumber, timerText } from "#kernel/timer/index.js"
 import { reached, TICK } from "#kernel/tick/index.js"
-import { AUTO_OP_COOLDOWN, isInstantBody, isTickRule, isTimedBody } from "#ability/skill/constants.js"
+import {
+  AUTO_OP_COOLDOWN,
+  SP_COST_FLAT,
+  SP_COST_MUL,
+  isInstantBody,
+  isTickRule,
+  isTimedBody,
+} from "#ability/skill/constants.js"
 import { attackWillHit } from "#combat/attack/index.js"
-import { allyTriggerMet, shouldCast } from "#ability/skill/trigger.js"
+import { allyTriggerMet, areaTriggerMet, shouldCast } from "#ability/skill/trigger.js"
 
 /** 技力计时与技能持续计时。 */
 export function registerSkillTimers(registry: BattleRegistry, state: BattleWorld): void {
@@ -59,7 +66,7 @@ export function bindSkillSignals(state: BattleWorld, registry: BattleRegistry, c
   ctx.subscribe("attack-hit", (event) => {
     const unitId = event.data.unitId
     if (typeof unitId !== "string") return
-    noteAttack(state, registry, ctx, unitId)
+    noteAttack(state, registry, ctx, unitId, event.data.noAmmo === true)
   })
   ctx.subscribe("damaged", (event) => {
     const unitId = event.data.targetId
@@ -84,7 +91,15 @@ export function resetSkills(
   }
   for (const skill of unit.skills) openSkill(state, registry, ctx, unit, skill, false)
   const timer = readTimer(unit, "skill-point")
-  if (timer) timer.phase = phaseOf(shown(unit))
+  if (timer) timer.phase = phaseOf(registry, unit, shown(unit))
+  sync(unit)
+}
+
+/** 单位倒下（原因 death）或被撤下（原因 retreat）时结束还开着的技能，包括被动。 */
+export function endSkillsOnDown(registry: BattleRegistry, ctx: ContentContext, unit: UnitState, reason: "death" | "retreat" = "death"): void {
+  for (const skill of unit.skills) {
+    if (skill.active || skill.pending || skill.effectsApplied) finishSkill(registry, ctx, unit, skill, reason)
+  }
   sync(unit)
 }
 
@@ -101,7 +116,7 @@ export function armUnit(
   startTimer(state, registry, unit.id, "skill-body")
   for (const skill of unit.skills) openSkill(state, registry, ctx, unit, skill, initial)
   const timer = readTimer(unit, "skill-point")
-  if (timer) timer.phase = phaseOf(shown(unit))
+  if (timer) timer.phase = phaseOf(registry, unit, shown(unit))
   sync(unit)
 }
 
@@ -132,18 +147,19 @@ export function advanceSkillPoint(
 ): void {
   const unit = requireUnit(state, unitId)
   const time = state.tick * TICK
+  for (const skill of unit.skills) settleCost(registry, unit, skill)
   for (const skill of unit.skills) recoverTime(state, registry, unit, skill)
   if (canAct(unit)) {
     for (const skill of unit.skills) {
       if (skill.pending && skill.triggerAllies && skill.trigger !== "SKILL_RANGE" && !allyTriggerMet(state, registry, unitId, skill.id)) {
         finishSkill(registry, ctx, unit, skill, "withdrawn")
-        addCharge(skill, 1)
+        addCharge(registry, unit, skill, 1)
       }
       consider(state, registry, ctx, unit, skill, time)
     }
   }
   timer.elapsed = numberOf(timer.elapsed) + 1
-  timer.phase = phaseOf(shown(unit))
+  timer.phase = phaseOf(registry, unit, shown(unit))
   sync(unit)
 }
 
@@ -163,13 +179,14 @@ export function configureSkill(
   if (typeof spec.duration === "number" && Number.isFinite(spec.duration)) mutable.duration = Math.max(0, spec.duration)
 }
 
-export function readySkill(state: BattleWorld, unitId: string, skillId: string): void {
+export function readySkill(state: BattleWorld, registry: BattleRegistry, unitId: string, skillId: string): void {
   const unit = state.units.get(unitId)
   if (!unit) return
   const skill = unit.skills.find((entry) => entry.id === skillId)
   if (!skill || skill.body === "passive") return
   skill.charges = Math.max(1, skill.maxCharges)
-  if (skill.spCost > 0) skill.sp = skill.spCost
+  const cost = costOf(registry, unit, skill)
+  if (cost > 0) skill.sp = cost
 }
 
 export function activateSkill(
@@ -203,6 +220,7 @@ export function activateSkill(
 
 export function gainSkillSp(
   state: BattleWorld,
+  registry: BattleRegistry,
   unitId: string,
   skillId: string,
   amount: number,
@@ -210,7 +228,7 @@ export function gainSkillSp(
 ): number {
   const unit = requireUnit(state, unitId)
   const skill = requireSkill(unit, skillId)
-  const gained = gain(unit, skill, amount, reason)
+  const gained = gain(registry, unit, skill, amount, reason)
   sync(unit)
   return gained
 }
@@ -255,8 +273,8 @@ function openSkill(
     ctx.emit("skill-start", { unitId: unit.id, skillId: skill.id, reason: "passive" })
     return
   }
-  gain(unit, skill, skill.initSp, "init")
-  if (skill.spCost <= 0) skill.charges = skill.maxCharges
+  gain(registry, unit, skill, skill.initSp, "init")
+  if (costOf(registry, unit, skill) <= 0) skill.charges = skill.maxCharges
   if (skill.activateOnDeploy) activateSkill(state, registry, ctx, unit.id, skill.id, "deploy")
 }
 
@@ -274,6 +292,11 @@ function consider(
     return
   }
   if (skill.trigger === "TAKE_DAMAGE" || skill.trigger === "NEVER") return
+  // 内容的触发区域每拍都问，攻击者与不攻击的都一样，不等攻击
+  if (!skill.heal && areaTriggerMet(state, registry, unit)) {
+    activateSkill(state, registry, ctx, unit.id, skill.id, "DEFAULT")
+    return
+  }
   const readyRange = shouldCast(state, registry, ctx, unit.id, skill.id)
   if (hasTag(unit, NO_ATTACK)) {
     if (readyRange) activateSkill(state, registry, ctx, unit.id, skill.id, "DEFAULT")
@@ -290,16 +313,17 @@ function recoverTime(state: BattleWorld, registry: BattleRegistry, unit: UnitSta
   if (hasTag(unit, NO_SP) || routeHidden(state, unit.id) || !unit.fielded || unit.downed) return
   if ((unit.attributes.hp ?? 0) <= 0) return
   const rate = attributeOf(unit, registry, "spRecovery")
-  if (rate > 0) gain(unit, skill, rate * TICK, "time")
+  if (rate > 0) gain(registry, unit, skill, rate * TICK, "time")
 }
 
-function noteAttack(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext, unitId: string): void {
+function noteAttack(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext, unitId: string, noAmmo: boolean): void {
   const unit = state.units.get(unitId)
   if (!unit) return
   for (const skill of unit.skills) {
     const timed = skill.active && isTimedBody(skill.body)
     const pendingHit = skill.active && skill.pending && isInstantBody(skill.body)
     if (timed && skill.body === "ammo") {
+      if (noAmmo) continue
       skill.ammo -= 1
       ctx.emit("ammo-used", { unitId, skillId: skill.id, left: skill.ammo })
       if (skill.ammo <= 0) {
@@ -314,7 +338,7 @@ function noteAttack(state: BattleWorld, registry: BattleRegistry, ctx: ContentCo
       finishSkill(registry, ctx, unit, skill, "instant")
     }
     if (skill.spType === "attack" && !timed && !pendingHit && !(skill.active && isTimedBody(skill.body))) {
-      gain(unit, skill, 1, "attack")
+      gain(registry, unit, skill, 1, "attack")
     }
   }
   sync(unit)
@@ -325,7 +349,7 @@ function noteHurt(state: BattleWorld, registry: BattleRegistry, ctx: ContentCont
   if (!unit) return
   const time = state.tick * TICK
   for (const skill of unit.skills) {
-    if (skill.spType === "hurt" && !(skill.active && isTimedBody(skill.body))) gain(unit, skill, 1, "hurt")
+    if (skill.spType === "hurt" && !(skill.active && isTimedBody(skill.body))) gain(registry, unit, skill, 1, "hurt")
     if (skill.trigger !== "TAKE_DAMAGE" || !canAsk(unit, skill, time)) continue
     skill.hurtPending = true
     const fire = shouldCast(state, registry, ctx, unitId, skill.id)
@@ -369,12 +393,12 @@ function runHook(registry: BattleRegistry, ctx: ContentContext, hookId: string |
 // MARK: sp
 
 /** reason 为 init 或 unlocked 时不看技力锁定：持续技能期间与阻回照样加。 */
-function gain(unit: UnitState, skill: SkillInstance, amount: number, reason: string): number {
+function gain(registry: BattleRegistry, unit: UnitState, skill: SkillInstance, amount: number, reason: string): number {
   if (skill.body === "passive" || !(amount > 0) || !Number.isFinite(amount)) return 0
   const unlocked = reason === "init" || reason === "unlocked"
   if (skill.active && isTimedBody(skill.body) && !unlocked) return 0
   if (!unlocked && hasTag(unit, NO_SP)) return 0
-  const cost = skill.spCost
+  const cost = costOf(registry, unit, skill)
   if (cost <= 0) return 0
   if (skill.charges >= skill.maxCharges && reached(skill.sp, cost)) return 0
   skill.sp += amount
@@ -387,10 +411,40 @@ function gain(unit: UnitState, skill: SkillInstance, amount: number, reason: str
   return amount
 }
 
-function addCharge(skill: SkillInstance, count: number): void {
+function addCharge(registry: BattleRegistry, unit: UnitState, skill: SkillInstance, count: number): void {
   if (!Number.isFinite(count)) return
   skill.charges = Math.max(0, Math.min(skill.maxCharges, skill.charges + count))
-  if (skill.charges >= skill.maxCharges) skill.sp = skill.spCost
+  if (skill.charges >= skill.maxCharges) skill.sp = costOf(registry, unit, skill)
+}
+
+/**
+ * 技力消耗：floor(spCost × spCostMul + spCostFlat)，不低于 0。两个属性都是缺省值时就是 spCost；
+ * 结果不是有限数时用 spCost。
+ */
+export function costOf(registry: BattleRegistry, unit: UnitState, skill: SkillInstance): number {
+  const mul = attributeOf(unit, registry, SP_COST_MUL)
+  const flat = attributeOf(unit, registry, SP_COST_FLAT)
+  if (mul === 1 && flat === 0) return skill.spCost
+  const cost = Math.floor(skill.spCost * mul + flat)
+  return Number.isFinite(cost) ? Math.max(0, cost) : skill.spCost
+}
+
+/** 消耗变化之后把技力夹回去：满出的部分换成充能，变成免费时直接满层。 */
+function settleCost(registry: BattleRegistry, unit: UnitState, skill: SkillInstance): void {
+  if (skill.body === "passive") return
+  const cost = costOf(registry, unit, skill)
+  if (cost <= 0) {
+    if (skill.sp > 0) {
+      skill.sp = 0
+      skill.charges = skill.maxCharges
+    }
+    return
+  }
+  while (reached(skill.sp, cost) && skill.charges < skill.maxCharges) {
+    skill.charges += 1
+    skill.sp = skill.charges < skill.maxCharges ? Math.max(0, skill.sp - cost) : cost
+  }
+  if (skill.sp > cost) skill.sp = cost
 }
 
 function canActivate(unit: UnitState, skill: SkillInstance): boolean {
@@ -420,11 +474,11 @@ function shown(unit: UnitState): SkillInstance | undefined {
   return unit.skills.find((skill) => skill.body !== "passive") ?? unit.skills[0]
 }
 
-function phaseOf(skill: SkillInstance | undefined): string {
+function phaseOf(registry: BattleRegistry, unit: UnitState, skill: SkillInstance | undefined): string {
   if (!skill) return "idle"
   if (skill.body === "passive") return "passive"
   if (skill.active && isTimedBody(skill.body)) return "active"
-  if (skill.charges >= skill.maxCharges && skill.sp >= skill.spCost) return "full"
+  if (skill.charges >= skill.maxCharges && skill.sp >= costOf(registry, unit, skill)) return "full"
   if (skill.charges >= 1) return "ready"
   return "recover"
 }

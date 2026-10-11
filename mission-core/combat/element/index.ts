@@ -30,6 +30,10 @@ function creditOf(world: { readonly components: ComponentStore }, unitId: string
   return peekGauges(world, unitId)?.credit ?? ""
 }
 
+/** 内置元素的 order：一样满时神经、侵蚀、灼燃、凋亡、坏死依次在前。 */
+// TRACE: source/element-order
+export const ELEMENT_ORDER = { neural: 0, erosion: 1, burn: 2, apoptosis: 3, necrosis: 4 } as const
+
 export type Charge = "burst" | "filled" | "refused"
 
 /** 把已经算好的损伤加进槽。返回值表示有没有蓄满。 */
@@ -47,7 +51,7 @@ export function chargeElement(
   const cap = gaugeCap(unit, definition.cap)
   const slots = gaugesOf(state, unitId).slots
   const existing = slots.get(elementId)
-  const slot = existing ?? { value: 0, locked: false, cap }
+  const slot = existing ?? { value: 0, locked: false, cap, order: definition.order ?? null }
   if (!existing) slots.set(elementId, slot)
   if (slot.locked) return "refused"
   slot.cap = cap
@@ -142,6 +146,7 @@ export function registerBuiltinElements(state: BattleWorld, registry: BattleRegi
   })
   registry.registerElement({
     id: "burn",
+    order: ELEMENT_ORDER.burn,
     cap: ELEMENT_GAUGE_MAX,
     resistance: 0,
     onBurst(unitId, ctx, sourceId = "") {
@@ -182,6 +187,7 @@ export function registerBuiltinElements(state: BattleWorld, registry: BattleRegi
   })
   registry.registerElement({
     id: "neural",
+    order: ELEMENT_ORDER.neural,
     cap: ELEMENT_GAUGE_MAX,
     resistance: 0,
     onBurst(unitId, ctx, sourceId = "") {
@@ -250,6 +256,7 @@ export function registerBuiltinElements(state: BattleWorld, registry: BattleRegi
   })
   registry.registerElement({
     id: "apoptosis",
+    order: ELEMENT_ORDER.apoptosis,
     cap: ELEMENT_GAUGE_MAX,
     resistance: 0,
     onBurst(unitId, ctx) {
@@ -293,6 +300,7 @@ export function registerBuiltinElements(state: BattleWorld, registry: BattleRegi
   })
   registry.registerElement({
     id: "erosion",
+    order: ELEMENT_ORDER.erosion,
     cap: ELEMENT_GAUGE_MAX,
     resistance: 0,
     onBurst(unitId, ctx, sourceId = "") {
@@ -332,6 +340,7 @@ export function registerBuiltinElements(state: BattleWorld, registry: BattleRegi
   })
   registry.registerElement({
     id: "necrosis",
+    order: ELEMENT_ORDER.necrosis,
     cap: ELEMENT_GAUGE_MAX,
     resistance: 0,
     onBurst(unitId, ctx) {

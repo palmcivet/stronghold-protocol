@@ -5,7 +5,7 @@ import type { BattleRegistry, TimerDefinition } from "#port/definition.js"
 import { CANNOT_ACT, TREMBLE } from "#port/tag.js"
 import { timerNumber, timerText, type TimerState } from "#kernel/timer/index.js"
 import { hasTag } from "#kernel/world/tag.js"
-import { requireUnit, type BattleWorld, type UnitState } from "#unit/record/index.js"
+import { requireUnit, unbalanced, type BattleWorld, type UnitState } from "#unit/record/index.js"
 import { attackTargetIds } from "#combat/target/aim.js"
 import { attributeOf } from "#ability/effect/attribute.js"
 import { interruptEnemyAttack } from "#ability/effect/palsy.js"
@@ -19,6 +19,7 @@ import { countdown, reached, READY_EPSILON, TICK } from "#kernel/tick/index.js"
 import { attackProfileOf } from "#combat/attack/profile.js"
 import { routeHidden } from "#field/grid/route.js"
 import { blockerOf } from "#unit/block/hold.js"
+import { standAfterStrike } from "#combat/attack/stand.js"
 
 /** 攻速下限。 */
 export const ASPD_MIN = 20
@@ -93,6 +94,22 @@ export function attackWillHit(
   if (text(timer, "phase") !== "idle" && text(timer, "phase") !== "recovery") return false
   if (timing.wind > READY_EPSILON && number(timer, "cooldown") <= READY_EPSILON) return false
   return countdown(number(timer, "cooldown"), TICK) === 0
+}
+
+/**
+ * 这一拍的攻击推进会不会从冷却进入前摇。移动先于出手结算，站定用它让敌人在进入前摇的这一拍就停下。
+ */
+export function attackWillWind(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext, unit: UnitState): boolean {
+  const timer = unit.timers.get("attack")
+  if (!timer) return false
+  const phase = text(timer, "phase")
+  if (phase !== "idle" && phase !== "recovery") return false
+  if (clockStopped(state, unit) || attackHeld(state, registry, unit) || targetDenied(unit)) return false
+  const timing = attackTiming(state, unit, registry)
+  if (!(timing.wind > READY_EPSILON)) return false
+  if (!reached(timing.wind, countdown(number(timer, "cooldown"), TICK))) return false
+  if (!readAttackTiming(state, unit, registry).canAttack) return false
+  return hasTarget(state, registry, ctx, unit)
 }
 
 // MARK: clock
@@ -186,6 +203,14 @@ function openSwing(
   timing: AttackTiming,
   before: number,
 ): void {
+  // 这一拍之前冷却就已经在前摇以内（没有目标、被打断或刚解除控制）：从头走完整个前摇
+  // TRACE: source/enemy-swing
+  if (timing.wind > READY_EPSILON && before < timing.wind - READY_EPSILON) {
+    timer.phase = "windup"
+    timer.lead = 1
+    timer.elapsed = 0
+    return
+  }
   if (number(timer, "cooldown") <= READY_EPSILON && before > READY_EPSILON) {
     strike(state, registry, ctx, unit, timer, timing)
     return
@@ -235,6 +260,7 @@ function strike(
     timer.lead = 0
     timer.cooldown = timing.interval
     timer.rest = ATTACK_PAUSE
+    if (!blockerOf(state, unit.id) && unit.attackRange.length > 0) standAfterStrike(state, unit, ATTACK_PAUSE)
     return
   }
   const notice: AttackEvent = { unitId: unit.id, targetIds: targets, cancel: false }
@@ -247,17 +273,57 @@ function strike(
     timer.rest = timing.rest
     return
   }
-  const scale = Number.isFinite(swing.damageScale) ? swing.damageScale : 1
-  const amount = Math.max(0, attributeOf(unit, registry, "atk") * scale)
-  const hitCount = Number.isFinite(swing.hitCount) ? Math.max(0, Math.floor(swing.hitCount)) : 1
-  for (const targetId of targets) deliver(state, registry, ctx, unit, targetId, amount, hitCount)
-  consumeAttackTiming(unit)
-  ctx.emit("attack-hit", { unitId: unit.id })
+  release(state, registry, ctx, unit, targets, notice.noAmmo === true)
   timer.phase = "recovery"
   timer.elapsed = 0
   timer.lead = 0
   timer.cooldown = timing.interval
   timer.rest = timing.rest
+  standAfterStrike(state, unit, timing.rest)
+}
+
+/** 打出这一下：按攻击片段的倍率与段数结算每个目标，用掉片段，送出 attack-hit。 */
+function release(
+  state: BattleWorld,
+  registry: BattleRegistry,
+  ctx: ContentContext,
+  unit: UnitState,
+  targets: readonly string[],
+  noAmmo: boolean,
+): void {
+  const swing = readAttackTiming(state, unit, registry)
+  const scale = Number.isFinite(swing.damageScale) ? swing.damageScale : 1
+  const amount = Math.max(0, attributeOf(unit, registry, "atk") * scale)
+  const hitCount = Number.isFinite(swing.hitCount) ? Math.max(0, Math.floor(swing.hitCount)) : 1
+  for (const targetId of targets) deliver(state, registry, ctx, unit, targetId, amount, hitCount)
+  consumeAttackTiming(unit)
+  ctx.emit("attack-hit", noAmmo ? { unitId: unit.id, noAmmo: true } : { unitId: unit.id })
+}
+
+/**
+ * 内容要求的额外一下普攻：不看也不动攻击计时，目标缺省按普攻选。照样经过 attack 拦截、算一次攻击；
+ * noAmmo 时不用掉弹药。打出去返回 true；单位不在场、没有目标或被取消时返回 false。
+ */
+export function forceAttack(
+  state: BattleWorld,
+  registry: BattleRegistry,
+  ctx: ContentContext,
+  unitId: string,
+  targetIds: readonly string[] | null,
+  noAmmo: boolean,
+): boolean {
+  const unit = state.units.get(unitId)
+  if (!unit || !unit.fielded || unit.downed || unit.removed || (unit.attributes.hp ?? 0) <= 0) return false
+  const targets = (targetIds ?? attackTargetIds(state, registry, ctx, unit)).filter((id) => {
+    const target = state.units.get(id)
+    return target !== undefined && target.fielded && !target.downed && !target.removed
+  })
+  if (targets.length === 0) return false
+  const notice: AttackEvent = noAmmo ? { unitId, targetIds: targets, cancel: false, noAmmo: true } : { unitId, targetIds: targets, cancel: false }
+  ctx.intercept("attack", notice)
+  if (notice.cancel === true) return false
+  release(state, registry, ctx, unit, targets, notice.noAmmo === true)
+  return true
 }
 
 // MARK: timing
@@ -285,10 +351,7 @@ function attackInterval(unit: UnitState, registry: BattleRegistry): number {
 }
 
 function aspdOf(unit: UnitState, registry: BattleRegistry): number {
-  const assumed = unit.base.aspd === undefined
-  if (assumed) unit.base.aspd = 100
-  const value = attributeOf(unit, registry, "aspd")
-  if (assumed) delete unit.base.aspd
+  const value = attributeOf(unit, registry, "aspd", 100)
   return Number.isFinite(value) ? value : 100
 }
 
@@ -317,9 +380,19 @@ function attackHeld(state: BattleWorld, registry: BattleRegistry, unit: UnitStat
   return false
 }
 
+/** 打断前摇中的一下（失衡）：回到冷却，之后重新走完整个前摇。已经出手的不撤回。 */
+export function cutSwing(unit: UnitState): void {
+  const timer = unit.timers.get("attack")
+  if (!timer || text(timer, "phase") !== "windup") return
+  timer.phase = "idle"
+  timer.elapsed = 0
+  timer.lead = 0
+}
+
 function clockStopped(state: BattleWorld, unit: UnitState): boolean {
   if (!unit.fielded || unit.downed || (unit.attributes.hp ?? 0) <= 0 || routeHidden(state, unit.id)) return true
-  return hasTag(unit, CANNOT_ACT)
+  // 失衡时不开始普攻，前摇中的一下被打断，冷却停下
+  return hasTag(unit, CANNOT_ACT) || unbalanced(state, unit)
 }
 
 function deliver(

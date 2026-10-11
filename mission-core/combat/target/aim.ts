@@ -1,3 +1,4 @@
+import { blockCount } from "#unit/block/index.js"
 import type { ContentContext } from "#port/context.js"
 import type { BattleRegistry } from "#port/definition.js"
 import type { BattleWorld } from "#unit/record/index.js"
@@ -10,13 +11,14 @@ import { attackProfileOf } from "#combat/attack/profile.js"
 import { routeHidden } from "#field/grid/route.js"
 
 const ALLY_QUERY = [
-  "enemy",
+  "foe",
   "fly",
   "stealth",
   "sleep",
   "untargetable",
   "isolated",
   "range",
+  "ally-target",
   "block",
   "priority",
   "taunt",
@@ -42,6 +44,9 @@ const ENEMY_QUERY = [
 ] as const
 
 /** 这一下攻击会打到的单位，和出手用的是同一份名单。 */
+// TRACE: source/block-targets
+const BLOCK_TARGET_EPSILON = 1e-9
+
 export function attackTargetIds(
   state: BattleWorld,
   registry: BattleRegistry,
@@ -50,9 +55,11 @@ export function attackTargetIds(
 ): readonly string[] {
   const shape = attackProfileOf(state, unit.id).shape
   if (shape?.damage === "heal") return pickHeals(state, registry, ctx, unit)
-  const query = unit.side === "enemy" ? ENEMY_QUERY : ALLY_QUERY
+  const base = unit.side === "enemy" ? ENEMY_QUERY : ALLY_QUERY
+  const query = shape?.filters ? [...base, ...shape.filters] : base
   const found = unitsInRange(state, registry, ctx, unit.id, query)
   if (shape?.lockRange === true) return found
+  if (shape?.blockTargets === true) return found.slice(0, Math.max(1, Math.floor(blockCount(unit, registry) + BLOCK_TARGET_EPSILON)))
   return found.slice(0, 1)
 }
 
@@ -72,7 +79,7 @@ function pickHeals(
   unit: UnitState,
 ): readonly string[] {
   const shape = attackProfileOf(state, unit.id).shape
-  const query = [unit.side, "untargetable", "isolated", "range", "hp-ratio", "spawn"] as const
+  const query = [unit.side, "untargetable", "isolated", "range", "hp-ratio", "spawn", ...(shape?.filters ?? [])]
   const found = unitsInRange(state, registry, ctx, unit.id, query).filter((id) => healable(state, registry, unit, id))
   if (healable(state, registry, unit, unit.id)) found.push(unit.id)
   const ordered = selectUnits(registry, ctx, ["hp-ratio", "spawn"], found, { origin: null })

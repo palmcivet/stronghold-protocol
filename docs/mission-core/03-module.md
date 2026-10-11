@@ -109,13 +109,13 @@ interface DeployStrategyDefinition {
 
 带 `token` 标签的是召唤物。带 `defer-deploy` 的是开战不上场的友方，它的初始格子留着。初始格子是放入时的坐标，之后 `displace` 可以离开，初始格子不变。
 
-`opening` 先按放入顺序列出敌人，再列干员，再列召唤物。干员和召唤物按初始格子排：列号小的在前，同一列行号大的在前，再比 id。带 `defer-deploy` 的友方不在这份名单里。
+`opening` 先按放入顺序列出敌人，再列干员，再列召唤物。干员和召唤物按初始格子排：列号小的在前，同一列行号大的在前，再比 id。带 `defer-deploy` 的友方和初始格子不在地图格子里的友方不在这份名单里。
 
 干员的倒地落点是当前坐标四舍五入后的格子。这个格子是另一名友方的初始格子，并且自己的初始格子 `canStand` 为真时，落点改回初始格子。召唤物和敌人留在倒下的格子。这条策略不读取推、拉或恐惧的落点。
 
 `canStand` 看三件事：地块存在且 `deployable` 为真；没有另一名在场单位站在这里；没有另一名倒地干员的当前格子，或一名还没上场的友方的初始格子，落在这里。正在问的这名单位自己不算。召唤物倒地之后不占格。地块高度和 `deployPositions` 留给内容自己的策略，用来判断高台、近战位和远程位。
 
-再部署用倒地之后已经写下的坐标，不调用 `opening` 和 `downedTile`。有部署策略时，回来之前用 `canStand` 看当前这一格；站不住就继续等。
+再部署用倒地之后已经写下的坐标，不调用 `opening` 和 `downedTile`。有部署策略时，回来之前用 `canStand` 看当前这一格；站不住就继续等。内容排下的再部署带落点时看落点。
 
 `spawnUnit` 和 `displace` 在规格写了部署策略时先问 `canStand`。站不住就不放入、不改坐标。没有策略时这两条命令不看格子。
 
@@ -126,6 +126,8 @@ interface DeployStrategyDefinition {
 `spawnUnit(spec)` 放入单位并标成在场，授予规格标签，送出 `spawn`。`kind: "device"` 时放入的是装置，倒下就是被摧毁并被移除。`removeUnit(unitId)` 让单位离场且不再回来，送出 `removed`，下一次快照起不再出现。它不装技能计时。规格里有未注册的标签时抛出 `UnknownRegistrationError`。规格写了部署策略时，`canStand` 为假就不放入。`displace(unitId, x, y)` 改坐标，清掉这条路线已经算好的路径，送出 `displace`。同样，有部署策略且 `canStand` 为假时坐标不动。`shift` 见 [费用、阻挡与投射物](./11-field.md)。`setObstacle(x, y, on, kind?)` 在格子上摆障碍，`kind` 缺省 `block`，也可以是 `crate`。
 
 `launchProjectile` 从来源单位的坐标发出一发，送出 `projectile`。可选 `speed` 是格/秒，缺省 `PROJECTILE_SPEED`（12）。`projectiles()` 读出仍在飞的那些，带当前 `x`、`y`。投射物槽里朝目标飞；目标已离场则消掉，不结算。`retain` 为真时落到最后坐标再结算。没有 `attack` 时到达后按 `amount` 造成 `physical` 伤害。超过 `PROJECTILE_MAX_AGE`（10 秒）仍未飞到，就落在目标当前位置并结算。普攻只在 `attackShape.projectile` 上写了种类时改走投射物。
+
+`retreatUnit(unitId)` 撤下在场的单位：开着的技能以 `retreat` 结束，开始再部署计时，送出 `retreat`。不算倒下，不送 `downed`，账本不记。`redeployUnit(unitId, order?)` 让等待再部署的单位回来。`order` 可以给 `tile`（落点）、`delay`（再等的秒数，0 是立即）、`cost`（回来时扣的费用，0 是免费）与 `keepSp`（保留技力与充能）；不给的按规则：等再部署计时、扣单位的 `cost`、按入场重新打开技能。`delay` 是 0 时这一拍就回来；不是 0 时排下，由再部署模块从排下时的计时起算，到点执行，没装再部署模块时拒绝（`no-redeploy`）。两条命令与玩家的 `retreat`、`redeploy` 输入同一段实现，生效返回 `null`，否则返回原因（见 [战斗](./02-battle.md#玩家输入)），不送 `input-refused`。`unbalanced(unitId)` 读这一拍是否失衡，`cutUnbalance(unitId)` 立刻结束失衡，见 [费用、阻挡与投射物](./11-field.md#失衡)。
 
 `spendCost(side, amount)` 从该阵营的池里扣。不够、或数额不是有限非负数时返回 false，池子不动。0 视为已经付过，返回 true。`addCost(side, amount)` 加上去，结果不超过规格里的上限。`costOf(side)` 读当前数量。见 [费用、阻挡与投射物](./11-field.md)。
 

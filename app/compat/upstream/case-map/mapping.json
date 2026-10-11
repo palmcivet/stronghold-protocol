@@ -69,139 +69,165 @@
   ],
   "cases": {
     "sim/battle.test.js::initial deployment order: by column from the left, top to bottom within a column (PRTS 从上到下>从左到右 as a scan); the right boss side from its own left": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/unit/deploy/board.spec.ts::开战按列从上到下，干员先于召唤物，推迟的不上场"
+      ],
+      "reason": "核心按列从上到下部署；首领场右侧的镜像是场地布局，由 app/server 编译坐标与朝向后交给核心"
     },
     "sim/battle.test.js::DP: starts at 10, +1/s, cap 99; dead operator redeploys after respawnTime when DP ≥ cost": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/economy/index.spec.ts::费用按阵营回复，加费不超过上限",
+        "mission-core/test/unit/redeploy/index.spec.ts::费用不够就继续等，够了的那一拍再回来",
+        "mission-core/test/unit/redeploy/index.spec.ts::倒计时走完并且费用够时，在当前坐标满血回到场上"
+      ],
+      "reason": "10 / 1 / 99 是 BattleSpec.cost 的数据，核心不内置；回复、上限与再部署等费按用例断言"
     },
     "sim/battle.test.js::battle.redeploy(unit) is instant and free; retreat() keeps respawn timers": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/port/input.spec.ts::内容命令 > redeployUnit 立即、免费、保留技力，落到给定格子；撤下敌人也走同一段",
+        "mission-core/test/port/input.spec.ts::玩家输入 > retreat 撤下在场的友方：送出 input 与 retreat，不送 downed，不记倒下；再部署模块按计时与费用让它回来"
+      ],
+      "reason": "撤下与再部署是核心命令；立即、免费是内容传入的选项"
     },
     "sim/battle.test.js::pathing: enemies walk around crates and re-path when a crate is destroyed": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/grid/index.spec.ts::箱子代价很高时绕行，只有箱子可走时仍然穿过",
+        "mission-core/test/field/grid/index.spec.ts::硬障碍让地面绕行，撤掉之后回到原路",
+        "mission-core/test/port/command.spec.ts::摆上障碍后地面路线绕开或停下"
+      ],
+      "reason": "箱子与障碍改由 setObstacle 摆上撤下，按路线断言"
     },
     "sim/battle.test.js::FLY enemies follow their checkpoint route and ignore ground obstacles": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "covered",
+      "next": [
+        "mission-core/test/field/grid/index.spec.ts::地面绕开障碍走一步，飞行沿检查点直线穿过"
+      ]
     },
     "sim/battle.test.js::route steps: disappear / wait / appear (teleport) are honoured": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/grid/index.spec.ts::消失后再出现会改站位",
+        "mission-core/test/field/grid/index.spec.ts::路线消失在状态刷新之后仍留在快照里",
+        "mission-core/test/combat/attack/stand.spec.ts::敌人出手站定 > 站定只停住行走：等待照常走完，出手比片段快的敌人在目标还在时不离开"
+      ],
+      "reason": "等待、消失、出现分在路线与站定用例里断言"
     },
     "sim/battle.test.js::leaks: recorded per player with enemyKey/mods/lpr/sourcePlayerId; perfect=false; cleared when all gone": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "moved",
+      "owner": "app/server/match",
+      "reason": "按玩家记漏怪、扣命与完美通关是对局层的事；核心只发 leak 并按单位 owner 记账（mission-core/test/unit/leak/index.spec.ts、mission-core/test/ledger/index.spec.ts）"
     },
     "sim/battle.test.js::kills: killed/total counters, bounty coins to the killer's owner, perfect clear": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "moved",
+      "owner": "app/server/match",
+      "reason": "赏金金币、击杀计数与完美通关是对局层的事；核心按 owner 记击倒与 resolved（mission-core/test/ledger/index.spec.ts）"
     },
     "sim/battle.test.js::time limit: battle ends at timeLimit, remaining enemies count as leaked, unspawned ones are dropped": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "moved",
+      "owner": "app/server/match",
+      "reason": "核心不判胜负也不计时限，由对局层按时限调用 finish 并结算剩余敌人"
     },
     "sim/battle.test.js::forceEnd: forced ends immediately, timeout counts leaks; step after finish is a no-op": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "moved",
+      "owner": "app/server/match",
+      "reason": "强制结束与超时计漏是对局层（app/server/match/fight/field 的 forceEnd）；核心提供 finish"
     },
     "sim/battle.test.js::unite field: two helpers (colOffset 0 / +8), carryState, per-half attribution, no layer gains": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "moved",
+      "owner": "app/server/match",
+      "reason": "联防场的列偏移、继承状态与按半场归属都是对局层；核心按单位 owner 记账"
     },
     "sim/battle.test.js::boss field: side R is mirrored and faces left; range grid mirrored": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "moved",
+      "owner": "app/server/match",
+      "reason": "首领场右侧的镜像坐标与朝向由对局层编译；核心按朝向旋转范围（mission-core/test/combat/range/index.spec.ts）"
     },
     "sim/battle.test.js::shared boss pool: damage routed to the pool from two battles; victory when it reaches 0": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "moved",
+      "owner": "app/server/match",
+      "reason": "两场共用的首领血池跨战斗，属于对局层"
     },
     "sim/battle.test.js::boss field with a shared pool: an emptied field (leader leaked) keeps running until the pool is 0 or the match ends it": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "moved",
+      "owner": "app/server/match",
+      "reason": "共用血池的场地何时结束由对局层决定"
     },
     "sim/battle.test.js::Final Assault h07_04 (pair): 昆图斯 walking into the objective does not end the field while the pool is full": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "moved",
+      "owner": "app/server/match",
+      "reason": "具体关卡与首领的结束规则属于对局层与内容"
     },
     "sim/battle.test.js::boss battles: infinite time limit, leaks carry lpr, match ends via forceEnd": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "moved",
+      "owner": "app/server/match",
+      "reason": "首领战时限与扣命属于对局层"
     },
     "sim/battle.test.js::snapshot / event wire format (DESIGN §8.2)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "moved",
+      "owner": "app/server/match",
+      "reason": "线上的快照与事件格式由 app/server 从核心快照与事件编码；核心的快照契约另有用例（mission-core/test/battle/snapshot.spec.ts）"
     },
     "sim/battle.test.js::one ENGAGE per unit, on its first attack that hits an enemy (the client's 行动开始 voice)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "moved",
+      "owner": "app/server/match",
+      "reason": "语音提示是画面元数据，由 app/server 从核心的 attack-hit 事件推出每个单位的第一次"
     },
     "sim/battle.test.js::determinism: same seed ⇒ identical result and event stream; different seed may differ": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/battle/guard.spec.ts::同一份规格建的几场交替推进，与各自单独推进一致",
+        "mission-core/test/determinism.spec.ts::determinism scan > engine sources use only deterministic math and no clock or entropy"
+      ],
+      "reason": "同一规格逐拍一致由交替推进与黄金回放断言，引擎源码扫描禁用时钟与熵"
     },
     "sim/battle.test.js::robustness: throwing content handlers / kits never crash the battle": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "内容回调的异常由 app/server/content/support/battle-facade.ts 捕获并记录；核心不吞异常"
     },
     "sim/battle.test.js::hook bus: priority order, owner removal, once, off by handle": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "按优先级、归属移除与 once 的钩子总线是内容层（battle-facade 的 on/off）；核心事件按先进先出分发（mission-core/test/kernel/event/index.spec.ts）"
     },
     "sim/battle.test.js::scheduling: after / every with cancel": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "after / every 由 battle-facade 在核心的 schedule 上实现"
     },
     "sim/battle.test.js::layers & coins: addLayers records gains (normal field) and emits client events": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "盟约层数与金币是对局内容"
     },
     "sim/battle.test.js::layers: an IN_BATTLE gain stops at BOND_LAYER_CAP (999, MAX_GARRISON_STACK) — the battle's count and the reported gain": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "盟约层数上限是对局内容"
     },
     "sim/battle.test.js::tokens: spawnToken deploys a token next to its owner; manual token pieces deploy from input": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "召唤物落点与手动召唤由 battle-facade 的 spawnToken 决定，核心只提供 spawnUnit"
     },
     "sim/battle.test.js::displacement helper moves enemies along passable tiles and re-paths": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/motion/index.spec.ts::推力按受力等级写到落点，倒地读这个坐标",
+        "mission-core/test/field/motion/index.spec.ts::拉力在受力等级不小于 0 时拉到急停圈"
+      ],
+      "reason": "推拉落点与重新规划路线按用例断言"
     },
     "sim/battle.test.js::content modules: a throwing install() is logged and skipped; units outside the rect are not deployed": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/unit/deploy/board.spec.ts::初始格子不在地图上的友方不上场，其余照常"
+      ],
+      "reason": "初始格子不在地图格子里的友方不在开场名单里（内置部署策略，步骤 6 补上）；install 抛错时记录并跳过是内容加载器 app/server/content/loader.ts 的 battleModules 的职责，核心对内核模块照常快速失败"
     },
     "sim/bossfield.browser.test.js::Final Assault / Hidden Core fields in the browser sim > real boss specs at 999 layers: Chrome and Node give the same digest, pool and fx; 限伤, drones, 瘫痪 and 奥术 all occur": {
       "status": "not-migrated",
@@ -228,164 +254,250 @@
       "reason": "盟约、装备、潜能与练度的取值随内容模块改写；核心提供加值、百分比、乘算与独立乘区（mission-core/test/battle/content.spec.ts）"
     },
     "sim/combat.test.js::stun stops enemy movement and attacks; immunity honoured; statusApplied fires": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/attack/stand.spec.ts::敌人出手站定 > 命中后站定期间被晕眩：站定作废并记下打断的拍，晕眩结束后接着走",
+        "mission-core/test/ability/effect/catalog.spec.ts::眩晕和缴械取消攻击",
+        "mission-core/test/ability/effect/catalog.spec.ts::恐惧免疫用 feared"
+      ],
+      "reason": "晕眩中的敌人不走（步骤 6 补上），statusApplied 对应核心的 status 事件"
     },
     "sim/combat.test.js::stunned operator neither attacks nor casts but keeps its natural SP recovery; silence blocks skill activation": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/skill/behavior.spec.ts::眩晕期间技力照涨、冻结也照涨，技力满了也不放技能，眩晕结束后才放",
+        "mission-core/test/ability/skill/index.spec.ts::随时间的技力在眩晕时仍涨，阻回时不涨",
+        "mission-core/test/ability/effect/catalog.spec.ts::眩晕和缴械取消攻击"
+      ],
+      "reason": "沉默是 CANNOT_CAST 标签，与眩晕的 CANNOT_ACT 走同一条技能判定"
     },
     "sim/combat.test.js::cold on cold ⇒ freeze for the longer cold (res −15), not a fixed 3 s; frozen-immune enemies only get cold": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/cold.spec.ts::寒冷 10 秒后紧接 1 秒寒冷：冻结取更长的 10 秒，这对寒冷变成冻结，冻结中法抗 −15",
+        "mission-core/test/ability/effect/catalog.spec.ts::第二次寒冷还在身上时施加冻结，单位免疫 frozen 则跳过"
+      ],
+      "reason": "步骤 6 B 已对齐"
     },
     "sim/combat.test.js::sleep: target is untargetable and inactive; fear stops enemy attacks": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/target/status.spec.ts::沉睡的敌人不被普攻选中，醒来之后照常挨打",
+        "mission-core/test/combat/damage/gate.spec.ts::没有例外时沉睡不受伤",
+        "mission-core/test/combat/target/status.spec.ts::恐惧：放开阻挡、不出手；没有来源时停在自己的格子上；结束后再被挡住"
+      ],
+      "reason": "沉睡不被选中、不受伤；恐惧不出手"
     },
     "sim/combat.test.js::element bursts on enemies (\"·我方\" terms): burn 7000 元素伤害 + RES −20 (10 s lock), neural 6000 + 3 麻痹, leaders hold 2000": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/element/index.spec.ts::敌人灼燃蓄满后爆发 7000 元素伤害且不再进槽",
+        "mission-core/test/combat/element/index.spec.ts::敌人神经爆发 6000 元素伤害并叠 3 层麻痹",
+        "mission-core/test/combat/element/index.spec.ts::属性 gaugeMax 提高槽上限后才爆发"
+      ],
+      "reason": "master 的“首领 2000”是元素槽容量（ELEMENT_GAUGE_MAX_LEADER），不是爆发伤害上限；核心用 gaugeMax 属性表达，2000 由 app/data 按首领写进规格"
     },
     "sim/combat.test.js::element bursts on enemies: apoptosis = 800 元素伤害/s + 50 % weaken recovering; erosion = 5000 + permanent DEF −120 (8 s lock)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/element/burst.spec.ts::敌人凋亡：每秒 800 元素伤害，攻击力减半并随时间恢复，15 秒后恢复原值",
+        "mission-core/test/combat/element/burst.spec.ts::敌人侵蚀：5000 元素伤害并永久降防 120，可叠；爆发后槽锁 8 秒，到时归零"
+      ],
+      "reason": "敌人凋亡与侵蚀的数值、恢复与槽锁按拍断言"
     },
     "sim/combat.test.js::element bursts on operators (enemy damage): burn 1200 arts, neural stun 10 s then 1000 true, apoptosis 阻回 + no skill / −1 SP/s / 100 arts/s, erosion DEF −100 then 800 phys (10 s cooldown)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/element/burst.spec.ts::干员的元素爆发：灼燃 1200 法术；神经先晕 10 秒再 1000 真实；凋亡沉默、阻回、每秒 −1 技力与 100 法术；侵蚀先降防 100 再 800 物理，冷却 10 秒，降防可叠"
+      ],
+      "reason": "干员四种元素爆发的伤害、晕眩、沉默、阻回、掉技力与降防"
     },
     "sim/combat.test.js::爆发冷却 (PRTS 元素): during a burst no element fills or recovers; its end resets every gauge; 损伤抵抗 = epResistance %": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/element/burst.spec.ts::爆发冷却：爆发期间别的元素也不进槽，冷却结束时所有槽归零，之后照常进槽",
+        "mission-core/test/combat/element/burst.spec.ts::损伤抵抗：单位的 elementRes 是百分比，进槽 = 损伤 × (1 − elementRes × 0.01)"
+      ],
+      "reason": "损伤抵抗是属性 elementRes（百分比）"
     },
     "sim/combat.test.js::a resolving burst already locks its gauge: an elementBurst handler spreading the element back cannot re-burst (no ping-pong recursion)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/element/burst.spec.ts::爆发时槽已锁：element-burst 回调把同一元素再撒给所有友方，每个单位只爆一次，不来回递归"
+      ],
+      "reason": "爆发结算时槽已锁，回调再撒元素不递归"
     },
     "sim/combat.test.js::淤困 (enemy_9007_acelem) parasite hosts side by side: one burst spreads once, no ping-pong": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "具体敌人的寄生扩散属于敌人内容"
     },
     "sim/combat.test.js::statuses (official terms): tremble only stops attacks while blocked; fear = unblockable + no attack + no advance (no source: it stays on its tile, fear.js); stunned blocker lets go": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/catalog.spec.ts::战栗的敌人被挡住时不出手，没被挡时照常打",
+        "mission-core/test/combat/target/status.spec.ts::恐惧：放开阻挡、不出手；没有来源时停在自己的格子上；结束后再被挡住",
+        "mission-core/test/unit/block/index.spec.ts::眩晕会放开已经挡住的敌人"
+      ],
+      "reason": "没有来源的恐惧留在原格（步骤 6 补上：带 fear 标签且没有恐惧位移时不沿路线走）"
     },
     "sim/combat.test.js::statuses: sleep = invulnerable except `hitSleep` attackers; levitate halves on heavy units; frozen RES cut only on enemies": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "covered",
+      "next": [
+        "mission-core/test/combat/damage/gate.spec.ts::沉睡挡住伤害和元素槽，能打沉睡或这一击声明忽略时除外",
+        "mission-core/test/ability/effect/application.spec.ts::效果施加的 effect 阶段 > 内置的抵抗与重量减半在内容修饰之后：内容看到的是缩短之前的拍数，缩短照常发生",
+        "mission-core/test/ability/effect/catalog.spec.ts::冻结只降低敌人的法术抗性"
+      ]
     },
     "sim/combat.test.js::statuses: \"同名效果取最高\" — a weaker fragile never overrides a stronger one and resumes after it; palsy cancels attacks": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "covered",
+      "next": [
+        "mission-core/test/ability/effect/catalog.spec.ts::脆弱用这次的强度，弱的不盖过强的，强的结束后续上弱的",
+        "mission-core/test/ability/effect/catalog.spec.ts::麻痹按层取消敌人普攻，第五层加不上去，友方不受影响"
+      ]
     },
     "sim/combat.test.js::beforeStatus may change the duration / value; NEVER trigger never auto-casts; dodge sources roll independently; no SP while a timed skill runs": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/application.spec.ts::效果施加的 effect 阶段 > 修饰可以改这次的拍数：1 秒晕眩翻倍成 2 秒；看到的是施加者、效果与换成拍数的时长",
+        "mission-core/test/ability/effect/application.spec.ts::效果施加的 effect 阶段 > 修饰可以改这次的强度，非有限值不生效",
+        "mission-core/test/combat/target/status.spec.ts::NEVER 的技能技力满了也不自己放；手动放之后持续期间不回技力",
+        "mission-core/test/combat/target/status.spec.ts::两个闪避来源各自独立判定：0.5 与 0.5 合成 1 − 0.5 × 0.5 = 0.75"
+      ],
+      "reason": "beforeStatus 对应效果施加的 effect 阶段修饰（架构师决定）；NEVER、闪避独立判定、持续期间不回技力分别断言"
     },
     "sim/combat.test.js::blocking: capacity, heavy enemies, release on blocker death": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "covered",
+      "next": [
+        "mission-core/test/unit/block/index.spec.ts::接触半径内按阻挡数写回关系，挡住后不再沿路线走",
+        "mission-core/test/unit/block/index.spec.ts::没写阻挡数时按 1，重量超过阻挡数则不挡",
+        "mission-core/test/unit/block/takeover.spec.ts::阻挡接替 > 后面的阻挡者死时前面那位还满员：敌人接着走"
+      ]
     },
     "sim/combat.test.js::blocked melee enemy attacks its blocker": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "covered",
+      "next": [
+        "mission-core/test/combat/attack/blocker.spec.ts::没有攻击范围的敌人只打挡住它的单位，没被挡时谁也不打"
+      ]
     },
     "sim/combat.test.js::melee operators cannot hit FLY enemies; ranged ones can": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "covered",
+      "next": [
+        "mission-core/test/combat/attack/index.spec.ts::不能打空的攻击不选飞行单位，隐匿要显形才打得到"
+      ]
     },
     "sim/combat.test.js::stealth enemies are untargetable unless blocked or revealed": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "covered",
+      "next": [
+        "mission-core/test/combat/target/index.spec.ts::没被挡的隐匿敌人和不可选中的敌人不被选中；被挡住或显形的隐匿敌人可以选中"
+      ]
     },
     "sim/combat.test.js::target priority: least remaining distance to goal, then earliest spawned; fly-first profiles": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "covered",
+      "next": [
+        "mission-core/test/combat/target/index.spec.ts::阻挡优先只读已有关系，特殊优先级、仇恨、路程、生命和防御按键排序"
+      ]
     },
     "sim/combat.test.js::operators prioritise enemies they block": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "covered",
+      "next": [
+        "mission-core/test/combat/target/index.spec.ts::阻挡优先只读已有关系，特殊优先级、仇恨、路程、生命和防御按键排序",
+        "mission-core/test/combat/attack/index.spec.ts::被自己阻挡、站在范围外的敌人仍然打得到"
+      ]
     },
     "sim/combat.test.js::healers target the lowest HP% ally in range; idle when everyone is full; noHeal allies skipped": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/target/status.spec.ts::治疗选生命比例最低的受伤友方；都满血时不出手；带 no-heal 的不治"
+      ],
+      "reason": "治疗选比例最低、满血不出手、跳过 no-heal"
     },
     "sim/combat.test.js::ranged enemies attack allies in radius: blocker → taunt → latest deployed, then pause": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/target/status.spec.ts::远程敌人打范围里的友方：阻挡者优先，其次嘲讽高的，再其次最晚部署的",
+        "mission-core/test/combat/attack/stand.spec.ts::敌人出手站定 > 没有片段时命中后站 0.35 秒、没有前摇站定；晕眩打断站定，晕眩结束后接着走"
+      ],
+      "reason": "出手后的停顿是攻击站定"
     },
     "sim/core.test.js::rng is deterministic and in [0,1)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "随机流与寻路基础，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/kernel/random/range.spec.ts::同一种子给同一串数，不同种子不同；数在 [0, 1)；int(n) 是 [0, n) 的整数"
+      ],
+      "reason": "种子随机流与 int(n)"
     },
     "sim/core.test.js::grid: 8-dir A* without corner cutting matches helper path lengths on real stages": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "随机流与寻路基础，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/grid/flow.spec.ts::流场与平滑 > 平滑跳到 Bresenham 视线里最远的祖先；斜走要两边的直格都能走；不许斜时只沿行或列跳",
+        "mission-core/test/field/grid/blockable.spec.ts::偏好可阻挡的地面 > 随机布局：长度是官方的；pen 是等长链里最少的地板数；每段都是官方视线；穿过的地板不多于官方路线；换指针只为更少地板或只跳过官方路点"
+      ],
+      "reason": "地面寻路是四向流场加 Bresenham 平滑（不切角），按随机布局与参照实现逐格比对；真实关卡的路径长度属于数据接线后的数据检查"
     },
     "sim/core.test.js::grid: obstacles re-route and bump version; blocked entirely ⇒ null unless ignoreObstacles": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "随机流与寻路基础，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/grid/flow.spec.ts::流场与平滑 > 箱子能走但代价 1000、挡视线、不是放置与位移格；硬障碍走不过；两种各占一位",
+        "mission-core/test/field/grid/index.spec.ts::硬障碍让地面绕行，撤掉之后回到原路"
+      ],
+      "reason": "障碍绕行、版本递增、全堵时为空，ignoreObstacles 时有路"
     },
     "sim/core.test.js::damage formulas: phys/arts/true, ignore, 5% floor": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "随机流与寻路基础，核对 next 现有用例"
+      "status": "covered",
+      "next": [
+        "mission-core/test/combat/damage/index.spec.ts::物理减伤含 5% 下限和忽略防御",
+        "mission-core/test/combat/damage/index.spec.ts::法术减伤含 5% 下限和忽略法抗"
+      ]
     },
     "sim/core.test.js::dealDamage applies multipliers, shields and records stats": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "随机流与寻路基础，核对 next 现有用例"
+      "status": "covered",
+      "next": [
+        "mission-core/test/combat/damage/index.spec.ts::来源伤害乘算和伤害自带乘数",
+        "mission-core/test/combat/damage/index.spec.ts::护盾先于生命，闪避不写生命也不扣护盾",
+        "mission-core/test/combat/damage/gate.spec.ts::受击次数每次扣 1 并跳过防御，闪避仍然先判定"
+      ]
     },
     "sim/core.test.js::dodge uses the seeded rng and is deterministic": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "随机流与寻路基础，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/damage/index.spec.ts::闪避用本场的种子随机数：同一种子同样的命中数，五成闪避约一半命中；canDodge 为假时必中"
+      ],
+      "reason": "闪避用本场种子随机数，可复现"
     },
     "sim/core.test.js::stat aggregation: (base+flat)(1+pct)Πmul, res clamp, aspd clamp, interval, HP ratio kept": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "随机流与寻路基础，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/battle/content.spec.ts::属性按 基础 → 加值 → 百分比 → 乘算 → 独立乘区 聚合，再按定义夹住；规格没写时取定义的基础值",
+        "mission-core/test/battle/guard.spec.ts::攻速为 0 或非数、攻击间隔为 0 时，间隔按上下限与缺省值取有限值，照常出手",
+        "mission-core/test/ability/effect/max-hp.spec.ts::最大生命翻倍时当前生命跟着翻倍，效果取下时按比例回落；拍内一读到就已经跟上",
+        "mission-core/test/ability/effect/max-hp.spec.ts::受伤之后上限再变按当时的比例算：1000/2000 掉到 600 后上限回到 1000，生命是 300",
+        "mission-core/test/ability/effect/max-hp.spec.ts::不在场时上限变化只记下来，不缩放生命；再上场之后的变化照常缩放"
+      ],
+      "reason": "聚合与夹取已有用例；最大生命变化保留生命比例是最大生命自己的规则（步骤 6 补上，assumed/max-hp-ratio）"
     },
     "sim/core.test.js::buffs: replace / extend / stack / independent / keep, expiry and onExpire": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "随机流与寻路基础，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/policy.spec.ts::independent：各算各的时长，最多 stackCap 条，满了先去掉最早的（1、2、3、4 秒的四次只留后三次）；缺省上限 1",
+        "mission-core/test/ability/effect/policy.spec.ts::keep：已经在身上时再施加不生效，强度与时长都留原来的",
+        "mission-core/test/ability/effect/stacking.spec.ts::removeEffect 连等待链一起取下，之后的新施加单独计时",
+        "mission-core/test/ability/effect/application.spec.ts::status 事件的 entered：新开始为真，刷新为假，到期之后再施加又为真；较弱的施加排进等待链时不送 status"
+      ],
+      "reason": "refresh/stack/strongest 已有用例；keep 与 independent 的上限在步骤 6 补上"
     },
     "sim/core.test.js::persistent buffs survive death; others are cleared": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "随机流与寻路基础，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/down.spec.ts::友方倒下时取下身上的效果并调用 onRemove，keepOnDown 的留着，再部署后还在",
+        "mission-core/test/ability/effect/down.spec.ts::撤下同样取下不常驻的效果"
+      ],
+      "reason": "效果定义 keepOnDown（步骤 6 补上）"
     },
     "sim/core.test.js::simdata normalises real chess, enemy, token, stage and routes": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "随机流与寻路基础，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "把真实干员、敌人、召唤物、关卡与路线数据编成规格是数据编译（app 侧），核心只收纯数据规格"
     },
     "sim/detmath.test.js::the results are pinned bit for bit (engine-independent digests)": {
       "status": "covered",
@@ -448,14 +560,14 @@
     "sim/displace-fx.test.js::a displacement puts a `displace` fx into the event stream the client receives": {
       "status": "rewritten",
       "next": [
-        "mission-core/test/field/motion/index.spec.ts::displace 带位移时长与是否保持朝向：推拉保持朝向，显式关掉或直接移动不保持"
+        "mission-core/test/field/motion/index.spec.ts::displace 带位移时长与是否保持朝向：推的时长是失衡秒数（受力等级 1 是 0.9 秒），直接移动是 0；推拉保持朝向，显式关掉或直接移动不保持"
       ],
       "reason": "核心发带 duration、keepFacing 的 displace 事件；线路上的 fx 形状由兼容层转换"
     },
     "sim/displace-fx.test.js::directional and radial pushes and hook pulls preserve facing; explicit overrides and raw moves do not": {
       "status": "covered",
       "next": [
-        "mission-core/test/field/motion/index.spec.ts::displace 带位移时长与是否保持朝向：推拉保持朝向，显式关掉或直接移动不保持"
+        "mission-core/test/field/motion/index.spec.ts::displace 带位移时长与是否保持朝向：推的时长是失衡秒数（受力等级 1 是 0.9 秒），直接移动是 0；推拉保持朝向，显式关掉或直接移动不保持"
       ]
     },
     "sim/docs-examples.test.js::SIM.md §10: 隐现 S2 fires 14 shots then ends": {
@@ -515,164 +627,210 @@
       "reason": "元素组件的 view 给出最满一槽的比例，一样满按官方元素先后；爆发期间给出锁住的一槽，不带冷却结束时刻，填充比例不做百分取整"
     },
     "sim/engine-requests.test.js::baseRangeKeys: the initial range includes permanent rangeExtend (persist, never-expiring) — DEFAULT trigger sees the module tile": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "范围扩展等内容请求的引擎机制"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/skill/behavior.spec.ts::技能触发只看永久攻击距离：rangeExtendBase 延伸 DEFAULT 与 ACTIVE_RANGE 的范围，rangeExtend 不延伸；no-range-extend 的技能不加"
+      ],
+      "reason": "永久攻击距离写在 rangeExtendBase，DEFAULT 的范围算它"
     },
     "sim/engine-requests.test.js::baseRangeKeys: temporary / skill rangeExtend never counts; a permanent one added after deployment is picked up": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "范围扩展等内容请求的引擎机制"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/skill/behavior.spec.ts::技能触发只看永久攻击距离：rangeExtendBase 延伸 DEFAULT 与 ACTIVE_RANGE 的范围，rangeExtend 不延伸；no-range-extend 的技能不加"
+      ],
+      "reason": "rangeExtend 不进技能触发；属性每次现算，部署后加上的永久距离照样读到"
     },
     "sim/engine-requests.test.js::forceAttack(u, targets, { noAmmo }): an extra attack that spends no bullet and emits no ammoUsed": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "范围扩展等内容请求的引擎机制"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/attack/force.spec.ts::forceAttack 额外打一下：noAmmo 时不用弹药、不送 ammo-used；不带时用掉一发；默认按普攻选目标",
+        "mission-core/test/combat/attack/force.spec.ts::attack 拦截把 noAmmo 改成真时普攻也不用弹药；最后一发用 noAmmo 打不结束技能"
+      ],
+      "reason": "核心的 forceAttack 内容接口与 attack 拦截的 noAmmo"
     },
     "sim/engine-requests.test.js::massFlat: current massLevel (weight) for displacement and 浮空 halving; base untouched; floored at 0": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "范围扩展等内容请求的引擎机制"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/motion/index.spec.ts::受力等级读修饰之后的重量：重量 4 挨中力不动，减 1 后按 −2 推 0.12 格；重量不低于 0，基础值不变",
+        "mission-core/test/ability/effect/application.spec.ts::效果施加的 effect 阶段 > 内置的抵抗与重量减半在内容修饰之后：内容看到的是缩短之前的拍数，缩短照常发生"
+      ],
+      "reason": "massLevel 注册成不低于 0 的属性，massFlat 是它的 add 修饰"
     },
     "sim/engine-requests.test.js::attract: the enemy is released, walks (own speed) to the point, waits there, then resumes its route": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "范围扩展等内容请求的引擎机制"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/motion/attract.spec.ts::诱导 > 按自身速度走到诱导点，诱导还在时停在那里，诱导结束后接着沿路线",
+        "mission-core/test/field/motion/attract.spec.ts::诱导 > 诱导提前结束时没走完的诱导位移作废，接着沿路线"
+      ],
+      "reason": "attract 效果（unblockable 放开阻挡）加诱导位移；带 attract 标签时在诱导点等"
     },
     "sim/engine-requests.test.js::attract: default point = the source tile; a new application moves the point; stun/bind stop it; flyers fly straight; resisted": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "范围扩展等内容请求的引擎机制"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/motion/attract.spec.ts::诱导 > 晕眩时诱导位移停下，晕眩结束后接着走",
+        "mission-core/test/field/motion/attract.spec.ts::诱导 > 飞行单位直线飞向诱导点：(6, 1) 到 (8, 2) 的直线上横向走的是纵向的两倍",
+        "mission-core/test/field/motion/attract.spec.ts::诱导 > 抵抗让诱导的时长减半：4 秒的诱导 2 秒就结束"
+      ],
+      "reason": "核心负责停下、直线与抵抗；缺省诱导点取施加者的格子、重新施加换点由内容（facade）调用 shift 决定"
     },
     "sim/engine-requests.test.js::resist: halves control statuses (not stat debuffs), never compounds, keeps a longer running status; statusApplied reports it": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "范围扩展等内容请求的引擎机制"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/application.spec.ts::效果施加的 effect 阶段 > 内置的抵抗与重量减半在内容修饰之后：内容看到的是缩短之前的拍数，缩短照常发生",
+        "mission-core/test/ability/effect/catalog.spec.ts::脆弱用这次的强度，弱的不盖过强的，强的结束后续上弱的"
+      ],
+      "reason": "抵抗改成 effect 阶段的内置修饰（effect-resist），只对 RESISTED 名单缩短；抵抗本身取最高不叠乘"
     },
     "sim/engine-requests.test.js::resist: a resisting enemy loses one 麻痹 stack every 5 s; the value scales the cut": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "范围扩展等内容请求的引擎机制"
+      "status": "covered",
+      "next": [
+        "mission-core/test/ability/effect/catalog.spec.ts::抵抗每 5 秒去掉 1 层麻痹"
+      ]
     },
     "sim/engine-requests.test.js::setExtraRange: extra tiles join the range across every rebuild (skill, relocate), never the initial range": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "范围扩展等内容请求的引擎机制"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/skill/behavior.spec.ts::setExtraRange 的绝对格子算进攻击范围，换位置后照样在；不让 DEFAULT 触发；null 清掉"
+      ],
+      "reason": "额外格子在查询时并进攻击范围，换位置、换范围都留着，不进技能触发范围"
     },
     "sim/engine-requests.test.js::addTriggerRange: an enemy in a content trigger range fires DEFAULT (attackers and non-attackers), not heal skills; unregister": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "范围扩展等内容请求的引擎机制"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/skill/behavior.spec.ts::内容的触发区域里有敌人时非治疗技能每拍按 DEFAULT 放：攻击者不等攻击，不攻击的也放；单位区域看它当前的攻击范围；治疗技能不看；撤下后不再算"
+      ],
+      "reason": "核心的 setTriggerArea：绝对格子或某个单位当前的攻击范围"
     },
     "sim/engine-requests.test.js::skill end: onEnd runs with the skill mods and range still applied, then they are removed; re-activation in onEnd keeps them": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "范围扩展等内容请求的引擎机制"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/skill/index.spec.ts::技能结束时结束钩子先跑，修饰还在；钩子里重新释放时修饰留着"
+      ],
+      "reason": "结束钩子与技能体的 onEnd 在撤下修饰之前；钩子里重新释放时不撤"
     },
     "sim/engine-requests.test.js::redeploy: { tile } lands on another tile (home unchanged; knocked out there, it comes back there); { keepSp } restores SP before deploy fires": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "范围扩展等内容请求的引擎机制"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/port/input.spec.ts::玩家输入 > redeploy 在计时走完后带 tile 落到别的格子；计时没走完时拒绝",
+        "mission-core/test/port/input.spec.ts::内容命令 > redeployUnit 立即、免费、保留技力，落到给定格子；撤下敌人也走同一段",
+        "mission-core/test/port/input.spec.ts::内容命令 > keepSp 保留撤下前的技力，不带时按 initSp 重新开始"
+      ],
+      "reason": "落点与保留技力；初始格子由部署策略记着，不随再部署改"
     },
     "sim/engine-requests.test.js::redeploy keepSp: charges survive too": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "范围扩展等内容请求的引擎机制"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/port/input.spec.ts::内容命令 > keepSp 也保留充能"
+      ],
+      "reason": "keepSp 同时保留充能"
     },
     "sim/engine-requests.test.js::findTacticalPoint: a free walkable tile of the initial range on an enemy ground path first, then the nearest": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "范围扩展等内容请求的引擎机制"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "战术点只在战术家召唤内容里用，随 battle-facade"
     },
     "sim/engine-requests.test.js::statusApplied ctx.entered: true only when the status newly started (refreshes, weaker valued applications: false)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "范围扩展等内容请求的引擎机制"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/application.spec.ts::status 事件的 entered：新开始为真，刷新为假，到期之后再施加又为真；较弱的施加排进等待链时不送 status"
+      ],
+      "reason": "status 事件新增 entered；较弱的施加排进等待链时核心不送 status，与 master 的事件对齐按架构决定留到步骤 8"
     },
     "sim/engine-requests.test.js::layerGain ctx.tile: the source's tile — or where it was knocked out this instant; null afterwards; explicit opts.tile": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "范围扩展等内容请求的引擎机制"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "盟约层数是对局内容"
     },
     "sim/facing-invariance.test.js::rotation invariance: every chess (normal + elite) facing UP / LEFT / DOWN plays like its RIGHT-facing original": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "朝向旋转不变性，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "逐个真实干员的检查随内容模块；核心的旋转由 mission-core/test/combat/range/index.spec.ts 断言"
     },
     "sim/facing-invariance.test.js::localOrder / localBefore: the facing-RIGHT frame tie-break equals the tile-key order for RIGHT and turns with the direction": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "朝向旋转不变性，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "落点与战术点的选法只在召唤与盟约内容里用，随 battle-facade"
     },
     "sim/facing-invariance.test.js::战术家 援军 (伺夜): the tactical point is the tile in FRONT along the direction (not the one beside it)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "朝向旋转不变性，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "落点与战术点的选法只在召唤与盟约内容里用，随 battle-facade"
     },
     "sim/facing-invariance.test.js::突袭 (raidShip): the landing tile beside the enemy turns with the member direction (equal candidates)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "朝向旋转不变性，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "落点与战术点的选法只在召唤与盟约内容里用，随 battle-facade"
     },
     "sim/facing-invariance.test.js::findSummonTile: equal candidates resolve in the owner's facing-RIGHT frame (RIGHT: the tile-key order, as before)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "朝向旋转不变性，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "落点与战术点的选法只在召唤与盟约内容里用，随 battle-facade"
     },
     "sim/facing.test.js::dir.js: the DATA.md rotation RIGHT (dr,dc) · UP (dc,−dr) · LEFT (−dr,−dc) · DOWN (−dc,dr), inverse and helpers": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "朝向与范围旋转，核对 next 现有用例"
+      "status": "covered",
+      "next": [
+        "mission-core/field/direction/index.test.ts::同一份相对格按四个朝向旋转"
+      ]
     },
     "sim/facing.test.js::absoluteRangeKeys rotates the facing-RIGHT grid; rangeExtend goes along +dCol before rotating": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "朝向与范围旋转，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/range/index.spec.ts::范围查询按朝向返回旋转后的格子",
+        "mission-core/test/port/command.spec.ts::攻击距离按 rangeExtend 沿行延伸"
+      ],
+      "reason": "旋转与沿行延伸分两条用例"
     },
     "sim/facing.test.js::units take `dir` from the battle input (default RIGHT): rotated rangeKeys, derived facing sign, UnitInfo.dir": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "朝向与范围旋转，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/range/index.spec.ts::范围查询按朝向返回旋转后的格子",
+        "mission-core/field/direction/index.test.ts::同一份相对格按四个朝向旋转"
+      ],
+      "reason": "朝向来自单位规格（缺省 RIGHT），范围按朝向旋转；画面的朝向读快照 facing"
     },
     "sim/facing.test.js::a unit only hits enemies inside its rotated range (DOWN-facing sniper shoots the row below)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "朝向与范围旋转，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/range/index.spec.ts::范围查询按朝向返回旋转后的格子"
+      ],
+      "reason": "普攻目标来自旋转后的范围"
     },
     "sim/facing.test.js::Final Assault right side: col c → 20 − c with RIGHT ↔ LEFT, UP / DOWN unchanged": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "朝向与范围旋转，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/match",
+      "reason": "首领场右侧的列镜像是对局层的场地布局"
     },
     "sim/facing.test.js::professions: 领主 (lord) full damage only on its own tile and the tile in FRONT along its direction": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "朝向与范围旋转，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "职业特性属于干员内容"
     },
     "sim/facing.test.js::professions: 行刑者 (reaperrange) front bonus follows the direction (own line, at or ahead)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "朝向与范围旋转，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "职业特性属于干员内容"
     },
     "sim/facing.test.js::skill CUSTOM_RANGE trigger grids are rotated with the unit": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "朝向与范围旋转，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/skill/behavior.spec.ts::CUSTOM_RANGE 的触发格随单位朝向旋转：朝下时面前一格是 y 小一的那格，朝右时同一处的敌人不在触发格里"
+      ],
+      "reason": "触发格随朝向旋转"
     },
     "sim/facing.test.js::token placement grids (findSummonTile) and support geometry follow the owner direction": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "朝向与范围旋转，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "召唤物落点由 battle-facade 的 spawnToken 决定"
     },
     "sim/facing.test.js::spawnToken inherits the owner direction unless given; spawnDevice takes opts.dir": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "朝向与范围旋转，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "spawnToken / spawnDevice 是 battle-facade 的内容接口，核心的 spawnUnit 按规格朝向生成"
     },
     "sim/facing.test.js::the legacy facing setter maps ±1 to RIGHT / LEFT (content that still assigns facing)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "朝向与范围旋转，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "旧内容的朝向写法由 battle-facade 兼容"
     },
     "sim/feedback1-followups.test.js::profession splash skips an unblocked 隐匿 enemy and hits it once revealed (PRTS §AOE伤害判定: only enemies that can be selected)": {
       "status": "rewritten",
@@ -923,64 +1081,66 @@
       "reason": "干员、敌人、盟约或真实关卡的内容用例，随内容模块改写"
     },
     "sim/feedback1b-displacement.test.js::B5: the data — every air unit of the mode but “炎佑” is a 静态刚体 (+ 昆图斯); 薄绿 S2 is 小力 and the default skill": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "静态刚体"
+      "status": "moved",
+      "owner": "app/data",
+      "reason": "静态刚体与力度来自数据编译"
     },
     "sim/feedback1b-displacement.test.js::B5 (the player's scenario): 薄绿 S2 hits the drones but never drags them; ground enemies of the same weight still come (normal + elite)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "静态刚体"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "具体干员、敌人或真实关卡的位移用例，随内容模块改写"
     },
     "sim/feedback1b-displacement.test.js::B5 (the player's scenario): on act2 m01 a round-7 drone flies past 薄绿 on its route, hit after hit — never moved, only held 0.1 s per force": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "静态刚体"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "具体干员、敌人或真实关卡的位移用例，随内容模块改写"
     },
     "sim/feedback1b-displacement.test.js::B5: 静态刚体 is the body, not the movement — a dynamic flyer is dragged, a static walker is not; push / pull give 0 at any 力度": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "静态刚体"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/motion/unbalance.spec.ts::失衡 > 静态刚体不动但照样失衡：推按保底，拉按作用时间；受力等级低于 −2 不失衡；位移免疫不失衡"
+      ],
+      "reason": "是否静态刚体只看 static-body 标签，与移动方式无关；哪些敌人带这个标签由 app/data 编译"
     },
     "sim/feedback1b-displacement.test.js::B5: hovering enemies are 失衡免疫 while they hover, dragged once grounded (PRTS 吉兆飞鳞 / 掠海漂移体)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "静态刚体"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "吉兆飞鳞、掠海漂移体悬浮时的失衡免疫是这两名敌人的模式切换，由内容授予或撤下 no-displace；核心按 no-displace 不位移不失衡（mission-core/test/field/motion/unbalance.spec.ts）"
     },
     "sim/feedback1b-displacement.test.js::B5 audit: every displacement source × ground / static air / dynamic air / hovering / 胄 shell": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "静态刚体"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "具体干员、敌人或真实关卡的位移用例，随内容模块改写"
     },
     "sim/feedback1b-displacement.test.js::B5 audit: 琳琅诗怀雅 S3's coins push ground enemies only (PRTS 备注 \"地面敌方单位…弹道（不可对空）\")": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "静态刚体"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "具体干员、敌人或真实关卡的位移用例，随内容模块改写"
     },
     "sim/feedback1b-displacement.test.js::B5 audit: 缪尔赛思 S3 — a melee 流形 copy's pulse reaches air units (PRTS 流形 \"…可对空（包括近战流形）\"), a static drone stays": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "静态刚体"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "具体干员、敌人或真实关卡的位移用例，随内容模块改写"
     },
     "sim/feedback1b-displacement.test.js::B5 audit: 溯光星源 S2 links (凝滞师, \"可对空\") pull a ground enemy to the target; a static drone stays linked in place": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "静态刚体"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "具体干员、敌人或真实关卡的位移用例，随内容模块改写"
     },
     "sim/feedback1b-displacement.test.js::B5: 刺胄之弹 / 斩胄之剑 / 破胄之锤 are 静态刚体 + 失衡免疫 — a fired shell pulled every tick still lands on time": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "静态刚体"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "具体干员、敌人或真实关卡的位移用例，随内容模块改写"
     },
     "sim/feedback1b-displacement.test.js::喷气人 飞行模式 = 近地悬浮 + 不可阻挡 + 失衡免疫 (PRTS 喷气人): an air unit nothing moves; then 1.333 s unblockable on the ground": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "静态刚体"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "具体干员、敌人或真实关卡的位移用例，随内容模块改写"
     },
     "sim/feedback1b-displacement.test.js::守墓石像 (PRTS 天赋): the statue (无法被阻挡，自缚，失衡免疫，免疫浮空) and the flight (飞行单位，失衡免疫) — nothing moves it, even 失重": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "静态刚体"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "具体干员、敌人或真实关卡的位移用例，随内容模块改写"
     },
     "sim/feedback1d-bombd.test.js::D4 暴鸰: the bomb leaves the drone and lands > real wave: trigger (hover) → release on the OnAttack frame (atk droneBomb, bomb-less mode) → damage on arrival → cast end: ×2 speed": {
       "status": "moved",
@@ -1388,39 +1548,52 @@
       "reason": "干员、敌人、盟约或真实关卡的内容用例，随内容模块改写"
     },
     "sim/feedback2-enemy-attack-stand.test.js::data: every enemy with a real attack clip carries it as attackAnim (the clip the client plays, its length and strike frame)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "攻击后摇站定改变敌人移动，站定行为与快照 stand/standCut 视图一起在步骤 6 做"
+      "status": "moved",
+      "owner": "app/data",
+      "reason": "攻击片段与「不停止移动」从资源清单和敌人能力编译（app/data/compiler/packet/record/enemy.ts 的 attackAnim、attackMoves）；核心只读规格的 attackClip 与 attack-moves 标签"
     },
     "sim/feedback2-enemy-attack-stand.test.js::隐形弩手 with an operator in range stands for its 1.0 s Attack clip at every attack (0.533 s wind-up + 0.467 s), then walks": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "攻击后摇站定改变敌人移动，站定行为与快照 stand/standCut 视图一起在步骤 6 做"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/attack/stand.spec.ts::敌人出手站定 > 有攻击片段时站过前摇与命中后的余下片段，两次出手之间照走"
+      ],
+      "reason": "用规格里的攻击片段代替具体敌人数据，按拍断言前摇与余下片段里不走、两次出手之间照走"
     },
     "sim/feedback2-enemy-attack-stand.test.js::the stand shortens with the clip when the attacks come quicker than the clip: an enemy attacking every 1 s with a 2 s clip never walks while it has a target": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "攻击后摇站定改变敌人移动，站定行为与快照 stand/standCut 视图一起在步骤 6 做"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/attack/stand.spec.ts::敌人出手站定 > 出手比片段快时片段一起变短，有目标期间一直站着"
+      ],
+      "reason": "片段随攻击间隔加速，前摇与余下片段一起变短"
     },
     "sim/feedback2-enemy-attack-stand.test.js::a 「不停止移动」 attacker (attackMoves) keeps walking through its attacks": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "攻击后摇站定改变敌人移动，站定行为与快照 stand/standCut 视图一起在步骤 6 做"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/attack/stand.spec.ts::敌人出手站定 > 不停止移动的攻击者边走边打，同一个敌人没有这个标签时站定"
+      ],
+      "reason": "不停止移动改为核心标签 attack-moves，数据或内容都能挂"
     },
     "sim/feedback2-enemy-attack-stand.test.js::no attack clip known: ATTACK_PAUSE after the strike and no wind-up stand; a stun cuts a stand short": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "攻击后摇站定改变敌人移动，站定行为与快照 stand/standCut 视图一起在步骤 6 做"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/attack/stand.spec.ts::敌人出手站定 > 没有片段时命中后站 0.35 秒、没有前摇站定；晕眩打断站定，晕眩结束后接着走",
+        "mission-core/test/combat/attack/stand.spec.ts::敌人出手站定 > 命中后站定期间被晕眩：站定作废并记下打断的拍，晕眩结束后接着走"
+      ],
+      "reason": "站定作废记在快照视图 attack:stand 的 cutAt，代替 atkStandUntil 的 -Infinity"
     },
     "sim/feedback2-enemy-attack-stand.test.js::a ranged enemy with a target in range on a WAIT checkpoint leaves when the wait (and its current clip) is over, as without a target": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "攻击后摇站定改变敌人移动，站定行为与快照 stand/standCut 视图一起在步骤 6 做"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/attack/stand.spec.ts::敌人出手站定 > 站定只停住行走：等待照常走完，出手比片段快的敌人在目标还在时不离开"
+      ],
+      "reason": "站定只停住行走，等待照常计时"
     },
     "sim/feedback2-enemy-attack-stand.test.js::DISAPPEAR / APPEAR legs proceed while an enemy stands for its attacks; leaving the field ends the stand": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "攻击后摇站定改变敌人移动，站定行为与快照 stand/standCut 视图一起在步骤 6 做"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/attack/stand.spec.ts::敌人出手站定 > 站定期间路线照常消失与出现，消失时站定作废"
+      ],
+      "reason": "消失与出现照常推进，路线消失时站定作废"
     },
     "sim/feedback2-forced-exit-down.test.js::史尔特尔 after 余烬 lies down on her tile (b.snap down, field meta) and redeploys there after 70 s — no kill": {
       "status": "moved",
@@ -1650,29 +1823,39 @@
       "reason": "对局层（玩家归属、首领血池、联防、赏金、大厅配置）的用例"
     },
     "sim/feedback3-cold-freeze.test.js::cold 10s then immediately another cold 1s → freeze lasts about 10s, not 3": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "寒冷叠加转冻结的时长规则未在 next 核对，随状态目录核对"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/cold.spec.ts::寒冷 10 秒后紧接 1 秒寒冷：冻结取更长的 10 秒，这对寒冷变成冻结，冻结中法抗 −15"
+      ],
+      "reason": "按冻结结束的拍与状态事件断言；同名控制效果的叠加改为 extend（取更长），敌人身上这对寒冷变成冻结"
     },
     "sim/feedback3-cold-freeze.test.js::cold 1s then cold 8s → freeze lasts about 8s, not 3": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "寒冷叠加转冻结的时长规则未在 next 核对，随状态目录核对"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/cold.spec.ts::寒冷 1 秒后接 8 秒寒冷：冻结 8 秒"
+      ],
+      "reason": "按冻结结束的拍断言"
     },
     "sim/feedback3-cold-freeze.test.js::a shorter second cold does not shorten a longer remaining cold's freeze": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "寒冷叠加转冻结的时长规则未在 next 核对，随状态目录核对"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/cold.spec.ts::较短的第二次寒冷不缩短剩余更长的寒冷给出的冻结"
+      ],
+      "reason": "按冻结结束的拍断言"
     },
     "sim/feedback3-cold-freeze.test.js::抵抗 still shortens the incoming duration before the max": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "寒冷叠加转冻结的时长规则未在 next 核对，随状态目录核对"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/cold.spec.ts::抵抗先缩短这次寒冷再取更长的，冻结不再被抵抗缩短一次"
+      ],
+      "reason": "抵抗在叠加之前缩短这次施加；冻结的状态事件只有一条"
     },
     "sim/feedback3-cold-freeze.test.js::a frozen-immune enemy gets the second cold and no freeze": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "寒冷叠加转冻结的时长规则未在 next 核对，随状态目录核对"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/cold.spec.ts::免疫冻结的敌人吃下第二次寒冷，寒冷取更长的时长，不冻结"
+      ],
+      "reason": "按寒冷结束的拍断言"
     },
     "sim/feedback3-cold-freeze.test.js::吉兆飞鳞: the stun when a freeze ends follows the longer or shorter cold, not a fixed 3 s": {
       "status": "moved",
@@ -1685,9 +1868,12 @@
       "reason": "真实技能数据的内容用例"
     },
     "sim/feedback3-stunsp.test.js::frozen or stunned operators keep their natural SP recovery; 阻回 (noSp) still stops it; no cast while stunned": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "眩晕与冻结期间照常回技力、阻回停回已有 next 用例；眩晕期间不释放未核对"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/skill/behavior.spec.ts::眩晕期间技力照涨、冻结也照涨，技力满了也不放技能，眩晕结束后才放",
+        "mission-core/test/ability/skill/index.spec.ts::随时间的技力在眩晕时仍涨，阻回时不涨"
+      ],
+      "reason": "阻回由授予 no-sp 标签的效果表达；不能行动时不考虑释放"
     },
     "sim/feedback3-swire-s3.test.js::琳琅诗怀雅 S3 shoots at the cap only once an enemy is in the skill attack range": {
       "status": "moved",
@@ -1784,29 +1970,36 @@
       "reason": "干员、敌人、盟约或真实关卡的内容用例，随内容模块改写"
     },
     "sim/feedback5-active-range.test.js::ACTIVE_RANGE: an enemy inside the running range only casts the skill at once (no attack); nobody, or an enemy outside it, does not": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "技能范围触发源"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/skill/behavior.spec.ts::ACTIVE_RANGE 在持续时的范围上问基础策略：自身范围外、持续范围内有敌人就放，不等攻击；没有敌人不放"
+      ],
+      "reason": "核心新增 ACTIVE_RANGE 触发（source/active-range）"
     },
     "sim/feedback5-active-range.test.js::ACTIVE_RANGE: the DEFAULT condition on the larger range — no flyer for a ground-only unit; the permanent 攻击距离 grows it": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "技能范围触发源"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/skill/behavior.spec.ts::ACTIVE_RANGE 照基础策略筛敌人：打不中飞行单位时持续范围里的飞行敌人不算，打得中时算",
+        "mission-core/test/ability/skill/behavior.spec.ts::技能触发只看永久攻击距离：rangeExtendBase 延伸 DEFAULT 与 ACTIVE_RANGE 的范围，rangeExtend 不延伸；no-range-extend 的技能不加"
+      ],
+      "reason": "ACTIVE_RANGE 的触发范围加永久攻击距离"
     },
     "sim/feedback5-active-range.test.js::ACTIVE_RANGE heal skill: an injured ally inside the running range only casts it; a healthy one does not": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "技能范围触发源"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/skill/behavior.spec.ts::ACTIVE_RANGE 的治疗技能看持续范围里的受伤友方，满血的不算"
+      ],
+      "reason": "核心新增 ACTIVE_RANGE 触发"
     },
     "sim/feedback5-active-range.test.js::real data: 莫斯提马 S3 序时之匙 (3-15 over her 3-6) casts on its running range; 白面鸮 S2 脑啡肽 (y-7 over y-2, a heal) resolves to it too": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "技能范围触发源"
+      "status": "moved",
+      "owner": "app/data",
+      "reason": "哪些技能编译成 ACTIVE_RANGE、触发范围取持续时的范围，由 app/data 编译；核心触发由 mission-core/test/ability/skill/behavior.spec.ts 断言"
     },
     "sim/feedback5-active-range.test.js::real data: the SEARCH row widened — 安洁莉娜 S3 秘杖·反重力模式 (y-4 over her y-2) casts on an enemy of the y-4 only, no attack needed; her S2 (no range change) keeps SEARCH on the y-2": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "技能范围触发源"
+      "status": "moved",
+      "owner": "app/data",
+      "reason": "SEARCH 行的技能是否改成 ACTIVE_RANGE 由 app/data 编译"
     },
     "sim/feedback5-attack-clip-rest.test.js::流泪小子 numbers (enemy_database / its Spine clip): 0.8 move speed, 2.0 s interval, 3.5 s stun, strike 0.767 s into its 1.567 s Attack clip, 隐匿 back 0 s after a block": {
       "status": "moved",
@@ -1834,14 +2027,18 @@
       "reason": "干员、敌人、盟约或真实关卡的内容用例，随内容模块改写"
     },
     "sim/feedback5-block-targets.test.js::blocking one enemy with two more in its range: one attack strikes all three (up to its block count, the blocked one first)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡数与攻击目标，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/attack/block-targets.spec.ts::阻挡一个、范围里还有两个：一次攻击打三个，阻挡的那个在前"
+      ],
+      "reason": "攻击形状 blockTargets"
     },
     "sim/feedback5-block-targets.test.js::blocking none: up to its block count from the range; never more than the block count; never fewer than 1": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡数与攻击目标，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/attack/block-targets.spec.ts::没阻挡时从范围里取阻挡数个；不超过阻挡数；阻挡数 0 也打一个；不写 blockTargets 只打一个"
+      ],
+      "reason": "攻击形状 blockTargets"
     },
     "sim/feedback5-bounty-payee.test.js::own field (战场#04): a bounty enemy the 活性源石 alone burns to death pays its owner — as before": {
       "status": "moved",
@@ -1939,19 +2136,25 @@
       "reason": "干员、敌人、盟约或真实关卡的内容用例，随内容模块改写"
     },
     "sim/feedback5-chain-heal.test.js::the jump reaches the 3×3 around the last one healed (x-4), not an ally two tiles away; each jump goes on from where it landed": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "治疗链，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/attack/chain.spec.ts::跳到上一个人周围 3×3 的格子，不跳到两格外的人；每一跳从落点接着找"
+      ],
+      "reason": "治疗链缺省跳跃范围改为上一个人周围 3×3（步骤 6 修正，原为 2.5 格直线）"
     },
     "sim/feedback5-chain-heal.test.js::a full-HP ally is a jump target when no injured one is in reach — healed for nothing, the chain jumps on from it": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "治疗链，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/attack/chain.spec.ts::够得着的人都满血时跳到满血的人身上，白治一下，再从它接着跳"
+      ],
+      "reason": "满血的也能当跳跃目标（步骤 6 修正）"
     },
     "sim/feedback5-chain-heal.test.js::ties of the HP ratio: the latest deployed first; a 禁疗 unit is never a jump target": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "治疗链，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/attack/chain.spec.ts::生命比例相同时最晚部署的在前；禁疗的不当主目标也不当跳跃目标"
+      ],
+      "reason": "同比例取最晚部署（步骤 6 修正，原为最早放入）"
     },
     "sim/feedback5-community-pins.test.js::忍冬: S3 casts with an enemy in its 2-2 running range (not only in her attack range), S2 on its 3-12, S1 on her attack": {
       "status": "moved",
@@ -2031,34 +2234,49 @@
       "reason": "核心里流失只发 loss、不发 damaged，订阅 damaged 的反击不会被流失触发；具体干员随内容模块改写"
     },
     "sim/feedback5-enemy-swing.test.js::attackWindup: the clip's strike frame, shortened with the clip when the attacks come quicker than it; 0 with no clip": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "敌人出手被控制打断"
+      "status": "covered",
+      "next": [
+        "mission-core/test/combat/attack/index.spec.ts::有片段时前摇和后摇按命中点和时长",
+        "mission-core/test/combat/attack/index.spec.ts::没有片段时前摇是 0，命中后停 0.35 秒",
+        "mission-core/test/combat/attack/stand.spec.ts::敌人出手站定 > 出手比片段快时片段一起变短，有目标期间一直站着"
+      ]
     },
     "sim/feedback5-enemy-swing.test.js::a blocked enemy swings when its cooldown is over and strikes at the damage frame: the first strike one wind-up after the block (its cooldown long over), then one per attack interval": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "敌人出手被控制打断"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/attack/swing.spec.ts::敌人出手的前摇与打断 > 被阻挡的敌人冷却走完就开始前摇，在命中点出手，之后每个攻击间隔一次"
+      ],
+      "reason": "按拍断言出手与伤害"
     },
     "sim/feedback5-enemy-swing.test.js::a 0.1 s stun before the damage frame cuts the swing: no strike at that frame, the attack starts again from its wind-up after the stun (卡西米尔 6's pulse, 忍冬 S3)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "敌人出手被控制打断"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/attack/swing.spec.ts::敌人出手的前摇与打断 > 命中点之前 0.1 秒的晕眩打断这一下，晕眩结束后重新走完整个前摇"
+      ],
+      "reason": "打断后从头走完整个前摇（openSwing 的 source/enemy-swing），按拍断言"
     },
     "sim/feedback5-enemy-swing.test.js::a 0.2 s stun before the damage frame cuts the swing: no strike at that frame, the attack starts again from its wind-up after the stun (卡西米尔 6's pulse, 忍冬 S3)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "敌人出手被控制打断"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/attack/swing.spec.ts::敌人出手的前摇与打断 > 命中点之前 0.2 秒的晕眩打断这一下，晕眩结束后重新走完整个前摇"
+      ],
+      "reason": "打断后从头走完整个前摇（openSwing 的 source/enemy-swing），按拍断言"
     },
     "sim/feedback5-enemy-swing.test.js::a stun during the cooldown (before the swing) only pauses it; 缴械 cuts a swing like a stun; a strike already made stays made (a ranged shot in flight lands)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "敌人出手被控制打断"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/attack/swing.spec.ts::敌人出手的前摇与打断 > 冷却中的晕眩只让冷却停下，不重新前摇",
+        "mission-core/test/combat/attack/swing.spec.ts::敌人出手的前摇与打断 > 缴械像晕眩一样打断前摇，结束后重新走完整个前摇",
+        "mission-core/test/combat/attack/swing.spec.ts::敌人出手的前摇与打断 > 已经出手的一箭照常飞到，出手后的晕眩不撤回"
+      ],
+      "reason": "拆成三条用例"
     },
     "sim/feedback5-enemy-swing.test.js::no attack clip known: no wind-up — it strikes as its swing starts, so a stun only pauses its cooldown (the rule before 0.2.0)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "敌人出手被控制打断"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/attack/swing.spec.ts::敌人出手的前摇与打断 > 没有攻击片段时没有前摇，第一拍就出手，晕眩只让冷却停下"
+      ],
+      "reason": "按拍断言"
     },
     "sim/feedback5-frozen-reblock.test.js::#232: freeze + 隐匿 — the operator redeployed beside the held enemy blocks it while it is still held, which reveals it; the 隐匿 timings stay": {
       "status": "rewritten",
@@ -2134,14 +2352,20 @@
       "reason": "干员、敌人、盟约或真实关卡的内容用例，随内容模块改写"
     },
     "sim/feedback5-groundbind.test.js::缚地 is a catalogue status: flag groundbind + noMove, move ×0, one of 抵抗's statuses": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "缚地还不在核心效果目录里，随状态目录补上"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/groundbind.spec.ts::缚地授予 groundbind 与 no-move，移速乘 0，抵抗缩短它，重量超过 3 时减半"
+      ],
+      "reason": "目录表的结构断言改为行为断言：标签、移速、抵抗与重量减半"
     },
     "sim/feedback5-groundbind.test.js::缚地: an air unit is a ground unit (melee operators hit it) and cannot move; half as long on weight > 3; 抵抗 shortens it; 浮空 lands on a 缚地 flyer; back in the air when it ends": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "缚地还不在核心效果目录里，随状态目录补上"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/effect/groundbind.spec.ts::缚地的飞行敌人算地面单位，打不到空中的干员能打它；结束后回到空中",
+        "mission-core/test/ability/effect/groundbind.spec.ts::飞行敌人不吃浮空，缚地中的飞行敌人吃浮空并回到空中",
+        "mission-core/test/ability/effect/groundbind.spec.ts::缚地授予 groundbind 与 no-move，移速乘 0，抵抗缩短它，重量超过 3 时减半"
+      ],
+      "reason": "用打不到空中的测试干员代替角峰；阻挡同样按 isFlying 取地面半径"
     },
     "sim/feedback5-groundbind.test.js::the hovering enemies (PRTS \"受…缚地影响后\"): 掠海漂移体 drops to its 爬行模式 for good; 吉兆飞鳞 is down while the 缚地 holds": {
       "status": "moved",
@@ -2244,9 +2468,11 @@
       "reason": "干员、敌人、盟约或真实关卡的内容用例，随内容模块改写"
     },
     "sim/feedback5-o16-engine.test.js::a 屏障 of several types (shieldType ['phys', 'arts']) absorbs those, not true damage; older shields first as ever": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "类型护盾与穿禁疗治疗的引擎机制"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/damage/shield-type.spec.ts::同时挡物理与法术的屏障不挡真实与元素损伤，种类写 phys 也认；单一种类照旧"
+      ],
+      "reason": "效果定义 shieldType（步骤 6 补上）"
     },
     "sim/feedback5-o16-engine.test.js::profile healThrough: the healer selects and heals the ally it names through its 禁疗 (noHeal / healFree); others do not, and a profile noHeal still stops it": {
       "status": "pending",
@@ -2254,24 +2480,33 @@
       "reason": "类型护盾与穿禁疗治疗的引擎机制"
     },
     "sim/feedback5-o23-engine.test.js::ally targets: none registered ⇒ nobody selects an ally; registered ⇒ the attackers whose range holds it select it, after every enemy": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "友方目标的引擎机制"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/target/ally-target.spec.ts::没有 ally-target 时谁都不选友方；带上时范围里有它的普攻选它，排在所有敌人之后"
+      ],
+      "reason": "登记改为标签 ally-target，友方普攻链 foe + ally-target 排序（步骤 6 补上）"
     },
     "sim/feedback5-o23-engine.test.js::ally targets: attacks on it are real attacks (melee instant, ranged by projectile); off the field it is skipped": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "友方目标的引擎机制"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/target/ally-target.spec.ts::打友方目标是真的攻击：近战当场命中，远程飞投射物过去；撤下之后不再选它"
+      ],
+      "reason": "近战命中、投射物飞过去、撤下后不选"
     },
     "sim/feedback5-o8-engine.test.js::typed shield: an arts 屏障 absorbs arts damage only; an untyped one every type; the older shield is spent first": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "类型护盾与跳过目标的引擎机制"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/damage/shield-type.spec.ts::法术屏障只挡法术；后加的不分种类的屏障什么都挡；同种伤害先用较早的；只带护盾的效果用完就取下；分种类的次数护盾"
+      ],
+      "reason": "效果定义 shieldType；只带护盾的效果用完取下（步骤 6 补上）"
     },
     "sim/feedback5-o8-engine.test.js::profile skipEnemy: the unit never selects such an enemy — no attack, no block target, no DEFAULT trigger — and other enemies stay its targets": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "类型护盾与跳过目标的引擎机制"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/skill/behavior.spec.ts::普攻追加的筛选器：不过筛的敌人不打、挡着也不打、不让 DEFAULT 触发；过筛的敌人照常是目标",
+        "mission-core/test/ability/skill/behavior.spec.ts::普攻的筛选器没注册时开场报错"
+      ],
+      "reason": "attackShape.filters：按 id 引用注册的筛选器（步骤 6 补上），管普攻与基础策略触发"
     },
     "sim/feedback5-raid-own-board.test.js::boss field (solo 最终攻势): a ranged 突袭 member never lands on the hand row 0 or the 临时整备区 row 1": {
       "status": "moved",
@@ -2384,24 +2619,31 @@
       "reason": "干员、敌人、盟约或真实关卡的内容用例，随内容模块改写"
     },
     "sim/fidelity.test.js::attack-SP instant skill fires every spCost+1 attacks: the skill attack itself recovers no SP": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/skill/behavior.spec.ts::攻击回技力的立即技能每 spCost + 1 次出手放一次，技能那一下不回技力"
+      ],
+      "reason": "用 hit 钩子标记技能那一下，断言出现在第 4、8、12 次出手"
     },
     "sim/fidelity.test.js::attack-SP ammo skill: no SP from any ammo shot, including the last one": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/skill/behavior.spec.ts::攻击回技力的弹药技能：每一发弹药都不回技力，最后一发也不回"
+      ],
+      "reason": "按出手事件计数"
     },
     "sim/fidelity.test.js::unite carryState: a skill running at the end of the own combat is not carried — unitsEnd reports sp 0 and the skill enters 联防 off": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "moved",
+      "owner": "app/server",
+      "reason": "联防的 unitsEnd 与 carryState 属于对局层；释放时扣光技力由核心覆盖（mission-core/test/ability/skill/behavior.spec.ts 的随时间回技力与充能用例）"
     },
     "sim/fidelity.test.js::MELEE enemies only hit their blocker even with a data radius; RANGED ones shoot unblocking operators": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "引擎通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/attack/blocker.spec.ts::没有攻击范围的敌人只打挡住它的单位，没被挡时谁也不打",
+        "mission-core/test/combat/attack/blocker.spec.ts::有攻击范围的敌人打范围里没在阻挡它的单位，挡住它的单位在范围外也照打"
+      ],
+      "reason": "近战与远程由数据编译成攻击范围：近战敌人没有攻击范围；被挡住的敌人总能打到挡住它的单位"
     },
     "sim/fidelity.test.js::real data: MELEE enemies with an official radius (宿主士兵) leave high-ground operators alone": {
       "status": "moved",
@@ -2701,74 +2943,82 @@
       "reason": "palsyTrigger 改为可拦截事件 palsy-interrupt，keep 用 revise 写入"
     },
     "sim/pathing-blockable.test.js::equal-length lanes: the road (blockable) lane wins over the floor lane whichever side it is on": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "寻路同分与平滑"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/grid/blockable.spec.ts::偏好可阻挡的地面 > 等长的两条道：不管在哪边，走路面那条，不走地板那条"
+      ],
+      "reason": "可阻挡地面偏好"
     },
     "sim/pathing-blockable.test.js::smoothing never cuts a corner across floor that the grid route does not walk": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "寻路同分与平滑"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/grid/blockable.spec.ts::偏好可阻挡的地面 > 平滑不会斜穿格子路线没走过的地板"
+      ],
+      "reason": "偏好平滑"
     },
     "sim/pathing-blockable.test.js::a diagonal that only brushes a floor tile's corner is the official one (D5); one through the floor is not": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "寻路同分与平滑"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/grid/blockable.spec.ts::偏好可阻挡的地面 > 只擦过地板格角的斜线是官方那条；穿过地板的不是"
+      ],
+      "reason": "擦角不算穿过"
     },
     "sim/pathing-blockable.test.js::the preference is only a tie-break: crates keep cost 1000, route lengths stay the official ones": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "寻路同分与平滑"
+      "status": "moved",
+      "owner": "app/data",
+      "reason": "真实关卡的路线与阻挡审计：核心的寻路算法由合成场地用例覆盖（test/field/grid/flow.spec.ts、blockable.spec.ts），逐关卡审计随关卡数据接线在 app/data 跑；箱子代价与长度不变由 flow.spec.ts 的箱子用例与 blockable.spec.ts 的随机布局覆盖"
     },
     "sim/pathing-blockable.test.js::战场#01 (user report): a lower-gate enemy keeps to the col-8 road and an operator on (10,8) blocks it": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "寻路同分与平滑"
+      "status": "moved",
+      "owner": "app/data",
+      "reason": "真实关卡的路线与阻挡审计：核心的寻路算法由合成场地用例覆盖（test/field/grid/flow.spec.ts、blockable.spec.ts），逐关卡审计随关卡数据接线在 app/data 跑"
     },
     "sim/pathing-blockable.test.js::audit: every active stage × gate × field — the non-blockable tiles crossed are exactly the listed unavoidable ones": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "寻路同分与平滑"
+      "status": "moved",
+      "owner": "app/data",
+      "reason": "真实关卡的路线与阻挡审计：核心的寻路算法由合成场地用例覆盖（test/field/grid/flow.spec.ts、blockable.spec.ts），逐关卡审计随关卡数据接线在 app/data 跑"
     },
     "sim/pathing-blockable.test.js::audit: every WALK leg of every wave template (normal / 联防 / boss / hidden, solo _s too) on every active stage": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "寻路同分与平滑"
+      "status": "moved",
+      "owner": "app/data",
+      "reason": "真实关卡的路线与阻挡审计：核心的寻路算法由合成场地用例覆盖（test/field/grid/flow.spec.ts、blockable.spec.ts），逐关卡审计随关卡数据接线在 app/data 跑"
     },
     "sim/pathing-blockable.test.js::every map (user: \"检查所有的地图\"): an operator on ANY road tile the enemy walks over blocks it — normal gates, 联防 partner gates, boss exits": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "寻路同分与平滑"
+      "status": "moved",
+      "owner": "app/data",
+      "reason": "真实关卡的路线与阻挡审计：核心的寻路算法由合成场地用例覆盖（test/field/grid/flow.spec.ts、blockable.spec.ts），逐关卡审计随关卡数据接线在 app/data 跑"
     },
     "sim/pathing-blockable.test.js::map cards (移除全部阻隔工事 / 阻隔工事变为射击台): with the crates gone or turned into platforms, no equal-length route crosses fewer non-blockable tiles": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "寻路同分与平滑"
+      "status": "moved",
+      "owner": "app/data",
+      "reason": "真实关卡的路线与阻挡审计：核心的寻路算法由合成场地用例覆盖（test/field/grid/flow.spec.ts、blockable.spec.ts），逐关卡审计随关卡数据接线在 app/data 跑"
     },
     "sim/pathing-blockable.test.js::deviation from the official route is bounded: same grid length everywhere, smoothed polyline ≤ 2 tiles longer": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "寻路同分与平滑"
+      "status": "moved",
+      "owner": "app/data",
+      "reason": "真实关卡的路线与阻挡审计：核心的寻路算法由合成场地用例覆盖（test/field/grid/flow.spec.ts、blockable.spec.ts），逐关卡审计随关卡数据接线在 app/data 跑"
     },
     "sim/pathing-blockable.test.js::random layouts: official lengths, fewest non-blockable tiles among equal-length chains, official line of sight, never more floor than the official route": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "寻路同分与平滑"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/grid/blockable.spec.ts::偏好可阻挡的地面 > 随机布局：长度是官方的；pen 是等长链里最少的地板数；每段都是官方视线；穿过的地板不多于官方路线；换指针只为更少地板或只跳过官方路点"
+      ],
+      "reason": "400 个随机布局"
     },
     "sim/pathing-crosscheck.test.js::every walkable tile of the normal / 联防 / boss fields of the 8 stages follows the full-map reference chain": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "寻路与参考算法对拍"
+      "status": "moved",
+      "owner": "app/data",
+      "reason": "真实关卡的路线与阻挡审计：核心的寻路算法由合成场地用例覆盖（test/field/grid/flow.spec.ts、blockable.spec.ts），逐关卡审计随关卡数据接线在 app/data 跑"
     },
     "sim/pathing-crosscheck.test.js::random crate / block layouts: identical flow fields and smoothing to the reference algorithm (same rect)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "寻路与参考算法对拍"
+      "status": "moved",
+      "owner": "app/data",
+      "reason": "对照参考实现的独立移植，需要 .cache/gamedata 的原始关卡文件（参考实现里也按缺文件跳过）；合成随机布局见 blockable.spec.ts"
     },
     "sim/pathing-crosscheck.test.js::vs the PURE official algorithm: same route length from every tile, never more non-blockable tiles crossed": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "寻路与参考算法对拍"
+      "status": "moved",
+      "owner": "app/data",
+      "reason": "真实关卡的路线与阻挡审计：核心的寻路算法由合成场地用例覆盖（test/field/grid/flow.spec.ts、blockable.spec.ts），逐关卡审计随关卡数据接线在 app/data 跑"
     },
     "sim/pathing-official.test.js::D5 战场#04 活性源石: the lower-gate route is the official diagonal from row 9 into row 10 (normal and 联防 fields)": {
       "status": "moved",
@@ -2811,54 +3061,70 @@
       "reason": "干员、敌人、盟约或真实关卡的内容用例，随内容模块改写"
     },
     "sim/pathing.test.js::flow field: 4 directions only, strict-improvement SPFA with the official UP/RIGHT/DOWN/LEFT tie-break": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "流场与平滑，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/grid/flow.spec.ts::流场与平滑 > 流场只走四个方向，严格变短才更新，同样代价时保留最先到达的父格（行加一、列加一、行减一、列减一的顺序）"
+      ],
+      "reason": "流场"
     },
     "sim/pathing.test.js::smoothing: next[] jumps to the farthest ancestor in Bresenham line of sight; diagonal steps need both orthogonals": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "流场与平滑，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/grid/flow.spec.ts::流场与平滑 > 平滑跳到 Bresenham 视线里最远的祖先；斜走要两边的直格都能走；不许斜时只沿行或列跳"
+      ],
+      "reason": "平滑"
     },
     "sim/pathing.test.js::crates: walkable at cost 1000 (blocks line of sight), blocks are impassable; each kind toggles its own bit": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "流场与平滑，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/grid/flow.spec.ts::流场与平滑 > 箱子能走但代价 1000、挡视线、不是放置与位移格；硬障碍走不过；两种各占一位"
+      ],
+      "reason": "箱子与硬障碍"
     },
     "sim/pathing.test.js::flow fields are cached per destination and grid version": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "流场与平滑，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/grid/flow.spec.ts::流场与平滑 > 流场按终点与网格版本缓存：障碍没变时不重建"
+      ],
+      "reason": "缓存"
     },
     "sim/pathing.test.js::real stages: the official lanes of research 08 §3.2 (crates = non-hidden level predefines, platforms blocking) + blockable-ground preference": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "流场与平滑，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/data",
+      "reason": "真实关卡的路线与阻挡审计：核心的寻路算法由合成场地用例覆盖（test/field/grid/flow.spec.ts、blockable.spec.ts），逐关卡审计随关卡数据接线在 app/data 跑"
     },
     "sim/pathing.test.js::act1 m02 (下半, no crates): an upper-gate enemy keeps the top road to col 3 instead of dropping into the lower lane": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "流场与平滑，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/data",
+      "reason": "真实关卡的路线与阻挡审计：核心的寻路算法由合成场地用例覆盖（test/field/grid/flow.spec.ts、blockable.spec.ts），逐关卡审计随关卡数据接线在 app/data 跑"
     },
     "sim/pathing.test.js::act1 m04: an upper-gate enemy stays on row 11 down to col 4 (does not join the lower-gate lane at once)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "流场与平滑，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/data",
+      "reason": "真实关卡的路线与阻挡审计：核心的寻路算法由合成场地用例覆盖（test/field/grid/flow.spec.ts、blockable.spec.ts），逐关卡审计随关卡数据接线在 app/data 跑"
     },
     "sim/pathing.test.js::crates in battle: detour when one exists; otherwise the enemy walks into the crate, is blocked and breaks it": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "流场与平滑，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/grid/crate.spec.ts::箱子在战斗里：有绕路时绕开，不踩箱子的格子",
+        "mission-core/test/field/grid/crate.spec.ts::箱子在战斗里：没有绕路时走进箱子，被箱子挡住，打碎它后接着走"
+      ],
+      "reason": "核心：箱子障碍、装置阻挡、敌人打阻挡者；箱子装置与障碍的联动（倒下拿掉障碍）由关卡内容做"
     },
     "sim/pathing.test.js::remaining distance follows the smoothed flow-field route (targeting \"closest to the goal\")": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "流场与平滑，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/grid/remaining.spec.ts::剩余路程：这一段按路点量，之后的地面段按平滑流场的长度，不是直线",
+        "mission-core/test/field/grid/remaining.spec.ts::剩余路程：出现段把起点挪到出现的位置；飞行段量直线"
+      ],
+      "reason": "修正：之后的地面段原先量直线，改为平滑流场长度；出现段挪起点（与参考实现 tailLength 一致）"
     },
     "sim/pathing.test.js::a pushed ground enemy re-plans from its tile centre: never cuts a fence corner or breaks the stage crate on it (act1 m03, tile 11,5)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "流场与平滑，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/grid/remaining.spec.ts::被推离格子中心的地面敌人从格子中心重新规划：一路不踩走不了的格子"
+      ],
+      "reason": "位移后重规划，偏离中心且直线会切角时先回格子中心"
     },
     "sim/perf.test.js::benchmark: 70-enemy wave (h05) + 10 operators < 0.5 ms/tick average": {
       "status": "not-migrated",
@@ -2869,19 +3135,23 @@
       "reason": "master sim 的耗时基准，不迁移"
     },
     "sim/playtest5-targeting.test.js::#1 the user's case: ground-only operators never hit a 近地悬浮 enemy (melee 山 / 泡泡, 迷迭香's ground-only shots); ranged 能天使 and the lord 银灰 do": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "选择器排序与对空限制"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "具体干员、敌人或技能的用例，随内容模块改写；筛选与排序的叠法在核心另有用例（mission-core/test/combat/target/index.spec.ts）"
     },
     "sim/playtest5-targeting.test.js::#220 (the owner's decision of 2026-10-08): a 速射手 blocking a ground enemy shoots a flyer in its range; a 神射手 keeps hitting the enemy it blocks": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "选择器排序与对空限制"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/target/targeting.spec.ts::#220 优先攻击空中单位的干员挡着地面敌人时先打范围里的飞行敌人；别的特殊优先级仍先打挡着的"
+      ],
+      "reason": "targetPriority fly 压过阻挡优先（步骤 6 补上，source/fly-over-block）"
     },
     "sim/playtest5-targeting.test.js::#1 ground-only splash spares a hovering enemy next to its ground target (迷迭香 + aftershocks)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "选择器排序与对空限制"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/target/targeting.spec.ts::#1 对地的溅射不波及主目标旁边的近地悬浮敌人"
+      ],
+      "reason": "近地悬浮算空中单位，groundOnly 溅射跳过"
     },
     "sim/playtest5-targeting.test.js::#1 a 近地悬浮 enemy walks the ground path through blockers, cannot be displaced (失衡免疫) and ignores deep water": {
       "status": "pending",
@@ -2889,219 +3159,275 @@
       "reason": "选择器排序与对空限制"
     },
     "sim/playtest5-targeting.test.js::#1 掠海漂移体 stunned ⇒ 爬行模式 for good (PRTS): a ground unit — blocked, hit by melee — that only attacks its blocker": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "选择器排序与对空限制"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "具体干员、敌人或技能的用例，随内容模块改写；筛选与排序的叠法在核心另有用例（mission-core/test/combat/target/index.spec.ts）"
     },
     "sim/playtest5-targeting.test.js::#1 吉兆飞鳞: a stun grounds it for Stun.duration s (unblockable), then it floats again; a freeze grounds it when it ends": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "选择器排序与对空限制"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "具体干员、敌人或技能的用例，随内容模块改写；筛选与排序的叠法在核心另有用例（mission-core/test/combat/target/index.spec.ts）"
     },
     "sim/playtest5-targeting.test.js::#1 浮空 (levitate) makes a ground enemy an air unit (melee cannot hit it); data flyers and levitated units refuse it, a 近地悬浮 enemy does not": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "选择器排序与对空限制"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/target/targeting.spec.ts::#1 浮空让地面敌人变成空中单位，近战打不到；近地悬浮的敌人能被浮空，浮空结束后仍悬浮",
+        "mission-core/test/ability/effect/catalog.spec.ts::飞行单位不被浮空，地面单位会被浮空"
+      ],
+      "reason": "浮空算空中、飞行与已浮空的拒绝、近地悬浮可被浮空"
     },
     "sim/playtest5-targeting.test.js::#1 ground-only skills and talents spare a hovering enemy (the worst 731a01c offenders + the PRTS \"不可对空\" notes)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "选择器排序与对空限制"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "具体干员、敌人或技能的用例，随内容模块改写；筛选与排序的叠法在核心另有用例（mission-core/test/combat/target/index.spec.ts）"
     },
     "sim/playtest5-targeting.test.js::#1 skills PRTS marks \"可对空\" still hit a hovering enemy (德克萨斯 S2 剑雨, 焰尾 S2 “红松林”, 锏 S3 归于宁静)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "选择器排序与对空限制"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "具体干员、敌人或技能的用例，随内容模块改写；筛选与排序的叠法在核心另有用例（mission-core/test/combat/target/index.spec.ts）"
     },
     "sim/playtest5-targeting.test.js::#1 阿罗玛's bubble levitates a hovering 掠海漂移体 (WALK in its data) without dropping it to 爬行模式": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "选择器排序与对空限制"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "具体干员、敌人或技能的用例，随内容模块改写；筛选与排序的叠法在核心另有用例（mission-core/test/combat/target/index.spec.ts）"
     },
     "sim/playtest5-targeting.test.js::#1 HOVER_KEYS lists exactly the enemies that spawn hovering (the match's bot counts them as air units)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "选择器排序与对空限制"
+      "status": "moved",
+      "owner": "app/data",
+      "reason": "哪些敌人出生即悬浮来自数据编译"
     },
     "sim/playtest5-targeting.test.js::#5 unblocked ranged enemies: highest taunt, then the latest deployed — the rightmost column, its bottom (从上到下 > 从左到右: down each column, the columns left to right)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "选择器排序与对空限制"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/target/targeting.spec.ts::#5 没被挡的远程敌人：嘲讽高的在前，其次最晚部署的——开场按列从左到右、同列从上到下部署，最右一列的最下面最晚"
+      ],
+      "reason": "用部署策略时仇恨序按部署先后（步骤 6 补上，source/latest-deployed）"
     },
     "sim/playtest5-targeting.test.js::#5 the initial deployment puts every operator before the summons (PRTS 卫戍协议/帮助) — a summon piece draws the fire": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "选择器排序与对空限制"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/target/targeting.spec.ts::#5 开场先部署干员再部署召唤物，召唤物最吸引火力；开场时随干员放进来的召唤物也排在所有干员之后；再部署的又是最晚的",
+        "mission-core/test/unit/deploy/board.spec.ts::开战按列从上到下，干员先于召唤物，推迟的不上场"
+      ],
+      "reason": "召唤物排在干员之后、开场随干员放进来的召唤物与再部署排到最后（步骤 6 补上）"
     },
     "sim/playtest5-targeting.test.js::#5 a blocked ranged enemy attacks its blocker first": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "选择器排序与对空限制"
+      "status": "covered",
+      "next": [
+        "mission-core/test/combat/target/status.spec.ts::远程敌人打范围里的友方：阻挡者优先，其次嘲讽高的，再其次最晚部署的"
+      ]
     },
     "sim/playtest5-targeting.test.js::#5 隐匿 / 迷彩 allies: only the enemy they block attacks them — blocking does not expose them to other ranged enemies (PRTS 作战机制 §隐匿, 索敌的概念)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "选择器排序与对空限制"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/target/targeting.spec.ts::#5 隐匿或迷彩的友方只被它挡着的敌人打；挡着别人不让其他远程敌人看见它"
+      ],
+      "reason": "只有它挡着的敌人看得见"
     },
     "sim/playtest5-targeting.test.js::#5 an enemy's own rule filters its candidates first: 萨卡兹枯朽战车 (只攻击地面单位) shoots the ground operator, never idles": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "选择器排序与对空限制"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "具体干员、敌人或技能的用例，随内容模块改写；筛选与排序的叠法在核心另有用例（mission-core/test/combat/target/index.spec.ts）"
     },
     "sim/playtest5-targeting.test.js::#5 “萨科塔之眼” (不会攻击飞行单位) filters its candidates: it shoots the ground ally, never the later-deployed flyer": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "选择器排序与对空限制"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "具体干员、敌人或技能的用例，随内容模块改写；筛选与排序的叠法在核心另有用例（mission-core/test/combat/target/index.spec.ts）"
     },
     "sim/playtest5-targeting.test.js::#5 a shared field (boss / 联防) deploys the players side by side — the i-th operators together, then the summons [ASSUMED]": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "选择器排序与对空限制"
+      "status": "moved",
+      "owner": "app/server/match",
+      "reason": "共用场地里各玩家的出场顺序由对局层排好写进规格"
     },
     "sim/playtest5-targeting.test.js::#5 a special priority breaks ties by taunt, then the latest deployed (假想敌：铳 \"优先攻击防御力最高的单位\"; PRTS 索敌: 特殊优先级 → 仇恨值)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "选择器排序与对空限制"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "具体干员、敌人或技能的用例，随内容模块改写；筛选与排序的叠法在核心另有用例（mission-core/test/combat/target/index.spec.ts）"
     },
     "sim/playtest5_blocking.test.js::the official block radii are the PRTS numbers": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡半径与接管，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/unit/block/takeover.spec.ts::阻挡接替 > 阻挡半径是官方数：地面 0.7071，飞行 0.8944，装置 0.4472"
+      ],
+      "reason": "阻挡半径常量"
     },
     "sim/playtest5_blocking.test.js::#4: the enemy between two operators is taken over by the front one when its blocker (the rear one) dies": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡半径与接管，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/unit/block/takeover.spec.ts::阻挡接替 > 夹在两人中间的敌人：后面的阻挡者活着时跟着它；它死后前面腾出位置的那位接替，敌人不往前走"
+      ],
+      "reason": "每拍对没被挡的敌人重新找接触中的阻挡者"
     },
     "sim/playtest5_blocking.test.js::#4: a withdrawn or stunned blocker hands its enemy to the operator it still touches": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡半径与接管，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/unit/block/takeover.spec.ts::阻挡接替 > 后面的阻挡者撤退或晕眩时，敌人交给还压着它的那位"
+      ],
+      "reason": "撤退与晕眩放开阻挡，接触中的阻挡者接替"
     },
     "sim/playtest5_blocking.test.js::#4: the rear blocker dies while the front operator is still full — the enemy walks on (no room)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡半径与接管，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/unit/block/takeover.spec.ts::阻挡接替 > 后面的阻挡者死时前面那位还满员：敌人接着走"
+      ],
+      "reason": "满员不接替"
     },
     "sim/playtest5_blocking.test.js::#4: an operator whose capacity frees up blocks an enemy that still overlaps it (past its tile, inside 0.7071)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡半径与接管，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/unit/block/takeover.spec.ts::阻挡接替 > 满员时穿过去；穿过格子但还在 0.7071 里时腾出位置，当场被挡；一直没位置就走过去"
+      ],
+      "reason": "接触判定连续进行"
     },
     "sim/playtest5_blocking.test.js::#4: pass-through when full — an enemy that never finds room walks past the operator": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡半径与接管，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/unit/block/takeover.spec.ts::阻挡接替 > 满员时穿过去；穿过格子但还在 0.7071 里时腾出位置，当场被挡；一直没位置就走过去"
+      ],
+      "reason": "满员时穿过"
     },
     "sim/playtest5_blocking.test.js::#4: contact happens at the block radius (the enemy stops ~0.71 tile from the operator, outside its tile)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡半径与接管，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/unit/block/takeover.spec.ts::阻挡接替 > 在阻挡半径处接触：敌人停在离干员约 0.71 格处，在干员的格子之外"
+      ],
+      "reason": "接触半径"
     },
     "sim/playtest5_blocking.test.js::#4: an operator beside the lane (one row off) never touches the enemies walking it": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡半径与接管，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/unit/block/takeover.spec.ts::阻挡接替 > 站在路线旁一行的干员碰不到走过的敌人"
+      ],
+      "reason": "相邻行不接触"
     },
     "sim/playtest5_blocking.test.js::#4: block weight — a 2-weight enemy needs 2 free block": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡半径与接管，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/unit/block/takeover.spec.ts::阻挡接替 > 阻挡重量 2 的敌人要 2 个空位：阻挡数 1 挡不住，2 挡得住",
+        "mission-core/test/unit/block/index.spec.ts::没写阻挡数时按 1，重量超过阻挡数则不挡"
+      ],
+      "reason": "阻挡重量"
     },
     "sim/playtest5_blocking.test.js::#4: of two free operators in contact the nearer one blocks": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡半径与接管，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/unit/block/index.spec.ts::更近的阻挡者优先，距离相同取更小的行再取更小的列"
+      ],
+      "reason": "近的优先"
     },
     "sim/playtest5_blocking.test.js::#4: a blocker attacks the enemy it blocks even when it stands outside its range (可以选择且优先选择阻挡单位)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡半径与接管，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/attack/index.spec.ts::被自己阻挡、站在范围外的敌人仍然打得到",
+        "mission-core/test/unit/block/takeover.spec.ts::挡住就打得到 > 单纯的阻挡，四个朝向：阻挡者打它挡住的敌人，不管在不在范围里"
+      ],
+      "reason": "阻挡优先，范围外也打"
     },
     "sim/playtest5_blocking.test.js::#4 (revised by the user after playtest #6): a ranged operator on a melee tile also hits and casts for the enemy it holds behind it": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡半径与接管，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/attack/index.spec.ts::被自己阻挡、站在范围外的敌人仍然打得到",
+        "mission-core/test/ability/skill/behavior.spec.ts::DEFAULT：自己挡着的敌人站在攻击范围外也满足基础策略，出手前放技能"
+      ],
+      "reason": "基础策略的技能条件补上自己挡着的敌人（source/blocked-first）"
     },
     "sim/playtest5_blocking.test.js::#4: \"melee\" is the deploy position — a 领主 with a ranged attack (银灰) still hits the enemy it holds behind it": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡半径与接管，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/attack/index.spec.ts::被自己阻挡、站在范围外的敌人仍然打得到"
+      ],
+      "reason": "核心不分近战远程，挡住的一律打得到；银灰的部署位与攻击档案由数据给出"
     },
     "sim/playtest5_blocking.test.js::#4 (revised after playtest #6): blocked-first holds for every blocker — a ranged blocker keeps shooting the enemy it blocks": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡半径与接管，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/target/index.spec.ts::阻挡优先只读已有关系，特殊优先级、仇恨、路程、生命和防御按键排序",
+        "mission-core/test/combat/attack/index.spec.ts::被自己阻挡、站在范围外的敌人仍然打得到"
+      ],
+      "reason": "选择器链里 block 排在前面，对每个阻挡者都成立"
     },
     "sim/playtest5_blocking.test.js::#4: a skywalker (起飞: blockFly) blocks flyers at the air block radius 0.8944": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡半径与接管，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/unit/block/radius.spec.ts::飞行敌人用飞行半径，而且要阻挡者带 blockFly"
+      ],
+      "reason": "飞行半径与 blockFly"
     },
     "sim/playtest5_blocking.test.js::#4: 瑕光 S2 puts the enemy she blocks to sleep although it stands outside her tile (PRTS: 自身这格内…及自身阻挡的敌人)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡半径与接管，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "瑕光 S2 的“自身阻挡的敌人”是这名干员的技能目标；核心提供阻挡关系（blockingOf）与范围外也能选中被挡敌人"
     },
     "sim/playtest5_bossbody.test.js::data: the huge bosses carry the PRTS hit areas, everything else is a point": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "大体型受击矩形，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/data",
+      "reason": "受击矩形来自数据编译"
     },
     "sim/playtest5_bossbody.test.js::geometry: 4.95 × 2.95 up 1 at the boss tile (3,10) occupies rows 3–5 × cols 8–12; 管 (隐秘核心) at (3,9) the same block": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "大体型受击矩形，核对 next 现有用例"
+      "status": "covered",
+      "next": [
+        "mission-core/test/field/body/index.spec.ts::大体型占据偏移后的 5×3，点单位只占所在格"
+      ]
     },
     "sim/playtest5_bossbody.test.js::#10: an operator whose range touches only the edge of the boss area hits it (and not a regular enemy there)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "大体型受击矩形，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/body/battle.spec.ts::#10 攻击范围只碰到巨型敌人受击矩形的边也打得到；同一位置的普通敌人打不到",
+        "mission-core/test/field/body/battle.spec.ts::#10 受击矩形的每一格都算，外面一格不算"
+      ],
+      "reason": "巨型受击矩形在实战攻击里的判定"
     },
     "sim/playtest5_bossbody.test.js::#10: every tile of the 5 × 3 body counts; one tile outside it does not": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "大体型受击矩形，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/body/index.spec.ts::范围里的一格能命中跨格身体，邻格打不中点单位",
+        "mission-core/test/field/body/index.spec.ts::大体型占据偏移后的 5×3，点单位只占所在格"
+      ],
+      "reason": "按用例断言"
     },
     "sim/playtest5_bossbody.test.js::#10: radius effects reach the body — an AoE 1 tile beyond the rectangle edge hits it, a regular enemy there is not hit": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "大体型受击矩形，核对 next 现有用例"
+      "status": "covered",
+      "next": [
+        "mission-core/test/field/body/index.spec.ts::大体型占据偏移后的 5×3，点单位只占所在格",
+        "mission-core/test/field/body/battle.spec.ts::#10 打护卫的溅射按中点判定：巨型敌人矩形离得近但中心远就不波及，1 格外的普通敌人波及"
+      ]
     },
     "sim/playtest5_bossbody.test.js::#10 (follow-up): an operator's splash on an escort next to the huge boss does not reach the boss (中点判定)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "大体型受击矩形，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/body/battle.spec.ts::#10 打护卫的溅射按中点判定：巨型敌人矩形离得近但中心远就不波及，1 格外的普通敌人波及"
+      ],
+      "reason": "溅射按中点判定"
     },
     "sim/playtest5_bossbody.test.js::#10: the enemy index lists a huge enemy once per query and unitsInGrid sees its body": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "大体型受击矩形，核对 next 现有用例"
+      "status": "covered",
+      "next": [
+        "mission-core/test/field/body/index.spec.ts::范围里的一格能命中跨格身体，邻格打不中点单位"
+      ]
     },
     "sim/playtest5_bossbody.test.js::#10: the real 假想敌：胄 on the real boss stage — an operator on the 1×3 fence left of the pipe block hits it": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "大体型受击矩形，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "真实首领与关卡的用例随内容；跨格命中由 mission-core/test/field/body/index.spec.ts 断言"
     },
     "sim/playtest5_bossbody.test.js::#10: every huge boss is 自缚 and unblockable (PRTS 天赋) — in its real template, from its spawn": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "大体型受击矩形，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "具体首领的天赋属于敌人内容"
     },
     "sim/playtest5_bossbody.test.js::#10: the co-op 盐风主教昆图斯 stays on its pipe block (its route would walk it to (2,2)) and never leaks": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "大体型受击矩形，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "具体首领属于敌人内容"
     },
     "sim/playtest5_bossbody.test.js::#10: an operator standing on the boss (a free-capacity blocker in contact) does not block it": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "大体型受击矩形，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "挡不住是这几名首领的天赋（自缚 + 无法被阻挡，参考实现 bosses.js SELF_BOUND），属首领内容；核心阻挡按接触半径照常"
     },
     "sim/playtest5_bossbody.test.js::docs: SIM.md / DATA.md describe the hit areas and the block radius (user playtest #5)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "大体型受击矩形，核对 next 现有用例"
+      "status": "not-migrated",
+      "reason": "检查参考实现自己的文档；核心的受击矩形写在 docs/mission-core"
     },
     "sim/playtest5_elements.test.js::海嗣 enemies take element damage at the official rate: 损伤抵抗 0, gauge 1000 (leaders 2000), 元素抗性 0 on the burst": {
       "status": "moved",
@@ -3194,104 +3520,119 @@
       "reason": "干员、敌人、盟约或真实关卡的内容用例，随内容模块改写"
     },
     "sim/playtest6-combat.test.js::#17 the user's case on act2 m01: the front operator takes over the enemy held between the two AND attacks it — every blocking chess, 4 directions": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡接管与命中，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "真实关卡、具体干员或召唤物的用例，随内容模块改写；用到的通用规则（阻挡优先、孤立、禁疗、推拉）在核心另有用例"
     },
     "sim/playtest6-combat.test.js::#17 a late take-over (the enemy slid behind the front operator's tile): every blocker hits it, ranged ones on melee tiles included (the user's rule)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡接管与命中，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/unit/block/takeover.spec.ts::挡住就打得到 > 晚接替（敌人已经穿过前面那位，在它身后、它的范围之外）：接替的阻挡者照样打它"
+      ],
+      "reason": "接替后阻挡优先；逐个真实干员的扫描属于数据接线后的数据检查"
     },
     "sim/playtest6-combat.test.js::#17 a plain block, every blocking chess × 4 facings: the blocker damages the enemy it blocks — in range or not (the user's rule)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡接管与命中，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/unit/block/takeover.spec.ts::挡住就打得到 > 单纯的阻挡，四个朝向：阻挡者打它挡住的敌人，不管在不在范围里"
+      ],
+      "reason": "四个朝向都打被挡的敌人；逐个真实干员的扫描属于数据接线后的数据检查"
     },
     "sim/playtest6-combat.test.js::#17 skills that pick their own targets keep the enemy the operator blocks (QA residual): 迷迭香 S3, 荒芜拉普兰德 S2, 佩佩 S2": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡接管与命中，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "真实关卡、具体干员或召唤物的用例，随内容模块改写；用到的通用规则（阻挡优先、孤立、禁疗、推拉）在核心另有用例"
     },
     "sim/playtest6-combat.test.js::#17 流形's melee copy (a summon of no fixed position) attacks the enemy it blocks outside its range": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡接管与命中，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "真实关卡、具体干员或召唤物的用例，随内容模块改写；用到的通用规则（阻挡优先、孤立、禁疗、推拉）在核心另有用例"
     },
     "sim/playtest6-combat.test.js::#17 heavy slows: ASPD never drops below 20 (PRTS 数值范围) — two −50 slows on a BAT 1.2 unit give a 6 s interval, not 12 s": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡接管与命中，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/attack/interval.spec.ts::攻速不低于 20：两层 −50 的减速让攻击间隔 1.2 秒的单位每 6 秒出手，不是 12 秒"
+      ],
+      "reason": "攻速下限 20"
     },
     "sim/playtest6-combat.test.js::#17 the user's case under heavy slows: the front blocker that took the enemy over hits it every 5 × BAT": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡接管与命中，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "真实关卡、具体干员或召唤物的用例，随内容模块改写；用到的通用规则（阻挡优先、孤立、禁疗、推拉）在核心另有用例"
     },
     "sim/playtest6-combat.test.js::#14 the official push table: 受力等级 = 力度 − 重量 (PRTS 游戏数据基础 §重量公式 / 推与拉)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡接管与命中，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/motion/force.spec.ts::推与拉 > 推力表：受力等级 = 力度 − 重量，−2 到 3 依次 0.12、0.44、1.7、2.14、2.96、3.53 格，≥ 3 按 3，≤ −3 不动"
+      ],
+      "reason": "推力表"
     },
     "sim/playtest6-combat.test.js::#14 directional pushes: > 45° off the direction or nearer than 0.25 → radial with 受力等级 −2, unless fixed (见行者 / 圣聆初雪)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡接管与命中，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/motion/force.spec.ts::推与拉 > 定向推：偏离方向超过 45° 或离起点近于 0.25 格时改成径向，受力等级减 2；fixed 两项都免，fixedAngle 只免夹角"
+      ],
+      "reason": "定向推的修正与 fixed、fixedAngle；没给起点时不修正（与参考实现一致）"
     },
     "sim/playtest6-combat.test.js::#14 见行者 S2 惊爆射击: angle waived, a target nearer than 0.25 tile radial −2 — and only a real wall lengthens the stun": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡接管与命中，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "真实关卡、具体干员或召唤物的用例，随内容模块改写；用到的通用规则（阻挡优先、孤立、禁疗、推拉）在核心另有用例"
     },
     "sim/playtest6-combat.test.js::#14 特效 pushes (PRTS 推与拉: one frame less of travel than 弹道 ones): the 特效 column, and 见行者 S1 护身射击 uses it": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡接管与命中，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/motion/force.spec.ts::推与拉 > 特效推用特效列，少一帧的行程"
+      ],
+      "reason": "特效列是核心的位移输入；见行者 S1 用哪一列由内容传 effect"
     },
     "sim/playtest6-combat.test.js::#14 锏 S3 归于宁静 slashes air units and pulls a non-static one (PRTS 备注 \"※可对空。不会拖拽自身中心半径0.6708范围内的敌人\")": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡接管与命中，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "真实关卡、具体干员或召唤物的用例，随内容模块改写；用到的通用规则（阻挡优先、孤立、禁疗、推拉）在核心另有用例"
     },
     "sim/playtest6-combat.test.js::#14 pulls: 受力等级 ≥ 0 all the way to the 急停 radius, −1 → 35 % of the way, −2 → 0.03, ≤ −3 → nothing; the puller's own blocked enemy stays": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡接管与命中，核对 next 现有用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/motion/force.spec.ts::推与拉 > 拉：受力等级 ≥ 0 拉到急停圈，−1 走起点距离的 35%，−2 走 0.03 格，≤ −3 不动",
+        "mission-core/test/field/motion/index.spec.ts::拉力在受力等级不小于 0 时拉到急停圈"
+      ],
+      "reason": "拉的距离档；被拉向自己的阻挡者时不拉（blockedByCenter）"
     },
     "sim/playtest6-combat.test.js::#14 流形 S3 pulse: the enemy a melee copy blocks is not pulled (so not released) and is stunned at every pulse": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡接管与命中，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "真实关卡、具体干员或召唤物的用例，随内容模块改写；用到的通用规则（阻挡优先、孤立、禁疗、推拉）在核心另有用例"
     },
     "sim/playtest6-combat.test.js::#14 the user's case: 野鬃 S2 夹枪冲锋 pushes by 力度 − 重量 — light enemies far, weight ≥ 4 not at all": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡接管与命中，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "真实关卡、具体干员或召唤物的用例，随内容模块改写；用到的通用规则（阻挡优先、孤立、禁疗、推拉）在核心另有用例"
     },
     "sim/playtest6-combat.test.js::#18 炎佑 holds 孤立 (PRTS “炎佑” 天赋): medics never heal it, auras never pick it — while they heal an injured operator": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡接管与命中，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "真实关卡、具体干员或召唤物的用例，随内容模块改写；用到的通用规则（阻挡优先、孤立、禁疗、推拉）在核心另有用例"
     },
     "sim/playtest6-combat.test.js::#18 the summons that hold 禁疗 (PRTS summon pages) are not healed by others: data list + 狼群 next to a medic": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡接管与命中，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "真实关卡、具体干员或召唤物的用例，随内容模块改写；用到的通用规则（阻挡优先、孤立、禁疗、推拉）在核心另有用例"
     },
     "sim/playtest6-combat.test.js::#18 圣聆初雪's 保护目标（冻结状态） holds 禁疗 (PRTS 备注 \"持有禁疗、无法撤退\"): a medic next to it does not heal it": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡接管与命中，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "真实关卡、具体干员或召唤物的用例，随内容模块改写；用到的通用规则（阻挡优先、孤立、禁疗、推拉）在核心另有用例"
     },
     "sim/playtest6-combat.test.js::#18 安洁莉娜 兼职工作 is an HP-regen attribute (PRTS 备注 \"不受治疗加成和禁疗影响\"): the 禁疗 狼群 gets it; 炎佑 (孤立) is never selected": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡接管与命中，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "真实关卡、具体干员或召唤物的用例，随内容模块改写；用到的通用规则（阻挡优先、孤立、禁疗、推拉）在核心另有用例"
     },
     "sim/playtest6-combat.test.js::#18 孤立 in every ally selection: 刺玫's 荆藤庇荫 picks the operator in her range, not 炎佑 (higher max HP)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "阻挡接管与命中，核对 next 现有用例"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "真实关卡、具体干员或召唤物的用例，随内容模块改写；用到的通用规则（阻挡优先、孤立、禁疗、推拉）在核心另有用例"
     },
     "sim/playtest6-enemies.test.js::#13 “萨科塔” self-fear: flutters at random inside a small area, then flies on > enemy_10083_hlbird “萨科塔之翼”: 5 s of random flight inside its tile (±0.25), ×1.5 speed, then its route again": {
       "status": "moved",
@@ -3559,179 +3900,192 @@
       "reason": "干员、敌人、盟约或真实关卡的内容用例，随内容模块改写"
     },
     "sim/playtest6_limits.test.js::switches: BOND_LAYER_CAP = 999 (MAX_GARRISON_STACK), BOSS_HIT_LIMIT = 300000 (MAX_BATTLE_DAMAGE)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "层数与伤害上限常量"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "层数上限是对局内容；300000 在核心是 BOSS_HIT_LIMIT 常量，由下面的限伤用例断言"
     },
     "sim/playtest6_limits.test.js::layerGainRoom: min(n, 999 − before), never negative, never lowers a count; +Infinity = the room left": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "层数与伤害上限常量"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "盟约层数与上限是对局内容，不进核心"
     },
     "sim/playtest6_limits.test.js::Battle.addLayers: clamps the live copy at 999; the event and layerGains carry what was added; at the cap: 0, no hook, no event": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "层数与伤害上限常量"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "盟约层数与上限是对局内容，不进核心"
     },
     "sim/playtest6_limits.test.js::Battle.addLayers: a layerGain hook that raises n (魔王 +1) is clamped after the hook": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "层数与伤害上限常量"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "盟约层数与上限是对局内容，不进核心"
     },
     "sim/playtest6_limits.test.js::Battle.addLayers without a live copy of the bond (partial input): the battle's own gains stop at 999": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "层数与伤害上限常量"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "盟约层数与上限是对局内容，不进核心"
     },
     "sim/playtest6_limits.test.js::support.gainLayers (特质 / bond gains): returns the clamped total; a capped bond counts nothing toward the per-battle cap": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "层数与伤害上限常量"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "盟约层数与上限是对局内容，不进核心"
     },
     "sim/playtest6_limits.test.js::layer gains stay disabled in boss / 联防 fields (unchanged)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "层数与伤害上限常量"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "盟约层数与上限是对局内容，不进核心"
     },
     "sim/playtest6_limits.test.js::限伤: a leader's hit of 299999 lands, 300000 deals 0 — nothing credited to the shared pool, no number, a hitCap event": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "层数与伤害上限常量"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/damage/index.spec.ts::首领限伤打开时超过阈值不扣生命，没打开时照常扣",
+        "mission-core/test/combat/damage/limit.spec.ts::首领限伤 > 取消之前的 hit 照常发出，之后的 damaged 与击倒都没有；没打开限伤的单位同一击照常扣"
+      ],
+      "reason": "核心不发 damaged 即不记账也不出数字；共用血池与 hitCap 提示属于对局层，由 app/server 从被取消的 hit 推出"
     },
     "sim/playtest6_limits.test.js::限伤: the check is ceil(final damage) — 299999.2 rounds up to the line and is cancelled, 299999 exactly lands": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "层数与伤害上限常量"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/damage/limit.spec.ts::首领限伤 > 看的是向上取整后的最终伤害：299999.2 算到线上被取消，299999 照常扣"
+      ],
+      "reason": "按用例断言"
     },
     "sim/playtest6_limits.test.js::限伤: the value checked is the hit after DEF / RES and every multiplier (before shields)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "层数与伤害上限常量"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/damage/limit.spec.ts::首领限伤 > 看的是减防与乘算之后的数额：减防后落到线下的一击照常扣，乘算后到线的一击取消"
+      ],
+      "reason": "按用例断言"
     },
     "sim/playtest6_limits.test.js::限伤: checked before shields — a cancelled hit leaves the leader's shield untouched; a smaller hit is absorbed as usual": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "层数与伤害上限常量"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/damage/limit.spec.ts::首领限伤 > 在护盾之前判定：取消的一击不动护盾，低于线的一击照常先扣护盾"
+      ],
+      "reason": "按用例断言"
     },
     "sim/playtest6_limits.test.js::限伤: only leaders — a minion and a part in the same boss field take any hit": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "层数与伤害上限常量"
+      "status": "moved",
+      "owner": "app/server/match",
+      "reason": "谁打开限伤由对局层按首领标记写进 UnitSpec.hitLimit；核心只认这个开关（mission-core/test/combat/damage/limit.spec.ts 里没打开的单位照常扣）"
     },
     "sim/playtest6_limits.test.js::限伤: only boss / hidden battles — the same leader-tagged unit takes any hit in a normal or 联防 field": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "层数与伤害上限常量"
+      "status": "moved",
+      "owner": "app/server/match",
+      "reason": "哪些场地打开限伤由对局层决定，核心只认 UnitSpec.hitLimit"
     },
     "sim/playtest6_limits.test.js::限伤: every HP-damage kind — 元素伤害 and element bursts, DoT ticks, losses passed on (loseHp); element 损伤 (gauge) is not HP damage": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "层数与伤害上限常量"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/damage/limit.spec.ts::首领限伤 > 每一种生命伤害都判定：元素伤害与流失到线时取消；元素损伤不是生命伤害，照常进槽并爆发",
+        "mission-core/test/combat/element/index.spec.ts::填槽不走闪避和首领限伤"
+      ],
+      "reason": "持续伤害在核心也走 dealDamage，与元素伤害同一条判定"
     },
     "sim/playtest6_limits.test.js::限伤: what ran before the hit stays — the attack's hit hook fires; nothing after (damaged, fatal, kill)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "层数与伤害上限常量"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/damage/limit.spec.ts::首领限伤 > 取消之前的 hit 照常发出，之后的 damaged 与击倒都没有；没打开限伤的单位同一击照常扣"
+      ],
+      "reason": "按用例断言"
     },
     "sim/playtest6_limits.test.js::限伤: a browser pool (client-side combat) behaves the same; the field stays alive and deterministic": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "层数与伤害上限常量"
+      "status": "moved",
+      "owner": "app/server/match",
+      "reason": "浏览器端的共用血池是对局层"
     },
     "sim/playtest6_limits.test.js::IsBossEnemy ⇔ tag 'boss': every tag-'boss' spawn of a boss / hidden template is a bosses.json enemyKey; parts and escorts never are": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "层数与伤害上限常量"
+      "status": "moved",
+      "owner": "app/data",
+      "reason": "首领标记来自数据编译"
     },
     "sim/playtest6_limits.test.js::限伤 on a real field: boss_1 — every copy of the leader cancels a 300000 hit and takes a 299999 one; its parts are no leaders": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "层数与伤害上限常量"
+      "status": "moved",
+      "owner": "app/server/match",
+      "reason": "真实关卡里谁打开限伤由对局层与数据决定，核心的判定由 mission-core/test/combat/damage/limit.spec.ts 断言"
     },
     "sim/playtest6_limits.test.js::限伤 on a real field: boss_5 — every copy of the leader cancels a 300000 hit and takes a 299999 one; its parts are no leaders": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "层数与伤害上限常量"
+      "status": "moved",
+      "owner": "app/server/match",
+      "reason": "真实关卡里谁打开限伤由对局层与数据决定，核心的判定由 mission-core/test/combat/damage/limit.spec.ts 断言"
     },
     "sim/playtest6_limits.test.js::限伤 on a real field: boss_8 — every copy of the leader cancels a 300000 hit and takes a 299999 one; its parts are no leaders": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "层数与伤害上限常量"
+      "status": "moved",
+      "owner": "app/server/match",
+      "reason": "真实关卡里谁打开限伤由对局层与数据决定，核心的判定由 mission-core/test/combat/damage/limit.spec.ts 断言"
     },
     "sim/playtest6_limits.test.js::限伤 on a real field: boss_9 — every copy of the leader cancels a 300000 hit and takes a 299999 one; its parts are no leaders": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "层数与伤害上限常量"
+      "status": "moved",
+      "owner": "app/server/match",
+      "reason": "真实关卡里谁打开限伤由对局层与数据决定，核心的判定由 mission-core/test/combat/damage/limit.spec.ts 断言"
     },
     "sim/playtest6_limits.test.js::限伤 on a real field: boss_10 — every copy of the leader cancels a 300000 hit and takes a 299999 one; its parts are no leaders": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "层数与伤害上限常量"
+      "status": "moved",
+      "owner": "app/server/match",
+      "reason": "真实关卡里谁打开限伤由对局层与数据决定，核心的判定由 mission-core/test/combat/damage/limit.spec.ts 断言"
     },
     "sim/playtest6_limits.test.js::限伤 vs the real leader defences [ASSUMED order]: 阿利斯泰尔's 5000 vest barrier stays under a cancelled hit; a 再生 block acts first": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "层数与伤害上限常量"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "具体首领的屏障与再生属于敌人内容"
     },
     "sim/playtest6_limits.test.js::限伤 vs 【死亡集群】 (real kit): a drone killed by an operator costs the leader 2 % of the pool max — a share, no hit: it lands past the 300000 line too (DESIGN §25.13.4)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "层数与伤害上限常量"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "具体首领机制属于敌人内容"
     },
     "sim/playtest6_limits.test.js::限伤 keeps the sim deterministic: a boss field whose hits cross the line gives the same result digest twice": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "层数与伤害上限常量"
+      "status": "moved",
+      "owner": "app/server/match",
+      "reason": "真实首领场的确定性由对局层回放检查；核心确定性由黄金回放与 determinism 扫描断言"
     },
     "sim/playtest6_limits.test.js::docs: research 11 is indexed; SIM / META / DATA / PLAYING / BALANCE state the 999 cap and the 300000 cancel": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "层数与伤害上限常量"
+      "status": "not-migrated",
+      "reason": "检查参考实现自己的文档；核心的限伤写在 docs/mission-core/05-damage.md"
     },
     "sim/portal-appear.test.js::normalizeRoute: DISAPPEAR → WAIT → MOVE gains the twin APPEAR at the move target": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "路线 APPEAR 补写由 app/data 编译路线，核心执行路线"
+      "status": "moved",
+      "owner": "app/data",
+      "reason": "路线的 APPEAR 补写由 app/data 编译路线时完成；核心按路线执行消失与出现（mission-core/test/field/grid/index.spec.ts::消失后再出现会改站位）"
     },
     "sim/portal-appear.test.js::normalizeRoute: a DISAPPEAR the data does spell out with an APPEAR is kept as the only one": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "路线 APPEAR 补写由 app/data 编译路线，核心执行路线"
+      "status": "moved",
+      "owner": "app/data",
+      "reason": "路线的 APPEAR 补写由 app/data 编译路线时完成；核心按路线执行消失与出现（mission-core/test/field/grid/index.spec.ts::消失后再出现会改站位）"
     },
     "sim/portal-appear.test.js::normalizeRoute: idempotent — a second pass over a fixed route changes nothing": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "路线 APPEAR 补写由 app/data 编译路线，核心执行路线"
+      "status": "moved",
+      "owner": "app/data",
+      "reason": "路线的 APPEAR 补写由 app/data 编译路线时完成；核心按路线执行消失与出现（mission-core/test/field/grid/index.spec.ts::消失后再出现会改站位）"
     },
     "sim/portal-appear.test.js::act1autochess_h07_02 route #4: portal crossing reappears at [5,10] and leaks visible": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "路线 APPEAR 补写由 app/data 编译路线，核心执行路线"
+      "status": "moved",
+      "owner": "app/data",
+      "reason": "路线的 APPEAR 补写由 app/data 编译路线时完成；核心按路线执行消失与出现（mission-core/test/field/grid/index.spec.ts::消失后再出现会改站位）"
     },
     "sim/portal-appear.test.js::act1autochess_h08_02 route #5: portal crossing reappears at [5,10] and leaks visible": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "路线 APPEAR 补写由 app/data 编译路线，核心执行路线"
+      "status": "moved",
+      "owner": "app/data",
+      "reason": "路线的 APPEAR 补写由 app/data 编译路线时完成；核心按路线执行消失与出现（mission-core/test/field/grid/index.spec.ts::消失后再出现会改站位）"
     },
     "sim/portal-appear.test.js::act1autochess_h08_02 route #9: portal crossing reappears at [5,10] and leaks visible": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "路线 APPEAR 补写由 app/data 编译路线，核心执行路线"
+      "status": "moved",
+      "owner": "app/data",
+      "reason": "路线的 APPEAR 补写由 app/data 编译路线时完成；核心按路线执行消失与出现（mission-core/test/field/grid/index.spec.ts::消失后再出现会改站位）"
     },
     "sim/portal-appear.test.js::act2autochess_h07_05 route #6: portal crossing reappears at [5,10] and leaks visible": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "路线 APPEAR 补写由 app/data 编译路线，核心执行路线"
+      "status": "moved",
+      "owner": "app/data",
+      "reason": "路线的 APPEAR 补写由 app/data 编译路线时完成；核心按路线执行消失与出现（mission-core/test/field/grid/index.spec.ts::消失后再出现会改站位）"
     },
     "sim/portal-appear.test.js::solo boss: a route ending on the left portal entrance leaks at the left blue door, not the portal": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "路线 APPEAR 补写由 app/data 编译路线，核心执行路线"
+      "status": "moved",
+      "owner": "app/data",
+      "reason": "终点落在哪个保护目标由路线与关卡数据编译决定；核心只认走到保护目标上的泄漏"
     },
     "sim/portal-appear.test.js::a route ending on the right portal entrance mirrors: leak at the right blue door": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "路线 APPEAR 补写由 app/data 编译路线，核心执行路线"
+      "status": "moved",
+      "owner": "app/data",
+      "reason": "终点落在哪个保护目标由路线与关卡数据编译决定；核心只认走到保护目标上的泄漏"
     },
     "sim/potential-battle.test.js::potential on a battle unit: the def at that potential (stats, redeploy, cost, talent), 潜能 6 / absent = the data record": {
       "status": "moved",
@@ -4062,14 +4416,18 @@
       "reason": "性能不设通过门槛，改为 mission-core 的 pnpm perf 基准（perf/golden.bench.ts）在每一步前后对比"
     },
     "sim/skills.test.js::deployment duration: synchronous start, one charge, countdown, carry and fresh redeployment": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "技能体与持续技能的通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/skill/behavior.spec.ts::部署即开的持续技能：开场同拍开始、只有一层、到点结束；倒下与再部署后重新完整计时"
+      ],
+      "reason": "快照元组与 UF.SKILL 位由兼容层转换；next 没有撤退，用倒下后再部署；carryState 属于对局层"
     },
     "sim/skills.test.js::deployment duration: early retreat/death cleans effects and leaves no stale end on redeployment": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "技能体与持续技能的通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/skill/behavior.spec.ts::持续中倒下：当场以 death 结束、修饰撤下，再部署后的新窗口不被旧的到点结束"
+      ],
+      "reason": "next 没有撤退，倒下是唯一离场"
     },
     "sim/skills.test.js::generic timed passive: deployment window owns stats and arts hits without reinterpreting passive proc parameters; permanent passive stays on": {
       "status": "moved",
@@ -4082,39 +4440,55 @@
       "reason": "通用 kit 与 kit 转规格属于内容模块；核心技能钩子改为按 id 注册的纯数据（mission-core/test/battle/content.spec.ts）"
     },
     "sim/skills.test.js::SP: time regen, starts at initSp, capped at cost; DEFAULT waits for an enemy in the initial range": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "技能体与持续技能的通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/skill/behavior.spec.ts::随时间回技力：从 initSp 起涨，涨满停在 spCost；DEFAULT 要初始范围里有敌人才放，持续期间不回技力"
+      ],
+      "reason": "用技力计时器视图与技能事件断言，敌人按出场项出现"
     },
     "sim/skills.test.js::SP types: attack (+1 per attack) and hurt (+1 per hit taken)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "技能体与持续技能的通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/skill/behavior.spec.ts::攻击回技力每次出手 +1，受击回技力每次受击 +1"
+      ],
+      "reason": "按 attack-hit 与 damaged 事件计数"
     },
     "sim/skills.test.js::trigger TAKE_DAMAGE fires on the first hit once ready; SP_FULL fires immediately; SEARCH needs an enemy in the initial range": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "技能体与持续技能的通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/skill/behavior.spec.ts::TAKE_DAMAGE 备好后第一次受击就放；SP_FULL 备好就放；SEARCH 只认初始范围里的敌人"
+      ],
+      "reason": "ALWAYS 由 normalizeTrigger 记成 SP_FULL；受击用 dealDamage 制造"
     },
     "sim/skills.test.js::trigger CUSTOM_RANGE uses the custom grid; unknown rules fall back to DEFAULT": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "技能体与持续技能的通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/skill/behavior.spec.ts::CUSTOM_RANGE 看 triggerRange，攻击范围里有敌人也不放",
+        "mission-core/test/ability/skill/index.spec.ts::未知触发标识被拒绝"
+      ],
+      "reason": "未知触发在 next 是注册错误，回退到 DEFAULT 由数据编译负责"
     },
     "sim/skills.test.js::ammo skills end when ammo runs out; ammoUsed fires per shot; no SP gain while active": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "技能体与持续技能的通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/skill/behavior.spec.ts::弹药技能每发送出 ammo-used，打空后以 ammo 结束，持续中不回技力"
+      ],
+      "reason": "弹药数直接写在技能规格上"
     },
     "sim/skills.test.js::charges accumulate up to maxCharges and are spent one per cast, 3 s apart (the automatic operation cooldown)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "技能体与持续技能的通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/skill/behavior.spec.ts::充能涨到上限，满层时技力条停在 spCost；每次释放用一层，用掉满层后技力条从 0 开始；MANUAL 自动释放间隔 3 秒",
+        "mission-core/test/ability/skill/index.spec.ts::MANUAL 的自动释放遵守操作冷却，直接释放可以在冷却中放出并重新开始冷却"
+      ],
+      "reason": "充能层数与操作方式直接写在技能规格上"
     },
     "sim/skills.test.js::instant skills with an attack override apply to exactly one attack": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "技能体与持续技能的通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/skill/behavior.spec.ts::带替换攻击的立即技能只作用于一次攻击"
+      ],
+      "reason": "替换攻击用 hit 钩子表达，断言钩子只跑一次"
     },
     "sim/skills.test.js::SkillSpec from a kit: mods, targeting override, attack override, onStart/onEnd/onHit": {
       "status": "moved",
@@ -4122,9 +4496,11 @@
       "reason": "通用 kit 与 kit 转规格属于内容模块；核心技能钩子改为按 id 注册的纯数据（mission-core/test/battle/content.spec.ts）"
     },
     "sim/skills.test.js::passive and toggle kinds; carryState restores hp/sp, never a running skill": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "技能体与持续技能的通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/skill/behavior.spec.ts::被动技能开场生效，开关技能放出后一直开着"
+      ],
+      "reason": "carryState 属于对局层（app/server/match）"
     },
     "sim/skills.test.js::generic kit maps blackboards of every real chess to a sane SkillSpec": {
       "status": "moved",
@@ -4137,14 +4513,18 @@
       "reason": "通用 kit 与 kit 转规格属于内容模块；核心技能钩子改为按 id 注册的纯数据（mission-core/test/battle/content.spec.ts）"
     },
     "sim/skills.test.js::spCostMul changes (绝技-style) keep SP within bounds and convert overflow into a charge": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "技能体与持续技能的通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/skill/behavior.spec.ts::spCostMul 与 spCostFlat 改变技力消耗，技力夹在消耗以内，满出的换成充能"
+      ],
+      "reason": "技力消耗倍率改为属性 spCostMul、spCostFlat，由效果修饰"
     },
     "sim/skills.test.js::a deploy-time passive fires the skill animation window; a deploy-timed skill runs its duration (PR #109)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "技能体与持续技能的通用行为，核对 next 现有用例后改为 covered 或 rewritten"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/ability/skill/behavior.spec.ts::部署时的被动技能开场送出 skill-start；部署即开的持续技能放完一次就不再备好"
+      ],
+      "reason": "0.5 秒的技能动画窗口是画面表现，核心只送 skill-start；真实干员的数据由内容模块提供"
     },
     "sim/strongest-status.test.js::fragile: three effects expire in strength order after application order 0,1,2": {
       "status": "rewritten",
@@ -4305,9 +4685,11 @@
       ]
     },
     "sim/tick-tolerance.test.js::a 1 s operator attacks every 30 ticks, a 3 s ranged enemy every 90": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "倒计时已由 countdown 覆盖；整场战斗里的攻击间隔随攻击组件补用例"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/attack/interval.spec.ts::攻击间隔 1 秒的干员每 30 拍出手一次，3 秒的远程敌人每 90 拍一次"
+      ],
+      "reason": "攻击间隔按拍整数对齐"
     },
     "sim/tick-tolerance.test.js::the non-integer control: 1.2 s takes 36 ticks (on time before as well), 1.25 s still ⌈37.5⌉ = 38": {
       "status": "covered",
@@ -4379,74 +4761,101 @@
       "reason": "词条解析与数值随内容模块改写；核心提供条件效果 enemies-in-range（mission-core/test/battle/content.spec.ts）"
     },
     "sim/unbalance.test.js::a push holds the enemy for the 位移时间 of its 受力等级 (PRTS 游戏数据基础), then it walks on": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "失衡状态机"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/motion/unbalance.spec.ts::失衡 > 推按受力等级失衡：中力推重量 0（受力等级 1）失衡 0.9 秒，期间不沿路线走，到时接着走",
+        "mission-core/test/field/motion/unbalance.spec.ts::失衡 > 受力等级决定时长：大力推重量 0 是 35 拍，受力等级 −3 不推也不失衡"
+      ],
+      "reason": "核心的失衡状态机：推按受力等级的位移时间，期间不走"
     },
     "sim/unbalance.test.js::no normal attack while it lasts — a 恐惧 does not walk out of it either (no exemption)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "失衡状态机"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/motion/unbalance.spec.ts::失衡 > 失衡期间不开始普攻、冷却停下，到时才打第一下",
+        "mission-core/test/field/motion/unbalance.spec.ts::失衡 > 恐惧也走不出失衡：失衡期间恐惧的位移停下，到时才走"
+      ],
+      "reason": "失衡期间冷却停下、不开始普攻；恐惧的位移也停"
     },
     "sim/unbalance.test.js::the −2 angle correction picks the row: a directional push off by more than 45° holds 0.2 s": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "失衡状态机"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/motion/unbalance.spec.ts::失衡 > 定向推偏离超过 45° 时按修正后的受力等级取档：中力推重量 1 修正到 −2，失衡 0.2 秒；特效列的推照样按这一档"
+      ],
+      "reason": "按修正后的受力等级取失衡档"
     },
     "sim/unbalance.test.js::the row time stays when the 特效 column or a wall shortens the slide; a wall at the first step gives the 0.1 s floor": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "失衡状态机"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/motion/unbalance.spec.ts::失衡 > 定向推偏离超过 45° 时按修正后的受力等级取档：中力推重量 1 修正到 −2，失衡 0.2 秒；特效列的推照样按这一档",
+        "mission-core/test/field/motion/unbalance.spec.ts::失衡 > 推向墙、第一步就停下时只有失衡硬直的保底 0.1 秒"
+      ],
+      "reason": "特效列照样按档；墙在第一步挡住时按保底"
     },
     "sim/unbalance.test.js::a pull holds for its force window (推与拉): 1 s, 0.5 s below 受力等级 −1, to the end after the 急停; ≤ −3 nothing": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "失衡状态机"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/motion/unbalance.spec.ts::失衡 > 拉在作用时间内失衡：拉不动（已在终点）也失衡 1 秒；受力等级低于 −1 时 0.5 秒",
+        "mission-core/test/field/motion/unbalance.spec.ts::失衡 > 受力等级决定时长：大力推重量 0 是 35 拍，受力等级 −3 不推也不失衡"
+      ],
+      "reason": "拉按作用时间失衡，急停后持续到作用时间结束"
     },
     "sim/unbalance.test.js::a 静态刚体 hit by a force > 0 gets the 0.1 s floor and never moves; 失衡免疫 never enters it": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "失衡状态机"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/motion/unbalance.spec.ts::失衡 > 静态刚体不动但照样失衡：推按保底，拉按作用时间；受力等级低于 −2 不失衡；位移免疫不失衡"
+      ],
+      "reason": "静态刚体（static-body）不动但失衡；位移免疫（no-displace）就是失衡免疫"
     },
     "sim/unbalance.test.js::浮空 ends the state at once (术语释义 浮空)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "失衡状态机"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/motion/unbalance.spec.ts::失衡 > 浮空、路线上的出现与内容命令 cutUnbalance 立刻结束失衡；unbalanced 读当前状态"
+      ],
+      "reason": "带 levitate 标签时立刻结束失衡"
     },
     "sim/unbalance.test.js::the displace fx carries the state's game seconds for the client's slide": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "失衡状态机"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/motion/unbalance.spec.ts::失衡 > 推的每一档都按 30 帧的整拍：受力等级 −2 到 3 依次 6、12、24、27、32、35 拍，之后的一拍接着走；位移的画面时长是失衡秒数",
+        "mission-core/test/field/motion/index.spec.ts::displace 带位移时长与是否保持朝向：推的时长是失衡秒数（受力等级 1 是 0.9 秒），直接移动是 0；推拉保持朝向，显式关掉或直接移动不保持"
+      ],
+      "reason": "displace 事件的 duration 是失衡秒数"
     },
     "sim/unbalance.test.js::every push row holds its exact frames at 30 fps (6, 12, 24, 27, 32, 35) — the enemy walks on the next frame": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "失衡状态机"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/motion/unbalance.spec.ts::失衡 > 推的每一档都按 30 帧的整拍：受力等级 −2 到 3 依次 6、12、24、27、32、35 拍，之后的一拍接着走；位移的画面时长是失衡秒数"
+      ],
+      "reason": "每一档按整拍，之后的一拍接着走"
     },
     "sim/unbalance.test.js::a 静态刚体 pulled is held for the pull's force window (1 s; 0.5 s below 受力等级 −1), a pushed one 0.1 s — never moved": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "失衡状态机"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/motion/unbalance.spec.ts::失衡 > 静态刚体不动但照样失衡：推按保底，拉按作用时间；受力等级低于 −2 不失衡；位移免疫不失衡"
+      ],
+      "reason": "静态刚体拉按作用时间、推按保底"
     },
     "sim/unbalance.test.js::弧光锋卫 bleeds 400 true damage every 0.066 s for as long as the state lasts (PRTS 天赋) — a push, a 急停 pull, a wall-shortened slide": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "失衡状态机"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "弧光锋卫的天赋是这名敌人的内容，读核心的 unbalanced 查询（mission-core/test/field/motion/unbalance.spec.ts）"
     },
     "sim/unbalance.test.js::no skill, blink or scripted move while it lasts (失衡免疫 「失衡期间无法自主移动、发动攻击、使用技能」)": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "失衡状态机"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "敌人技能、闪现与脚本移动都在内容里，按参考实现由内容自己读 unbalanced；核心只提供查询并停下自主移动与普攻（mission-core/test/field/motion/unbalance.spec.ts）"
     },
     "sim/unbalance.test.js::乌顶巨角卢鲁: a 失衡 that does not move it holds its clash until the state ends": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "失衡状态机"
+      "status": "moved",
+      "owner": "app/server/content",
+      "reason": "乌顶巨角卢鲁的冲撞是这名敌人的内容，读 unbalanced"
     },
     "sim/unbalance.test.js::a route APPEAR (a forced relocation) and a 逐火 重生 end the state": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "失衡状态机"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/field/motion/unbalance.spec.ts::失衡 > 浮空、路线上的出现与内容命令 cutUnbalance 立刻结束失衡；unbalanced 读当前状态"
+      ],
+      "reason": "路线上的出现由核心结束失衡；逐火的重生是内容，经内容命令 cutUnbalance 结束"
     }
   }
 }

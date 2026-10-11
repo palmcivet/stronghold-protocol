@@ -75,7 +75,7 @@ interface UnitSpec {
 }
 ```
 
-`attributes` 是调用方已经算好的基础值。当前生命读 `hp`。引擎会读的键还有 `maxHp`、`atk`、`def`、`res`、`aspd`、`bat`、`batPct`、`spRecovery`、`moveSpeed`、`massLevel`、`redeployMul`、`rangeExtend`、`timerRate`、`times`、`ammoMax`、`atk_scale`、`taunt`，以及伤害和治疗乘区。再部署读 `cost` 和 `respawnTime`（秒），没写或不是非负有限数时按 0。阻挡读 `blockCnt` 和 `blockWeight`：没写 `blockCnt` 时按 1，没写 `blockWeight` 时按 1。战斗读取属性时再叠状态和正在生效的技能修饰，见 [战斗](./02-battle.md)。`cost` 和 `respawnTime` 按单位上存放的数字读，不走这层汇总。`taunt` 是选择器里的嘲讽键。
+`attributes` 是调用方已经算好的基础值。当前生命读 `hp`。引擎会读的键还有 `maxHp`、`atk`、`def`、`res`、`aspd`、`bat`、`batPct`、`spRecovery`、`moveSpeed`、`massLevel`、`redeployMul`、`rangeExtend`、`rangeExtendBase`、`timerRate`、`times`、`ammoMax`、`atk_scale`、`taunt`，以及伤害和治疗乘区。再部署读 `cost` 和 `respawnTime`（秒），没写或不是非负有限数时按 0。阻挡读 `blockCnt` 和 `blockWeight`：没写 `blockCnt` 时按 1，没写 `blockWeight` 时按 1。战斗读取属性时再叠状态和正在生效的技能修饰，见 [战斗](./02-battle.md)。`cost` 和 `respawnTime` 按单位上存放的数字读，不走这层汇总。`taunt` 是选择器里的嘲讽键。
 
 `owner` 是记账的归属 id，对核心不透明，账本按它分行，缺省时只计入全场合计，见 [战斗](./02-battle.md#账本)。`kind` 缺省时友方是 `operator`、敌方是 `enemy`；`device` 是装置，倒下就被移除。
 
@@ -89,15 +89,15 @@ interface UnitSpec {
 
 `tags` 里的每个 id 都要已注册：核心标签之外的由内容模块在 `install` 里 `registerTag`，否则 `createBattle` 报错。`token` 表示召唤物，`defer-deploy` 表示开战不上场，内置部署策略读这两个标签，见 [模块](./03-module.md)。核心标签见 [世界、组件、资源与标签](./04-world.md)。
 
-`targetPriority` 交给选择器的 `priority` 键。空字符串不改变顺序。`blocking` 是这个单位正在阻挡的单位 id。`blockedBy` 是挡住它的单位 id。`aggroSeq` 缺省按入场先后，越晚越大。
+`targetPriority` 交给选择器的 `priority` 键。空字符串不改变顺序。`blocking` 是这个单位正在阻挡的单位 id。`blockedBy` 是挡住它的单位 id。`aggroSeq` 缺省按入场先后，越晚越大；用部署策略时按部署先后重排，见 [选择器](./10-selector.md)。
 
 `hitLimit` 为真时，一次结算的数额向上取整达到 300000，这一整段取消。`immunity` 是免疫名。冻结写 `frozen`，恐惧和战栗写 `feared`，其余与效果 id 相同。见 [效果与属性](./09-status.md)。`conditionalEffects` 见 [条件效果](./09-status.md#条件效果)。
 
 `timers` 列出要启动的独立计时器 id。引擎对每一项调用 `startTimer`。缺省是空。未知 id 拒绝创建。内置 id 是 `charge`、`ammo`、`boomerang`，这三条只在友方身上启动。见 [计时](./08-timer.md)。
 
-`route` 的检查点是 `move`、`wait`、`disappear`、`appear`，可以再带一个 `end`。敌人在敌人槽里沿这条路线走。`FLY` 直飞检查点，地面走流场。每秒移动的格数是汇总后的 `moveSpeed × 0.5`，`sluggish` 这类修饰算在里面。正在走恐惧或诱导时，这一拍不沿路线走。`disappear` 给单位加上路线隐藏，快照多一个 `hidden` 标志。`blockedBy` 已经指向某个单位时，这一拍不再沿路线走。走到 `end` 且那一格不是 `objective` 时停住。
+`route` 的检查点是 `move`、`wait`、`disappear`、`appear`，可以再带一个 `end`。敌人在敌人槽里沿这条路线走。`FLY` 直飞检查点，地面走流场。每秒移动的格数是汇总后的 `moveSpeed × 0.5`，`sluggish` 这类修饰算在里面。正在走恐惧或诱导时，这一拍不沿路线走；带恐惧标签时也不沿路线走。`disappear` 给单位加上路线隐藏，快照多一个 `hidden` 标志。`blockedBy` 已经指向某个单位时，这一拍不再沿路线走。走到 `end` 且那一格不是 `objective` 时停住。
 
-`redeployMul` 乘在再部署等待秒数上，缺省 1。`rangeExtend` 把攻击范围每一行再往前延伸这么多格，见 [选择器](./10-selector.md)。`massLevel` 参与推和拉的受力等级。
+`redeployMul` 乘在再部署等待秒数上，缺省 1。`rangeExtend` 与 `rangeExtendBase` 把攻击范围每一行再往前延伸两者之和那么多格，见 [选择器](./10-selector.md)。`rangeExtendBase` 是永久的攻击距离：整场部署期间一直在、不随技能或限时效果结束的延伸（模组、天赋、常驻增益）；随技能或限时效果撤下的写进 `rangeExtend`。技能触发只看 `rangeExtendBase`，见 [技能](./06-skill.md)。`massLevel` 参与推和拉的受力等级。
 
 ## 技能规格
 

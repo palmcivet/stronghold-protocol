@@ -21,7 +21,11 @@ description: 技力、充能和触发在 skill-point 上走，技能体在 skill
 
 眩晕、冻结、浮空让单位不能行动，不暂停 `time` 的回复。`no-sp` 挡住时间、攻击、受击和 `gainSp`。
 
-技力攒到 `spCost` 得到一层，然后重新累计。层数已满时技力停在这一层的花费上。`spCost` 不大于 0 时直接给满层。
+技力攒到当前花费得到一层，然后重新累计。层数已满时技力停在这一层的花费上。花费不大于 0 时直接给满层。
+
+当前花费是 `floor(spCost × spCostMul + spCostFlat)`，不低于 0；`spCostMul` 缺省 1，`spCostFlat` 缺省 0，都走属性汇总，可以由效果修饰。两个属性都是缺省值时就是 `spCost`。花费变了之后的下一拍，技力超过花费的部分换成层数，层数满了就停在花费上；变成免费时直接满层。快照的 `spCost` 是当前花费。
+
+单位倒下时，开着的技能（包括被动）以 `death` 结束，修饰随之撤下；被撤下时以 `retreat` 结束。再部署按入场重新打开技能。
 
 `MANUAL` 在开战部署后，以及每次释放后，进入 `AUTO_OP_COOLDOWN`（3 秒）才再次自动释放。`AUTO` 不等。规格刷出时装上技能计时，不加这 3 秒。`castSkill` 不受这层冷却拦住，但会重新开始冷却。
 
@@ -35,7 +39,8 @@ description: 技力、充能和触发在 skill-point 上走，技能体在 skill
 
 | id | 何时算满足 |
 | --- | --- |
-| `DEFAULT` | 治疗技能看攻击范围内有没有生命未满的友方；否则看攻击范围内有没有可选的敌人。打不中飞行单位时不包括飞行敌人 |
+| `DEFAULT` | 这里的攻击范围只加永久攻击距离 `rangeExtendBase`，不加 `rangeExtend`。治疗技能看攻击范围内有没有生命未满的友方；否则看攻击范围内有没有可选的敌人，自己挡着的敌人不在范围里也算。打不中飞行单位时不包括飞行敌人。普攻的 `attackShape.filters` 不过筛的敌人不算 |
+| `ACTIVE_RANGE` | 条件和 `DEFAULT` 相同，只是范围换成触发范围（技能持续时的攻击范围）；没有触发范围时同 `DEFAULT`。触发范围也加 `rangeExtendBase`，技能带 `no-range-extend` 标记时不加。不等攻击 |
 | `SKILL_RANGE` | 要求友方时，在触发范围里找生命比例不超过 `triggerHpAtMost` 的受伤友方；没有触发范围则用攻击范围。不要求友方且没有触发范围时同 `DEFAULT`。否则触发范围内有敌人即可，不看不可选中和隐匿，飞行也算 |
 | `TAKE_DAMAGE` | 这次 `damaged` 正在询问 |
 | `SP_FULL` | 总是满足。`ALWAYS` 归一化成这个 id |
@@ -44,7 +49,9 @@ description: 技力、充能和触发在 skill-point 上走，技能体在 skill
 | `GDGLOW_SKILL_2` | 治疗技能看场上有没有生命未满的友方；否则看场上有没有可选的敌人，飞行也算 |
 | `NEVER` | 不满足。`MANUAL` 归一化成这个 id |
 
-`SP_FULL`、`SEARCH`、`CUSTOM_RANGE`、`SKILL_RANGE`、`GDGLOW_SKILL_2` 每个技力拍都问。`DEFAULT` 等这一拍的攻击会命中再问；单位带 `no-attack` 时不等攻击。`TAKE_DAMAGE` 在 `damaged` 时问。
+`SP_FULL`、`SEARCH`、`CUSTOM_RANGE`、`SKILL_RANGE`、`ACTIVE_RANGE`、`GDGLOW_SKILL_2` 每个技力拍都问。
+
+内容可以用 `setTriggerArea(unitId, key, area)` 登记技能触发区域：`area` 是绝对格子，或 `{ unitId }`（那名单位当前的攻击范围），`null` 撤下。区域里有敌人（飞行的也算）时，这名单位的非治疗技能，只要触发不是上面这些每拍问的，也不是 `TAKE_DAMAGE`、`NEVER`，就在这个技力拍按 `DEFAULT` 释放，攻击者也不等攻击。`DEFAULT` 等这一拍的攻击会命中再问；单位带 `no-attack` 时不等攻击。`TAKE_DAMAGE` 在 `damaged` 时问。
 
 治疗技能的 `triggerHpAtMost` 缺省是 1，也就是不满血即可。未知触发标识拒绝创建。
 

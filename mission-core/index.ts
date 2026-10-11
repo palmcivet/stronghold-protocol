@@ -60,7 +60,14 @@ export type {
   PalsyInterruptEvent,
   StatusEvent,
   UnitEvent,
+  InputEvent,
+  AttackHitEvent,
+  InputRefusedEvent,
 } from "#contract/event.js"
+export type { BattleInput, BattleInputType } from "#contract/input.js"
+export { BATTLE_INPUT_TYPES } from "#contract/input.js"
+export type { CommandRefusal, RedeployOrder, TriggerArea } from "#contract/input.js"
+export type { InputRefusal } from "#battle/input.js"
 export type { BattleLedger, BattleResult, LedgerRow } from "#contract/result.js"
 export type { BattleSnapshot, RedeploySnapshot, SkillSnapshot, UnitSnapshot } from "#contract/snapshot.js"
 
@@ -86,6 +93,7 @@ export { defineAttribute, MULTIPLIER_ATTRIBUTES } from "#ability/effect/attribut
 export { defineEffect, type EffectOptions } from "#ability/effect/index.js"
 export { defineCondition, ENEMIES_IN_RANGE } from "#ability/effect/condition.js"
 export { STACKINGS } from "#ability/effect/stacking.js"
+export { ELEMENT_ORDER } from "#combat/element/index.js"
 export type {
   AttributeModifier,
   DamageInfo,
@@ -119,6 +127,7 @@ export type {
   ExtensibleContract,
   ExtensibleDefinitions,
   HitChange,
+  EffectChange,
   HpChange,
   SkillHookDefinition,
   StackingDefinition,
@@ -135,6 +144,7 @@ export {
   AIRBORNE,
   ATTRACT,
   BIND,
+  GROUNDBIND,
   BLOCK_FLY,
   BURST_LOCK,
   CAMOU,
@@ -142,6 +152,7 @@ export {
   CANNOT_ATTACK,
   CANNOT_CAST,
   NO_MOVE,
+  ATTACK_MOVES,
   CAN_HIT_FLY,
   COLD,
   CORE_TAGS,
@@ -164,6 +175,7 @@ export {
   NO_BLOCK,
   NO_DISPLACE,
   NO_HEAL,
+  ALLY_TARGET,
   NO_SP,
   REVEAL,
   SILENCE,
@@ -212,7 +224,7 @@ export { DEPLOY_STRATEGY, deployModule } from "#unit/deploy/index.js"
 export { leakModule } from "#unit/leak/index.js"
 export {
   BOOMERANG_RETURN_SPEED,
-  CHAIN_HEAL_RADIUS,
+  CHAIN_HEAL_REACH,
   PROJECTILE_KIND_SPEEDS,
   PROJECTILE_RETAIN,
   PROJECTILE_RETURN_SPEEDS,

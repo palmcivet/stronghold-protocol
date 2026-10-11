@@ -110,7 +110,7 @@ test("恐惧沿扇形走，倒地时先落到计划终点", () => {
   expect(downed?.data.x).not.toBe(2)
 })
 
-test("displace 带位移时长与是否保持朝向：推拉保持朝向，显式关掉或直接移动不保持", () => {
+test("displace 带位移时长与是否保持朝向：推的时长是失衡秒数（受力等级 1 是 0.9 秒），直接移动是 0；推拉保持朝向，显式关掉或直接移动不保持", () => {
   const battle = createBattle(
     spec({
       modules: [DEPLOY_STRATEGY, "move"],
@@ -148,8 +148,47 @@ test("displace 带位移时长与是否保持朝向：推拉保持朝向，显�
     .filter((event) => event.type === "displace")
     .map((event) => (event.type === "displace" ? [event.data.unitId, event.data.duration, event.data.keepFacing] : []))
   expect(moves).toEqual([
-    ["e", 0, true],
-    ["f", 0, false],
+    ["e", 0.9, true],
+    ["f", 0.9, false],
     ["a", 0, false],
   ])
+})
+
+test("受力等级读修饰之后的重量：重量 4 挨中力不动，减 1 后按 −2 推 0.12 格；重量不低于 0，基础值不变", () => {
+  const moved: number[] = []
+  const read: number[] = []
+  const module: MissionModule = {
+    id: "mass",
+    install(ctx) {
+      ctx.registerSystem({
+        id: "mass",
+        slot: "schedule",
+        priority: 0,
+        run(runCtx) {
+          if (runCtx.tick() !== 0) return
+          runCtx.shift(SHIFT_PUSH, "e", { force: 1, fromX: -1, fromY: 0 })
+          runCtx.setModifier("e", "weightless", [{ attribute: "massLevel", op: "add", value: -1 }])
+          read.push(runCtx.attribute("e", "massLevel"))
+          runCtx.shift(SHIFT_PUSH, "e", { force: 1, fromX: -1, fromY: 0 })
+          runCtx.setModifier("e", "feather", [{ attribute: "massLevel", op: "add", value: -10 }])
+          read.push(runCtx.attribute("e", "massLevel"))
+          runCtx.clearModifier("e", "weightless")
+          runCtx.clearModifier("e", "feather")
+          read.push(runCtx.attribute("e", "massLevel"))
+        },
+      })
+      ctx.subscribe("displace", (event) => {
+        moved.push(event.data.x)
+      })
+    },
+  }
+  const battle = createBattle(
+    spec({ modules: ["mass"], tiles: lane, units: [ally("e", { side: "enemy", x: 1, attributes: { hp: 10, massLevel: 4, moveSpeed: 0 } })] }),
+    [module],
+  )
+  battle.step()
+  battle.drainEvents()
+  expect(moved).toHaveLength(1)
+  expect(moved[0]).toBeCloseTo(1.12, 6)
+  expect(read).toEqual([3, 0, 4])
 })

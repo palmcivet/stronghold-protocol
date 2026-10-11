@@ -1,6 +1,6 @@
 import type { ElementHitEvent, FatalEvent, HitEvent } from "#contract/event.js"
 import type { ContentContext, HealOptions } from "#port/context.js"
-import type { DamageInfo, DamageOrigin, DamagePreview, HitChange, HpChange } from "#port/definition.js"
+import type { DamageInfo, DamageOrigin, DamagePreview, EffectDefinition, HitChange, HpChange } from "#port/definition.js"
 import type { BattleRegistry } from "#port/definition.js"
 import { BOSS_HIT_LIMIT, MIN_DAMAGE_RATIO } from "#combat/damage/constants.js"
 import { canonicalKind, clamp01, mitigate, type Penetration } from "#combat/damage/formula.js"
@@ -13,7 +13,7 @@ import { peekGauges } from "#combat/element/gauge.js"
 import { hasHitLimit } from "#combat/damage/limit.js"
 import { overhealOf, setOverheal } from "#combat/damage/shield.js"
 import { isFlying, type UnitState } from "#unit/record/index.js"
-import { applyEffect } from "#ability/effect/index.js"
+import { applyEffect, removeEffect } from "#ability/effect/index.js"
 import { hasTag } from "#kernel/world/tag.js"
 import {
   BURST_LOCK,
@@ -26,6 +26,9 @@ import {
   NO_HEAL,
   SLEEP,
 } from "#port/tag.js"
+
+/** 护盾数值小于这个就算用完。 */
+const SHIELD_EPSILON = 1e-9
 
 export function registerDamageSteps(state: BattleWorld, registry: BattleRegistry): void {
   registry.registerDamageStep({
@@ -127,10 +130,11 @@ export function registerDamageSteps(state: BattleWorld, registry: BattleRegistry
   registry.registerDamageStep({
     id: "shield",
     priority: 600,
-    apply(info, _ctx, pass) {
+    apply(info, ctx, pass) {
       if (skipHp(info)) return
       const target = requireUnit(state, info.targetId)
-      info.amount = absorb(state, target, info.amount, !pass.preview)
+      info.amount = absorb(state, registry, target, info.kind, info.amount, !pass.preview)
+      if (!pass.preview) dropSpentShields(state, registry, ctx, target)
     },
   })
   registry.registerDamageStep({
@@ -293,10 +297,16 @@ function applyLife(
   if (hp <= 0) knockDown(state, registry, ctx, unit.id)
 }
 
-function absorb(state: BattleWorld, unit: UnitState, amount: number, commit: boolean): number {
+function absorb(state: BattleWorld, registry: BattleRegistry, unit: UnitState, kind: string, amount: number, commit: boolean): number {
   if (!(amount > 0)) return 0
   let rest = amount
-  for (const status of unit.effects) {
+  // 效果上的护盾按施加先后用，写了 shieldType 的只挡那几种伤害
+  const canonical = canonicalKind(kind)
+  const shields = unit.effects.filter((status) => {
+    const types = registry.requireEffect(status.id).shieldType
+    return types === undefined || types.some((type) => canonicalKind(type) === canonical)
+  })
+  for (const status of shields) {
     if (!(rest > 0)) break
     if (status.shieldHits > 0) {
       if (commit) status.shieldHits -= 1
@@ -308,7 +318,7 @@ function absorb(state: BattleWorld, unit: UnitState, amount: number, commit: boo
     if (commit) unit.attributes.shieldHits = hits - 1
     return 0
   }
-  for (const status of unit.effects) {
+  for (const status of shields) {
     if (!(rest > 0)) break
     if (!(status.shield > 0)) continue
     const take = Math.min(status.shield, rest)
@@ -328,6 +338,26 @@ function absorb(state: BattleWorld, unit: UnitState, amount: number, commit: boo
     rest -= take
   }
   return rest
+}
+
+/** 只带护盾的效果（没有别的修饰、标签与回调）护盾用完时取下；还带别的东西的留着到期。 */
+function dropSpentShields(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext, unit: UnitState): void {
+  const spent = new Set<string>()
+  for (const status of unit.effects) {
+    if (status.dropped || status.shield > SHIELD_EPSILON || status.shieldHits > 0) continue
+    if (status.runtimeModifiers.length > 0 || !shieldOnly(registry.requireEffect(status.id))) continue
+    spent.add(status.id)
+  }
+  for (const effectId of spent) {
+    const live = unit.effects.some((status) => status.id === effectId && !status.dropped && (status.shield > SHIELD_EPSILON || status.shieldHits > 0))
+    if (!live) removeEffect(state, registry, ctx, unit.id, effectId)
+  }
+}
+
+function shieldOnly(definition: EffectDefinition): boolean {
+  if (definition.modifiers.length === 0) return false
+  if (definition.grantsTags.length > 0 || definition.scale || definition.onTick || definition.onApply) return false
+  return definition.modifiers.every((modifier) => modifier.attribute === "shield" || modifier.attribute === "shieldHits")
 }
 
 // MARK: info
@@ -385,7 +415,7 @@ function reviseHit(
   const start = info.mul ?? 1
   const change: HitChange = { ...originOf(info), amount: info.amount, mul: start, kind: info.kind, cancel: false }
   for (const modifier of registry.damageModifiers(stage)) {
-    if (modifier.stage === "hp") continue
+    if (modifier.stage !== "hit" && modifier.stage !== "element-hit") continue
     const before = { amount: change.amount, mul: change.mul, kind: change.kind }
     modifier.modify(change, ctx)
     if (typeof change.amount !== "number" || !Number.isFinite(change.amount)) change.amount = before.amount

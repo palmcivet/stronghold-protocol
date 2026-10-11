@@ -11,8 +11,8 @@ import { hypot } from "#kernel/math/hypot.js"
 import { powi } from "#kernel/math/powi.js"
 import { routeHidden } from "#field/grid/route.js"
 
-/** 治疗链在主目标周围找下一名友方的半径，格。 */
-export const CHAIN_HEAL_RADIUS = 2.5
+/** 治疗链缺省的跳跃范围：上一个人所在格子周围这么多格（切比雪夫距离）。 */
+export const CHAIN_HEAL_REACH = 1
 
 /** 回旋物飞回投掷者的速度，格/秒。 */
 export const BOOMERANG_RETURN_SPEED = 3.75
@@ -185,7 +185,7 @@ function resolveChain(
   if (!start || !attacker) return
   const count = Math.max(1, Math.floor(finite(chain.count, 1)))
   const falloff = finite(chain.falloff, 0)
-  const radius = chain.radius !== undefined && chain.radius > 0 ? chain.radius : CHAIN_HEAL_RADIUS
+  const radius = chain.radius !== undefined && chain.radius > 0 ? chain.radius : null
   const seen = new Set<string>([start.id])
   let prev = start
   for (let jump = 1; jump < count; jump += 1) {
@@ -296,7 +296,7 @@ function lowestAlly(
   registry: BattleRegistry,
   attacker: UnitState,
   prev: UnitState,
-  radius: number,
+  radius: number | null,
   seen: ReadonlySet<string>,
 ): UnitState | null {
   let best: UnitState | null = null
@@ -304,11 +304,10 @@ function lowestAlly(
   for (const unit of state.units.values()) {
     if (seen.has(unit.id) || unit.side !== attacker.side) continue
     if (!present(state, unit) || hasTag(unit, NO_HEAL)) continue
-    if (!injured(unit, registry)) continue
-    const distance = hypot(unit.x - prev.x, unit.y - prev.y)
-    if (distance > radius + 1e-9) continue
+    if (!chainReach(prev, unit, radius)) continue
+    // 满血的也能跳，按比例自然排在受伤的后面；同比例时最晚部署的在前
     const ratio = hpRatio(unit, registry)
-    if (best === null || ratio < bestRatio - 1e-9 || (Math.abs(ratio - bestRatio) <= 1e-9 && unit.spawnSeq < best.spawnSeq)) {
+    if (best === null || ratio < bestRatio - 1e-9 || (Math.abs(ratio - bestRatio) <= 1e-9 && unit.aggroSeq > best.aggroSeq)) {
       best = unit
       bestRatio = ratio
     }
@@ -316,8 +315,10 @@ function lowestAlly(
   return best
 }
 
-function injured(unit: UnitState, registry: BattleRegistry): boolean {
-  return (unit.attributes.hp ?? 0) + 1e-6 < maxHpOf(unit, registry)
+/** 缺省跳到上一个人周围 3×3 的格子；写了半径时按直线距离。 */
+function chainReach(prev: UnitState, unit: UnitState, radius: number | null): boolean {
+  if (radius !== null) return hypot(unit.x - prev.x, unit.y - prev.y) <= radius + 1e-9
+  return Math.abs(Math.round(unit.x) - Math.round(prev.x)) <= CHAIN_HEAL_REACH && Math.abs(Math.round(unit.y) - Math.round(prev.y)) <= CHAIN_HEAL_REACH
 }
 
 function hpRatio(unit: UnitState, registry: BattleRegistry): number {

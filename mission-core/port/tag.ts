@@ -27,6 +27,9 @@ export const DISARM: TagKey = defineTag("disarm", { meaning: "disarmed", implies
 
 export const BIND: TagKey = defineTag("bind", { meaning: "bound in place" })
 
+/** 缚地。敌方空中单位算作地面单位，浮空时除外。 */
+export const GROUNDBIND: TagKey = defineTag("groundbind", { meaning: "grounded: an airborne enemy counts as a ground unit" })
+
 export const FEAR: TagKey = defineTag("fear", { meaning: "feared; runs away from the source" })
 
 export const ATTRACT: TagKey = defineTag("attract", { meaning: "drawn toward a point" })
@@ -97,14 +100,17 @@ export const AIRBORNE: TagKey = defineTag("airborne", { meaning: "counts as airb
 /** 浮空。 */
 export const LEVITATE: TagKey = defineTag("levitate", { meaning: "levitated", implies: [AIRBORNE] })
 
-/** 近地悬浮。 */
-export const FLOAT: TagKey = defineTag("float", { meaning: "hovering", implies: [AIRBORNE] })
-
 /** 位移免疫。 */
 export const NO_DISPLACE: TagKey = defineTag("no-displace", { meaning: "immune to forced movement" })
 
+/** 近地悬浮：算空中单位，仍走地面路线；位移免疫（失衡免疫）。 */
+export const FLOAT: TagKey = defineTag("float", { meaning: "hovering", implies: [AIRBORNE, NO_DISPLACE] })
+
 /** 静态刚体：不被位移。 */
 export const STATIC_BODY: TagKey = defineTag("static-body", { meaning: "static body; never displaced" })
+
+/** 不停止移动：敌人出手前后都不站定，边走边打。 */
+export const ATTACK_MOVES: TagKey = defineTag("attack-moves", { meaning: "keeps walking through its attacks" })
 
 /** 不在场上可见。快照给路线消失的单位写上它。 */
 export const HIDDEN: TagKey = defineTag("hidden", { meaning: "not visible on the field" })
@@ -126,6 +132,9 @@ export const HEAL_FREE: TagKey = defineTag("heal-free", { meaning: "refuses heal
 /** 禁疗。治疗来自自己时不拦。 */
 export const NO_HEAL: TagKey = defineTag("no-heal", { meaning: "cannot be healed by others" })
 
+/** 友方目标：同阵营的普攻在范围里也选它，排在所有敌人之后。 */
+export const ALLY_TARGET: TagKey = defineTag("ally-target", { meaning: "selected by allied normal attacks after every enemy" })
+
 /** 元素损伤不累积、不爆发。撤销时清空元素槽。 */
 export const BURST_LOCK: TagKey = defineTag("burst-lock", { meaning: "element damage neither builds up nor bursts" })
 
@@ -140,8 +149,12 @@ export const TOKEN: TagKey = defineTag("token", { meaning: "summoned token; depl
 /** 开战不上场，初始格子留给它。 */
 export const DEFER_DEPLOY: TagKey = defineTag("defer-deploy", { meaning: "stays off the field at the opening" })
 
+/** 技能的标记：ACTIVE_RANGE 的触发范围不加永久攻击距离（技能范围不受攻击距离影响）。 */
+export const NO_RANGE_EXTEND: TagKey = defineTag("no-range-extend", { meaning: "skill range ignores permanent range extension" })
+
 /** 引擎认识的全部标签。每场战斗开始时注册。 */
 export const CORE_TAGS: readonly TagKey[] = [
+  ATTACK_MOVES,
   CANNOT_ACT,
   CANNOT_ATTACK,
   CANNOT_CAST,
@@ -152,6 +165,7 @@ export const CORE_TAGS: readonly TagKey[] = [
   SILENCE,
   DISARM,
   BIND,
+  GROUNDBIND,
   FEAR,
   ATTRACT,
   TREMBLE,
@@ -181,8 +195,10 @@ export const CORE_TAGS: readonly TagKey[] = [
   HIT_SLEEP,
   HEAL_FREE,
   NO_HEAL,
+  ALLY_TARGET,
   BURST_LOCK,
   NO_SP,
   TOKEN,
   DEFER_DEPLOY,
+  NO_RANGE_EXTEND,
 ]

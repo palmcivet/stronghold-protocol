@@ -1,10 +1,10 @@
 import type { ContentContext } from "#port/context.js"
-import type { EffectApplication, EffectDefinition, EffectIncoming } from "#port/definition.js"
+import type { EffectApplication, EffectChange, EffectDefinition, EffectIncoming } from "#port/definition.js"
 import type { BattleRegistry } from "#port/definition.js"
 import { requireUnit, type BattleWorld } from "#unit/record/index.js"
 import { clearElements } from "#combat/element/index.js"
 import { overhealOf, setOverheal } from "#combat/damage/shield.js"
-import { immuneTo, refuseEffect, shortenControlled } from "#ability/effect/catalog.js"
+import { immuneTo, refuseEffect } from "#ability/effect/catalog.js"
 import { refreshTags } from "#ability/effect/tag.js"
 import { resumeWait } from "#ability/effect/stacking.js"
 import { cancelTimer, startTimer } from "#unit/record/timer.js"
@@ -32,6 +32,10 @@ export interface EffectOptions {
   readonly onApply?: EffectDefinition["onApply"]
   readonly onTick?: EffectDefinition["onTick"]
   readonly onRemove?: EffectDefinition["onRemove"]
+  /** 友方倒下或撤下后仍留着。 */
+  readonly keepOnDown?: boolean
+  /** 护盾只挡的伤害种类。 */
+  readonly shieldType?: readonly string[]
 }
 
 /** 写出一份效果定义。时长与间隔按秒给出，换成效果计时器的拍数。 */
@@ -55,6 +59,8 @@ export function defineEffect(id: string, options: EffectOptions = {}): EffectDef
     ...(options.onApply ? { onApply: options.onApply } : {}),
     ...(options.onTick ? { onTick: options.onTick } : {}),
     ...(options.onRemove ? { onRemove: options.onRemove } : {}),
+    ...(options.keepOnDown === true ? { keepOnDown: true } : {}),
+    ...(options.shieldType ? { shieldType: [...options.shieldType] } : {}),
   }
 }
 
@@ -90,27 +96,74 @@ export function applyEffect(
   if (immuneTo(state, registry, unit, effectId) || refuseEffect(unit, effectId)) return
   const span = spanOf(application?.duration, definition)
   if (!span) return
-  const incoming: EffectIncoming = {
-    ...span,
+  const change = reviseApplication(registry, ctx, {
+    unitId,
+    effectId,
+    sourceId: application?.sourceId ?? null,
+    ticks: span.ticks,
+    permanent: span.permanent,
     value: application?.value ?? definition.valued ?? 0,
+    cancel: false,
+  })
+  if (change.cancel || (!change.permanent && !(change.ticks > 0))) return
+  const incoming: EffectIncoming = {
+    permanent: change.permanent,
+    ticks: change.ticks,
+    value: change.value,
     stackAs: application?.stackAs !== undefined && Number.isFinite(application.stackAs) ? application.stackAs : null,
     at: state.tick,
   }
   if (definition.instant) {
     for (const timerId of definition.cancels) cancelTimer(state, registry, unitId, timerId)
     definition.onApply?.(unitId, 1, ctx)
-    ctx.emit("status", { unitId, statusId: effectId, stacks: 1 })
+    ctx.emit("status", { unitId, statusId: effectId, stacks: 1, entered: true })
     return
   }
+  const entered = !unit.effects.some((effect) => effect.id === effectId && !effect.dropped)
   const existing = unit.effects.find((effect) => effect.id === effectId && !effect.dropped && effect.source === null)
   const applied = registry.requireStacking(definition.stacking).apply(unit.effects, existing, incoming, definition)
   if (!applied) return
-  shortenControlled(unit, applied)
   refreshTags(registry, unit)
   for (const timerId of definition.cancels) cancelTimer(state, registry, unitId, timerId)
   startTimer(state, registry, unitId, "status")
   definition.onApply?.(unitId, applied.stacks, ctx)
-  ctx.emit("status", { unitId, statusId: effectId, stacks: applied.stacks })
+  if (applied.dropped) return
+  ctx.emit("status", { unitId, statusId: effectId, stacks: applied.stacks, entered })
+}
+
+/** 按 priority 依次跑 effect 阶段的修饰。非有限的拍数或强度回到修饰之前的值。 */
+function reviseApplication(registry: BattleRegistry, ctx: ContentContext, change: EffectChange): EffectChange {
+  for (const modifier of registry.damageModifiers("effect")) {
+    if (modifier.stage !== "effect") continue
+    const before = { ticks: change.ticks, value: change.value }
+    modifier.modify(change, ctx)
+    if (typeof change.ticks !== "number" || Number.isNaN(change.ticks) || change.ticks === Number.NEGATIVE_INFINITY) change.ticks = before.ticks
+    if (change.ticks === Number.POSITIVE_INFINITY) {
+      change.permanent = true
+      change.ticks = 0
+    }
+    if (typeof change.value !== "number" || !Number.isFinite(change.value)) change.value = before.value
+    change.permanent = change.permanent === true
+    change.cancel = change.cancel === true
+  }
+  return change
+}
+
+/**
+ * 友方倒下或撤下时取下身上的效果，定义写了 keepOnDown 的留着；取下的各调用一次 onRemove。
+ * 条件效果之后按条件照常重新判定。
+ */
+// TRACE: source/down-effects
+export function dropEffectsOnDown(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext, unit: UnitState): void {
+  if (unit.side !== "ally") return
+  const removed = unit.effects.filter((effect) => !effect.dropped && registry.requireEffect(effect.id).keepOnDown !== true)
+  if (removed.length === 0) return
+  for (const effect of removed) effect.dropped = true
+  const kept = unit.effects.filter((effect) => !effect.dropped)
+  unit.effects.length = 0
+  unit.effects.push(...kept)
+  afterRemoval(state, registry, unit, removed)
+  for (const effectId of new Set(removed.map((effect) => effect.id))) registry.requireEffect(effectId).onRemove?.(unit.id, ctx)
 }
 
 /** 取下这个效果的全部记录并调用 onRemove。 */

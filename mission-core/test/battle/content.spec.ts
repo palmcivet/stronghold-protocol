@@ -107,7 +107,7 @@ test("重复注册报冲突；只有标成可扩展的 id 能 replace 或 wrap�
     }),
   ).toThrow(RegistrationConflictError)
   expect(() =>
-    open((ctx) => ctx.replace(defineExtensible("burn", { version: 2, contract: "element" }), { id: "burn", cap: 1, resistance: 0 })),
+    open((ctx) => ctx.replace(defineExtensible("burn", { version: 2, contract: "element" }), { id: "burn", order: 2, cap: 1, resistance: 0 })),
   ).toThrow(ExtensionRefusedError)
   expect(() =>
     open((ctx) => {

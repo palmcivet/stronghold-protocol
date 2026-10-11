@@ -214,6 +214,7 @@ test("内置系统的执行顺序", () => {
     "projectile engine:projectile",
     "redeploy redeploy",
     "finale engine:modifiers",
+    "finale engine:max-hp",
   ])
 })
 

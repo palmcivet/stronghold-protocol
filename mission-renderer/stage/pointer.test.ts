@@ -33,6 +33,7 @@ function unit(id: string, x: number, y: number, tags: readonly string[] = []): U
     shield: 0,
     downed: false,
     redeploy: null,
+    unbalanceUntil: null,
     components: {},
   }
 }

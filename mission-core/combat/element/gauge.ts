@@ -6,6 +6,8 @@ export interface ElementSlot {
   locked: boolean
   /** 蓄满的数值。 */
   cap: number
+  /** 元素定义上的 order，没写时是 null，排在写了的后面。显示值一样满时取小的，再相同按 id。 */
+  order: number | null
 }
 
 /** 单位的元素槽、爆发结算中的开关与爆发击杀的记账人。 */
@@ -24,10 +26,6 @@ export interface ElementGaugeView {
   readonly ratio: number
   readonly locked: boolean
 }
-
-/** 比例相同时按这个顺序取前面的元素。 */
-// TRACE: source/element-order
-const VIEW_ORDER: readonly string[] = ["neural", "erosion", "burn", "apoptosis", "necrosis"]
 
 export const ELEMENT_GAUGES = defineComponent<ElementGauges>("element:gauges", {
   create: () => ({ slots: new Map(), bursting: false, credit: "" }),
@@ -57,8 +55,8 @@ function viewGauges(gauges: ElementGauges): ElementGaugeView | null {
     if (slot.locked) return { element, ratio: 1, locked: true }
     if (!(slot.value > 0) || !(slot.cap > 0)) continue
     const ratio = slot.value / slot.cap
-    const rank = rankOf(element)
-    if (best === null || ratio > best.ratio || (ratio === best.ratio && rank < bestRank)) {
+    const rank = slot.order ?? Infinity
+    if (best === null || ratio > best.ratio || (ratio === best.ratio && ahead(rank, element, bestRank, best.element))) {
       best = { element, ratio, locked: false }
       bestRank = rank
     }
@@ -66,7 +64,7 @@ function viewGauges(gauges: ElementGauges): ElementGaugeView | null {
   return best
 }
 
-function rankOf(element: string): number {
-  const index = VIEW_ORDER.indexOf(element)
-  return index < 0 ? VIEW_ORDER.length : index
+function ahead(order: number, element: string, bestOrder: number, bestElement: string): boolean {
+  if (order !== bestOrder) return order < bestOrder
+  return element < bestElement
 }

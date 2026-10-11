@@ -4,7 +4,7 @@ import type { BattleRegistry } from "#port/definition.js"
 import { requireUnit, type BattleWorld } from "#unit/record/index.js"
 import { attributeOf } from "#ability/effect/attribute.js"
 import { TICK } from "#kernel/tick/index.js"
-import type { EffectRecord, UnitState } from "#unit/record/index.js"
+import type { UnitState } from "#unit/record/index.js"
 import { immunityOf } from "#ability/effect/immunity.js"
 import {
   COLD_ASPD,
@@ -15,6 +15,7 @@ import {
   RESIST_CAP,
   RESIST_DEFAULT,
   RESIST_PALSY_DECAY,
+  HALVED_ON_HEAVY,
   RESISTED,
 } from "#ability/effect/constants.js"
 import { dropEffect } from "#ability/effect/tag.js"
@@ -22,6 +23,7 @@ import { hasTag, type TagKey } from "#kernel/world/tag.js"
 import {
   ATTRACT,
   BIND,
+  GROUNDBIND,
   NO_MOVE,
   CAMOU,
   COLD,
@@ -50,12 +52,13 @@ const DECAY_TICKS = ticks(RESIST_PALSY_DECAY)
 
 export function registerEffectCatalog(state: BattleWorld, registry: BattleRegistry): void {
   for (const definition of definitions(state, registry)) registry.registerEffect(definition)
+  registerApplicationModifiers(state, registry)
 }
 
-/** 飞行单位和已经浮空的单位不再接受浮空。 */
+/** 飞行单位（缚地中的除外）和已经浮空的单位不再接受浮空。 */
 export function refuseEffect(unit: UnitState, effectId: string): boolean {
   if (effectId !== "levitate") return false
-  return unit.motion === "FLY" || hasTag(unit, LEVITATE)
+  return (unit.motion === "FLY" && !hasTag(unit, GROUNDBIND)) || hasTag(unit, LEVITATE)
 }
 
 /** 单位的免疫名单或身上效果的 immunity 挡住这个效果。 */
@@ -72,12 +75,30 @@ export function immuneTo(state: BattleWorld, registry: BattleRegistry, unit: Uni
   return false
 }
 
-/** 控制效果的持续时间乘上 (1 − 抵抗)。一直持续的不缩短。 */
-export function shortenControlled(unit: UnitState, status: EffectRecord): void {
-  if (status.permanent || !RESISTED.has(status.id)) return
-  const factor = 1 - resistOf(unit)
-  if (!(factor > 0) || factor >= 1) return
-  status.remaining *= factor
+/**
+ * 内置的 effect 阶段修饰：控制效果的拍数乘上 (1 − 抵抗)；浮空与缚地在重量超过 LEVITATE_HALF_WEIGHT 时再减半。
+ * 一直持续的施加不缩短。
+ */
+function registerApplicationModifiers(state: BattleWorld, registry: BattleRegistry): void {
+  registry.registerDamageModifier({
+    id: "effect-resist",
+    stage: "effect",
+    priority: 100,
+    modify(change) {
+      if (change.permanent || !RESISTED.has(change.effectId)) return
+      const factor = 1 - resistOf(requireUnit(state, change.unitId))
+      if (factor > 0 && factor < 1) change.ticks *= factor
+    },
+  })
+  registry.registerDamageModifier({
+    id: "effect-heavy",
+    stage: "effect",
+    priority: 200,
+    modify(change) {
+      if (change.permanent || !HALVED_ON_HEAVY.has(change.effectId)) return
+      if (attributeOf(requireUnit(state, change.unitId), registry, "massLevel") > LEVITATE_HALF_WEIGHT) change.ticks /= 2
+    },
+  })
 }
 
 function definitions(state: BattleWorld, registry: BattleRegistry): readonly EffectDefinition[] {
@@ -114,6 +135,11 @@ function definitions(state: BattleWorld, registry: BattleRegistry): readonly Eff
     }),
     define({ id: "sluggish", modifiers: [{ attribute: "moveSpeed", op: "mul", value: 0.2 }] }),
     define({ id: "bind", tags: [BIND, NO_MOVE], modifiers: [{ attribute: "moveSpeed", op: "mul", value: 0 }] }),
+    define({
+      id: "groundbind",
+      tags: [GROUNDBIND, NO_MOVE],
+      modifiers: [{ attribute: "moveSpeed", op: "mul", value: 0 }],
+    }),
     define({
       id: "fragile",
       valued: 0.3,
@@ -153,13 +179,6 @@ function definitions(state: BattleWorld, registry: BattleRegistry): readonly Eff
       tags: [LEVITATE, STUN, UNBLOCKABLE, NO_DISPLACE],
       cancels: attack,
       immune: "levitate",
-      onApply(unitId) {
-        const unit = requireUnit(state, unitId)
-        const status = unit.effects.find((item) => item.id === "levitate")
-        if (!status || status.permanent) return
-        if (!(attributeOf(unit, registry, "massLevel") > LEVITATE_HALF_WEIGHT)) return
-        status.remaining /= 2
-      },
     }),
     define({ id: "palsy", stackCap: PALSY_MAX, immune: "palsy", valued: 1, stacking: "stack" }),
     define({
@@ -215,30 +234,28 @@ function definitions(state: BattleWorld, registry: BattleRegistry): readonly Eff
   ]
 }
 
+/**
+ * 第二次寒冷让单位冻结，时长取已有寒冷的剩余与这次寒冷（已按抵抗缩短）中更长的，冻结本身不再按抵抗缩短。
+ * 敌人身上的这对寒冷变成冻结，不再留下寒冷；友方的寒冷照样留着。
+ */
+// TRACE: assumed/cold-pair-max
 function freezeFromCold(state: BattleWorld, registry: BattleRegistry, ctx: ContentContext, unitId: string): void {
   const unit = requireUnit(state, unitId)
-  const cold = unit.effects.find((item) => item.id === "cold")
+  const cold = unit.effects.find((item) => item.id === "cold" && !item.dropped)
   if (!cold?.carried || immuneTo(state, registry, unit, "freeze")) return
-  const incoming = cold.permanent ? Number.POSITIVE_INFINITY : cold.remaining
-  const spans = [cold.priorRemaining, incoming].filter(
+  const spans = [cold.priorRemaining, cold.permanent ? Number.POSITIVE_INFINITY : cold.remaining].filter(
     (time) => time === Number.POSITIVE_INFINITY || (Number.isFinite(time) && time > 0),
   )
+  const wanted = spans.length === 0 ? ticks(COLD_FREEZE_DURATION) : Math.max(...spans)
+  const held = unit.effects.find((item) => item.id === "freeze" && !item.dropped)
+  const prior = held ? (held.permanent ? Number.POSITIVE_INFINITY : held.remaining) : 0
   ctx.applyEffect(unitId, "freeze")
-  const freeze = requireUnit(state, unitId).effects.find((item) => item.id === "freeze" && !item.dropped)
+  const freeze = unit.effects.find((item) => item.id === "freeze" && !item.dropped)
   if (!freeze) return
-  if (spans.length === 0) {
-    freeze.permanent = false
-    freeze.remaining = ticks(COLD_FREEZE_DURATION)
-    return
-  }
-  const longest = Math.max(...spans)
-  if (!Number.isFinite(longest)) {
-    freeze.permanent = true
-    freeze.remaining = 0
-    return
-  }
-  freeze.permanent = false
-  freeze.remaining = longest
+  const longest = Math.max(prior, wanted)
+  freeze.permanent = !Number.isFinite(longest)
+  freeze.remaining = freeze.permanent ? 0 : longest
+  if (unit.side === "enemy") ctx.removeEffect(unitId, "cold")
 }
 
 function resistOf(unit: UnitState): number {
@@ -274,5 +291,5 @@ function define(entry: {
   onTick?: EffectDefinition["onTick"]
 }): EffectDefinition {
   const { id, tags, ...options } = entry
-  return defineEffect(id, { ...(tags ? { grantsTags: tags } : {}), ...options })
+  return defineEffect(id, { stacking: "extend", ...(tags ? { grantsTags: tags } : {}), ...options })
 }

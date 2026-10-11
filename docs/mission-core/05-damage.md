@@ -44,6 +44,7 @@ interface DamageInfo {
 | `boss-limit` | 400 | `hitLimit` 打开且达到限伤时整段取消 |
 | `shield` | 600 | 先扣次数护盾，再扣数值护盾 |
 | `hp` | 1000 | 写当前生命 |
+| `effect` | 一次效果施加在免疫之后、叠加之前 | `ticks`（效果计时器的拍数）、`permanent`、`value`、`cancel` | 非有限的拍数或强度不生效；`ticks` 为 `Infinity` 时改成一直持续；拍数不是正数又不一直持续时这次不施加。内置的抵抗（`effect-resist`，priority 100）与重量减半（`effect-heavy`，priority 200）也在这一阶段 |
 
 `cancel` 为真，或种类仍是 `element` 时，后面的步骤不再写生命。模块用别的优先级插在这些 id 之间。同名再登记报 `RegistrationConflictError`；内置步骤标成可扩展，用 `replace` 或 `wrap` 换掉。
 
@@ -73,7 +74,7 @@ interface DamageInfo {
 
 ### 护盾和生命
 
-护盾先看状态上的次数，再看属性 `shieldHits`。命中次数的护盾直接吃掉这一下。然后按状态上的数值护盾和属性 `shield` 扣。
+护盾先看状态上的次数，再看属性 `shieldHits`。命中次数的护盾直接吃掉这一下。然后按状态上的数值护盾和属性 `shield` 扣。状态按施加先后用，较早的先扣。效果定义写了 `shieldType`（如 `["arts"]`、`["physical", "arts"]`，`phys` 与 `physical` 同义）时，它的次数护盾和数值护盾只挡这些种类的伤害，别的种类越过它；属性上的护盾不分种类。只带护盾的效果（修饰只有 `shield`、`shieldHits`，没有标签、`scale`、`onApply`、`onTick`）在次数与数值都用完时取下并调用 `onRemove`；带别的东西的留到到期。
 
 生命步骤把当前 `hp` 减去数额。会扣到 0 时先送出 `fatal`。`prevented` 为真时，生命留在 1 和最大生命里较小的那个。否则写下剩余生命，再送出 `damaged`。生命不大于 0 时倒地：标成已倒地、离场，送出 `downed`。有部署策略时，落点用 `downedTile`，坐标写成这个格子，事件里带上坐标和 `canStand`。内置策略 `deploy` 的落点见 [模块](./03-module.md)。
 
@@ -127,6 +128,7 @@ interface DamagePreview {
 ```ts
 interface ElementDefinition {
   id: string
+  order?: number
   cap: number
   resistance: number
   onBurst?(unitId: string, ctx: ContentContext, sourceId?: string): void
@@ -134,5 +136,7 @@ interface ElementDefinition {
 ```
 
 内置标识是 `burn`、`neural`、`apoptosis`、`erosion`、`necrosis`。槽上限先看单位基础属性 `gaugeMax`，没有则用定义上的 `cap`。内置定义的 `cap` 是 1000。
+
+快照里元素槽的显示值取最满的一槽（锁住的槽优先）。一样满时取定义上 `order` 小的那种。内置的 `order` 是 `ELEMENT_ORDER`：`neural` 0、`erosion` 1、`burn` 2、`apoptosis` 3、`necrosis` 4。模块加的元素用 `order` 排进它们之间，例如 1.5 排在侵蚀和灼燃之间；不写 `order` 时排在全部写了的之后。`order` 相同（包括都没写）时按 id 的字典序。
 
 `kind` 为 `element` 的伤害写入 `info.element` 这一个槽。`addElement(unitId, elementId, amount)` 把数量直接加进这个标识的槽。蓄满后这个槽锁定，并调用 `onBurst`。爆发是无来源伤害，不吃填槽者的伤害乘算和穿透，击杀仍记在填槽者上。爆发期间该单位任何元素都不再进槽。内置的五种会施加爆发状态。冷却结束时该单位的槽归零。

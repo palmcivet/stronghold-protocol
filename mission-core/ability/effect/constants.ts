@@ -7,7 +7,7 @@ export const FREEZE_RES_DOWN = 15
 /** 两边寒冷都没有时长时，冻结使用的秒数。 */
 export const COLD_FREEZE_DURATION = 3
 
-/** 重量超过这个值时，浮空持续时间减半。 */
+/** 重量超过这个值时，浮空与缚地的持续时间减半。 */
 export const LEVITATE_HALF_WEIGHT = 3
 
 /** 抵抗默认减掉的持续时间比例，最高按 0.95 计。 */
@@ -32,8 +32,12 @@ export const RESISTED: ReadonlySet<string> = new Set([
   "attract",
   "levitate",
   "bind",
+  "groundbind",
   "silence",
   "disarm",
   "sluggish",
   "slow",
 ])
+
+/** 重量超过 LEVITATE_HALF_WEIGHT 时持续时间减半的状态。 */
+export const HALVED_ON_HEAVY: ReadonlySet<string> = new Set(["levitate", "groundbind"])

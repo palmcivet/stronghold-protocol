@@ -130,8 +130,8 @@ test("元素视图取最满的一槽，一样满按官方元素先后，爆发�
   const module: MissionModule = {
     id: "elements",
     install(ctx) {
-      ctx.replace(defineExtensible("burn", { version: 1, contract: "element" }), { id: "burn", cap: 10, resistance: 0 })
-      ctx.replace(defineExtensible("neural", { version: 1, contract: "element" }), { id: "neural", cap: 10, resistance: 0 })
+      ctx.replace(defineExtensible("burn", { version: 1, contract: "element" }), { id: "burn", order: 2, cap: 10, resistance: 0 })
+      ctx.replace(defineExtensible("neural", { version: 1, contract: "element" }), { id: "neural", order: 0, cap: 10, resistance: 0 })
       ctx.registerSystem({
         id: "charge",
         slot: "schedule",
@@ -153,6 +153,70 @@ test("元素视图取最满的一槽，一样满按官方元素先后，爆发�
   battle.step()
   expect(unitIn(battle, "a").components["element:gauges"]).toEqual({ element: "neural", ratio: 1, locked: true })
   expect(unitIn(battle, "b").components).not.toHaveProperty("element:gauges")
+})
+
+test("模块加的元素按定义上的 order 排进内置元素之间，一样满时 order 小的在前", () => {
+  const charges: readonly [string, number][] = [["burn", 300], ["frost", 300], ["erosion", 300]]
+  const module: MissionModule = {
+    id: "elements",
+    install(ctx) {
+      ctx.registerElement({ id: "frost", order: 1.5, cap: 1000, resistance: 0 })
+      ctx.registerSystem({
+        id: "charge",
+        slot: "schedule",
+        priority: 1,
+        run(runCtx) {
+          if (runCtx.tick() === 0) for (const [element, amount] of charges) runCtx.addElement("a", element, amount)
+        },
+      })
+    },
+  }
+  const battle = createBattle(spec({ modules: ["elements"], units: [ally("a", { attributes: { hp: 1e6, maxHp: 1e6 } })] }), [module])
+  battle.step()
+  expect(unitIn(battle, "a").components["element:gauges"]).toEqual({ element: "erosion", ratio: 0.3, locked: false })
+  const late: MissionModule = {
+    id: "late",
+    install(ctx) {
+      ctx.registerElement({ id: "frost", order: 1.5, cap: 1000, resistance: 0 })
+      ctx.registerSystem({
+        id: "charge",
+        slot: "schedule",
+        priority: 1,
+        run(runCtx) {
+          if (runCtx.tick() === 0) for (const [element, amount] of [["burn", 300], ["frost", 300]] as const) runCtx.addElement("a", element, amount)
+        },
+      })
+    },
+  }
+  const ahead = createBattle(spec({ modules: ["late"], units: [ally("a", { attributes: { hp: 1e6, maxHp: 1e6 } })] }), [late])
+  ahead.step()
+  expect(unitIn(ahead, "a").components["element:gauges"]).toEqual({ element: "frost", ratio: 0.3, locked: false })
+})
+
+test("元素没写 order 时排在内置元素之后，order 相同时按 id 的字典序", () => {
+  function shown(elements: readonly { id: string; order?: number }[], charged: readonly string[]): unknown {
+    const module: MissionModule = {
+      id: "elements",
+      install(ctx) {
+        for (const element of elements) ctx.registerElement({ ...element, cap: 1000, resistance: 0 })
+        ctx.registerSystem({
+          id: "charge",
+          slot: "schedule",
+          priority: 1,
+          run(runCtx) {
+            if (runCtx.tick() === 0) for (const element of charged) runCtx.addElement("a", element, 300)
+          },
+        })
+      },
+    }
+    const battle = createBattle(spec({ modules: ["elements"], units: [ally("a", { attributes: { hp: 1e6, maxHp: 1e6 } })] }), [module])
+    battle.step()
+    return unitIn(battle, "a").components["element:gauges"]
+  }
+  expect(shown([{ id: "aqua" }], ["aqua", "necrosis"])).toEqual({ element: "necrosis", ratio: 0.3, locked: false })
+  expect(shown([{ id: "zinc" }, { id: "aqua" }], ["zinc", "aqua"])).toEqual({ element: "aqua", ratio: 0.3, locked: false })
+  expect(shown([{ id: "zinc", order: 1 }], ["zinc", "erosion"])).toEqual({ element: "erosion", ratio: 0.3, locked: false })
+  expect(shown([{ id: "able", order: 1 }], ["erosion", "able"])).toEqual({ element: "able", ratio: 0.3, locked: false })
 })
 
 test("弹药技能持续时快照带剩余弹药与弹匣，其余时候是 null，技力照常给出", () => {

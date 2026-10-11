@@ -162,7 +162,7 @@ ctx.revokeTag(unitId, CHARMED, "mark:charm")
 | `CAN_HIT_FLY` | `can-hit-fly` | 普攻能打飞行单位 |
 | `AIRBORNE` | `airborne` | 视为空中，敌人带着它算空中单位 |
 | `LEVITATE` | `levitate` | 浮空，蕴含 `airborne` |
-| `FLOAT` | `float` | 近地悬浮，蕴含 `airborne` |
+| `FLOAT` | `float` | 近地悬浮，蕴含 `airborne` 与 `no-displace`：算空中单位（只有能对空的才挡得住、打得到），仍走地面路线，推拉移不动 |
 | `NO_DISPLACE` | `no-displace` | 位移免疫 |
 | `STATIC_BODY` | `static-body` | 静态刚体：不被位移 |
 | `HIDDEN` | `hidden` | 不在场上可见，快照给路线消失的单位写上它 |
@@ -171,10 +171,12 @@ ctx.revokeTag(unitId, CHARMED, "mark:charm")
 | `HIT_SLEEP` | `hit-sleep` | 攻击者能打到沉睡的目标 |
 | `HEAL_FREE` | `heal-free` | 不接受治疗，生命回复与指明忽略的除外 |
 | `NO_HEAL` | `no-heal` | 禁疗，来自自己的治疗除外 |
+| `ALLY_TARGET` | `ally-target` | 友方目标：同阵营的普攻也选它，排在敌人之后 |
 | `BURST_LOCK` | `burst-lock` | 元素损伤不累积、不爆发 |
 | `NO_SP` | `no-sp` | 阻回：技力不自然回复，也不接受外界给予 |
 | `TOKEN` | `token` | 召唤物，开战排在干员后面 |
 | `DEFER_DEPLOY` | `defer-deploy` | 开战不上场，初始格子留给它 |
+| `NO_RANGE_EXTEND` | `no-range-extend` | 技能标记：`ACTIVE_RANGE` 的触发范围不加永久攻击距离 |
 
 沉睡蕴含 `cannot-act`、`no-block`、`unblockable`：不能行动、不阻挡、不被阻挡。其余由各处查 `sleep`：选择器的 `sleep` 一项与范围效果去掉沉睡的单位，治疗的名单不带 `sleep` 一项，照常选中沉睡的友方；伤害挡下打向沉睡目标的一击，忽略沉睡的伤害与带 `hit-sleep` 的攻击者照常命中。眩晕的状态另授 `no-block`，被眩晕的干员放开所挡的敌人。
 

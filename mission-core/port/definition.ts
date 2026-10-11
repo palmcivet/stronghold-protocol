@@ -35,6 +35,8 @@ export interface EffectApplication {
   readonly value?: number
   /** 取最高时拿来比较的强度，缺省用 value。效果本身仍按 value 生效。 */
   readonly stackAs?: number
+  /** 施加者，交给 effect 阶段的修饰。 */
+  readonly sourceId?: string
 }
 
 /** 叠加策略看到的这一次施加，时长已经换成效果计时器的拍数。 */
@@ -112,6 +114,10 @@ export interface EffectDefinition {
   onTick?(unitId: string, stacks: number, ctx: ContentContext): void
   /** 到期、被取下或条件不再成立而离开单位时。 */
   onRemove?(unitId: string, ctx: ContentContext): void
+  /** 为真时友方倒下或撤下后仍留在身上，再部署时带着。缺省倒下时取下。特性、天赋这类常驻效果用它。 */
+  readonly keepOnDown?: boolean
+  /** 这条效果带的数值护盾与次数护盾只挡这些伤害种类（physical、arts、true、element，按伤害的 kind）。缺省挡所有种类。 */
+  readonly shieldType?: readonly string[]
 }
 
 /** 同名效果再施加时怎么叠。返回 undefined 表示这次不生效。 */
@@ -182,8 +188,10 @@ export interface DamageStepDefinition {
  * - `hit`：进入减伤之前，可以改数额、倍率、类型或取消；
  * - `element-hit`：元素损伤进槽之前，可以改数额、倍率、类型或取消；
  * - `hp`：护盾之后、扣生命之前，只能调低数额。流失与被护盾整段吸收的伤害不经过这一阶段。
+ * - `effect`：一次效果施加在免疫之后、叠加之前，可以改这次的拍数、是否一直持续、强度，或取消。
+ *   内置的抵抗（priority 100）与重量超过 3 的浮空、缚地减半（priority 200）也是这一阶段的修饰。
  */
-export const DAMAGE_STAGES = ["hit", "element-hit", "hp"] as const
+export const DAMAGE_STAGES = ["hit", "element-hit", "hp", "effect"] as const
 
 export type DamageStage = (typeof DAMAGE_STAGES)[number]
 
@@ -219,9 +227,25 @@ interface DamageModifierBase {
   readonly priority: number
 }
 
+/**
+ * effect 阶段修饰可写的数据。ticks 是效果计时器的拍数；permanent 为真时 ticks 不用。
+ * 拍数不是正数且不一直持续时这次施加不成立；非有限的拍数或强度不生效。
+ */
+export interface EffectChange {
+  readonly unitId: string
+  readonly effectId: string
+  /** 施加者。施加时没给出时是 null。 */
+  readonly sourceId: string | null
+  ticks: number
+  permanent: boolean
+  value: number
+  cancel: boolean
+}
+
 export type DamageModifierDefinition =
   | (DamageModifierBase & { readonly stage: "hit" | "element-hit"; modify(change: HitChange, ctx: ContentContext): void })
   | (DamageModifierBase & { readonly stage: "hp"; modify(change: HpChange, ctx: ContentContext): void })
+  | (DamageModifierBase & { readonly stage: "effect"; modify(change: EffectChange, ctx: ContentContext): void })
 
 export interface DamagePreview {
   readonly sourceId: string
@@ -233,6 +257,11 @@ export interface DamagePreview {
 
 export interface ElementDefinition {
   readonly id: string
+  /**
+   * 元素槽显示值的先后：一样满时取 order 小的，order 也相同时按 id 的字典序。
+   * 模块加的元素用它排进内置元素之间；不写时排在全部内置元素之后。
+   */
+  readonly order?: number
   readonly cap: number
   readonly resistance: number
   onBurst?(unitId: string, ctx: ContentContext, sourceId?: string): void
@@ -291,7 +320,10 @@ export interface ShiftInput {
   readonly sourceX?: number
   readonly sourceY?: number
   readonly effect?: boolean
+  /** 定向推不做两项修正（离起点太近、夹角超过 45°）。 */
   readonly fixed?: boolean
+  /** 定向推只免去夹角修正，离起点太近照样修正。 */
+  readonly fixedAngle?: boolean
   readonly inward?: boolean
   /** 立即完成的位移在画面上是否保持原朝向。缺省 true。 */
   readonly keepFacing?: boolean
@@ -301,6 +333,8 @@ export interface ShiftPlan {
   readonly x: number
   readonly y: number
   readonly points?: readonly TileCoord[]
+  /** 这次受力让目标失衡的秒数。落点可以就是当前坐标：只失衡、不移动。 */
+  readonly unbalance?: number
 }
 
 export interface ShiftDefinition {

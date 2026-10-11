@@ -4,6 +4,7 @@ import type { Direction, TileCoord, UnitAttributes, UnitKind, UnitSide } from "#
 export interface SkillSnapshot {
   readonly id: string
   readonly sp: number
+  /** 当前的技力消耗，已算上 spCostMul 与 spCostFlat。 */
   readonly spCost: number
   readonly charges: number
   readonly active: boolean
@@ -40,6 +41,8 @@ export interface UnitSnapshot {
   readonly downed: boolean
   /** 倒下时的再部署计时；没倒下时是 null。 */
   readonly redeploy: RedeploySnapshot | null
+  /** 失衡到这一拍为止（不含）；没有失衡是 null。计入状态。 */
+  readonly unbalanceUntil: number | null
   /** 组件给画面的显示值，键是组件 id。只给画面，不计入状态。 */
   readonly components: Readonly<Record<string, unknown>>
 }

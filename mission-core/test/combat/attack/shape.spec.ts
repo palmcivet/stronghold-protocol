@@ -1,7 +1,7 @@
 import { expect, test } from "vitest"
 import {
   BOOMERANG_RETURN_SPEED,
-  CHAIN_HEAL_RADIUS,
+  CHAIN_HEAL_REACH,
   PROJECTILE_KIND_SPEEDS,
   PROJECTILE_SPEED,
   TICK,
@@ -41,7 +41,7 @@ test("投射物种类的速度是数据", () => {
   expect(PROJECTILE_KIND_SPEEDS).toEqual({ arrow: 14, bolt: 11, orb: 10, bomb: 8, boomerang: 15 })
   expect(BOOMERANG_RETURN_SPEED).toBe(3.75)
   expect(PROJECTILE_SPEED).toBe(12)
-  expect(CHAIN_HEAL_RADIUS).toBe(2.5)
+  expect(CHAIN_HEAL_REACH).toBe(1)
 })
 
 test("溅射打中半径内的人，圈外不动", () => {

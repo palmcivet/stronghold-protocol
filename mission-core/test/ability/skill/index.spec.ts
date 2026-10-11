@@ -607,3 +607,63 @@ function recorder(id: string, unitIds: readonly string[]): {
     },
   }
 }
+
+test("技能结束时结束钩子先跑，修饰还在；钩子里重新释放时修饰留着", () => {
+  const seen: number[] = []
+  const hooks = (again: boolean): MissionModule => ({
+    id: "end",
+    install(ctx) {
+      ctx.registerSkillHook({
+        id: "end-hook",
+        run(moment, runCtx) {
+          seen.push(runCtx.attribute(moment.unitId, "atk"))
+          if (!again || seen.length > 1) return
+          runCtx.readySkill(moment.unitId, moment.skillId)
+          runCtx.castSkill(moment.unitId, moment.skillId)
+        },
+      })
+      ctx.registerSystem({
+        id: "open",
+        slot: "schedule",
+        priority: 1,
+        run(runCtx) {
+          if (runCtx.tick() === 0) runCtx.castSkill("a", "s")
+        },
+      })
+    },
+  })
+  const atkAfter = (again: boolean): number => {
+    seen.length = 0
+    const battle = createBattle(
+      spec({
+        modules: ["end"],
+        units: [
+          ally("a", {
+            attributes: { hp: 100, atk: 10, def: 0 },
+            skills: [
+              {
+                id: "s",
+                body: "duration",
+                trigger: "NEVER",
+                spCost: 50,
+                initSp: 50,
+                duration: 1,
+                ammo: 0,
+                spType: "time",
+                mods: [{ attribute: "atk", op: "add", value: 25 }],
+                hooks: { end: "end-hook" },
+              },
+            ],
+          }),
+        ],
+      }),
+      [hooks(again)],
+    )
+    for (let step = 0; step < 35; step += 1) battle.step()
+    return battle.snapshot().units[0]?.attributes.atk ?? Number.NaN
+  }
+  expect(atkAfter(false)).toBe(10)
+  expect(seen).toEqual([35])
+  expect(atkAfter(true)).toBe(35)
+  expect(seen).toEqual([35])
+})

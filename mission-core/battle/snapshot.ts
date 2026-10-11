@@ -1,13 +1,14 @@
 import type { BattleSnapshot, RedeploySnapshot, SkillSnapshot, UnitSnapshot } from "#contract/snapshot.js"
 import type { BattleRegistry } from "#port/definition.js"
 import { overlaySkillAttributes } from "#ability/skill/modifier.js"
-import { sortedTagIds, type BattleWorld, type SkillInstance, type UnitState } from "#unit/record/index.js"
+import { sortedTagIds, unbalanced, type BattleWorld, type SkillInstance, type UnitState } from "#unit/record/index.js"
 import { HIDDEN } from "#port/tag.js"
 import { gridOf } from "#field/grid/index.js"
 import { routeHidden } from "#field/grid/route.js"
 import { peekGauges } from "#combat/element/gauge.js"
 import { blockerOf, blockingOf } from "#unit/block/hold.js"
 import { redeployDuration } from "#unit/deploy/redeploy.js"
+import { costOf } from "#ability/skill/point.js"
 
 /** 抄出每个没有移除的单位的核心字段、标签、属性、元素槽、阻挡、技能读数与再部署计时，再加上组件给画面的显示值。按单位 id 排序。 */
 export function readSnapshot(world: BattleWorld, registry: BattleRegistry): BattleSnapshot {
@@ -41,20 +42,21 @@ function readUnit(world: BattleWorld, registry: BattleRegistry, unit: UnitState)
     elements,
     blocking: [...blockingOf(world, unit.id)],
     blockedBy: blockerOf(world, unit.id),
-    skills: unit.skills.map((skill) => readSkill(unit, skill)),
+    skills: unit.skills.map((skill) => readSkill(registry, unit, skill)),
     shield: shieldOf(unit),
     downed: unit.downed,
     redeploy: unit.downed ? readRedeploy(registry, unit) : null,
+    unbalanceUntil: unbalanced(world, unit) ? unit.unbalanceUntil : null,
     components: world.components.views(unit.id),
   }
 }
 
-function readSkill(unit: UnitState, skill: SkillInstance): SkillSnapshot {
+function readSkill(registry: BattleRegistry, unit: UnitState, skill: SkillInstance): SkillSnapshot {
   const counting = skill.body === "ammo" && skill.active && unit.fielded && !unit.downed
   return {
     id: skill.id,
     sp: skill.sp,
-    spCost: skill.spCost,
+    spCost: costOf(registry, unit, skill),
     charges: skill.charges,
     active: skill.active,
     ammo: counting ? { left: Math.ceil(skill.ammo), max: skill.ammoSpec } : null,

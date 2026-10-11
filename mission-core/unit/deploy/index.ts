@@ -3,6 +3,7 @@ import type { ContentContext } from "#port/context.js"
 import type { MissionModule } from "#port/module.js"
 import { DEFER_DEPLOY, TOKEN } from "#port/tag.js"
 import { hasTag } from "#kernel/world/tag.js"
+import { gridOf } from "#field/grid/index.js"
 import { engineOf, requireUnit, type UnitState } from "#unit/record/index.js"
 
 /** 内置部署策略。规格的 `deployStrategy` 与模块 id 都用这个标识。 */
@@ -25,6 +26,7 @@ export const deployModule: MissionModule = {
 
 function opening(ctx: ContentContext): readonly string[] {
   const { world: state } = engineOf(ctx)
+  const grid = gridOf(state)
   const enemies: string[] = []
   const operators: UnitState[] = []
   const tokens: UnitState[] = []
@@ -34,6 +36,8 @@ function opening(ctx: ContentContext): readonly string[] {
       continue
     }
     if (hasTag(unit, DEFER_DEPLOY)) continue
+    // 初始格子不在地图上的友方不上场
+    if (!grid.at(unit.homeX, unit.homeY)) continue
     if (hasTag(unit, TOKEN)) tokens.push(unit)
     else operators.push(unit)
   }

@@ -87,6 +87,21 @@ test("开战按列从上到下，干员先于召唤物，推迟的不上场", ()
   ])
 })
 
+test("初始格子不在地图上的友方不上场，其余照常", () => {
+  const battle = createBattle(
+    spec({
+      modules: [DEPLOY_STRATEGY],
+      deployStrategy: DEPLOY_STRATEGY,
+      tiles: [ground(0, 0), ground(1, 0)],
+      units: [ally("in", { x: 1, y: 0 }), ally("out", { x: 9, y: 3 })],
+    }),
+    [deployModule],
+  )
+  expect(battle.drainEvents().filter((event) => event.type === "deploy").map((event) => event.data.unitId)).toEqual(["in"])
+  battle.step()
+  expect(battle.snapshot().units.find((unit) => unit.id === "out")?.downed).toBe(false)
+})
+
 test("倒在别人的初始格子上，自己的格子空着就回到初始格子", () => {
   const battle = battleOf([ally("a"), ally("b", { x: 2 })], (ctx) => {
     ctx.displace("b", 3, 0)

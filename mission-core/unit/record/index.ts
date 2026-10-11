@@ -1,7 +1,7 @@
 import type { ConditionalEffectSpec, Direction, HitArea, Motion, SkillHooks, SkillModifier, UnitKind, UnitSpec } from "#contract/spec.js"
 import type { AttributeModifier, BattleRegistry, EffectRecord, SkillRuntime } from "#port/definition.js"
 import type { ContentContext } from "#port/context.js"
-import { AIRBORNE } from "#port/tag.js"
+import { AIRBORNE, GROUNDBIND, LEVITATE } from "#port/tag.js"
 import type { TimerState } from "#kernel/timer/index.js"
 import { emit } from "#kernel/event/index.js"
 import { requireEntity, type World } from "#kernel/world/index.js"
@@ -25,11 +25,12 @@ import { IMMUNITY } from "#ability/effect/immunity.js"
 
 export type { EffectRecord } from "#port/definition.js"
 
-/** 空中单位：飞行，或敌人正浮空、近地悬浮。 */
+/** 空中单位：飞行，或敌人正浮空、近地悬浮。缚地的敌人算地面单位，浮空时仍算空中。移动与寻路只看 motion。 */
 export function isFlying(unit: UnitState): boolean {
-  if (unit.motion === "FLY") return true
-  if (unit.side !== "enemy") return false
-  return hasTag(unit, AIRBORNE)
+  if (unit.side !== "enemy") return unit.motion === "FLY"
+  if (hasTag(unit, LEVITATE)) return true
+  if (hasTag(unit, GROUNDBIND)) return false
+  return unit.motion === "FLY" || hasTag(unit, AIRBORNE)
 }
 
 export interface SkillInstance extends SkillRuntime {
@@ -72,7 +73,8 @@ export interface UnitState {
   /** 规格、效果、技能与模块按来源授予的标签。 */
   readonly tags: TagGrants
   readonly deployPositions: readonly string[]
-  readonly aggroSeq: number
+  /** 仇恨序：越大越是最晚部署。用部署策略时每次部署重新排到最后。 */
+  aggroSeq: number
   readonly spawnSeq: number
   /** 放入时的格子。之后的坐标可以离开这里。 */
   readonly homeX: number
@@ -99,6 +101,10 @@ export interface UnitState {
   removed: boolean
   /** 每次部署加一。回旋物等按部署分代的记录读它。 */
   deployEpoch: number
+  /** 失衡到这一拍为止（不含）；没有失衡是 null。 */
+  unbalanceUntil: number | null
+  /** 上一次结算到的最大生命，开始时是规格里的最大生命。最大生命变了时当前生命按比例跟着变。 */
+  maxHpSeen: number
 }
 
 function createSkill(spec: UnitSpec["skills"][number]): SkillInstance {
@@ -178,6 +184,8 @@ export function createUnit(spec: UnitSpec, fielded: boolean, order: number): Uni
     downed: false,
     removed: false,
     deployEpoch: 0,
+    unbalanceUntil: null,
+    maxHpSeen: Math.max(1, base.maxHp ?? base.hp ?? 1),
   }
 }
 
@@ -213,6 +221,8 @@ export function placeUnit(world: BattleWorld, registry: BattleRegistry, spec: Un
   checkSpecTags(registry, spec)
   const unit = addUnit(world, spec, fielded)
   grantSpecTags(registry, unit, spec)
+  // 战斗中放进来就在场的友方（召唤物）是最晚部署的
+  if (fielded && spec.aggroSeq === undefined && world.spec.deployStrategy !== null) markLatestDeployed(world, unit)
   return unit
 }
 
@@ -247,6 +257,15 @@ export function removeUnit(world: BattleWorld, unitId: string): void {
 /** 单位上场：部署世代加一。 */
 export function markDeployed(unit: UnitState): void {
   unit.deployEpoch += 1
+}
+
+/** 把友方排成最晚部署的：仇恨序取当前所有单位里最大的加一。 */
+// TRACE: source/latest-deployed
+export function markLatestDeployed(world: BattleWorld, unit: UnitState): void {
+  if (unit.side !== "ally") return
+  let top = 0
+  for (const other of world.units.values()) if (other.id !== unit.id && other.aggroSeq > top) top = other.aggroSeq
+  unit.aggroSeq = top + 1
 }
 
 // MARK: tag
@@ -288,4 +307,9 @@ function tagIdsOf(unit: UnitState): TagIds {
 /** 单位持有的全部标签 id，不分来源，按 id 排序。 */
 export function sortedTagIds(unit: UnitState): readonly string[] {
   return tagIdsOf(unit).sorted
+}
+
+/** 这一拍还在失衡。 */
+export function unbalanced(state: { readonly tick: number }, unit: UnitState): boolean {
+  return unit.unbalanceUntil !== null && state.tick < unit.unbalanceUntil
 }

@@ -160,6 +160,10 @@ export interface AttackShape {
   readonly chain?: ChainHealShape
   readonly healCount?: number
   readonly lockRange?: boolean
+  /** 一次攻击的目标数等于阻挡数，不低于 1；阻挡的敌人排在前面。 */
+  readonly blockTargets?: boolean
+  /** 普攻选目标时追加的筛选器 id（registerSelector 注册的 filter）。不过筛的单位不当普攻目标，也不让 DEFAULT 触发。 */
+  readonly filters?: readonly string[]
   readonly projectile?: ProjectileKind
 }
 

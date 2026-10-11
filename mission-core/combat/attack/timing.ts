@@ -283,10 +283,7 @@ function attackCooling(unit: UnitState): boolean {
 }
 
 function attackInterval(unit: UnitState, registry: BattleRegistry): number {
-  const assumed = unit.base.aspd === undefined
-  if (assumed) unit.base.aspd = 100
-  const aspd = clamp(attributeOf(unit, registry, "aspd"), ASPD_MIN, ASPD_MAX)
-  if (assumed) delete unit.base.aspd
+  const aspd = clamp(attributeOf(unit, registry, "aspd", 100), ASPD_MIN, ASPD_MAX)
   const batBase = unit.base.bat
   const bat = (batBase !== undefined && batBase > 0 ? batBase : 1) * Math.max(0.1, 1 + attributeOf(unit, registry, "batPct"))
   if (!(aspd > 0)) return 0
@@ -317,10 +314,7 @@ function timerRate(unit: UnitState, registry: BattleRegistry): number {
 }
 
 function resolved(unit: UnitState, registry: BattleRegistry, key: string, fallback: number): number {
-  const assumed = unit.base[key] === undefined
-  if (assumed) unit.base[key] = fallback
-  const value = attributeOf(unit, registry, key)
-  if (assumed) delete unit.base[key]
+  const value = attributeOf(unit, registry, key, fallback)
   if (!Number.isFinite(value)) return fallback
   return value
 }

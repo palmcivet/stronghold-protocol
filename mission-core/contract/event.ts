@@ -1,4 +1,5 @@
 import type { UnitSide } from "#contract/spec.js"
+import type { BattleInput } from "#contract/input.js"
 
 // MARK: payload
 
@@ -7,6 +8,14 @@ export type AttackEvent = {
   readonly unitId: string
   readonly targetIds: readonly string[]
   cancel: boolean
+  /** 改成 true 时这一下不用掉弹药、不送 ammo-used，照样算一次攻击。缺省没有。 */
+  noAmmo?: boolean
+}
+
+/** 一次普攻打了出去。noAmmo 为真时这一下不用掉弹药。 */
+export type AttackHitEvent = {
+  readonly unitId: string
+  readonly noAmmo?: true
 }
 
 /** 一次伤害进入减伤之前，hit 阶段的伤害修饰都已执行。数值的修改走伤害修饰。 */
@@ -79,6 +88,17 @@ export type UnitEvent = {
   readonly unitId: string
 }
 
+/** 这一拍开始时接受的玩家输入。 */
+export type InputEvent = {
+  readonly input: BattleInput
+}
+
+/** 这一拍开始时拒绝的玩家输入与原因，世界不变。 */
+export type InputRefusedEvent = {
+  readonly input: BattleInput
+  readonly reason: string
+}
+
 /** 倒下。有部署策略时带上倒下的格子与能否站在那里。 */
 export type DownedEvent = {
   readonly unitId: string
@@ -128,6 +148,8 @@ export type StatusEvent = {
   readonly unitId: string
   readonly statusId: string
   readonly stacks: number
+  /** 施加之前身上没有这个效果（条件效果挂上的也算有）：这次是新开始，不是刷新、加层或排进等待链。 */
+  readonly entered: boolean
 }
 
 export type ElementBurstEvent = {
@@ -172,7 +194,7 @@ export interface Intercept<T> {
  */
 export interface BattleEventMap {
   attack: Intercept<AttackEvent>
-  "attack-hit": UnitEvent
+  "attack-hit": AttackHitEvent
   hit: HitEvent
   "element-hit": ElementHitEvent
   fatal: Intercept<FatalEvent>
@@ -184,6 +206,10 @@ export interface BattleEventMap {
   /** 离场且不再回来：召唤物消失、装置被摧毁、敌人漏出或被移除。从下一次快照起不再出现。 */
   removed: UnitEvent
   deploy: UnitEvent
+  /** 被撤下，等待再部署。不算倒下。 */
+  retreat: UnitEvent
+  input: InputEvent
+  "input-refused": InputRefusedEvent
   spawn: UnitEvent
   displace: DisplaceEvent
   blocked: BlockEvent

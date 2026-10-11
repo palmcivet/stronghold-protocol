@@ -1,3 +1,5 @@
+import type { BattleInput } from "#contract/input.js"
+import { applyInputs } from "#battle/input.js"
 import { PHASE_SLOTS } from "#contract/phase.js"
 import type { BattleEvent } from "#contract/event.js"
 import type { BattleLedger, BattleResult } from "#contract/result.js"
@@ -33,6 +35,7 @@ import { bindIndependentTimers } from "#combat/attack/timing.js"
 import { registerEffectCatalog } from "#ability/effect/catalog.js"
 import { registerEffectTimer } from "#ability/effect/index.js"
 import { registerBuiltinAttributes } from "#ability/effect/attribute.js"
+import { SKILL_ATTRIBUTES } from "#ability/skill/constants.js"
 import { registerBuiltinStackings } from "#ability/effect/stacking.js"
 import { registerBuiltinConditions, registerConditionSystem } from "#ability/effect/condition.js"
 import { canonicalJson, hashText } from "#kernel/hash/index.js"
@@ -41,8 +44,11 @@ import { BUILTIN_SKILL_BODIES } from "#ability/skill/body.js"
 import { registerBuiltinSelectors } from "#combat/target/catalog.js"
 
 export interface Battle {
-  /** 推进一拍。推进中（系统或订阅者里）再调用会报错，保证每拍的顺序确定。 */
-  step(): void
+  /**
+   * 推进一拍。inputs 在这一拍开始时按提交顺序生效，送出 input 或 input-refused；世界里不记输入，日志由调用方保存。
+   * 推进中（系统或订阅者里）再调用会报错，保证每拍的顺序确定。
+   */
+  step(inputs?: readonly BattleInput[]): void
   snapshot(): BattleSnapshot
   drainEvents(): readonly BattleEvent[]
   result(): BattleResult
@@ -69,6 +75,7 @@ export function createBattle(spec: BattleSpec, modules: readonly MissionModule[]
   registry.registerTimer(elapsedTimer("redeploy", "redeploy"))
   registerAttackTimers(registry, state)
   registerBuiltinAttributes(registry)
+  for (const definition of SKILL_ATTRIBUTES) registry.registerAttribute(definition)
   registerBuiltinStackings(registry)
   registerBuiltinConditions(registry)
   registerEffectTimer(registry, state)
@@ -113,10 +120,11 @@ export function createBattle(spec: BattleSpec, modules: readonly MissionModule[]
   if (archive) importWorld(state, archive, units)
   let stepping = false
   return {
-    step() {
+    step(inputs) {
       if (stepping) throw new Error("step called while the battle is stepping")
       stepping = true
       try {
+        if (inputs && inputs.length > 0) applyInputs(ctx, inputs)
         for (const slot of PHASE_SLOTS) {
           for (const system of registry.systemsIn(slot)) system.run(ctx)
         }
@@ -230,6 +238,7 @@ function validateUnits(spec: BattleSpec, registry: BattleRegistry): void {
       }
     }
     for (const timerId of unit.timers ?? []) registry.requireTimer(timerId)
+    for (const selectorId of unit.attackShape?.filters ?? []) registry.requireSelector(selectorId)
     for (const entry of unit.conditionalEffects ?? []) {
       registry.requireCondition(entry.condition)
       registry.requireEffect(entry.effect)

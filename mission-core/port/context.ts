@@ -1,6 +1,7 @@
+import type { CommandRefusal, RedeployOrder, TriggerArea } from "#contract/input.js"
 import type { PhaseSlot } from "#contract/phase.js"
 import type { BattleEvent, EventData, InterceptEventType, NoticeEventType } from "#contract/event.js"
-import type { Direction, Motion, TileSpec, UnitSide, UnitSpec } from "#contract/spec.js"
+import type { Direction, Motion, TileCoord, TileSpec, UnitSide, UnitSpec } from "#contract/spec.js"
 import type { Random } from "#kernel/random/index.js"
 import type { TimerView } from "#kernel/timer/index.js"
 import type { ComponentAccess, ComponentKey } from "#kernel/world/component.js"
@@ -123,8 +124,31 @@ export interface ContentContext extends Registration {
   finish(winner: UnitSide): void
   tick(): number
   shouldCast(unitId: string, skillId: string): boolean
+  /**
+   * 额外一下普攻，不看也不动攻击计时。targetIds 缺省按普攻选目标；照样经过 attack 拦截、算一次攻击。
+   * noAmmo 时不用掉弹药、不送 ammo-used。打出去返回 true。
+   */
+  forceAttack(unitId: string, targetIds?: readonly string[] | null, options?: { readonly noAmmo?: boolean }): boolean
+  /** 加进攻击范围的绝对格子，换位置、换范围后都留着；null 或空名单清掉。不进技能触发的初始范围。 */
+  setExtraRange(unitId: string, tiles: readonly TileCoord[] | null): void
+  /**
+   * 登记（area）或撤下（null）一块技能触发区域：绝对格子，或某个单位当前的攻击范围。区域里有敌人（飞行的也算）时，
+   * 这名单位的非治疗、非 TAKE_DAMAGE / NEVER 技能每拍都按 DEFAULT 释放，不等攻击。
+   */
+  setTriggerArea(unitId: string, key: string, area: TriggerArea | null): void
   /** 释放技能。成功返回 true。充能不够或正在持续时返回 false。 */
   castSkill(unitId: string, skillId: string): boolean
+  /** 命令：撤下在场的单位，与玩家的 retreat 输入同一段实现。生效返回 null，否则返回原因。 */
+  retreatUnit(unitId: string): CommandRefusal | null
+  /**
+   * 命令：让等待再部署的单位回来，与玩家的 redeploy 输入同一段实现。内容可以改落点、等待、费用与是否保留技力；
+   * delay 不是 0 时排下，到点由再部署模块执行。生效（或排下）返回 null，否则返回原因。
+   */
+  redeployUnit(unitId: string, order?: RedeployOrder): CommandRefusal | null
+  /** 这一拍还在失衡（推、拉之后的状态机）。失衡期间内容自己的技能、闪现与脚本移动应当不做。 */
+  unbalanced(unitId: string): boolean
+  /** 命令：立刻结束失衡（内容的强制切换状态机，例如重生）。没有失衡时也返回 null；单位不存在时返回 unknown-unit。 */
+  cutUnbalance(unitId: string): CommandRefusal | null
   /** 把这一技能的充能补满，使下一次 castSkill 能够释放。 */
   readySkill(unitId: string, skillId: string): void
   /** 按内容脚本改技能体、弹药和持续时间。技能不存在时不做。 */

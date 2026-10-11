@@ -1,3 +1,8 @@
+import { setExtraRange } from "#combat/target/selector.js"
+import { setTriggerArea } from "#ability/skill/trigger.js"
+import { forceAttack } from "#combat/attack/index.js"
+import { cutUnbalance } from "#field/motion/unbalance.js"
+import { orderRedeploy, retreatUnit } from "#unit/deploy/command.js"
 import type { BattleEvent, InterceptEventType } from "#contract/event.js"
 import type { PhaseSlot } from "#contract/phase.js"
 import type { BattleResult } from "#contract/result.js"
@@ -16,6 +21,7 @@ import {
   placeUnit,
   removeUnit as retireUnit,
   requireUnit,
+  unbalanced,
   type BattleWorld,
 } from "#unit/record/index.js"
 import { emit as publish, intercept as publishIntercept, subscribe } from "#kernel/event/index.js"
@@ -40,6 +46,7 @@ import {
   startTimer as beginTimer,
   timerView as readTimerView,
 } from "#unit/record/timer.js"
+import { cutStand } from "#combat/attack/stand.js"
 
 /** 本场结果。finish 写上胜方。 */
 export const RESULT = defineResource<BattleResult>("battle:result", () => ({ finished: false, winner: null }))
@@ -138,6 +145,7 @@ export function createContext(state: BattleWorld, registry: BattleRegistry): Con
       unit.x = x
       unit.y = y
       replanRoute(state, unitId)
+      cutStand(state, unitId)
       publish(state, "displace", { unitId, x, y, duration: 0, keepFacing: false })
     },
     shift(actionId, unitId, input) {
@@ -237,11 +245,38 @@ export function createContext(state: BattleWorld, registry: BattleRegistry): Con
     shouldCast(unitId, skillId) {
       return askTrigger(state, registry, ctx, unitId, skillId)
     },
+    forceAttack(unitId, targetIds = null, options = {}) {
+      return forceAttack(state, registry, ctx, unitId, targetIds, options.noAmmo === true)
+    },
+    setExtraRange(unitId, tiles) {
+      requireUnit(state, unitId)
+      setExtraRange(state, unitId, tiles)
+    },
+    setTriggerArea(unitId, key, area) {
+      requireUnit(state, unitId)
+      setTriggerArea(state, unitId, key, area)
+    },
     castSkill(unitId, skillId) {
       return activateSkill(state, registry, ctx, unitId, skillId, "manual")
     },
+    retreatUnit(unitId) {
+      return retreatUnit(ctx, unitId)
+    },
+    redeployUnit(unitId, order = {}) {
+      return orderRedeploy(ctx, unitId, order, false)
+    },
+    unbalanced(unitId) {
+      const unit = state.units.get(unitId)
+      return unit !== undefined && unbalanced(state, unit)
+    },
+    cutUnbalance(unitId) {
+      const unit = state.units.get(unitId)
+      if (!unit || unit.removed) return "unknown-unit"
+      cutUnbalance(unit)
+      return null
+    },
     readySkill(unitId, skillId) {
-      fillSkill(state, unitId, skillId)
+      fillSkill(state, registry, unitId, skillId)
     },
     configureSkill(unitId, skillId, spec) {
       writeSkill(state, unitId, skillId, spec)
@@ -251,7 +286,7 @@ export function createContext(state: BattleWorld, registry: BattleRegistry): Con
       setTargetPriority(state, unitId, priority)
     },
     gainSp(unitId, skillId, amount, options) {
-      return gainSkillSp(state, unitId, skillId, amount, options?.ignoreLock === true ? "unlocked" : "grant")
+      return gainSkillSp(state, registry, unitId, skillId, amount, options?.ignoreLock === true ? "unlocked" : "grant")
     },
     tile(x, y): TileSpec | null {
       return gridOf(state).at(x, y)

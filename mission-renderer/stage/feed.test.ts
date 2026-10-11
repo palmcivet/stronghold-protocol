@@ -22,6 +22,7 @@ function unit(id: string, x: number): UnitSnapshot {
     shield: 0,
     downed: false,
     redeploy: null,
+    unbalanceUntil: null,
     components: {},
   }
 }
