@@ -1,7 +1,10 @@
+import { LinearSRGBColorSpace, SRGBColorSpace, type Texture } from "three"
 import {
+  assetColorSpace,
   assetKindOf,
   createSpineCache,
   spineSource,
+  type AssetColorSpace,
   type AssetKey,
   type AssetKind,
   type AssetResolver,
@@ -10,9 +13,9 @@ import {
   type SpineSource,
 } from "arknights-assets-catalog"
 
-export type RendererAssetKind = "image" | "spine" | "model" | "json"
+export type MissionAssetKind = "image" | "spine" | "model" | "json"
 
-export interface RendererResourcePort<TImage = unknown, TSpine = unknown, TModel = unknown, TJson = unknown> {
+export interface MissionResourcePort<TImage = unknown, TSpine = unknown, TModel = unknown, TJson = unknown> {
   /** Takes one reference to the image under `key`. Release it with `release` when done, even if the call rejects. */
   image(key: AssetKey): Promise<TImage>
   /** Takes one reference to the spine model under `key`, with its atlas pages loaded. */
@@ -22,12 +25,13 @@ export interface RendererResourcePort<TImage = unknown, TSpine = unknown, TModel
   /** Takes one reference to the JSON document under `key`. */
   json(key: AssetKey): Promise<TJson>
   /** Gives back one reference. Without `kind`, the kind follows from the key. */
-  release(key: AssetKey, kind?: RendererAssetKind): void
+  release(key: AssetKey, kind?: MissionAssetKind): void
 }
 
-export interface RendererResourceLoaders<TImage = unknown, TSpine = unknown, TModel = unknown, TJson = unknown> {
+export interface MissionResourceLoaders<TImage = unknown, TSpine = unknown, TModel = unknown, TJson = unknown> {
   readonly resolver: AssetResolver
-  readonly image: (url: string, key: AssetKey) => Promise<TImage>
+  /** `colorSpace` is the entry's, `srgb` unless the catalog marks it `linear`. A Three texture returned here gets it set. */
+  readonly image: (url: string, key: AssetKey, colorSpace: AssetColorSpace) => Promise<TImage>
   readonly spine: (source: SpineSource) => Promise<TSpine>
   readonly model: (url: string, key: AssetKey) => Promise<TModel>
   readonly json: (url: string, key: AssetKey) => Promise<TJson>
@@ -37,7 +41,7 @@ export interface RendererResourceLoaders<TImage = unknown, TSpine = unknown, TMo
   readonly spineCache?: Omit<SpineCacheOptions, "load">
 }
 
-type FileKind = Exclude<RendererAssetKind, "spine">
+type FileKind = Exclude<MissionAssetKind, "spine">
 
 const DEFAULT_RETRY_DELAYS: readonly number[] = [250, 1000]
 
@@ -65,27 +69,39 @@ interface SpineHold {
   sourceKey: AssetKey | null
 }
 
+function isTexture(value: unknown): value is Texture {
+  return Boolean(value && typeof value === "object" && "isTexture" in value && value.isTexture === true)
+}
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, ms)
   })
 }
 
-function rendererKindOf(key: AssetKey): RendererAssetKind | null {
+function missionKindOf(key: AssetKey): MissionAssetKind | null {
   const kind = assetKindOf(key)
   if (kind === "texture") return "image"
   return kind === "image" || kind === "spine" || kind === "model" || kind === "json" ? kind : null
 }
 
-export function createRendererResourcePort<TImage = unknown, TSpine = unknown, TModel = unknown, TJson = unknown>(
-  options: RendererResourceLoaders<TImage, TSpine, TModel, TJson>,
-): RendererResourcePort<TImage, TSpine, TModel, TJson> {
+export function createMissionResourcePort<TImage = unknown, TSpine = unknown, TModel = unknown, TJson = unknown>(
+  options: MissionResourceLoaders<TImage, TSpine, TModel, TJson>,
+): MissionResourcePort<TImage, TSpine, TModel, TJson> {
   const { resolver } = options
   const retryDelays = options.retryDelays ?? DEFAULT_RETRY_DELAYS
-  const fileLoaders: Record<FileKind, (url: string, key: AssetKey) => Promise<unknown>> = {
-    image: options.image,
-    model: options.model,
-    json: options.json,
+  const fileLoaders: Record<FileKind, (url: string, entry: ResolvedAsset) => Promise<unknown>> = {
+    image: async (url, entry) => {
+      const colorSpace = assetColorSpace(entry.asset) ?? "srgb"
+      const image = await options.image(url, entry.key, colorSpace)
+      if (isTexture(image)) {
+        image.colorSpace = colorSpace === "srgb" ? SRGBColorSpace : LinearSRGBColorSpace
+        image.needsUpdate = true
+      }
+      return image
+    },
+    model: (url, entry) => options.model(url, entry.key),
+    json: (url, entry) => options.json(url, entry.key),
   }
   const fileLoads: Record<FileKind, Map<AssetKey, SharedLoad>> = {
     image: new Map(),
@@ -141,7 +157,7 @@ export function createRendererResourcePort<TImage = unknown, TSpine = unknown, T
     return settle(key, async (entry) => {
       const file = entry.files.find((candidate) => candidate.role === "main") ?? entry.files[0]
       if (!file) throw new Error(`asset ${entry.key} has no files`)
-      return retrying(() => fileLoaders[kind](file.url, entry.key))
+      return retrying(() => fileLoaders[kind](file.url, entry))
     })
   }
 
@@ -220,7 +236,7 @@ export function createRendererResourcePort<TImage = unknown, TSpine = unknown, T
     model: (key) => acquireFile("model", key) as Promise<TModel>,
     json: (key) => acquireFile("json", key) as Promise<TJson>,
     release(key, kind) {
-      const target = kind ?? rendererKindOf(key)
+      const target = kind ?? missionKindOf(key)
       if (target === null) return
       if (target === "spine") releaseSpine(key)
       else releaseFile(target, key)

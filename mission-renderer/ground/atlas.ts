@@ -19,7 +19,7 @@ export type TerrainUvTable = Readonly<Record<string, TerrainSurface>>
 
 const surface = (src: TerrainAtlasSource, rect: Rect, rot = 0): TerrainSurface => ({ src, rect, rot, flipX: false })
 
-/** Surface name → atlas region of `tiles.json` `board3d` (master board3d/atlas.js SURFACES). */
+/** Surface name → atlas region of `tiles.json` `board3d`. */
 export const TERRAIN_SURFACES: TerrainUvTable = Object.freeze({
   concrete: surface("D", [256, 512, 256, 256]),
   concreteRailTL: surface("D", [0, 256, 256, 256]),

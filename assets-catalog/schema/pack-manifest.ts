@@ -3,6 +3,7 @@ import type { AssetKey, AssetKind } from "#key/asset-key.js"
 import type { AssetFile } from "#schema/asset-file.js"
 import { fieldPath, indexPath, isRecord, SchemaCheck, SHA256_HEX, type SchemaIssue } from "#schema/issue.js"
 import { checkEntryHead } from "#schema/raw-catalog.js"
+import type { AssetColorSpace } from "#schema/color-space.js"
 
 export const PACK_TYPES = ["base", "season", "mod", "local", "upstream"] as const
 
@@ -44,6 +45,8 @@ export interface PackAsset {
   readonly dependsOn: readonly AssetKey[]
   readonly fallbackId: AssetKey | null
   readonly preloadGroup: string | null
+  /** Colour space of an image or texture; `srgb` when absent. */
+  readonly colorSpace?: AssetColorSpace
 }
 
 export interface PackFile extends AssetFile {

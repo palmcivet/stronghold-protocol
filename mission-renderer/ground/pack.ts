@@ -1,34 +1,34 @@
 import type { AssetKey } from "arknights-assets-catalog"
 import type { Object3D, Texture } from "three"
-import type { RendererAssetKind, RendererResourcePort } from "#port/resource.js"
+import type { MissionAssetKind, MissionResourcePort } from "#port/resource.js"
 import { resolveUvTable, type TerrainUvTable } from "#ground/atlas.js"
 import { isParsedMesh, parseObj, type ParsedMesh } from "#ground/mesh.js"
 
-/** Official board atlas slots (master board3d/load.js PACK_IMAGES). The diffuse slot `D` is required. */
-export const TERRAIN_IMAGE_SLOTS = [
-  "D",
-  "N",
-  "R",
-  "E",
+/** Official board atlas slots. The `diffuse` slot is required. */
+export const MISSION_GROUND_IMAGE_SLOTS = [
+  "diffuse",
+  "normal",
+  "roughness",
+  "emissive",
   "common",
-  "commonE",
-  "BG",
+  "commonEmissive",
+  "background",
   "wind",
   "gate",
-  "waterN",
+  "waterNormal",
   "caustics",
   "noise",
 ] as const
 
-export type TerrainImageSlot = (typeof TERRAIN_IMAGE_SLOTS)[number]
+export type MissionGroundImageSlot = (typeof MISSION_GROUND_IMAGE_SLOTS)[number]
 
-/** Official meshes (master board3d/load.js PACK_MESHES). */
-export const TERRAIN_MESH_SLOTS = ["crate", "blower", "bgPlane"] as const
+/** Official meshes. */
+export const MISSION_GROUND_MESH_SLOTS = ["crate", "blower", "bgPlane"] as const
 
-export type TerrainMeshSlot = (typeof TERRAIN_MESH_SLOTS)[number]
+export type TerrainMeshSlot = (typeof MISSION_GROUND_MESH_SLOTS)[number]
 
-/** Gate and objective box pieces, by the prefab node name that holds them (master board3d/load.js GATE_NODES). */
-export const TERRAIN_GATE_NODES = Object.freeze({
+/** Gate and objective box pieces, by the prefab node name that holds them. */
+export const MISSION_GROUND_GATE_NODES = Object.freeze({
   startDown: "Start_down",
   startUp: "Start_up",
   startBack: "Start_back",
@@ -36,12 +36,12 @@ export const TERRAIN_GATE_NODES = Object.freeze({
   endUp: "Start_up1",
 })
 
-export type TerrainGateSlot = keyof typeof TERRAIN_GATE_NODES
+export type TerrainGateSlot = keyof typeof MISSION_GROUND_GATE_NODES
 
 export type TerrainProp = ParsedMesh | Object3D
 
-export interface TerrainPackRequest {
-  readonly images: Partial<Record<TerrainImageSlot, AssetKey>>
+export interface MissionGroundPack {
+  readonly images: Partial<Record<MissionGroundImageSlot, AssetKey>>
   readonly meshes?: Partial<Record<TerrainMeshSlot, AssetKey>>
   /** Explicit gate piece meshes; a slot missing here is looked up in `gatePrefab`. */
   readonly gates?: Partial<Record<TerrainGateSlot, AssetKey>>
@@ -53,12 +53,12 @@ export interface TerrainPackRequest {
 }
 
 /** The part of the renderer port that the ground loads through. */
-export type TerrainResourcePort = Pick<RendererResourcePort, "image" | "model" | "json" | "release">
+export type TerrainResourcePort = Pick<MissionResourcePort, "image" | "model" | "json" | "release">
 
-type TerrainLoadKind = Extract<RendererAssetKind, "image" | "model" | "json">
+type TerrainLoadKind = Extract<MissionAssetKind, "image" | "model" | "json">
 
 export interface TerrainPack {
-  readonly images: Partial<Record<TerrainImageSlot, Texture>>
+  readonly images: Partial<Record<MissionGroundImageSlot, Texture>>
   readonly meshes: Partial<Record<TerrainMeshSlot, TerrainProp>>
   readonly gates: Partial<Record<TerrainGateSlot, TerrainProp>>
   readonly uv: TerrainUvTable
@@ -105,7 +105,7 @@ function prefabFor(records: readonly PrefabRecord[], node: string): PrefabRecord
  * Load the board pack through the resource port. Every entry is optional except the diffuse atlas: without it the
  * pack is null and the ground stays hidden. A missing map or mesh drops only its own feature.
  */
-export async function loadTerrainPack(port: TerrainResourcePort, request: TerrainPackRequest): Promise<TerrainPack | null> {
+export async function loadTerrainPack(port: TerrainResourcePort, request: MissionGroundPack): Promise<TerrainPack | null> {
   const held: { readonly key: AssetKey, readonly kind: TerrainLoadKind }[] = []
   const releaseHeld = (): void => {
     for (const item of held.splice(0)) port.release(item.key, item.kind)
@@ -122,19 +122,19 @@ export async function loadTerrainPack(port: TerrainResourcePort, request: Terrai
     }
   }
 
-  const diffuse = await take(request.images.D, "image")
+  const diffuse = await take(request.images.diffuse, "image")
   if (!isTexture(diffuse)) {
     releaseHeld()
     return null
   }
-  const images: Partial<Record<TerrainImageSlot, Texture>> = { D: diffuse }
-  await Promise.all(TERRAIN_IMAGE_SLOTS.filter((slot) => slot !== "D").map(async (slot) => {
+  const images: Partial<Record<MissionGroundImageSlot, Texture>> = { diffuse }
+  await Promise.all(MISSION_GROUND_IMAGE_SLOTS.filter((slot) => slot !== "diffuse").map(async (slot) => {
     const value = await take(request.images[slot], "image")
     if (isTexture(value)) images[slot] = value
   }))
 
   const meshes: Partial<Record<TerrainMeshSlot, TerrainProp>> = {}
-  await Promise.all(TERRAIN_MESH_SLOTS.map(async (slot) => {
+  await Promise.all(MISSION_GROUND_MESH_SLOTS.map(async (slot) => {
     const value = propOf(await take(request.meshes?.[slot], "model"))
     if (value) meshes[slot] = value
   }))
@@ -143,9 +143,9 @@ export async function loadTerrainPack(port: TerrainResourcePort, request: Terrai
     ? prefabRecords(await take(request.gatePrefab, "json"))
     : []
   const gates: Partial<Record<TerrainGateSlot, TerrainProp>> = {}
-  await Promise.all((Object.keys(TERRAIN_GATE_NODES) as TerrainGateSlot[]).map(async (slot) => {
+  await Promise.all((Object.keys(MISSION_GROUND_GATE_NODES) as TerrainGateSlot[]).map(async (slot) => {
     const explicit = request.gates?.[slot]
-    const node = TERRAIN_GATE_NODES[slot]
+    const node = MISSION_GROUND_GATE_NODES[slot]
     const record = prefabFor(prefab, node)
     const meshName = record?.mesh ?? node
     const key = explicit ?? (request.resolveMesh ? request.resolveMesh(meshName) : null)

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest"
 import { DataTexture } from "three"
 import type { AssetKey } from "arknights-assets-catalog"
 import type { MissionMap } from "#contract/view.js"
-import { createTerrainStage, type TerrainRenderView, type TerrainResourcePort } from "#ground/index.js"
+import { createMissionGround, type TerrainRenderView, type TerrainResourcePort } from "#ground/index.js"
 import type { WebGLContextEvent } from "#ground/webgl.js"
 
 const map: MissionMap = {
@@ -50,10 +50,10 @@ function atlas(): DataTexture {
 describe("terrain stage", () => {
   it("shows the 3D ground once the atlas has loaded and renders it on update", async () => {
     const view = viewOf()
-    const stage = createTerrainStage({
+    const stage = createMissionGround({
       view,
       resources: resourcesWith(async () => atlas()),
-      pack: { images: { D: diffuse } },
+      pack: { images: { diffuse: diffuse } },
     })
 
     stage.setMap(map)
@@ -69,10 +69,10 @@ describe("terrain stage", () => {
 
   it("sizes the canvas with the display scale", async () => {
     const view = viewOf()
-    const stage = createTerrainStage({
+    const stage = createMissionGround({
       view,
       resources: resourcesWith(async () => atlas()),
-      pack: { images: { D: diffuse } },
+      pack: { images: { diffuse: diffuse } },
     })
 
     stage.setMap(map)
@@ -84,10 +84,10 @@ describe("terrain stage", () => {
   })
 
   it("stays hidden when there is no GPU view", async () => {
-    const stage = createTerrainStage({
+    const stage = createMissionGround({
       view: null,
       resources: resourcesWith(async () => atlas()),
-      pack: { images: { D: diffuse } },
+      pack: { images: { diffuse: diffuse } },
     })
 
     stage.setMap(map)
@@ -101,12 +101,12 @@ describe("terrain stage", () => {
 
   it("stays hidden when the diffuse atlas fails to load", async () => {
     const release = vi.fn()
-    const stage = createTerrainStage({
+    const stage = createMissionGround({
       view: viewOf(),
       resources: resourcesWith(async () => {
         throw new Error("missing atlas")
       }, release),
-      pack: { images: { D: diffuse } },
+      pack: { images: { diffuse: diffuse } },
     })
 
     stage.setMap(map)
@@ -120,10 +120,10 @@ describe("terrain stage", () => {
   it("hides the ground while the context is lost and rebuilds it on restore", async () => {
     const view = viewOf()
     const modes: string[] = []
-    const stage = createTerrainStage({
+    const stage = createMissionGround({
       view,
       resources: resourcesWith(async () => atlas()),
-      pack: { images: { D: diffuse } },
+      pack: { images: { diffuse: diffuse } },
       onMode: (mode) => modes.push(mode),
     })
 
@@ -142,7 +142,7 @@ describe("terrain stage", () => {
   })
 
   it("accepts a camera and a leak without a loaded scene", () => {
-    const stage = createTerrainStage({ view: null })
+    const stage = createMissionGround({ view: null })
 
     stage.setCamera({ x: 0, y: 0, width: 1, height: 1, margin: 0 })
     stage.flashObjective()

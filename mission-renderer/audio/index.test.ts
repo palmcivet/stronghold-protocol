@@ -20,6 +20,7 @@ function unitOf(id: string, kind: UnitSnapshot["kind"]): UnitSnapshot {
     facing: "RIGHT",
     height: 0,
     attributes: { hp: 0, maxHp: 1 },
+    maxHp: 1,
     tags: [],
     attackRange: [],
     deployPositions: [],

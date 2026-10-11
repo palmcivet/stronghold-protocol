@@ -417,7 +417,7 @@ function topHeight(cell: TerrainCell): number {
   return cell.glyph === "d" ? -BASIN : cell.height
 }
 
-/** Build every board bucket of a map from its tiles (master board3d/layout.js buildBoard). */
+/** Build every board bucket of a map from its tiles. */
 export function buildTerrainLayout(map: MissionMap, uvTable: TerrainUvTable): TerrainLayout {
   const cells = classifyCells(map)
   const board = new GeometryBuilder()

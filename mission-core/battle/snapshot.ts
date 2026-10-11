@@ -9,8 +9,9 @@ import { peekGauges } from "#combat/element/gauge.js"
 import { blockerOf, blockingOf } from "#unit/block/hold.js"
 import { redeployDuration } from "#unit/deploy/redeploy.js"
 import { costOf } from "#ability/skill/point.js"
+import { maxHpValue } from "#ability/effect/attribute.js"
 
-/** 抄出每个没有移除的单位的核心字段、标签、属性、元素槽、阻挡、技能读数与再部署计时，再加上组件给画面的显示值。按单位 id 排序。 */
+/** 抄出每个没有移除的单位的核心字段、生效的最大生命、标签、属性、元素槽、阻挡、技能读数与再部署计时，再加上组件给画面的显示值。按单位 id 排序。 */
 export function readSnapshot(world: BattleWorld, registry: BattleRegistry): BattleSnapshot {
   const snapshots: UnitSnapshot[] = []
   for (const unit of world.units.values()) if (!unit.removed) snapshots.push(readUnit(world, registry, unit))
@@ -36,6 +37,7 @@ function readUnit(world: BattleWorld, registry: BattleRegistry, unit: UnitState)
     facing: unit.facing,
     height: gridOf(world).at(Math.round(unit.x), Math.round(unit.y))?.height ?? 0,
     attributes,
+    maxHp: maxHpValue(unit, registry),
     tags,
     attackRange: unit.attackRange.map((cell) => ({ x: cell.x, y: cell.y })),
     deployPositions: [...unit.deployPositions],

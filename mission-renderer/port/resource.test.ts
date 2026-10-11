@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest"
+import { LinearSRGBColorSpace, SRGBColorSpace, Texture } from "three"
 import {
   createAssetResolver,
   packFileRoot,
@@ -11,7 +12,7 @@ import {
   type PackFile,
   type PackManifest,
 } from "arknights-assets-catalog"
-import { createRendererResourcePort, type RendererResourceLoaders } from "#port/resource.js"
+import { createMissionResourcePort, type MissionResourceLoaders } from "#port/resource.js"
 
 const ORIGIN = "https://cdn.example"
 const HASH = "e3".repeat(32)
@@ -22,6 +23,7 @@ const FALLBACK_IMAGE: AssetKey = "image:char/avatar/default"
 const SPINE: AssetKey = "spine:enemy/slime"
 const MODEL: AssetKey = "model:map/gate"
 const JSON_KEY: AssetKey = "json:board/tiles"
+const NORMAL: AssetKey = "image:board/normal"
 
 const singleFile = (format: FileFormat): PackFile[] => [{ role: "main", name: null, format, bytes: 1, hash: HASH }]
 const SPINE_FILES: PackFile[] = [
@@ -45,6 +47,7 @@ const manifest: PackManifest = {
     [SPINE]: asset("spine", SPINE_FILES),
     [MODEL]: asset("model", singleFile("obj")),
     [JSON_KEY]: asset("json", singleFile("json")),
+    [NORMAL]: { ...asset("image", singleFile("png")), colorSpace: "linear" },
   },
 }
 
@@ -52,7 +55,7 @@ const manifestUrl = new URL(`${RESOURCE_ROOT}${packManifestAddress(pack)}`, ORIG
 const imageUrl = `${ORIGIN}/res/files/image/char/avatar/char_002_amiya.png?v=${HASH.slice(0, 12)}`
 const fallbackImageUrl = `${ORIGIN}/res/files/image/char/avatar/default.png?v=${HASH.slice(0, 12)}`
 
-function loadersWith(overrides: Partial<RendererResourceLoaders> = {}): RendererResourceLoaders {
+function loadersWith(overrides: Partial<MissionResourceLoaders> = {}): MissionResourceLoaders {
   return {
     resolver: createAssetResolver([{ manifest, url: manifestUrl }]),
     image: async (url) => url,
@@ -65,9 +68,19 @@ function loadersWith(overrides: Partial<RendererResourceLoaders> = {}): Renderer
 }
 
 describe("renderer resource port", () => {
+  it("passes the catalog colour space to the image loader and sets it on a returned texture", async () => {
+    const image = vi.fn(async () => new Texture())
+    const port = createMissionResourcePort(loadersWith({ image }))
+    const normal = (await port.image(NORMAL)) as Texture
+    const color = (await port.image(IMAGE)) as Texture
+    expect(image.mock.calls.map((call) => (call as unknown[])[2])).toEqual(["linear", "srgb"])
+    expect(normal.colorSpace).toBe(LinearSRGBColorSpace)
+    expect(color.colorSpace).toBe(SRGBColorSpace)
+  })
+
   it("shares one image load between callers and loads again after the last release", async () => {
     const image = vi.fn(async (url: string) => url)
-    const port = createRendererResourcePort(loadersWith({ image }))
+    const port = createMissionResourcePort(loadersWith({ image }))
     await port.image(IMAGE)
     await port.image(IMAGE)
     expect(image).toHaveBeenCalledTimes(1)
@@ -84,7 +97,7 @@ describe("renderer resource port", () => {
       if (calls === 1) throw new Error("network")
       return url
     })
-    const port = createRendererResourcePort(loadersWith({ image }))
+    const port = createMissionResourcePort(loadersWith({ image }))
     await expect(port.image(IMAGE)).resolves.toBe(imageUrl)
     expect(image).toHaveBeenCalledTimes(2)
   })
@@ -94,13 +107,13 @@ describe("renderer resource port", () => {
       if (url === imageUrl) throw new Error("gone")
       return url
     })
-    const port = createRendererResourcePort(loadersWith({ image }))
+    const port = createMissionResourcePort(loadersWith({ image }))
     await expect(port.image(IMAGE)).resolves.toBe(fallbackImageUrl)
   })
 
   it("loads a spine model once for every holder", async () => {
     const spine = vi.fn(async (source: { key: AssetKey }) => ({ key: source.key }))
-    const port = createRendererResourcePort(loadersWith({ spine }))
+    const port = createMissionResourcePort(loadersWith({ spine }))
     await port.spine(SPINE)
     await port.spine(SPINE)
     expect(spine).toHaveBeenCalledTimes(1)

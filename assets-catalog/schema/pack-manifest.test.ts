@@ -57,6 +57,19 @@ describe("pack manifest guard", () => {
     expect(packManifestIssues(noHref)).toEqual([{ path: 'assets["audio:a"].files[0].hash', message: "expected a lowercase hex SHA-256" }])
   })
 
+  test("an image or texture may name its colour space; other kinds may not", () => {
+    const image = BASE.assets["image:char/avatar/char_002_amiya"]
+    const audio = { kind: "audio", files: [{ role: "main", name: null, format: "mp3", bytes: 1, hash: HASH }], dependsOn: [], fallbackId: null, preloadGroup: null }
+    const withAssets = (assets: Record<string, unknown>) => ({ ...BASE, assets, refs: undefined })
+    expect(packManifestIssues(withAssets({ "image:board/normal": { ...image, colorSpace: "linear" } }))).toEqual([])
+    expect(packManifestIssues(withAssets({ "image:board/normal": { ...image, colorSpace: "rgb" } }))).toEqual([
+      { path: 'assets["image:board/normal"].colorSpace', message: 'expected one of "srgb", "linear"' },
+    ])
+    expect(packManifestIssues(withAssets({ "audio:a": { ...audio, colorSpace: "srgb" } }))).toEqual([
+      { path: 'assets["audio:a"].colorSpace', message: '"audio" assets have no colour space' },
+    ])
+  })
+
   test("header fields", () => {
     expect(
       packManifestIssues({

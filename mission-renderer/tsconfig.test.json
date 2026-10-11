@@ -1,12 +1,13 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["es2024"],
+    "lib": ["es2024", "dom", "dom.iterable"],
     "types": ["node"],
     "outDir": "dist-test",
-    "rootDir": "test",
+    "rootDir": ".",
     "tsBuildInfoFile": "dist-test/.tsbuildinfo"
   },
-  "include": ["test/**/*.ts"],
+  "include": ["test", "**/*.test.ts", "**/*.spec.ts"],
+  "exclude": ["dist", "dist-test", "node_modules"],
   "references": [{ "path": "./tsconfig.json" }]
 }

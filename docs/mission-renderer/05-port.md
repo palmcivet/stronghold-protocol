@@ -1,6 +1,6 @@
 ---
 title: 资源端口
-description: createRendererResourcePort 按资源键申请图片、Spine、模型与 JSON 句柄，沿回退链加载、失败重试并做引用计数。
+description: createMissionResourcePort 按资源键申请图片、Spine、模型与 JSON 句柄，沿回退链加载、失败重试并做引用计数。
 ---
 
 # 资源端口
@@ -8,9 +8,9 @@ description: createRendererResourcePort 按资源键申请图片、Spine、模�
 画面不直接读文件。它通过资源端口按资源键（`AssetKey`）申请句柄。键由 `arknights-assets-catalog` 定义，文件地址由它的解析器 `AssetResolver` 给出。
 
 ```ts
-import { createRendererResourcePort } from "arknights-mission-renderer"
+import { createMissionResourcePort } from "arknights-mission-renderer"
 
-const port = createRendererResourcePort({
+const port = createMissionResourcePort({
   resolver,
   image: (url) => textureLoader.loadAsync(url),
   spine: (source) => loadSpine(source.skel, source.atlas, source.pages),
@@ -25,9 +25,9 @@ port.release("texture:map/autochess/TX_autochessi_D")
 ## 接口
 
 ```ts
-interface RendererResourceLoaders<TImage, TSpine, TModel, TJson> {
+interface MissionResourceLoaders<TImage, TSpine, TModel, TJson> {
   readonly resolver: AssetResolver
-  readonly image: (url: string, key: AssetKey) => Promise<TImage>
+  readonly image: (url: string, key: AssetKey, colorSpace: AssetColorSpace) => Promise<TImage>
   readonly spine: (source: SpineSource) => Promise<TSpine>
   readonly model: (url: string, key: AssetKey) => Promise<TModel>
   readonly json: (url: string, key: AssetKey) => Promise<TJson>
@@ -35,7 +35,7 @@ interface RendererResourceLoaders<TImage, TSpine, TModel, TJson> {
   readonly spineCache?: Omit<SpineCacheOptions, "load">
 }
 
-interface RendererResourcePort<TImage, TSpine, TModel, TJson> {
+interface MissionResourcePort<TImage, TSpine, TModel, TJson> {
   image(key: AssetKey): Promise<TImage>
   spine(key: AssetKey): Promise<TSpine>
   model(key: AssetKey): Promise<TModel>
@@ -61,6 +61,14 @@ interface RendererResourcePort<TImage, TSpine, TModel, TJson> {
 - 图片、模型、JSON 的缓存按种类分开，同一个键在不同种类之间互不影响。
 - Spine 由 `createSpineCache` 管理。回退命中时，缓存里保存的是实际加载的那个键；释放请求的键时一并释放它。空闲淘汰、内存预算与卸载回调见 [缓存](../assets-catalog/05-cache.md#spine)，可用 `spineCache` 调整。
 
+## 颜色空间
+
+资源目录的 `image`、`texture` 条目可以写 `colorSpace`（`srgb` 或 `linear`），省略时是 `srgb`，见 [资源目录格式](../assets-catalog/02-schema.md#包清单)。端口按实际加载的那个条目（回退命中时是回退条目）取得颜色空间，作为第三个参数交给 `image` 加载函数；加载结果是 Three 的 `Texture` 时，端口再把它的 `colorSpace` 设为 `SRGBColorSpace` 或 `LinearSRGBColorSpace`。其余种类没有颜色空间。
+
 ## 地面使用的部分
 
-地面通过端口的 `image`、`model`、`json` 与 `release` 加载地形资源包，`RendererResourcePort` 可以直接传给地面的 `resources`。图片、模型和 JSON 的对应关系见 [地面](./04-ground.md#地形资源包)。
+地面通过端口的 `image`、`model`、`json` 与 `release` 加载地形资源包，`MissionResourcePort` 可以直接传给地面的 `resources`。图片、模型和 JSON 的对应关系见 [地面](./04-ground.md#地形资源包)。
+
+## 骨骼
+
+`spine` 加载函数可以直接用 `createMissionSkeletonLoader(runtime, fetch)`，这时资源端口的 Spine 缓存存放骨骼端口产出的 `MissionSkeletonData`。演员经 `spine(key)` 取得它，演员释放时调用 `release(key)`。见 [演员](./07-actor.md)。

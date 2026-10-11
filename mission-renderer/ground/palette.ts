@@ -1,6 +1,6 @@
 export type Vec3 = readonly [number, number, number]
 
-/** Height of a raised tile class, in tiles (master render/style.js TILE_H). */
+/** Height of a raised tile class, in tiles. */
 export const TILE_HEIGHT = Object.freeze({
   wall: 0.42,
   forbid: 0.3,
@@ -11,7 +11,7 @@ export const TILE_HEIGHT = Object.freeze({
 
 export type TileHeightClass = keyof typeof TILE_HEIGHT
 
-/** Raised glyphs and the height class each stands at (master render/style.js GLYPH). */
+/** Raised glyphs and the height class each stands at. */
 export const RAISED_GLYPH_HEIGHT: Readonly<Record<string, TileHeightClass>> = Object.freeze({
   "#": "forbid",
   X: "sep",
@@ -38,7 +38,7 @@ export const PANEL = Object.freeze({ rim: 0.085, seam: 0.05, lift: 0.004 })
 /** Height of a platform device standing on its tile. */
 export const PLATFORM_DEVICE_HEIGHT = TILE_HEIGHT.platform
 
-/** 活性源石 colours in linear space (master render/style.js ORIGINIUM). */
+/** 活性源石 colours in linear space. */
 export const ORIGINIUM = Object.freeze({
   base: Object.freeze([0.16, 0.05, 0.05] as const),
   crust: Object.freeze([0.3, 0.1, 0.07] as const),

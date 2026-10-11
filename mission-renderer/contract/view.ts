@@ -1,9 +1,10 @@
 import type { BattleEvent, BattleSnapshot, TileCoord, TileSpec, UnitSnapshot } from "arknights-mission-core"
 import type { MissionStageCommand, MissionUpdateMode } from "#contract/command.js"
-import type { MissionPointerHit } from "#contract/pointer.js"
+import type { MissionPointerEvent, MissionPointerHit, MissionPointerPhase } from "#contract/pointer.js"
+import type { MissionAppearances } from "#contract/appearance.js"
 
 export type { MissionStageCommand, MissionUpdateMode } from "#contract/command.js"
-export type { MissionPointerHit } from "#contract/pointer.js"
+export type { MissionPointerEvent, MissionPointerHit, MissionPointerPhase } from "#contract/pointer.js"
 
 export interface MissionMap {
   readonly cols: number
@@ -27,6 +28,10 @@ export interface MissionView {
   readonly events: readonly BattleEvent[]
   readonly highlightedTiles: readonly TileCoord[]
   readonly updateMode: MissionUpdateMode
+  /** Speed of the local render clock, kept across mode changes. */
+  readonly speed: number
+  /** Appearances set so far, by unit id. */
+  readonly appearances: MissionAppearances
 }
 
 export interface MissionStage {
@@ -34,6 +39,8 @@ export interface MissionStage {
   readonly dispatch: (command: MissionStageCommand) => void
   readonly update: (deltaSeconds: number) => void
   readonly pick: (screenX: number, screenY: number) => MissionPointerHit
+  /** Picks under the pointer and hands the event to the stage's `onPointer`. */
+  readonly pointer: (phase: MissionPointerPhase, screenX: number, screenY: number) => MissionPointerEvent
   readonly resize: (width: number, height: number) => void
   readonly destroy: () => void
 }

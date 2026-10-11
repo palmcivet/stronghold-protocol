@@ -73,6 +73,7 @@ interface RawEntry {
   readonly kind: AssetKind // 与键的种类一致
   readonly files: readonly AssetFile[]
   readonly dependsOn: readonly AssetKey[]
+  readonly colorSpace?: "srgb" | "linear" // 只给 image、texture
   readonly source: { readonly id: string; readonly path: string; readonly revision: string | null }
 }
 ```
@@ -97,11 +98,13 @@ interface PackAsset {
   readonly dependsOn: readonly AssetKey[]
   readonly fallbackId: AssetKey | null
   readonly preloadGroup: string | null
+  readonly colorSpace?: "srgb" | "linear" // 只给 image、texture
 }
 ```
 
 - `pack.type` 为 `base`、`season`、`mod`、`local`、`upstream` 之一；`contentHash` 是 SHA-256。
 - `href` 只给不按地址布局存放的文件；带 `href` 的文件 `hash` 可以是空串，表示不校验。
+- `colorSpace` 说明图像颜色通道的编码。只有 `image`、`texture` 可以写；省略时是 `srgb`。法线、粗糙度这类数据贴图写 `linear`。`assetColorSpace(entry)` 给出生效的值，其余种类给 `null`。原始目录与包清单用同一条检查。
 - 条目不能把 `fallbackId` 指向自己；更长的回退环由 [解析器](./04-resolver.md) 发现。
 - `refs` 可以任意嵌套对象与数组，叶子必须是合法键；`packRefsIssues(refs)` 单独检查它。
 

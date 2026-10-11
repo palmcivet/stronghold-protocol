@@ -60,7 +60,7 @@ function neighborGlyph(cells: ReadonlyMap<string, TerrainCell>, x: number, y: nu
   return cells.get(cellKey(x, y))?.glyph ?? null
 }
 
-/** The high-ground plate that joins a raised tile to its raised neighbours (master classifyStage). */
+/** The high-ground plate that joins a raised tile to its raised neighbours. */
 function highPlate(cells: ReadonlyMap<string, TerrainCell>, cell: TerrainCell): { surface: string, rot: number } {
   const left = neighborGlyph(cells, cell.x - 1, cell.y) === "h"
   const right = neighborGlyph(cells, cell.x + 1, cell.y) === "h"

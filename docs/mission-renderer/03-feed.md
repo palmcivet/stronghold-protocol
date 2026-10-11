@@ -20,7 +20,7 @@ stage.update(deltaSeconds)
 
 ## 参数
 
-`createLocalFeed` 直接使用时，参数是 `LocalFeedOptions`。舞台只传入 `speed` 和 `delay`。
+`createMissionFeed` 直接使用时，参数是 `MissionFeedOptions`。舞台只传入 `speed` 和 `delay`。
 
 | 参数 | 缺省 | 范围 | 含义 |
 | --- | --- | --- | --- |
@@ -49,7 +49,7 @@ stage.update(deltaSeconds)
 
 返回值中的 `snapshot` 是 `b`，标签（`tags`）和属性（`attributes`）都取自它。
 
-舞台只把 `sample().units` 写入 `view.units`。舞台不读取 `moving` 集合。
+舞台把 `sample().units` 写入 `view.units`，`moving` 交给演员决定是否播移动动画。
 
 ## 事件
 
@@ -59,4 +59,8 @@ stage.update(deltaSeconds)
 
 ## 重置
 
-`reset()` 清空帧、事件和渲染时钟。舞台在 `reset` 命令和 `set-update-mode` 切换时会丢弃 feed 实例，因此这两个操作都会清空缓冲。
+`reset()` 清空帧、事件和渲染时钟。舞台在 `reset` 命令时丢弃 feed 实例。
+
+## 调整
+
+`configure({ speed, delay })` 修改速度或延迟，帧与事件保留。`pendingEvents()` 返回尚未释放的事件。舞台在 `set-speed` 和再次切到 `local` 时调用 `configure`，切回 `external` 时把 `pendingEvents()` 留给下一次 `update` 释放。

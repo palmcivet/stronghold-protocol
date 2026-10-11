@@ -211,7 +211,7 @@ const image = key ? await store.image(key) : null
 - 叠加顺序为基础 < 赛季 < 模组（按顺序）< 本地。本地清单缺失时是空的覆盖层。
 - 清单请求失败时按 `retryDelays`（默认 250、1000 毫秒）重试。
 - `image`、`preload(group)`、`release` 管理图片缓存与引用；`preload` 按清单条目的 `preloadGroup` 一次加载一组。
-- 渲染器通过 `createRendererResourcePort` 按键请求图片、Spine、模型与 JSON，见 [资源端口](../../mission-renderer/05-port.md)。
+- 渲染器通过 `createMissionResourcePort` 按键请求图片、Spine、模型与 JSON，见 [资源端口](../../mission-renderer/05-port.md)。
 
 ## 连接 master 后端
 

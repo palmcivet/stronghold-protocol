@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { TICK, type BattleEvent, type BattleSnapshot, type UnitSnapshot } from "arknights-mission-core"
-import { createLocalFeed } from "#runtime/feed/index.js"
+import { createMissionFeed } from "#runtime/feed/index.js"
 
 function unit(id: string, x: number): UnitSnapshot {
   return {
@@ -12,6 +12,7 @@ function unit(id: string, x: number): UnitSnapshot {
     facing: "RIGHT",
     height: 0,
     attributes: { hp: 1, maxHp: 1 },
+    maxHp: 1,
     tags: [],
     attackRange: [],
     deployPositions: [],
@@ -37,7 +38,7 @@ function event(tick: number): BattleEvent {
 
 describe("local feed", () => {
   it("trails the newest frame by the delay and interpolates units between frames", () => {
-    const feed = createLocalFeed({ speed: 1, delay: 0.5 })
+    const feed = createMissionFeed({ speed: 1, delay: 0.5 })
 
     feed.push(frame(0, 0))
     feed.push(frame(100, 100))
@@ -53,7 +54,7 @@ describe("local feed", () => {
   })
 
   it("holds a unit that is missing from the newer frame until the clock reaches it", () => {
-    const feed = createLocalFeed({ speed: 1, delay: 0.5 })
+    const feed = createMissionFeed({ speed: 1, delay: 0.5 })
 
     feed.push({ tick: 0, units: [unit("guard", 2), unit("gone", 5)] })
     feed.push({ tick: 100, units: [unit("guard", 2)] })
@@ -63,7 +64,7 @@ describe("local feed", () => {
   })
 
   it("releases an event once the render clock passes its tick", () => {
-    const feed = createLocalFeed({ speed: 1, delay: 0.5 })
+    const feed = createMissionFeed({ speed: 1, delay: 0.5 })
 
     feed.push(frame(0, 0))
     feed.push(frame(100, 0))
@@ -77,7 +78,7 @@ describe("local feed", () => {
   })
 
   it("advances the render clock at the battle's speed and never past the newest frame", () => {
-    const feed = createLocalFeed({ speed: 2, delay: 0 })
+    const feed = createMissionFeed({ speed: 2, delay: 0 })
 
     feed.push(frame(0, 0))
     feed.push(frame(10, 10))
@@ -89,7 +90,7 @@ describe("local feed", () => {
   })
 
   it("starts over when the stream restarts with an earlier tick", () => {
-    const feed = createLocalFeed({ speed: 1, delay: 0 })
+    const feed = createMissionFeed({ speed: 1, delay: 0 })
 
     feed.push(frame(200, 20))
     feed.pushEvent(event(200))

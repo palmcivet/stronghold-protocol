@@ -105,6 +105,7 @@ interface UnitSnapshot {
   facing: Direction
   height: number
   attributes: Readonly<Record<string, number>>
+  maxHp: number
   tags: readonly string[]
   attackRange: readonly TileCoord[]
   deployPositions: readonly string[]
@@ -128,7 +129,7 @@ interface SkillSnapshot {
 }
 ```
 
-单位按 `id` 排序。属性抄单位上存放的数字，再叠正在生效的技能修饰。当前生命不叠技能修饰。状态带来的属性修饰在战斗读取属性时现算，不写进这份快照。`height` 是单位所在地块的高度，不在地块上时是 0。`tags` 是单位持有的标签 id，不分来源（规格、状态、技能与模块授予的合在一起），按 id 排序；路线隐藏额外有 `hidden`；不含蕴含得到的标签。元素槽按标识抄当前值。`blocking` 和 `blockedBy` 抄阻挡组件里已经写好的阻挡关系。`skills` 按单位的技能顺序给出技力、花费、层数和是否持续；弹药技能持续且单位在场时 `ammo` 是向上取整的剩余弹药与弹匣，其余时候是 `null`。`shield` 是护盾池与状态护盾的合计。倒下时 `redeploy` 是再部署计时已过的秒数与要等的秒数，没倒下时是 `null`。`unbalanceUntil` 是失衡结束的拍（不含），没有失衡时是 `null`，见 [费用、阻挡与投射物](./11-field.md#失衡)。
+单位按 `id` 排序。属性抄单位上存放的数字，再叠正在生效的技能修饰。当前生命不叠技能修饰。状态带来的属性修饰在战斗读取属性时现算，不写进这份快照。`maxHp` 是生效的最大生命，即基础值叠上效果修饰之后的值，计入状态；读快照不会结算当前生命的缩放。`height` 是单位所在地块的高度，不在地块上时是 0。`tags` 是单位持有的标签 id，不分来源（规格、状态、技能与模块授予的合在一起），按 id 排序；路线隐藏额外有 `hidden`；不含蕴含得到的标签。元素槽按标识抄当前值。`blocking` 和 `blockedBy` 抄阻挡组件里已经写好的阻挡关系。`skills` 按单位的技能顺序给出技力、花费、层数和是否持续；弹药技能持续且单位在场时 `ammo` 是向上取整的剩余弹药与弹匣，其余时候是 `null`。`shield` 是护盾池与状态护盾的合计。倒下时 `redeploy` 是再部署计时已过的秒数与要等的秒数，没倒下时是 `null`。`unbalanceUntil` 是失衡结束的拍（不含），没有失衡时是 `null`，见 [费用、阻挡与投射物](./11-field.md#失衡)。
 
 `components` 是带 `view` 的组件给画面的显示值，键是组件 id（见 [世界](./04-world.md#组件)）。它只给画面，不计入状态：黄金摘要先去掉它再算。快照不调用选择器。
 

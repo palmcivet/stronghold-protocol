@@ -1,17 +1,22 @@
 import type { Scene } from "three"
-import { OrthographicCamera, WebGLRenderer } from "three"
+import { DoubleSide, Group, Mesh, MeshBasicMaterial, OrthographicCamera, PlaneGeometry, WebGLRenderer } from "three"
+import type { TileCoord } from "arknights-mission-core"
 import type { MissionCamera, MissionMap } from "#contract/view.js"
+import { cellKey, classifyCells, type TerrainCells } from "#ground/cells.js"
 import { createTerrainScene, type TerrainFocusRect, type TerrainScene } from "#ground/scene.js"
-import { loadTerrainPack, type TerrainPack, type TerrainPackRequest, type TerrainResourcePort } from "#ground/pack.js"
+import { loadTerrainPack, type TerrainPack, type MissionGroundPack, type TerrainResourcePort } from "#ground/pack.js"
 import type { TerrainLayout } from "#ground/layout.js"
 import type { WebGLContextEvent, WebGLSurface } from "#ground/webgl.js"
 
-export type { TerrainPackRequest, TerrainResourcePort } from "#ground/pack.js"
-export { TERRAIN_GATE_NODES, TERRAIN_IMAGE_SLOTS, TERRAIN_MESH_SLOTS } from "#ground/pack.js"
-export type { TerrainGateSlot, TerrainImageSlot, TerrainMeshSlot } from "#ground/pack.js"
+export type { MissionGroundPack, TerrainResourcePort } from "#ground/pack.js"
+export { MISSION_GROUND_GATE_NODES, MISSION_GROUND_IMAGE_SLOTS, MISSION_GROUND_MESH_SLOTS } from "#ground/pack.js"
+export type { TerrainGateSlot, MissionGroundImageSlot, TerrainMeshSlot } from "#ground/pack.js"
 export { createTerrainScene, TERRAIN_LIGHTING, gatePulse, type TerrainFocusRect, type TerrainScene } from "#ground/scene.js"
 
-export type TerrainMode = "terrain" | "hidden"
+export type MissionGroundMode = "terrain" | "hidden"
+
+/** How highlighted tiles are drawn: a flat square of `size` tiles, `lift` above the tile's surface. */
+export const MISSION_GROUND_HIGHLIGHT = Object.freeze({ color: 0xffd34d, opacity: 0.35, size: 0.92, lift: 0.01 })
 
 /** The GPU surface the terrain draws to. */
 export interface TerrainRenderView {
@@ -22,25 +27,32 @@ export interface TerrainRenderView {
   dispose(): void
 }
 
-export interface TerrainStageOptions {
+export interface MissionGroundOptions {
   /** Whether the GPU ground may be shown. Defaults to whether a view is present. */
   readonly available?: boolean
   /** Pixels per board tile before the stage's display scale; the canvas is board-sized × display scale × pixel ratio. */
   readonly tileSize?: number
   readonly pixelRatio?: number
   readonly resources?: TerrainResourcePort
-  readonly pack?: TerrainPackRequest
+  readonly pack?: MissionGroundPack
   /** The GPU view. Null leaves the ground hidden. Undefined creates a WebGL renderer when the browser has one. */
   readonly view?: TerrainRenderView | null
-  readonly onMode?: (mode: TerrainMode) => void
+  readonly onMode?: (mode: MissionGroundMode) => void
 }
 
-export interface TerrainStage {
-  readonly mode: TerrainMode
+export interface MissionGround {
+  readonly mode: MissionGroundMode
   readonly canvas: TerrainRenderView["canvas"] | null
   readonly boardWidth: number
   readonly boardHeight: number
   readonly layout: TerrainLayout | null
+  /** Drawn in the ground's scene, above the board, whenever the scene is built (x = column, y = height, z = −row). */
+  readonly overlay: Group
+  /** The highlighted tiles drawn on the board. */
+  readonly highlights: Group
+  /** Height of the board's surface at a tile, in tiles. 0 off the map. */
+  readonly surfaceHeight: (x: number, y: number) => number
+  readonly setHighlights: (tiles: readonly TileCoord[]) => void
   readonly ready: Promise<void>
   readonly setMap: (map: MissionMap) => void
   readonly setCamera: (camera: MissionCamera | null) => void
@@ -53,7 +65,7 @@ export interface TerrainStage {
 
 function createWebGLView(pixelRatio: number): TerrainRenderView | null {
   try {
-    const renderer = new WebGLRenderer({ antialias: true, alpha: true, stencil: false, depth: true })
+    const renderer = new WebGLRenderer({ antialias: true, alpha: true, stencil: true, depth: true })
     renderer.setClearColor(0x000000, 0)
     renderer.setPixelRatio(1)
     const canvas = renderer.domElement as unknown as TerrainRenderView["canvas"]
@@ -86,7 +98,7 @@ function focusOf(camera: MissionCamera | null): TerrainFocusRect | null {
  * when the pack is missing or fails to load, and while the WebGL context is lost; the scene is rebuilt when the
  * context returns. Units and the battle state are never touched here.
  */
-export function createTerrainStage(options: TerrainStageOptions = {}): TerrainStage {
+export function createMissionGround(options: MissionGroundOptions = {}): MissionGround {
   const tileSize = options.tileSize ?? 64
   const pixelRatio = options.pixelRatio ?? 1
   const view = options.view === undefined ? createWebGLView(pixelRatio) : options.view
@@ -99,6 +111,31 @@ export function createTerrainStage(options: TerrainStageOptions = {}): TerrainSt
   let generation = 0
   let presented = false
   let ready = Promise.resolve()
+  const overlay = new Group()
+  overlay.name = "overlay"
+  const highlights = new Group()
+  highlights.name = "highlights"
+  const highlightGeometry = new PlaneGeometry(MISSION_GROUND_HIGHLIGHT.size, MISSION_GROUND_HIGHLIGHT.size).rotateX(-Math.PI / 2)
+  const highlightMaterial = new MeshBasicMaterial({
+    color: MISSION_GROUND_HIGHLIGHT.color,
+    opacity: MISSION_GROUND_HIGHLIGHT.opacity,
+    transparent: true,
+    depthWrite: false,
+    side: DoubleSide,
+  })
+  let cells: TerrainCells = new Map()
+  let highlighted: readonly TileCoord[] = []
+
+  const surfaceHeight = (x: number, y: number): number => cells.get(cellKey(Math.round(x), Math.round(y)))?.height ?? 0
+
+  const drawHighlights = (): void => {
+    highlights.clear()
+    for (const tile of highlighted) {
+      const square = new Mesh(highlightGeometry, highlightMaterial)
+      square.position.set(tile.x, surfaceHeight(tile.x, tile.y) + MISSION_GROUND_HIGHLIGHT.lift, -tile.y)
+      highlights.add(square)
+    }
+  }
 
   const publish = (): void => {
     const next = enabled && sceneRef !== null && view !== null
@@ -123,6 +160,7 @@ export function createTerrainStage(options: TerrainStageOptions = {}): TerrainSt
 
   const buildScene = (nextMap: MissionMap, loaded: TerrainPack): void => {
     sceneRef = createTerrainScene({ map: nextMap, pack: loaded, renderer: view?.renderer ?? null })
+    sceneRef.scene.add(highlights, overlay)
     sceneRef.setFocus(focus)
     resizeView()
   }
@@ -142,6 +180,8 @@ export function createTerrainStage(options: TerrainStageOptions = {}): TerrainSt
   const setMap = (nextMap: MissionMap): void => {
     clearGround()
     map = nextMap
+    cells = classifyCells(nextMap)
+    drawHighlights()
     resizeView()
     ready = load(nextMap, generation)
   }
@@ -176,6 +216,13 @@ export function createTerrainStage(options: TerrainStageOptions = {}): TerrainSt
     get layout() {
       return sceneRef?.layout ?? null
     },
+    overlay,
+    highlights,
+    surfaceHeight,
+    setHighlights(tiles) {
+      highlighted = tiles
+      drawHighlights()
+    },
     get ready() {
       return ready
     },
@@ -205,6 +252,9 @@ export function createTerrainStage(options: TerrainStageOptions = {}): TerrainSt
       view?.canvas.removeEventListener("webglcontextlost", onContextLost)
       view?.canvas.removeEventListener("webglcontextrestored", onContextRestored)
       clearGround()
+      highlights.clear()
+      highlightGeometry.dispose()
+      highlightMaterial.dispose()
       view?.dispose()
     },
   }

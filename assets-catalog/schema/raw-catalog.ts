@@ -1,6 +1,7 @@
 import type { AssetKey, AssetKind } from "#key/asset-key.js"
 import { assetKindOf } from "#key/asset-key.js"
 import { checkAssetFiles, type AssetFile } from "#schema/asset-file.js"
+import { ASSET_COLOR_SPACES, COLOR_SPACE_KINDS, type AssetColorSpace } from "#schema/color-space.js"
 import { fieldPath, indexPath, SchemaCheck, type SchemaIssue } from "#schema/issue.js"
 
 /** Every extracted asset by key, plus the needs no source could provide. */
@@ -16,6 +17,8 @@ export interface RawEntry {
   readonly files: readonly AssetFile[]
   /** Other keys this entry needs, e.g. the textures of a material. */
   readonly dependsOn: readonly AssetKey[]
+  /** Colour space of an image or texture; `srgb` when absent. Normal, roughness and mask maps are `linear`. */
+  readonly colorSpace?: AssetColorSpace
   readonly source: RawSource
 }
 
@@ -33,7 +36,7 @@ export interface MissingNeed {
   readonly tried: readonly { readonly source: string; readonly reason: string }[]
 }
 
-/** Checks `key`, `kind`, `files` and `dependsOn` shared by raw entries and pack assets. Returns the checked key. */
+/** Checks `key`, `kind`, `files`, `dependsOn` and `colorSpace` shared by raw entries and pack assets. Returns the checked key. */
 export function checkEntryHead(check: SchemaCheck, recordKey: string, entry: Readonly<Record<string, unknown>>, path: string, href: boolean): AssetKey | null {
   const key = check.key(recordKey, path)
   if (!key) return null
@@ -41,6 +44,11 @@ export function checkEntryHead(check: SchemaCheck, recordKey: string, entry: Rea
   if (entry["kind"] !== kind) check.fail(fieldPath(path, "kind"), `expected "${kind}" to match the key`)
   checkAssetFiles(check, kind, entry["files"], fieldPath(path, "files"), { href })
   check.keys(entry["dependsOn"], fieldPath(path, "dependsOn"))
+  if (entry["colorSpace"] !== undefined) {
+    const colorPath = fieldPath(path, "colorSpace")
+    check.oneOf(entry["colorSpace"], colorPath, ASSET_COLOR_SPACES)
+    if (!COLOR_SPACE_KINDS.includes(kind)) check.fail(colorPath, `"${kind}" assets have no colour space`)
+  }
   return key
 }
 

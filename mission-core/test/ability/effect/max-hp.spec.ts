@@ -60,3 +60,15 @@ test("不在场时上限变化只记下来，不缩放生命；再上场之后�
   battle.step()
   expect(hpOf()).toBe(500)
 })
+
+test("快照的 maxHp 是生效的最大生命，attributes.maxHp 仍是基础值；读快照不结算缩放", () => {
+  const { battle } = open({ 0: (ctx) => ctx.retreatUnit("u"), 1: (ctx) => ctx.applyEffect("u", "case-double") })
+  const unitOf = () => battle.snapshot().units.find((unit) => unit.id === "u")!
+  battle.step()
+  expect(unitOf().maxHp).toBe(1000)
+  battle.step()
+  const unit = unitOf()
+  expect(unit.maxHp).toBe(2000)
+  expect(unit.attributes.maxHp).toBe(1000)
+  expect(unit.attributes.hp).toBe(500)
+})

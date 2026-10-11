@@ -1,6 +1,6 @@
 import type { MissionCamera } from "#contract/view.js"
 
-export interface BoardTransform {
+export interface MissionBoardTransform {
   readonly x: number
   readonly y: number
   readonly scale: number
@@ -17,7 +17,7 @@ export function calculateBoardTransform(
   tileSize: number,
   viewportWidth: number,
   viewportHeight: number,
-): BoardTransform | null {
+): MissionBoardTransform | null {
   if (cols <= 0 || rows <= 0 || tileSize <= 0 || viewportWidth <= 0 || viewportHeight <= 0) return null
 
   const mapWidth = cols * tileSize

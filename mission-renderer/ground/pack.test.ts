@@ -1,14 +1,14 @@
 import { describe, expect, it, vi } from "vitest"
 import { DataTexture } from "three"
 import type { AssetKey } from "arknights-assets-catalog"
-import { loadTerrainPack, TERRAIN_GATE_NODES, type TerrainResourcePort } from "#ground/pack.js"
+import { loadTerrainPack, MISSION_GROUND_GATE_NODES, type TerrainResourcePort } from "#ground/pack.js"
 
 const diffuse: AssetKey = "texture:map/autochess/TX_autochessi_D"
 const gate: AssetKey = "model:map/fx/gate_end"
 
 describe("terrain pack", () => {
   it("names the official gate nodes", () => {
-    expect(TERRAIN_GATE_NODES).toMatchObject({
+    expect(MISSION_GROUND_GATE_NODES).toMatchObject({
       startDown: "Start_down",
       startUp: "Start_up",
       startBack: "Start_back",
@@ -26,11 +26,11 @@ describe("terrain pack", () => {
       json: async () => null,
       release,
     }, {
-      images: { D: diffuse },
+      images: { diffuse: diffuse },
       gates: { endDown: gate },
     })
 
-    expect(pack?.images.D).toBe(texture)
+    expect(pack?.images.diffuse).toBe(texture)
     expect(pack?.gates.endDown).toBeTruthy()
     pack?.release()
     expect(release).toHaveBeenCalledWith(diffuse, "image")
@@ -55,7 +55,7 @@ describe("terrain pack", () => {
       release: vi.fn(),
     }
     const pack = await loadTerrainPack(port, {
-      images: { D: diffuse },
+      images: { diffuse: diffuse },
       gatePrefab: "json:map/fx/prefab",
       resolveMesh: (name) => (name === "gate_end" ? gate : null),
       tiles: "json:map/autochess/tiles",
@@ -76,7 +76,7 @@ describe("terrain pack", () => {
       model: async () => null,
       json: async () => null,
       release,
-    }, { images: { D: diffuse } })
+    }, { images: { diffuse: diffuse } })
 
     expect(pack).toBeNull()
     expect(release).toHaveBeenCalledWith(diffuse, "image")

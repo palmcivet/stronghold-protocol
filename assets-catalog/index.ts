@@ -44,6 +44,7 @@ export {
   type PackType,
   type RequiredPackType,
 } from "#schema/pack-manifest.js"
+export { ASSET_COLOR_SPACES, assetColorSpace, COLOR_SPACE_KINDS, type AssetColorSpace } from "#schema/color-space.js"
 export { isSpineMeta, spineMetaIssues, type SpineAnimation, type SpineBounds, type SpineMeta } from "#schema/spine-meta.js"
 
 export {

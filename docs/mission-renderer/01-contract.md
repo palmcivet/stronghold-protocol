@@ -54,7 +54,9 @@ interface MissionView {
 - `snapshot` 是最近一次推入的快照，本地模式下也是。
 - `units` 是舞台正在画的单位。外部模式下等于最近推入的快照中的单位；本地模式下是渲染时钟上的插值结果，见 [本地喂数](./03-feed.md)。
 - `events` 保留最近 100 条已经释放的事件，包括没有音效的事件。
-- `highlightedTiles` 是最近一次 `set-highlights` 给出的格子。舞台只保存它，不绘制。
+- `highlightedTiles` 是最近一次 `set-highlights` 给出的格子，由地面绘制。
+- `speed` 是渲染时钟的速度，缺省 2，切换模式时保留。
+- `appearances` 是到目前为止设置的表现数据，按单位 id。
 
 ## 命令
 
@@ -66,8 +68,10 @@ type MissionStageCommand =
   | { type: "set-camera"; camera: MissionCamera }
   | { type: "set-highlights"; tiles: readonly TileCoord[] }
   | { type: "set-update-mode"; mode: MissionUpdateMode; speed?: number; delay?: number }
+  | { type: "set-speed"; speed: number }
   | { type: "push-snapshot"; snapshot: BattleSnapshot }
   | { type: "push-event"; event: BattleEvent }
+  | { type: "set-appearances"; appearances: MissionAppearances }
   | { type: "reset" }
 ```
 
@@ -75,11 +79,13 @@ type MissionStageCommand =
 | --- | --- |
 | `set-map` | 换成新地图，重建地面，并按当前相机重新铺满视口 |
 | `set-camera` | 设置相机，并重新计算视口变换 |
-| `set-highlights` | 替换 `highlightedTiles` |
-| `set-update-mode` | 切换模式，`local` 时用 `speed` 和 `delay` 建立渲染时钟 |
+| `set-highlights` | 替换 `highlightedTiles`，地面画出这些格子 |
+| `set-update-mode` | 切换模式，`local` 时用 `speed` 和 `delay` 建立或调整渲染时钟；已缓冲的帧和待放的事件保留 |
+| `set-speed` | 设置渲染时钟的速度（每真实秒的游戏秒数），夹在 0.05 到 20 |
 | `push-snapshot` | 推入一帧快照 |
 | `push-event` | 推入一条事件 |
-| `reset` | 清空快照、单位、事件和高亮，模式回到 `external`，地图与相机保留 |
+| `set-appearances` | 按单位 id 合并表现数据，见 [演员](./07-actor.md) |
+| `reset` | 清空快照、单位、事件、高亮、表现数据与演员，模式回到 `external`，地图与相机保留 |
 
 命令在 [舞台](./02-stage.md) 中逐条说明。
 
@@ -89,7 +95,7 @@ type MissionStageCommand =
 type MissionUpdateMode = "external" | "local"
 ```
 
-- `external`：快照和事件推入后立即生效。
+- `external`：快照推入后立即生效，事件在下一次 `update` 释放。
 - `local`：调用方每帧推入快照和事件，舞台按渲染时钟释放它们。见 [本地喂数](./03-feed.md)。
 
 ## 拾取结果
@@ -102,3 +108,18 @@ type MissionPointerHit =
 ```
 
 拾取规则见 [舞台](./02-stage.md#拾取)。
+
+## 指针事件
+
+```ts
+type MissionPointerPhase = "down" | "move" | "up"
+
+interface MissionPointerEvent {
+  readonly phase: MissionPointerPhase
+  readonly screenX: number
+  readonly screenY: number
+  readonly hit: MissionPointerHit
+}
+```
+
+宿主把容器上的指针事件交给 `stage.pointer(phase, x, y)`，舞台拾取后把事件交给 `onPointer`。坐标相对视口。

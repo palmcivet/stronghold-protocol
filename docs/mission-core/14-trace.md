@@ -31,7 +31,7 @@ export function hypot(x: number, y: number): number {
 - 标记的写法；每个 `assumed`、`source` 标记都在本表对应包的一节里，表里每一行至少被引用一次；每个 `interim` 标记都能在 `plans/` 中找到。
 - 注释、测试名与报错文案中不出现参考实现的文件路径、文件名、设计记录小节号，以及待办或实施期字样。命中即失败，报出文件与行号，没有豁免名单。
 
-在 `mission-core` 内运行：
+在 `mission-core` 或 `mission-renderer` 内运行：
 
 ```sh
 pnpm test
@@ -61,3 +61,8 @@ pnpm test
 | `source/loadout-compose` | 带模块的属性是无模块属性加模块的平加值并保留六位小数；天赋按序号覆盖，模块未写的键保留，其余追加，空占位丢弃 | `port/loadout.ts`（`composeStats`、`composeTalents`） | 参考实现 `tools/build-data.mjs`（`mergeTalentChanges`）、`shared/loadoutRecord.js` | 与数据构建时的合并规则一致，详情卡与战斗读到同一组数 | 未核对 |
 | `source/loadout-range` | 部署时的攻击范围：技能写明「被动效果：攻击范围扩大」用技能范围；精英且模块写明「攻击范围扩大」用模块范围；否则用记录范围；再加特性的永久攻击距离 | `port/loadout.ts`（`attackRangeGrid`） | 参考实现 `shared/loadoutRecord.js`，设计记录 DESIGN §16 | 官方技能与模块描述的文字约定 | 未核对 |
 | `source/range-extend` | 攻击距离增加 n 时，范围每一行在最远端外补上 1…⌊n⌋ 格，去重，丢弃无效项 | `port/loadout.ts`（`extendedGrid`） | 参考实现 `server/sim/targeting.js`（`absoluteRangeKeys`），设计记录 DESIGN §3 | 官方「攻击距离 +1」按行向前延伸 | 未核对 |
+
+## mission-renderer
+
+| id | 规则 | 位置 | 来源 | 依据 | 核对 |
+|---|---|---|---|---|---|

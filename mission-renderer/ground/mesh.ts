@@ -144,7 +144,7 @@ export interface BoardPlacement {
 }
 
 /**
- * Place a board-space mesh (x = column, y = row, z = up) at `placement`, then convert it to the three.js scene
+ * Place a board-space mesh (x = column, y = row, z = up) at `placement`, then convert it to the Three scene
  * (x = column, y = height, z = −row).
  */
 export function placeBoardMesh(mesh: TerrainGeometry, placement: BoardPlacement): TerrainGeometry {

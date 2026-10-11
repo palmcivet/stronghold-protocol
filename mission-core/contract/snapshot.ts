@@ -28,6 +28,8 @@ export interface UnitSnapshot {
   /** 所在地块的高度。不在地块上时是 0。 */
   readonly height: number
   readonly attributes: UnitAttributes
+  /** 生效的最大生命：基础值叠上效果的修饰。读它不结算当前生命的缩放。 */
+  readonly maxHp: number
   /** 单位持有的标签 id，不分来源；路线消失时加上 hidden。按 id 排序。 */
   readonly tags: readonly string[]
   readonly attackRange: readonly TileCoord[]

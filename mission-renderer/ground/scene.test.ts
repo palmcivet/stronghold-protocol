@@ -12,7 +12,7 @@ function texture(): DataTexture {
 
 function pack(): TerrainPack {
   return {
-    images: { D: texture() },
+    images: { diffuse: texture() },
     meshes: {},
     gates: {},
     uv: resolveUvTable(null),

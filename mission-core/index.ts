@@ -233,6 +233,7 @@ export {
   type AttackImpact,
   type AttackResolver,
 } from "#combat/attack/shape.js"
+export type { AttackStandView } from "#combat/attack/stand.js"
 export { PROJECTILE_MAX_AGE, PROJECTILE_SPEED } from "#combat/projectile/index.js"
 export { REDEPLOY_MUL_ATTRIBUTE, redeployModule } from "#unit/deploy/redeploy.js"
 export {

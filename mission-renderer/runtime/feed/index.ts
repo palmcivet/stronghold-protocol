@@ -1,6 +1,6 @@
 import { TICK, type BattleEvent, type BattleSnapshot, type UnitSnapshot } from "arknights-mission-core"
 
-export interface LocalFeedOptions {
+export interface MissionFeedOptions {
   /** Game seconds per real second: the battle's speed. */
   readonly speed?: number | undefined
   /** Real seconds the render clock trails the newest frame. */
@@ -9,7 +9,7 @@ export interface LocalFeedOptions {
   readonly keep?: number | undefined
 }
 
-export interface FeedSample {
+export interface MissionFeedSample {
   /** Game time of the render clock, in seconds. */
   readonly time: number
   /** The newer frame that brackets the render clock; flags and attributes come from it. */
@@ -20,13 +20,19 @@ export interface FeedSample {
   readonly moving: ReadonlySet<string>
 }
 
-export interface LocalFeed {
+export interface MissionFeed {
   readonly renderTime: number
   readonly newestTime: number
+  readonly speed: number
+  readonly delay: number
+  /** Changes the speed or the delay; buffered frames and waiting events are kept. */
+  configure(options: Pick<MissionFeedOptions, "speed" | "delay">): void
+  /** Events not released yet, in push order. */
+  pendingEvents(): readonly BattleEvent[]
   push(snapshot: BattleSnapshot): void
   pushEvent(event: BattleEvent): void
   advance(deltaSeconds: number): void
-  sample(): FeedSample | null
+  sample(): MissionFeedSample | null
   takeEvents(): readonly BattleEvent[]
   reset(): void
 }
@@ -51,11 +57,11 @@ function gameTimeOf(tick: number): number {
 /**
  * Snapshots fed every frame by a local simulation. The render clock advances at the battle's speed and trails the
  * newest frame by `delay` real seconds; units are interpolated between the two frames around the clock, and an event
- * is released once the clock reaches its tick (master client-side combat, render/interp.js).
+ * is released once the clock reaches its tick.
  */
-export function createLocalFeed(options: LocalFeedOptions = {}): LocalFeed {
-  const speed = clamp(options.speed ?? 2, 0.05, 20)
-  const delay = Math.max(0, options.delay ?? 0.034)
+export function createMissionFeed(options: MissionFeedOptions = {}): MissionFeed {
+  let speed = clamp(options.speed ?? 2, 0.05, 20)
+  let delay = Math.max(0, options.delay ?? 0.034)
   const keep = Math.max(0.5, options.keep ?? 2.5)
   let frames: Frame[] = []
   let events: BattleEvent[] = []
@@ -83,6 +89,19 @@ export function createLocalFeed(options: LocalFeedOptions = {}): LocalFeed {
     },
     get newestTime() {
       return newestTime()
+    },
+    get speed() {
+      return speed
+    },
+    get delay() {
+      return delay
+    },
+    configure(next) {
+      if (next.speed !== undefined) speed = clamp(next.speed, 0.05, 20)
+      if (next.delay !== undefined) delay = Math.max(0, next.delay)
+    },
+    pendingEvents() {
+      return events
     },
     push(snapshot) {
       const last = frames[frames.length - 1]

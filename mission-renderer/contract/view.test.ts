@@ -8,6 +8,7 @@ describe("mission renderer contract", () => {
       { type: "set-camera", camera: { x: 0, y: 0, width: 2, height: 2, margin: 1 } },
       { type: "set-highlights", tiles: [{ x: 1, y: 1 }] },
       { type: "set-update-mode", mode: "local" },
+      { type: "set-appearances", appearances: {} },
       { type: "reset" },
     ]
 
@@ -16,6 +17,7 @@ describe("mission renderer contract", () => {
       "set-camera",
       "set-highlights",
       "set-update-mode",
+      "set-appearances",
       "reset",
     ])
   })
@@ -40,6 +42,8 @@ describe("mission renderer contract", () => {
       events: [],
       highlightedTiles: [],
       updateMode: "external",
+      speed: 2,
+      appearances: {},
     }
 
     expect(view).toMatchObject({

@@ -152,7 +152,7 @@ function propGeometry(prop: TerrainProp, scale: number, placement: BoardPlacemen
 }
 
 /**
- * Build the official board as a three.js scene for a map: the board's tiles, decals, railings, gates, devices, animated
+ * Build the official board as a Three scene for a map: the board's tiles, decals, railings, gates, devices, animated
  * special terrain, the field border and the background, lit by a key light with soft shadows.
  */
 export function createTerrainScene(options: TerrainSceneOptions): TerrainScene {
@@ -162,16 +162,16 @@ export function createTerrainScene(options: TerrainSceneOptions): TerrainScene {
   const focus: FocusUniforms = focusUniforms()
   const images = pack.images
   const textures: BoardTextures = {
-    diffuse: images.D!,
-    normal: images.N ?? null,
-    roughness: images.R ?? null,
-    emissive: images.E ?? null,
+    diffuse: images.diffuse!,
+    normal: images.normal ?? null,
+    roughness: images.roughness ?? null,
+    emissive: images.emissive ?? null,
     common: images.common ?? null,
-    commonEmissive: images.commonE ?? null,
-    background: images.BG ?? null,
+    commonEmissive: images.commonEmissive ?? null,
+    background: images.background ?? null,
     wind: images.wind ?? null,
     gate: images.gate ?? null,
-    water: images.waterN ?? null,
+    water: images.waterNormal ?? null,
     caustics: images.caustics ?? null,
     noise: images.noise ?? null,
   }
