@@ -7,10 +7,10 @@ description: 盟约是「卫戍协议：盟约」的应用：赛季数据与资�
 
 盟约是本仓库里的应用，复刻《明日方舟》自走棋塔防玩法「卫戍协议：盟约」。它用四个库搭成一款游戏：
 
-- [arknights-mission-core](../mission-core/index.md)演算战斗
-- [arknights-mission-renderer](../mission-renderer/index.md)绘制战场
-- [arknights-assets-catalog](../assets-catalog/index.md)按键解析资源
-- [arknights-assets-extractor](../assets-extractor/index.md)在构建期取回资源
+- [arknights-mission-core](../mission-core/index.md) 演算战斗
+- [arknights-mission-renderer](../mission-renderer/index.md) 绘制战场
+- [arknights-assets-catalog](../assets-catalog/index.md) 按键解析资源
+- [arknights-assets-extractor](../assets-extractor/index.md) 在构建期取回资源
 
 库文档只写库本身。应用怎样组织数据、发布资源、连接服务端，写在这一节。
 

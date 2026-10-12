@@ -8,26 +8,26 @@
   "exports": {
     "./package.json": "./package.json",
     "./workspace": {
-      "types": "./dist/workspace.d.ts",
       "source": "./workspace.ts",
+      "types": "./dist/workspace.d.ts",
       "import": "./dist/workspace.js",
       "default": "./dist/workspace.js"
     },
     "./gamedata": {
-      "types": "./dist/compiler/gamedata.d.ts",
       "source": "./compiler/gamedata.ts",
+      "types": "./dist/compiler/gamedata.d.ts",
       "import": "./dist/compiler/gamedata.js",
       "default": "./dist/compiler/gamedata.js"
     },
     "./refs": {
-      "types": "./dist/schema/pack-refs.d.ts",
       "source": "./schema/pack-refs.ts",
+      "types": "./dist/schema/pack-refs.d.ts",
       "import": "./dist/schema/pack-refs.js",
       "default": "./dist/schema/pack-refs.js"
     },
     "./pack-layout": {
-      "types": "./dist/schema/pack-layout.d.ts",
       "source": "./schema/pack-layout.ts",
+      "types": "./dist/schema/pack-layout.d.ts",
       "import": "./dist/schema/pack-layout.js",
       "default": "./dist/schema/pack-layout.js"
     }
@@ -52,7 +52,10 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "check": "tsc --noEmit",
+    "check": "pnpm check:src && pnpm check:test",
+    "check:src": "tsc --noEmit --incremental false --composite false",
+    "check:test": "tsc -p tsconfig.test.json",
+    "clean": "rimraf dist dist-test tsconfig.test.tsbuildinfo",
     "compile:derive": "node dist/compiler/scripts/derive.js",
     "compile:emotes": "node dist/compiler/scripts/emotes.js",
     "compile:needs": "node dist/compiler/scripts/needs.js",
@@ -64,6 +67,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@alliance/shared": "workspace:*",
     "arknights-assets-catalog": "workspace:*",
     "arknights-assets-extractor": "workspace:*",
     "arknights-mission-core": "workspace:*"
@@ -71,6 +75,7 @@
   "devDependencies": {
     "@biomejs/biome": "catalog:",
     "@types/node": "catalog:",
+    "rimraf": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"

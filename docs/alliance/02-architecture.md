@@ -17,13 +17,37 @@ description: app/ 下的各个包、它们的依赖，以及数据从构建期�
 
 ## 依赖
 
-- `@alliance/contract`：无
-- `@alliance/data`：`assets-catalog`、`assets-extractor`、`mission-core`
-- `@alliance/server`：`@alliance/contract`、`@alliance/data`、`mission-core`、`ws`
-- `@alliance/client`：`@alliance/contract`、`@alliance/data`、`assets-catalog`、`@alliance/compat-upstream`、`mission-core`、`mission-renderer`
-- `@alliance/compat-upstream`：`assets-catalog`、`valibot`
+箭头表示「依赖」方向。库名省略前缀 `arknights-`。
 
-表中的库名省略了前缀 `arknights-`。
+```mermaid
+flowchart BT
+  contract["@alliance/contract"]
+  catalog[assets-catalog]
+  extractor[assets-extractor]
+  core[mission-core]
+  renderer[mission-renderer]
+  valibot[valibot]
+  ws[ws]
+
+  data["@alliance/data"] --> catalog
+  data --> extractor
+  data --> core
+
+  compat["@alliance/compat-upstream"] --> catalog
+  compat --> valibot
+
+  server["@alliance/server"] --> contract
+  server --> data
+  server --> core
+  server --> ws
+
+  client["@alliance/client"] --> contract
+  client --> data
+  client --> catalog
+  client --> compat
+  client --> core
+  client --> renderer
+```
 
 - 库不依赖应用。`assets-extractor` 只被 `@alliance/data` 的构建脚本使用，不进入客户端与服务端的产物
 - 服务端只读赛季数据包，不读资源清单与媒体文件
@@ -31,10 +55,24 @@ description: app/ 下的各个包、它们的依赖，以及数据从构建期�
 
 ## 数据流
 
-```text
-构建期  gamedata、社区仓库 ─▶ @alliance/data ─▶ 数据包、基础包、赛季包
-对局    数据包 ─▶ @alliance/server ─▶ 战斗规格 ─▶ 浏览器演算 ─▶ 结果交回服务端
-画面    资源包 ─▶ assets-catalog ─▶ mission-renderer
+```mermaid
+flowchart LR
+  subgraph build [构建期]
+    sources[gamedata、社区仓库] --> data["@alliance/data"]
+    data --> packs[数据包、基础包、赛季包]
+  end
+
+  subgraph match [对局]
+    packet[数据包] --> server["@alliance/server"]
+    server --> spec[战斗规格]
+    spec --> browser[浏览器演算]
+    browser --> result[结果交回服务端]
+  end
+
+  subgraph view [画面]
+    assets[资源包] --> catalog[assets-catalog]
+    catalog --> renderer[mission-renderer]
+  end
 ```
 
 - 数据与资源的流水线见 [资源从哪里来](./data/03-resource.md)

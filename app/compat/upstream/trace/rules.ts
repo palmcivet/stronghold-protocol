@@ -367,9 +367,14 @@ export const TRACE_RULES: readonly TraceRule[] = [
     source:
       '参考实现 `tools/build-data.mjs`（`mergeTalentChanges`）、`shared/loadoutRecord.js`',
     basis: '与数据构建时的合并规则一致，详情卡与战斗读到同一组数',
-    verified: '未核对',
-    next: [],
-    gap: 'mission-core 里没有直接调用 port/loadout.ts 这一函数的用例；app/server 通过它组装部署单位，未找到锁住这条规则的用例，待补',
+    verified: '已按 port/loadout.ts 的用例核对，未逐条对照参考实现',
+    next: [
+      'mission-core/test/port/loadout.spec.ts::带模块的属性是无模块属性加模块平加值，保留六位小数；没有的字段按 0 加；整数与 1e6 以上不舍入；不改输入',
+      'mission-core/test/port/loadout.spec.ts::天赋按序号覆盖，模块未写的键保留、bb 合并，新序号追加，空占位丢弃；不改输入',
+    ],
+    upstreamCases: [
+      'sim/loadout.test.js::getChess(id, loadout): selected skill (bb, SP, trigger) and module (stats, trait, talents); cached; default = same def',
+    ],
   },
   {
     id: 'source/loadout-range',
@@ -378,20 +383,32 @@ export const TRACE_RULES: readonly TraceRule[] = [
     location: '`port/loadout.ts`（`attackRangeGrid`）',
     source: '参考实现 `shared/loadoutRecord.js`，设计记录 DESIGN §16',
     basis: '官方技能与模块描述的文字约定',
-    verified: '未核对',
-    next: [],
-    gap: 'mission-core 里没有直接调用 port/loadout.ts 这一函数的用例；app/server 通过它组装部署单位，未找到锁住这条规则的用例，待补',
+    verified: '已按 port/loadout.ts 的用例核对，未逐条对照参考实现',
+    next: [
+      'mission-core/test/port/loadout.spec.ts::部署范围：技能写明「被动效果：攻击范围扩大」时用技能范围，先于模块',
+      'mission-core/test/port/loadout.spec.ts::部署范围：精英且装着写明「攻击范围扩大」的模块时用模块序号 −1 的范围；不是精英、模块未装或没有该范围时用记录范围',
+      'mission-core/test/port/loadout.spec.ts::部署范围再加特性的永久攻击距离，向下取整；集成战略专用、非正数不加；null 与无范围得 null',
+    ],
+    upstreamCases: [
+      "ui/feedback1e-range.test.js::prep: the record's attack range (card without a live entry, board overlay, deploy wheel) = the unit's range at deployment — every loadout",
+    ],
   },
   {
     id: 'source/range-extend',
     package: 'mission-core',
-    rule: '攻击距离增加 n 时，范围每一行在最远端外补上 1…⌊n⌋ 格，去重，丢弃无效项',
+    rule: '攻击距离增加 n 时，范围每一行在最远端外补上 1…⌊n⌋ 格（最多补到场地列数 21 格），去重，丢弃无效项',
     location: '`port/loadout.ts`（`extendedGrid`）',
     source:
       '参考实现 `server/sim/targeting.js`（`absoluteRangeKeys`），设计记录 DESIGN §3',
     basis: '官方「攻击距离 +1」按行向前延伸',
-    verified: '未核对',
-    next: [],
-    gap: 'mission-core 里没有直接调用 port/loadout.ts 这一函数的用例；app/server 通过它组装部署单位，未找到锁住这条规则的用例，待补',
+    verified: '已按 port/loadout.ts 的用例核对，未逐条对照参考实现',
+    next: [
+      'mission-core/test/port/loadout.spec.ts::攻击距离 n：每一行在最远端外补 1…⌊n⌋ 格，原格在前；不改输入',
+      'mission-core/test/port/loadout.spec.ts::攻击距离：重复格去重，无效项丢弃；n 不大于 0、NaN、Infinity 不延伸；不是数组得空',
+      'mission-core/test/port/loadout.spec.ts::攻击距离最多补到场地列数 21 格',
+    ],
+    upstreamCases: [
+      "sim/feedback1e-skillrange.test.js::extendedGrid: the relative form of absoluteRangeKeys' rangeExtend, for every facing (random grids)",
+    ],
   },
 ];

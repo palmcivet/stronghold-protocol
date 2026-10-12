@@ -181,19 +181,8 @@ export interface Intercept<T> {
   readonly intercept: T;
 }
 
-/**
- * 事件名到事件数据。写成 Intercept<数据> 的事件可拦截，其余只读、排队分发。模块经声明合并加入自己的事件：
- *
- * ```ts
- * declare module "arknights-mission-core" {
- *   interface BattleEventMap {
- *     "doll-swap": { readonly unitId: string }
- *     "doll-guard": Intercept<{ readonly unitId: string; cancel: boolean }>
- *   }
- * }
- * ```
- */
-export interface BattleEventMap {
+/** 核心自己声明的事件。封闭：模块不往这里合并，而是合并进 BattleEventMap。 */
+interface CoreBattleEventMap {
   attack: Intercept<AttackEvent>;
   'attack-hit': AttackHitEvent;
   hit: HitEvent;
@@ -225,6 +214,65 @@ export interface BattleEventMap {
   'element-burst': ElementBurstEvent;
   cue: CueEvent;
 }
+
+/**
+ * 事件名到事件数据。写成 Intercept<数据> 的事件可拦截，其余只读、排队分发。模块经声明合并加入自己的事件，事件名写成 `<namespace>:<event>`：
+ *
+ * ```ts
+ * declare module "arknights-mission-core" {
+ *   interface BattleEventMap {
+ *     "my-mod:doll-swap": { readonly unitId: string }
+ *     "my-mod:doll-guard": Intercept<{ readonly unitId: string; cancel: boolean }>
+ *   }
+ * }
+ * ```
+ */
+export interface BattleEventMap extends CoreBattleEventMap {}
+
+/** 列出的事件名恰好覆盖全部核心事件时才接受：漏列或列入非核心事件都编译不过。 */
+function coreEventTypes<const T extends readonly (keyof CoreBattleEventMap)[]>(
+  types: T &
+    ([Exclude<keyof CoreBattleEventMap, T[number]>] extends [never]
+      ? unknown
+      : { readonly missing: Exclude<keyof CoreBattleEventMap, T[number]> }),
+): T {
+  return Object.freeze(types);
+}
+
+/** 核心声明的全部事件名，封闭。模块经声明合并加入的事件不在其中。 */
+export const CORE_EVENT_TYPES = coreEventTypes([
+  'attack',
+  'attack-hit',
+  'hit',
+  'element-hit',
+  'fatal',
+  'palsy-interrupt',
+  'damaged',
+  'loss',
+  'heal',
+  'downed',
+  'removed',
+  'deploy',
+  'retreat',
+  'input',
+  'input-refused',
+  'spawn',
+  'displace',
+  'blocked',
+  'unblocked',
+  'cost',
+  'leak',
+  'projectile',
+  'skill-start',
+  'skill-end',
+  'ammo-used',
+  'status',
+  'element-burst',
+  'cue',
+] as const);
+
+/** 核心事件名。 */
+export type CoreEventType = (typeof CORE_EVENT_TYPES)[number];
 
 export type BattleEventType = keyof BattleEventMap & string;
 

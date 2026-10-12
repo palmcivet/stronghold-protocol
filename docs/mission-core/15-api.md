@@ -633,6 +633,7 @@ mod.redeployModule satisfies MissionModule
 | `TICK` | `1 / 30` |
 | `FRAME_CATCHUP` | 150 |
 | `PHASE_SLOTS` | 十个阶段槽，按执行顺序 |
+| `CORE_EVENT_TYPES` | 全部核心事件名，封闭；元素类型是 `CoreEventType` |
 | `BATTLE_INPUT_TYPES` | `retreat`、`redeploy`、`cast` |
 | `DAMAGE_STAGES` | 伤害修饰的阶段 |
 | `EXTENSIBLE_CONTRACTS` | 可扩展的注册表名 |

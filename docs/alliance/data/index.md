@@ -1,5 +1,5 @@
 ---
-title: 卫戍协议数据
+title: "@alliance/data"
 description: 卫戍协议的赛季包、资源清单和构建器。
 ---
 

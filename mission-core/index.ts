@@ -63,6 +63,7 @@ export type {
   BattleEventMap,
   BattleEventType,
   BlockEvent,
+  CoreEventType,
   CostEvent,
   CueEvent,
   CueMap,
@@ -87,6 +88,7 @@ export type {
   StatusEvent,
   UnitEvent,
 } from '#contract/event.js';
+export { CORE_EVENT_TYPES } from '#contract/event.js';
 export type {
   BattleInput,
   BattleInputType,

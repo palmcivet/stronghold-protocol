@@ -3,11 +3,14 @@
   "compilerOptions": {
     "types": ["node"],
     "customConditions": ["source"],
-    "outDir": "dist-test",
     "rootDir": ".",
-    "tsBuildInfoFile": "dist-test/.tsbuildinfo"
+    "composite": false,
+    "incremental": false,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false,
+    "noEmit": true
   },
   "include": ["**/*.test.ts"],
-  "exclude": ["dist", "dist-test", "node_modules"],
-  "references": [{ "path": "./tsconfig.json" }]
+  "exclude": ["dist", "dist-test", "node_modules"]
 }

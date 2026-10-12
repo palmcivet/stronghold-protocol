@@ -222,7 +222,7 @@ mod.effectCueFor satisfies typeof effectCueFor
 | `MISSION_ACTOR_FADE_SECONDS` | 演员淡出时长，0.6 秒 |
 | `MISSION_HUD_BAR` | 头顶条的宽、高与抬升高度，单位是格 |
 | `MISSION_TEXTURE_POLICY` | 按种类的纹理策略 |
-| `MISSION_EVENT_BINDINGS` | 核心事件的默认线索绑定 |
+| `MISSION_EVENT_BINDINGS` | 核心事件（`CORE_EVENT_TYPES` 除裸 `cue`）的默认线索绑定 |
 | `MISSION_EFFECT_KINDS` | 引擎的特效种类 |
 | `MISSION_GROUND_IMAGE_SLOTS` | 地形资源包的图片槽 |
 | `MISSION_GROUND_MESH_SLOTS` | 地形资源包的模型槽 |

@@ -1,7 +1,8 @@
+import { CORE_EVENT_TYPES } from 'arknights-mission-core';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import type {
+  MissionCoreEventCueKey,
   MissionEventBindings,
-  MissionEventCueKey,
 } from '#contract/cue.js';
 import {
   createMissionCueBindings,
@@ -15,8 +16,14 @@ describe('cue coverage', () => {
     expectTypeOf(MISSION_EVENT_BINDINGS).toEqualTypeOf<MissionEventBindings>();
     expectTypeOf<
       keyof MissionEventBindings
-    >().toEqualTypeOf<MissionEventCueKey>();
+    >().toEqualTypeOf<MissionCoreEventCueKey>();
     expect(Object.keys(MISSION_EVENT_BINDINGS)).not.toContain('cue');
+  });
+
+  it('keys the default table by exactly the core event types', () => {
+    expect(Object.keys(MISSION_EVENT_BINDINGS).sort()).toEqual(
+      CORE_EVENT_TYPES.filter((type) => type !== 'cue').sort(),
+    );
   });
 
   it('refuses a core binding table that leaves an event out', () => {

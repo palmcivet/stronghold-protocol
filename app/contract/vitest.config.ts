@@ -1,4 +1,4 @@
-import { moduleTest } from '../../vitest.shared.ts';
+import { moduleTest } from '@alliance/shared/vitest';
 
 export default moduleTest('@alliance/contract', {
   environment: 'node',

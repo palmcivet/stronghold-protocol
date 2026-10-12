@@ -113,7 +113,7 @@ export function replay(spec: BattleSpec, modules: readonly MissionModule[]) {
 
 一条事件是 `{ tick, type, data }`，`data` 的类型由 `type` 决定（`EventData<type>`）。
 
-`BattleEventMap` 是事件名到数据的表，模块经声明合并加入自己的事件。写成 `Intercept<数据>` 的事件可拦截，只用于否决与保留（`cancel`、`prevented`、`keep`），改数值走 [伤害修饰](./06-damage.md#伤害修饰)：发出者用 `ctx.intercept`，订阅者按订阅顺序同步收到可写的 `data`，发出者在返回后读回改写。其余事件只读：用 `ctx.emit` 发出，`data` 是 `Readonly`；在分发中发出时排进队列，等最外层这一条分发完按先进先出分发，所以订阅者里再发事件不会压栈。
+`BattleEventMap` 是事件名到数据的表，保持开放：模块经声明合并加入自己的事件，事件名写成 `<namespace>:<event>`。核心自己的事件名列在封闭的 `CORE_EVENT_TYPES`（`as const` 数组）里，`CoreEventType` 是它的元素类型；核心新增事件而没有列进 `CORE_EVENT_TYPES` 时编译不过。模块加入的事件不在其中，`Exclude<BattleEventType, CoreEventType>` 即全部扩展事件。写成 `Intercept<数据>` 的事件可拦截，只用于否决与保留（`cancel`、`prevented`、`keep`），改数值走 [伤害修饰](./06-damage.md#伤害修饰)：发出者用 `ctx.intercept`，订阅者按订阅顺序同步收到可写的 `data`，发出者在返回后读回改写。其余事件只读：用 `ctx.emit` 发出，`data` 是 `Readonly`；在分发中发出时排进队列，等最外层这一条分发完按先进先出分发，所以订阅者里再发事件不会压栈。
 
 ```ts
 import type { Intercept } from "arknights-mission-core"

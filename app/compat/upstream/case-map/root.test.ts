@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { isAbsolute, join, relative } from 'node:path';
 import { expect, test } from 'vitest';
 import {
   DEFAULT_REPO_DIR,
@@ -18,8 +18,9 @@ test('the package root is the compat upstream package and the default master che
 
 test('the workspace root holds pnpm-workspace.yaml and contains the package', () => {
   expect(existsSync(join(WORKSPACE_ROOT, 'pnpm-workspace.yaml'))).toBe(true);
-  expect(PACKAGE_ROOT.startsWith(WORKSPACE_ROOT)).toBe(true);
-  expect(PACKAGE_ROOT).not.toBe(WORKSPACE_ROOT);
+  const inside = relative(WORKSPACE_ROOT, PACKAGE_ROOT);
+  expect(inside).not.toBe('');
+  expect(inside.startsWith('..') || isAbsolute(inside)).toBe(false);
 });
 
 test('findUp fails when no directory above has the marker', () => {

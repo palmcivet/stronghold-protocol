@@ -125,8 +125,8 @@ test('声明为 Intercept 的事件同步分发，订阅者能改写数据；只
     id: 'probe',
     install(ctx) {
       ctx.subscribe('ping', (event, live) => {
-        // @ts-expect-error 只读事件的数据不能改写
         if (event.data.step < 0) {
+          // @ts-expect-error 只读事件的数据不能改写
           event.data.step = 9;
         }
         const guard = { unitId: 'a', cancel: false };
@@ -146,8 +146,8 @@ test('声明为 Intercept 的事件同步分发，订阅者能改写数据；只
         slot: 'finale',
         priority: 0,
         run(runCtx) {
-          // @ts-expect-error 可拦截的事件只能经 intercept 发出
           if (runCtx.tick() < 0) {
+            // @ts-expect-error 可拦截的事件只能经 intercept 发出
             runCtx.emit('guard', { unitId: 'a', cancel: false });
           }
           if (runCtx.tick() === 0) {

@@ -1,19 +1,31 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["es2024"],
-    "types": ["node"],
-    "customConditions": ["source"],
-    "outDir": "dist-test",
+    "lib": [
+      "es2024"
+    ],
+    "types": [
+      "node"
+    ],
+    "customConditions": [
+      "source"
+    ],
     "rootDir": ".",
-    "tsBuildInfoFile": "dist-test/.tsbuildinfo"
+    "composite": false,
+    "incremental": false,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false,
+    "noEmit": true
   },
-  "include": ["**/*.test.ts", "**/*.spec.ts"],
-  "exclude": ["dist", "dist-test", "node_modules", "**/vitest.config.ts"],
-  "references": [
-    { "path": "./tsconfig.json" },
-    { "path": "../../assets-catalog" },
-    { "path": "../../assets-extractor" },
-    { "path": "../../mission-core" }
+  "include": [
+    "**/*.test.ts",
+    "**/*.spec.ts"
+  ],
+  "exclude": [
+    "dist",
+    "dist-test",
+    "node_modules",
+    "**/vitest.config.ts"
   ]
 }

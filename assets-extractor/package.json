@@ -7,8 +7,8 @@
   "sideEffects": false,
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
       "source": "./index.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     }
@@ -53,7 +53,10 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "check": "tsc --noEmit && tsc -p tsconfig.test.json --noEmit",
+    "check": "pnpm check:src && pnpm check:test",
+    "check:src": "tsc --noEmit --incremental false --composite false",
+    "check:test": "tsc -p tsconfig.test.json",
+    "clean": "rimraf dist dist-test tsconfig.test.tsbuildinfo",
     "extract": "node dist/script/extract.js",
     "extract:local": "python3 source/local-client/python/extract.py",
     "format": "biome check --write",
@@ -65,8 +68,10 @@
     "arknights-assets-catalog": "workspace:*"
   },
   "devDependencies": {
+    "@alliance/shared": "workspace:*",
     "@biomejs/biome": "catalog:",
     "@types/node": "catalog:",
+    "rimraf": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"

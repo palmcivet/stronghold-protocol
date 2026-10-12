@@ -25,6 +25,7 @@
     "ws": "^8.22.0"
   },
   "devDependencies": {
+    "@alliance/shared": "workspace:*",
     "@biomejs/biome": "catalog:",
     "@types/node": "catalog:",
     "@types/ws": "^8.18.2",

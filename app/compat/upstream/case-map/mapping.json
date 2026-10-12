@@ -1341,9 +1341,13 @@
       "reason": "干员、敌人、盟约或真实关卡的内容用例，随内容模块改写"
     },
     "sim/feedback1e-skillrange.test.js::extendedGrid: the relative form of absoluteRangeKeys' rangeExtend, for every facing (random grids)": {
-      "status": "moved",
-      "owner": "app/server/content",
-      "reason": "干员、敌人、盟约或真实关卡的内容用例，随内容模块改写"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/port/loadout.spec.ts::攻击距离 n：每一行在最远端外补 1…⌊n⌋ 格，原格在前；不改输入",
+        "mission-core/test/port/loadout.spec.ts::攻击距离：重复格去重，无效项丢弃；n 不大于 0、NaN、Infinity 不延伸；不是数组得空",
+        "mission-core/test/port/loadout.spec.ts::攻击距离最多补到场地列数 21 格"
+      ],
+      "reason": "改写为朝右的相对范围上的纯函数用例；各朝向的换算由调用方负责，随机网格改为手写网格"
     },
     "sim/feedback1e-skillrange.test.js::audit: every selectable attack-range change attacks with the official grid while it runs and shows it as the live range — with every module": {
       "status": "moved",
@@ -2852,7 +2856,7 @@
     },
     "sim/loadout.browser.test.js::operator loadouts in the browser sim > a spec with loadouts resolves the same defs and gives the same digest in Chrome as in Node": {
       "status": "not-migrated",
-      "reason": "在浏览器里跑 master sim 的整场用例，干员配置的合成在 port/loadout.ts 另有用例"
+      "reason": "在浏览器里跑 master sim 的整场用例；干员配置合成的纯函数在 mission-core/test/port/loadout.spec.ts 有用例"
     },
     "sim/loadout.test.js::resolveLoadout: legal choices resolve, anything else falls back to the default": {
       "status": "moved",

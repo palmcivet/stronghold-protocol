@@ -1,0 +1,37 @@
+{
+  "name": "@alliance/shared",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Workspace tooling shared by the packages: workspace root and package listing, reference checks, the shared vitest config. Plain JavaScript with declaration files, so nothing needs a build.",
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./workspace": {
+      "types": "./types/workspace.d.ts",
+      "default": "./src/workspace.js"
+    },
+    "./references": {
+      "types": "./types/references.d.ts",
+      "default": "./src/references.js"
+    },
+    "./vitest": {
+      "types": "./types/vitest.d.ts",
+      "default": "./src/vitest.js"
+    }
+  },
+  "scripts": {
+    "check": "tsc -p tsconfig.json",
+    "format": "biome check --write",
+    "lint": "biome lint"
+  },
+  "peerDependencies": {
+    "vitest": "catalog:"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

@@ -9,6 +9,7 @@ import {
 import { availableParallelism, tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { listWorkspacePackages } from '@alliance/shared/workspace';
 
 /** 一次枚举的结果。用例按文件与出现顺序排列。 */
 export interface Enumeration {
@@ -185,51 +186,6 @@ export async function enumerateMaster(
   return { cases, errors };
 }
 
-/** pnpm-workspace.yaml 的 packages 列表。 */
-export function workspacePatterns(yaml: string): readonly string[] {
-  const patterns: string[] = [];
-  let inside = false;
-  for (const line of yaml.split('\n')) {
-    if (/^\S/.test(line)) {
-      inside = line.trim() === 'packages:';
-    } else if (inside) {
-      const item = /^\s+-\s+["']?([^"']+)["']?\s*$/.exec(line);
-      if (item?.[1] !== undefined) {
-        patterns.push(item[1]);
-      }
-    }
-  }
-  return patterns;
-}
-
-/** 展开工作区模式，只支持末段的 `*`。返回有 package.json 的目录，相对仓库根。 */
-export function workspacePackages(
-  repoRoot: string,
-  patterns: readonly string[],
-): readonly string[] {
-  const found = new Set<string>();
-  for (const pattern of patterns) {
-    if (pattern.endsWith('/*')) {
-      const parent = pattern.slice(0, -2);
-      const directory = join(repoRoot, parent);
-      if (!existsSync(directory)) {
-        continue;
-      }
-      for (const entry of readdirSync(directory, { withFileTypes: true })) {
-        if (
-          entry.isDirectory() &&
-          existsSync(join(directory, entry.name, 'package.json'))
-        ) {
-          found.add(`${parent}/${entry.name}`);
-        }
-      }
-    } else if (existsSync(join(repoRoot, pattern, 'package.json'))) {
-      found.add(pattern);
-    }
-  }
-  return [...found].sort();
-}
-
 interface VitestListEntry {
   readonly name: string;
   readonly file: string;
@@ -242,10 +198,14 @@ function vitestList(
 ): Promise<string | null> {
   const cli = join(repoRoot, 'node_modules', 'vitest', 'vitest.mjs');
   return new Promise((resolvePromise) => {
-    const child = spawn(process.execPath, [cli, 'list', `--json=${outFile}`], {
-      cwd: join(repoRoot, packageDir),
-      stdio: ['ignore', 'ignore', 'pipe'],
-    });
+    const child = spawn(
+      process.execPath,
+      [cli, 'list', `--json=${outFile}`],
+      {
+        cwd: join(repoRoot, packageDir),
+        stdio: ['ignore', 'ignore', 'pipe'],
+      },
+    );
     let stderr = '';
     child.stderr.on('data', (chunk: Buffer) => {
       stderr += chunk.toString('utf8');
@@ -263,16 +223,15 @@ export async function enumerateNext(
   repoRoot: string,
   only?: readonly string[],
 ): Promise<Enumeration> {
-  const patterns = workspacePatterns(
-    readFileSync(join(repoRoot, 'pnpm-workspace.yaml'), 'utf8'),
-  );
-  const packages = workspacePackages(repoRoot, patterns).filter(
-    (dir) =>
-      (only === undefined || only.includes(dir)) &&
-      ['vitest.config.ts', 'vitest.config.mts', 'vitest.config.js'].some(
-        (name) => existsSync(join(repoRoot, dir, name)),
-      ),
-  );
+  const packages = listWorkspacePackages(repoRoot)
+    .map((entry) => toPosix(relative(repoRoot, entry.dir)))
+    .filter(
+      (dir) =>
+        (only === undefined || only.includes(dir)) &&
+        ['vitest.config.ts', 'vitest.config.mts', 'vitest.config.js'].some(
+          (name) => existsSync(join(repoRoot, dir, name)),
+        ),
+    );
   const scratch = mkdtempSync(join(tmpdir(), 'case-map-next-'));
   const cases: string[] = [];
   const errors: EnumerationError[] = [];

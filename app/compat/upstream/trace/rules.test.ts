@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { danglingReferences } from '@alliance/shared/references';
 import { describe, expect, test } from 'vitest';
 import { parseInventory } from '#case-map/check.js';
 import { enumerateNext } from '#case-map/enumerate.js';
@@ -44,12 +45,12 @@ describe('trace rules', () => {
       ...TRACE_PACKAGES,
     ]);
     expect(errors).toEqual([]);
-    const known = new Set(cases);
-    const dangling = TRACE_RULES.flatMap((entry) =>
-      entry.next
-        .filter((id) => !known.has(id))
-        .map((id) => `${entry.id} -> ${id}`),
-    );
+    const dangling = danglingReferences(
+      TRACE_RULES.flatMap((entry) =>
+        entry.next.map((id) => [entry.id, id] as const),
+      ),
+      cases,
+    ).map(({ id, reference }) => `${id} -> ${reference}`);
     expect(dangling).toEqual([]);
   }, 300_000);
 });

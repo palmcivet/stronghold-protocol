@@ -1,0 +1,35 @@
+{
+  "extends": "//",
+  "linter": {
+    "rules": {
+      "style": {
+        "noRestrictedImports": {
+          "level": "error",
+          "options": {
+            "paths": {
+              "@alliance/shared": "A library stays independent of the workspace tooling; only vitest.config.ts may use it."
+            },
+            "patterns": [
+              {
+                "group": ["@alliance/shared/**"],
+                "message": "A library stays independent of the workspace tooling; only vitest.config.ts may use it."
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["vitest.config.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": "off"
+          }
+        }
+      }
+    }
+  ]
+}

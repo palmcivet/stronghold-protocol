@@ -1,5 +1,5 @@
 ---
-title: 连接 master 后端
+title: "@alliance/compat-upstream"
 description: 客户端连接 master 后端时怎样读取它的资源表，以及 master 用例与引擎规则在 next 里的去向。
 ---
 

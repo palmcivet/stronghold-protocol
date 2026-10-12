@@ -2,6 +2,7 @@ import type {
   MissionCueBinding,
   MissionCueKey,
   MissionEventBindings,
+  MissionExtensionEventType,
 } from '#contract/cue.js';
 import type { MissionEffectTable } from '#effect/table.js';
 import { isNamespacedId } from '#runtime/registry/index.js';
@@ -46,8 +47,11 @@ export function eventBindingOf(key: string): MissionCueBinding | undefined {
 
 /** What each cue key draws and plays, starting from the core bindings. Fixed once sealed. */
 export interface MissionCueBindings {
-  /** Binds or rebinds a key: a core event, `cue:<kind>`, or `<namespace>:<event>` of a mod event. */
-  bind(key: MissionCueKey, binding: MissionCueBinding): void;
+  /** Binds or rebinds a key: a core event, `cue:<kind>`, or `<namespace>:<event>` of an extension event. */
+  bind(
+    key: MissionCueKey | MissionExtensionEventType,
+    binding: MissionCueBinding,
+  ): void;
   /** Declares cue kinds content emits; each must have a `cue:<kind>` binding, possibly all null, when sealed. */
   declare(...kinds: readonly string[]): void;
   /** Declared cue kinds, in declaration order. */

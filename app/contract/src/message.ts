@@ -309,8 +309,18 @@ export interface StoredLoadoutEntry {
 }
 
 export type LoadoutCheck =
-  | { ok: true; loadout: Record<string, StoredLoadoutEntry> }
-  | { error: 'BAD_MSG' | 'BAD_TARGET'; detail: string };
+  | {
+      ok: true;
+      loadout: Record<string, StoredLoadoutEntry>;
+      error?: never;
+      detail?: never;
+    }
+  | {
+      ok?: never;
+      loadout?: never;
+      error: 'BAD_MSG' | 'BAD_TARGET';
+      detail: string;
+    };
 
 function includesNumber(
   list: readonly number[],

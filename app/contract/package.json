@@ -21,14 +21,19 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "check": "tsc --noEmit",
+    "check": "pnpm check:src && pnpm check:test",
+    "check:src": "tsc --noEmit --incremental false --composite false",
+    "check:test": "tsc -p tsconfig.test.json",
+    "clean": "rimraf dist dist-test tsconfig.test.tsbuildinfo",
     "format": "biome check --write",
     "lint": "biome lint",
     "test": "vitest run"
   },
   "devDependencies": {
+    "@alliance/shared": "workspace:*",
     "@biomejs/biome": "catalog:",
     "@types/node": "catalog:",
+    "rimraf": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"

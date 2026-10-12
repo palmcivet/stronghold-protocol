@@ -21,7 +21,10 @@
   },
   "scripts": {
     "build": "tsc -b client/config",
-    "check": "tsc -p client/config --noEmit && tsc -p client/config/tsconfig.test.json --noEmit",
+    "check": "pnpm check:src && pnpm check:test",
+    "check:src": "tsc -p client/config --noEmit --incremental false --composite false",
+    "check:test": "tsc -p client/config/tsconfig.test.json",
+    "clean": "rimraf client/config/dist client/config/dist-test client/config/tsconfig.test.tsbuildinfo",
     "format": "biome check --write",
     "lint": "biome lint",
     "test": "vitest run --root client/config"
@@ -30,8 +33,10 @@
     "@alliance/data": "workspace:*"
   },
   "devDependencies": {
+    "@alliance/shared": "workspace:*",
     "@biomejs/biome": "catalog:",
     "@types/node": "catalog:",
+    "rimraf": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:",

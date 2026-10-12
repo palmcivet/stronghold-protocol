@@ -35,8 +35,6 @@ pnpm compile:packs --season act2autochess
 
 为什么要跑三遍，见 [编译](./data/02-compiler.md#流程)。
 
-数据包放在别处时，用环境变量 `SP_DATA_DIR` 指向那个目录。
-
 ## 启动对局进程
 
 ```sh

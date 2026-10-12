@@ -8,7 +8,10 @@
   "scripts": {
     "build": "tsc -b",
     "build:web": "vite build",
-    "check": "tsc --noEmit",
+    "check": "pnpm check:src && pnpm check:test",
+    "check:src": "tsc --noEmit --incremental false --composite false",
+    "check:test": "tsc -p tsconfig.test.json",
+    "clean": "rimraf dist dist-test dist-web tsconfig.test.tsbuildinfo",
     "dev": "vite",
     "test": "vitest run"
   },
@@ -21,7 +24,9 @@
     "arknights-mission-renderer": "workspace:*"
   },
   "devDependencies": {
+    "@alliance/shared": "workspace:*",
     "@types/node": "catalog:",
+    "rimraf": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"

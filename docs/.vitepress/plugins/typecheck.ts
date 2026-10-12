@@ -13,7 +13,6 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
-  readdirSync,
   readFileSync,
   rmSync,
   symlinkSync,
@@ -22,6 +21,7 @@ import {
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { listWorkspacePackages } from '@alliance/shared/workspace';
 import type { MarkdownRenderer, SiteConfig } from 'vitepress';
 
 /** Fence languages that hold checked code; both mean TypeScript. */
@@ -171,32 +171,14 @@ function programs(pages: readonly string[]): Line[][] {
 
 // MARK: check
 
+let packagesOfWorkspace: Map<string, string> | undefined;
+
+/** Workspace package name → directory, as pnpm lists them. */
 function workspacePackages(): Map<string, string> {
-  const manifest = readFileSync(join(repoRoot, 'pnpm-workspace.yaml'), 'utf8');
-  const patterns = [...manifest.matchAll(/^\s*-\s*"?([^"\n]+?)"?\s*$/gm)].map(
-    (match) => match[1] as string,
+  packagesOfWorkspace ??= new Map(
+    listWorkspacePackages(repoRoot).map((entry) => [entry.name, entry.dir]),
   );
-  const dirs = patterns.flatMap((pattern) => {
-    if (!pattern.endsWith('/*')) {
-      return [join(repoRoot, pattern)];
-    }
-    const parent = join(repoRoot, pattern.slice(0, -2));
-    return readdirSync(parent, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory())
-      .map((entry) => join(parent, entry.name));
-  });
-  const packages = new Map<string, string>();
-  for (const dir of dirs) {
-    const file = join(dir, 'package.json');
-    if (!existsSync(file)) {
-      continue;
-    }
-    const name: unknown = JSON.parse(readFileSync(file, 'utf8')).name;
-    if (typeof name === 'string') {
-      packages.set(name, dir);
-    }
-  }
-  return packages;
+  return packagesOfWorkspace;
 }
 
 /**

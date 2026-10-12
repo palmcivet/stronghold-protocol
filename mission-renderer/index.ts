@@ -49,6 +49,7 @@ export type {
 } from '#contract/appearance.js';
 export type { MissionAudioCue, MissionAudioCueType } from '#contract/audio.js';
 export type {
+  MissionCoreEventCueKey,
   MissionCue,
   MissionCueBase,
   MissionCueBinding,
@@ -58,6 +59,7 @@ export type {
   MissionEffectKindId,
   MissionEventBindings,
   MissionEventCueKey,
+  MissionExtensionEventType,
   MissionKindCueKey,
 } from '#contract/cue.js';
 export type {

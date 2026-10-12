@@ -1,3 +1,4 @@
+import { danglingReferences } from '@alliance/shared/references';
 import * as v from 'valibot';
 
 // MARK: schema
@@ -194,17 +195,10 @@ export function checkCaseMap(input: CheckInput): CheckReport {
       notCaseByCase.push(id);
     }
   }
-  const dangling: DanglingReference[] = [];
-  for (const [id, entry] of Object.entries(mapping.cases)) {
-    if (entry.status !== 'covered' && entry.status !== 'rewritten') {
-      continue;
-    }
-    for (const reference of entry.next) {
-      if (!nextCases.has(reference)) {
-        dangling.push({ id, next: reference });
-      }
-    }
-  }
+  const dangling: readonly DanglingReference[] = mappingDangling(
+    mapping,
+    nextCases,
+  );
   const previous = new Set(inventory?.cases ?? []);
   return {
     total: master.length,
@@ -225,6 +219,22 @@ export function checkCaseMap(input: CheckInput): CheckReport {
     byCase,
     byRule,
   };
+}
+
+/** 对照表里 covered、rewritten 条目指向的、next 里没有的用例。 */
+export function mappingDangling(
+  mapping: Mapping,
+  next: Iterable<string>,
+): readonly DanglingReference[] {
+  const references = Object.entries(mapping.cases).flatMap(([id, entry]) =>
+    entry.status === 'covered' || entry.status === 'rewritten'
+      ? entry.next.map((reference) => [id, reference] as const)
+      : [],
+  );
+  return danglingReferences(references, next).map(({ id, reference }) => ({
+    id,
+    next: reference,
+  }));
 }
 
 /** 未对应、悬空引用或该逐条却只靠规则时失败。 */

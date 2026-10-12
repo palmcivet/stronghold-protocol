@@ -1,5 +1,6 @@
 import type {
   BattleEventType,
+  CoreEventType,
   CueEvent,
   CueMap,
   EventData,
@@ -11,6 +12,20 @@ export type MissionCueKind = keyof CueMap & string;
 
 /** Battle events keyed by their type. A `cue` event is keyed by its kind instead. */
 export type MissionEventCueKey = Exclude<BattleEventType, 'cue'>;
+
+/** Core battle events keyed by their type: the keys of the default binding table. */
+export type MissionCoreEventCueKey = Exclude<CoreEventType, 'cue'>;
+
+/** Holds only `<namespace>:<event>` keys; anything else fails to compile here. */
+type Namespaced<K extends `${string}:${string}`> = K;
+
+/**
+ * Events modules add to `BattleEventMap` by declaration merging. Each must be `<namespace>:<event>`; they are bound at
+ * runtime through `MissionCueBindings`, not by the default table.
+ */
+export type MissionExtensionEventType = Namespaced<
+  Exclude<BattleEventType, CoreEventType>
+>;
 
 /** Key of a declared cue kind. */
 export type MissionKindCueKey = `cue:${MissionCueKind}`;
@@ -57,7 +72,7 @@ export interface MissionCueBinding {
   readonly sound: MissionAudioCueType | null;
 }
 
-/** A binding for every core battle event. */
-export type MissionEventBindings = {
-  readonly [K in MissionEventCueKey]: MissionCueBinding;
-};
+/** A binding for every core battle event. Events modules add are not listed; bind them at runtime. */
+export type MissionEventBindings = Readonly<
+  Record<MissionCoreEventCueKey, MissionCueBinding>
+>;

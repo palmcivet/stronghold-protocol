@@ -15,6 +15,9 @@ catalogs:
     cross-env:
       specifier: ^10.1.0
       version: 10.1.0
+    rimraf:
+      specifier: ^6.1.3
+      version: 6.1.3
     typescript:
       specifier: ^7.0.2
       version: 7.0.2
@@ -57,9 +60,15 @@ importers:
         specifier: workspace:*
         version: link:../../mission-renderer
     devDependencies:
+      '@alliance/shared':
+        specifier: workspace:*
+        version: link:../../shared
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.4
+      rimraf:
+        specifier: 'catalog:'
+        version: 6.1.3
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
@@ -72,6 +81,9 @@ importers:
 
   app/compat/upstream:
     dependencies:
+      '@alliance/shared':
+        specifier: workspace:*
+        version: link:../../../shared
       arknights-assets-catalog:
         specifier: workspace:*
         version: link:../../../assets-catalog
@@ -85,6 +97,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.4
+      rimraf:
+        specifier: 'catalog:'
+        version: 6.1.3
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
@@ -97,12 +112,18 @@ importers:
 
   app/contract:
     devDependencies:
+      '@alliance/shared':
+        specifier: workspace:*
+        version: link:../../shared
       '@biomejs/biome':
         specifier: 'catalog:'
         version: 2.5.15
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.4
+      rimraf:
+        specifier: 'catalog:'
+        version: 6.1.3
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
@@ -115,6 +136,9 @@ importers:
 
   app/data:
     dependencies:
+      '@alliance/shared':
+        specifier: workspace:*
+        version: link:../../shared
       arknights-assets-catalog:
         specifier: workspace:*
         version: link:../../assets-catalog
@@ -131,6 +155,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.4
+      rimraf:
+        specifier: 'catalog:'
+        version: 6.1.3
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
@@ -156,6 +183,9 @@ importers:
         specifier: ^8.22.0
         version: 8.22.0
     devDependencies:
+      '@alliance/shared':
+        specifier: workspace:*
+        version: link:../../shared
       '@biomejs/biome':
         specifier: 'catalog:'
         version: 2.5.15
@@ -180,12 +210,18 @@ importers:
 
   assets-catalog:
     devDependencies:
+      '@alliance/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@biomejs/biome':
         specifier: 'catalog:'
         version: 2.5.15
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.4
+      rimraf:
+        specifier: 'catalog:'
+        version: 6.1.3
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
@@ -205,12 +241,18 @@ importers:
         specifier: workspace:*
         version: link:../assets-catalog
     devDependencies:
+      '@alliance/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@biomejs/biome':
         specifier: 'catalog:'
         version: 2.5.15
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.4
+      rimraf:
+        specifier: 'catalog:'
+        version: 6.1.3
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
@@ -227,12 +269,18 @@ importers:
         specifier: workspace:*
         version: link:../app/data
     devDependencies:
+      '@alliance/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@biomejs/biome':
         specifier: 'catalog:'
         version: 2.5.15
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.4
+      rimraf:
+        specifier: 'catalog:'
+        version: 6.1.3
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
@@ -248,6 +296,9 @@ importers:
 
   docs:
     devDependencies:
+      '@alliance/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@biomejs/biome':
         specifier: 'catalog:'
         version: 2.5.15
@@ -278,6 +329,9 @@ importers:
 
   mission-core:
     devDependencies:
+      '@alliance/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@biomejs/biome':
         specifier: 'catalog:'
         version: 2.5.15
@@ -287,6 +341,9 @@ importers:
       fast-check:
         specifier: ^4.10.2
         version: 4.10.2
+      rimraf:
+        specifier: 'catalog:'
+        version: 6.1.3
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
@@ -333,6 +390,9 @@ importers:
         specifier: ^0.186.1
         version: 0.186.1
     devDependencies:
+      '@alliance/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@biomejs/biome':
         specifier: 'catalog:'
         version: 2.5.15
@@ -342,12 +402,30 @@ importers:
       '@types/three':
         specifier: ^0.186.0
         version: 0.186.0
+      rimraf:
+        specifier: 'catalog:'
+        version: 6.1.3
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
       vite:
         specifier: 'catalog:'
         version: 8.3.3(@types/node@26.6.4)
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.3(@types/node@26.6.4)(vite@8.3.3(@types/node@26.6.4))
+
+  shared:
+    devDependencies:
+      '@biomejs/biome':
+        specifier: 'catalog:'
+        version: 2.5.15
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.4
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
       vitest:
         specifier: 'catalog:'
         version: 5.0.3(@types/node@26.6.4)(vite@8.3.3(@types/node@26.6.4))
@@ -2078,6 +2156,9 @@ packages:
   oniguruma-to-es@3.1.1:
     resolution: {integrity: sha512-bUH8SDvPkH3ho3dvwJwfonjlQ4R80vjyvrU8YpxuROddv55vAEJrTuCuCVUhhsHbtlD9tGGbaNApGQckXhS8iQ==}
 
+  package-json-from-dist@1.0.1:
+    resolution: {integrity: sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==}
+
   package-manager-detector@1.9.0:
     resolution: {integrity: sha512-zAMfbta9nPA8AKkA4WdmNAT8R8s6Dk0/xwPsqNnRidMFcLo1YkLuPDTgs2f64XdzS8vbLNnoJ+uUIkgbz7oRHA==}
 
@@ -2152,6 +2233,11 @@ packages:
 
   rfdc@1.4.1:
     resolution: {integrity: sha512-q1b3N5QkRUWUl7iyylaaj3kOpIT0N2i9MqIEQXP73GVsN9cw3fdx8X63cEmWhJGi2PPCF23Ijp7ktmd39rawIA==}
+
+  rimraf@6.1.3:
+    resolution: {integrity: sha512-LKg+Cr2ZF61fkcaK1UdkH2yEBBKnYjTyWzTJT6KNPcSPaiT7HSdhtMXQuN5wkTX0Xu72KQ1l8S42rlmexS2hSA==}
+    engines: {node: 20 || >=22}
+    hasBin: true
 
   robust-predicates@3.0.3:
     resolution: {integrity: sha512-NS3levdsRIUOmiJ8FZWCP7LG3QpJyrs/TE0Zpf1yvZu8cAJJ6QMW92H1c7kWpdIHo8RvmLxN/o2JXTKHp74lUA==}
@@ -4091,6 +4177,8 @@ snapshots:
       regex: 6.1.0
       regex-recursion: 6.0.2
 
+  package-json-from-dist@1.0.1: {}
+
   package-manager-detector@1.9.0: {}
 
   path-data-parser@0.1.0: {}
@@ -4149,6 +4237,11 @@ snapshots:
       regex-utilities: 2.3.0
 
   rfdc@1.4.1: {}
+
+  rimraf@6.1.3:
+    dependencies:
+      glob: 13.0.6
+      package-json-from-dist: 1.0.1
 
   robust-predicates@3.0.3: {}
 

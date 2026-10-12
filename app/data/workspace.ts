@@ -1,5 +1,6 @@
 import { basename, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { findWorkspaceRoot } from '@alliance/shared/workspace';
 
 export interface DataWorkspace {
   readonly workspaceRoot: string;
@@ -40,7 +41,7 @@ export function dataWorkspace(
   const defaultRoot =
     basename(moduleRoot) === 'dist' ? resolve(moduleRoot, '..') : moduleRoot;
   const root = resolve(options.root ?? defaultRoot);
-  const workspaceRoot = resolve(root, '..', '..');
+  const workspaceRoot = findWorkspaceRoot(root);
   const compilerDir = join(root, 'compiler');
   const inputDir = join(root, 'compiler', 'input');
   const productDir = resolve(options.productDir ?? join(root, 'product'));

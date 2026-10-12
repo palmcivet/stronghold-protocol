@@ -1,6 +1,6 @@
-import { moduleTest } from "../../vitest.shared.ts"
+import { moduleTest } from '@alliance/shared/vitest';
 
-export default moduleTest("@alliance/client", {
-  environment: "node",
-  include: ["**/*.test.ts", "**/*.spec.ts"],
-})
+export default moduleTest('@alliance/client', {
+  environment: 'node',
+  include: ['**/*.test.ts', '**/*.spec.ts'],
+});

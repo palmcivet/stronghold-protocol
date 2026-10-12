@@ -7,7 +7,7 @@ import {
   parseInventory,
   parseMapping,
 } from '#case-map/check.js';
-import { numberDuplicates, workspacePatterns } from '#case-map/enumerate.js';
+import { numberDuplicates } from '#case-map/enumerate.js';
 
 function mapping(overrides: Partial<Mapping> = {}): Mapping {
   return {
@@ -190,11 +190,5 @@ describe('enumeration helpers', () => {
       'a > c',
       'a #3',
     ]);
-  });
-
-  test('workspace patterns come from the packages list only', () => {
-    const yaml =
-      'packages:\n  - "app/*"\n  - mission-core\ncatalog:\n  vite: ^7\n';
-    expect(workspacePatterns(yaml)).toEqual(['app/*', 'mission-core']);
   });
 });

@@ -3,11 +3,15 @@
   "compilerOptions": {
     "lib": ["es2024"],
     "types": ["node"],
-    "outDir": "dist-test",
     "rootDir": ".",
-    "tsBuildInfoFile": "dist-test/.tsbuildinfo"
+    "composite": false,
+    "incremental": false,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false,
+    "noEmit": true,
+    "customConditions": ["source"]
   },
   "include": ["test", "**/*.test.ts", "**/*.spec.ts", "**/*.bench.ts"],
-  "exclude": ["dist", "dist-test", "node_modules"],
-  "references": [{ "path": "./tsconfig.json" }]
+  "exclude": ["dist", "dist-test", "node_modules"]
 }
