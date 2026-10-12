@@ -1,10 +1,12 @@
 - [目标与前提](#目标与前提)
 - [分层与 ECS](#分层与-ecs)
   - [引擎选库](#引擎选库)
+  - [骨骼动画](#骨骼动画)
 - [运行时框架](#运行时框架)
 - [模组模型](#模组模型)
   - [数据、文案与资源层](#数据文案与资源层)
   - [行为层](#行为层)
+  - [第三方许可的代码与孵化位置](#第三方许可的代码与孵化位置)
   - [表现层](#表现层)
   - [清单与握手](#清单与握手)
   - [哈希锁定与自由内容](#哈希锁定与自由内容)
@@ -44,7 +46,7 @@
 - 增益：采用类似 GAS（Gameplay Ability System）的属性、修饰器、标签模型表达 buff 与状态。
 - 确定性：迭代顺序稳定（插入序、按 id 排序），模块安装顺序固定。
 
-`mission-renderer` 采用轻量 ECS 风格的视图层：每个单位一个视图对象，按特性注册视图系统（Spine 本体、血条、SP 与护盾、状态图标、朝向、离场淡出），特效按 kind 注册到特效表。Three 的场景图仍是显示树。
+`mission-renderer` 采用轻量 ECS 风格的视图层：每个单位一个视图对象，按特性注册视图系统（骨骼本体、血条、SP 与护盾、状态图标、朝向、离场淡出），特效按 kind 注册到特效表。Three 的场景图仍是显示树。
 
 `app/server` 的对局层不使用 ECS：休整、商店、经济是回合制规则，采用类型化钩子注册表和显式阶段状态机。`content/` 中带 `@ts-nocheck` 的 master 内容与 `content/support/battle-facade.ts` 适配层，改写为类型化的 `MissionModule` 与对局钩子。
 
@@ -78,13 +80,20 @@
 | 类型化事件 | nanoevents、mitt、emittery | 核心自建；renderer 可用 nanoevents | 核心要 FIFO 重入、拍号日志与稳定顺序 |
 | 对象池 | 无合适的通用库 | 自建 | 按特效种类分池，几十行 |
 | 数据结构 | mnemonist（MIT） | 暂不用 | 目前只需数组与 `Map` |
-| Spine 运行时 | `@pixi-spine/runtime-3.8`、`@pixi-spine/base` 4.0.6 | 用（可替换） | 能读 3.8 数据；只做骨骼与动画计算，Three 网格适配自建并藏在骨骼端口后 |
-| Spine 运行时 | `@esotericsoftware/spine-threejs` 4.x | 不能直接用 | 资源是 Spine 3.8 |
+| 骨骼动画运行时 | pixi-spine、spine-ts、`@esotericsoftware/spine-threejs` | 不进本仓库 | Spine Runtimes License 要求每个使用者自持 Spine Editor 许可，与 GPL 分发不兼容；见下方「骨骼动画」 |
 | 规格与对照表校验 | valibot（MIT） | 用（规格入口与工具） | 与叶子库选型一致，可摇树 |
 | 属性测试 | fast-check（MIT） | 用（开发依赖） | 适合拍对齐、叠加顺序、导出导入往返等不变量 |
 | 补间 | @tweenjs/tween.js（MIT） | 暂不用 | 滑行、淡出公式简单；需要时间线编排时再引入 |
 
-Spine 依赖：`mission-renderer` 用 pixi-spine 3.8 的运行时部分，以及它声明的对等依赖 `@pixi/core`、`@pixi/display`、`@pixi/graphics`、`@pixi/mesh`、`@pixi/mesh-extras`、`@pixi/sprite`（7.4.3，与 `assets-extractor` 一致）。只有 `actor/skeleton/` 可以引用这些包，只做骨骼与动画计算，不创建 Pixi 渲染器、显示对象与纹理（依赖扫描用例锁定）。代价：压缩后约 422 KB（gzip 约 122 KB），`@pixi/core` 导入时注册全局扩展、摇树不掉，不满足「无全局副作用」，因 3.8 资源暂无更好选择作为已知例外接受。
+### 骨骼动画
+
+决定：本仓库的主包不含任何 Spine 运行时代码，也不依赖 Pixi。
+
+- 骨骼动画是 `mission-renderer` 中与格式无关的端口。后端按格式 id（如 `spine-3.8`）注册到命名空间注册表，在创建舞台前封存，做法与特效表相同。
+- 资源的某个格式没有注册后端时，演员退回替身（impostor），战斗与界面照常。
+- `assets-extractor` 读骨骼（版本、动画时长与事件、包围盒、缺失区域）是可选的构建期插件，与渲染后端来自同一个外部模组。没有插件时，`SpineMeta` 中由运行时读出的字段（时长、事件、包围盒、缺失区域）缺省，格式自身可读的字段照常写入。
+- 资源目录的 `spine` 种类、`SpineMeta`、`spineSource` 和缓存属于格式知识，留在主包。
+- 实施计划见 SPINE.md。
 
 ## 运行时框架
 
@@ -123,6 +132,13 @@ Spine 依赖：`mission-renderer` 用 pixi-spine 3.8 的运行时部分，以及
 - 扩展信道：消息 `{ t: "x", mod, type, rid?, data }`，按模组 id 命名空间路由，每个模组为自己的消息类型注册 schema，路由时检查角色权限。服务端只向声明了 `x` 能力的连接发送扩展消息。
 - 可扩展 id：只有用 `defineExtensible(id, { version, contract })` 标记的注册 id 允许 `replace` 与 `wrap`，并逐步开放更多 id。每个 id 独立语义化版本；模组在清单中声明所需范围，运行时用 `ctx.has(id, range)` 检测；构建时生成 `extensible-ids` 目录与类型声明；弃用先警告一个次版本，下一个模组 `api` 大版本移除。`wrap` 按加载顺序串联，同一 id 的第二个 `replace` 报告为冲突。
 - 不对 `mission-core` 和对局核心做运行时打补丁。
+
+### 第三方许可的代码与孵化位置
+
+- 携带第三方许可运行时代码的模组（第一例是 Spine 骨骼后端）只能是客户端本地模组（`scope: local`），由玩家自行安装；服务端不得下发，清单校验拒绝这类模组的 `url`。
+- 这类模组自带许可证声明，是该运行时代码在仓库中唯一的位置；主包与其他模组不依赖它，只依赖主包的公开接口。
+- 模组在 `examples/extensions/<id>/` 孵化，是否提交由用户按模组决定（可不跟踪或写进忽略列表）；成熟后可迁到独立仓库，接口不变。
+- `examples/extensions/*` 属于 pnpm 工作区；主包不得依赖其中任何包，由依赖扫描用例强制。
 
 ### 表现层
 
@@ -198,7 +214,7 @@ N 人联机涉及 `MAX_SEATS`、棋盘几何与波次表，作为核心特性设
 - 模组样式隔离使用带前缀的类名或 CSS Modules；`@scope` 的浏览器基线尚不满足。
 - 浏览器基线为 2021 年以后的版本，由 browserslist 与 Lightning CSS 处理。
 
-理由：模组友好取决于三点：不需要编译器、运行时公开 API 稳定、作者熟悉。Svelte 预编译产物与运行时精确版本绑定；Solid 依赖编译器且 2.0 正在大改。React 的 JSX 运行时在大版本内稳定，React Aria 最完善，体积相对 Three 与 Spine 可以接受。
+理由：模组友好取决于三点：不需要编译器、运行时公开 API 稳定、作者熟悉。Svelte 预编译产物与运行时精确版本绑定；Solid 依赖编译器且 2.0 正在大改。React 的 JSX 运行时在大版本内稳定，React Aria 最完善，体积相对 Three 可以接受。
 
 ## 多语言
 

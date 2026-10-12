@@ -221,7 +221,7 @@ master 来源：`server/index.js` 的静态文件、gzip、ETag、Range 归入 `
 - 发布脚本：`app/data/.cache/derived/` 与 `app/data/.cache/assets/files/`（同一地址时派生文件优先）复制到 `/res/files/`，只复制清单引用到的文件；`app/data/product/base/` 复制到 `/res/packs/base/<version>/`，`product/season/<id>/` 复制到 `/res/packs/season/<id>/<contentHash>/`。清单的 `fileRoot` 相对清单地址，所以 `/res/` 可以整体放到另一个域名。
 - 生产静态服务：gzip、ETag、Range 与缓存头按 `deployment/client/config/static-policy.ts`（策略函数已有，尚无服务器使用它）：`/res/` 下带 `?v=` 的文件 `immutable`，`/res/files/` 其余文件长缓存，`/res/packs/` 的清单短缓存加 ETag，`/res/local/` 与页面不缓存。`/res/local/manifest.json` 缺失时返回 `emptyLocalManifest()` 的空清单。
 - vendor 与前端构建产物的发布。
-- 镜像与工具：Docker 镜像（`client/image`、`server/image`），根目录初始化脚本与 `deployment/tool` 的统一命令（初始化、检查、资源总命令）。
+- 镜像与工具：Docker 镜像（`client/image`、`server/image`），根目录初始化脚本与 `deployment/tool` 的统一命令（初始化、检查、资源总命令）。`client/image` 的 Docker 构建上下文必须包含 `app/data` 与 `assets-catalog`，并先构建它们，因为 `deployment/client/config` 依赖 `@alliance/data/pack-layout`。
 - CI：缓存整个提取缓存目录 `app/data/.cache/assets`（含 `repos/` 浅克隆、`files/`、`ledger.json`），再次运行由账本复用。
 
 0.2.x 的发行形态暂不迁移：master 有完整包、精简包（首次启动从公开镜像下载素材）、更新包（只含改动文件，依 `MANIFEST.json` 校验并删除旧文件）、`npm run doctor` 文件校验与 `npm run package`。以后尽量复用 master 的形式，基于原始目录与包清单的哈希实现。
@@ -232,7 +232,5 @@ master 来源：`server/index.js` 的静态文件、gzip、ETag、Range 归入 `
 
 ## 待决事项
 
-- 版本号：`package.json` 为 0.1.3，master 的 `APP_VERSION` 为 0.2.1，`/healthz` 的 `app` 字段因此不同。next 的版本号策略、与 master 的版本关系，以及兼容模式下是否读 `/healthz` 的 `app` 版本区分更早的 upstream 版本，一起确定。
 - 兼容层 `data/` 中，数据视图与 packet 视图是否共用一个类型，还是各自独立。
-- 边界检查规则放在 `app/contract` 的哪个子目录，以及 next 服务端是否也强制执行。
 - 备用模型与别名染色（master `render/units.js` 的 `ALIAS_TINT`：本机客户端独有的敌人模型在网页端用替代模型并朝该敌人的颜色染色）是否保留。

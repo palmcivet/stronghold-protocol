@@ -72,7 +72,6 @@
 ### mission-renderer
 
 - renderer 只读快照、事件、cue 与资源句柄：资源按调用方给的 `AssetKey` 经资源端口申请，表现数据由 app 经 `set-appearances` 传入，renderer 不读 `chess.json`、`enemies.json`。
-- `@pixi/*`、`@pixi-spine/*` 只能被 `actor/skeleton/` 引用，只做骨骼与动画计算，不创建 Pixi 渲染器、显示对象与纹理（`test/dependency.spec.ts`）。骨骼经 `port/skeleton.ts` 端口使用，换运行时只换 `actor/skeleton/`。
 - 视图系统按 `MISSION_VIEW_SYSTEM_ORDER` 固定顺序逐帧运行，顺序表导出并测试；`cull` 按地面相机视锥剔除演员与特效对象，没有 LOD。
 - 资源端口按种类设置颜色空间、mipmap 与各向异性（`MISSION_TEXTURE_POLICY`）；地面尺寸常量 `TILE_SIZE`、`TILE_HEIGHT` 都在 `ground/tile.ts`。
 - 特效表、线索绑定、头顶条读数表在 `createMissionStage` 时封存，之后 `register`、`replace`、`bind` 抛错，不支持热重载；封存校验一次列出全部问题（`RangeError`），包括内容 `declare` 过的 cue 种类必须有绑定。
@@ -119,13 +118,13 @@ flowchart LR
 - 交付：
   - 局中玩家操作改为 `BattleInput`：开局放置的初始单位属于 `BattleSpec`，不是输入；局中所有玩家操作（部署、撤退、重部署、施放等）均为 `BattleInput`。接受时发 `input`，拒绝时发 `input-refused`，与现有三种输入一致。黄金场景改为由输入驱动的部分作为有意变更单独提交，记录变动的场景。
   - 替身接到演员：演员按 `impostorDue` 的本帧更新序刷新替身；图集从等大格子改为货架分配与分页（含 clip 页），参照 master `render/impostor.js` 的行为。
-  - 技能期间的攻击、命中音按技能槽选择音库（master 0.2.3 §28.17）：技能槽作为核心技能相关事件（如 `attack`、`hit`）的字段携带，快照只保留连续状态；音效线索带上技能槽，选择规则在 `app/client/audio`。先到的技能音（§27.44）一并处理。
-  - 头顶条：状态图标（冻结、眩晕、沉睡、无敌、隐身等，读标签）、重部署圈（快照的重部署计时，数字纹理共享，§28.8）、残影血条、首领与精英框（读快照上已注册的标签，如 `boss`/`elite`；`components` 视图只是表现推导数据，不读它；若尚无此类标签，由内容注册）。
+  - 技能期间的攻击、命中音按技能槽选择音库（master 0.2.3 设计记录「主动技能的攻击与命中音」）：技能槽作为核心技能相关事件（如 `attack`、`hit`）的字段携带，快照只保留连续状态；音效线索带上技能槽，选择规则在 `app/client/audio`。先到的技能音（master 0.2.2 设计记录「先于单位到达音频的释放只响一次」）一并处理。
+  - 头顶条：状态图标（冻结、眩晕、沉睡、无敌、隐身等，读标签）、重部署圈（快照的重部署计时，数字纹理共享）、残影血条、首领与精英框（读快照上已注册的标签，如 `boss`/`elite`；`components` 视图只是表现推导数据，不读它；若尚无此类标签，由内容注册）。
   - 核对四项机制。原计划把它们记为已完成，但 `mission-core` 里没有找到对应实现，模块文档也没有写。逐项确认是已用别的机制覆盖（补文档、补用例），还是确实缺失（补实现）：
-    - 立即生效、本身不是攻击的技能，两次释放至少隔一个攻击间隔（master 0.2.2 §27.18，`sim/skills.js nextCastAt`）。现有代码只有 `MANUAL` 的 3 秒自动释放冷却。
-    - 触发源的 `cadence: "attack"`（§28.4、§28.13，master `addTriggerRange(fn, { attackOnly })`）：现有的 `setTriggerArea`（「mission-core 文档中的技能」）只有每拍问，没有等到下一次普攻时点的选项。
-    - 没有敌人时的替代目标（如治疗半血友方）与治疗、攻击混合触发（§28.10）：攻击系统里没有替代目标的扩展点。
-    - 友方装置在敌方条件里算作敌人（§27.6）：原计划写的标签是 `hostile-target`，代码里只有 `ally-target`（同阵营的普攻也选它）。确认 `ally-target` 是否覆盖 §27.6 的技能条件（`sim/skills.js _allyTargetIn`）。
+    - 立即生效、本身不是攻击的技能，两次释放至少隔一个攻击间隔（master 0.2.2 设计记录「无攻击的立即技能每个攻击间隔至多释放一次」，`sim/skills.js nextCastAt`）。现有代码只有 `MANUAL` 的 3 秒自动释放冷却。
+    - 触发源的 `cadence: "attack"`（master 0.2.3 设计记录「蕾缪安的通缉范围也触发技能」「特殊目标遵守 DEFAULT 攻击时序」，master `addTriggerRange(fn, { attackOnly })`）：现有的 `setTriggerArea`（「mission-core 文档中的技能」）只有每拍问，没有等到下一次普攻时点的选项。
+    - 没有敌人时的替代目标（如治疗半血友方）与治疗、攻击混合触发（master 0.2.3 设计记录「充能守护者治疗与混合技能触发」）：攻击系统里没有替代目标的扩展点。
+    - 友方装置在敌方条件里算作敌人（master 0.2.2 设计记录「白铁的铁钳号·原型机像敌人一样开启非治疗技能」）：原计划写的标签是 `hostile-target`，代码里只有 `ally-target`（同阵营的普攻也选它）。确认 `ally-target` 是否覆盖这条记录的技能条件（`sim/skills.js _allyTargetIn`）。
 - 验收：两包内 `pnpm test`、`pnpm lint` 通过，追溯与确定性扫描通过；输入的接受与拒绝、导出导入后继续推进的用例；四项核对各有结论与用例；替身分页与刷新顺序、头顶条各项用演员的录制快照加假时钟测试；黄金摘要只有记录在案的有意变动；`pnpm perf` 结果与上一阶段比较。
 
 ### 阶段 B：地形
@@ -154,7 +153,7 @@ flowchart LR
     - `app/server/match/fight/field/index.ts` 的 `missionSpec` 现在把每格写成平地（`height: 0`、`deployable: true`、地面与飞行都可走）；改为按关卡记录拼 `TileSpec`，写上 `height`、`deployable`、`walkableBy`、`terrain`，`special` 放进 `notes`。
     - `app/server/content/support/battle-facade.ts` 的 `grid.tile()` 现在总是返回 `terrain: "flat"`；改为读核心地块（只做最小修复，`tsc --noEmit` 通过）。`content/device/battle/index.ts` 里 master 风格的地形实现在内容改写时换成上面的注册。
     - renderer 的地面已经按 `MissionMap` 画出这四种地块，不需要改；地形效果的画面（如沼泽层数）走横向扩展。
-  - 依据：master `server/sim/grid.js`（地块图例、`DEPLOY_REFUSED_TILES`、`TERRAIN_BY_KEY`、深水的同分规则）、`server/sim/content/devices.js`（`enterTerrain`、`touchInfection`、`tickMire`、`terrainFor`、`RESEARCH` 缺省值）；master 设计记录 0.2.2 §27.26；master 用例 `sim/playtest5-targeting.test.js` #1；PRTS「沼泽控制」「涨潮控制」「特殊地形」页（master 注释里引用的原文）；next 侧 `app/data/compiler/packet/record/stage/record.ts`、`app/server/content/device/battle/index.ts`（master 内容的副本）。
+  - 依据：master `server/sim/grid.js`（地块图例、`DEPLOY_REFUSED_TILES`、`TERRAIN_BY_KEY`、深水的同分规则）、`server/sim/content/devices.js`（`enterTerrain`、`touchInfection`、`tickMire`、`terrainFor`、`RESEARCH` 缺省值）；master 0.2.2 设计记录「寻路同分时不比官方路线多踩深水区」；master 用例 `sim/playtest5-targeting.test.js` #1；PRTS「沼泽控制」「涨潮控制」「特殊地形」页（master 注释里引用的原文）；next 侧 `app/data/compiler/packet/record/stage/record.ts`、`app/server/content/device/battle/index.ts`（master 内容的副本）。
 - 验收：`mission-core` 内 `pnpm test`、`pnpm lint`，追溯与确定性扫描通过；地形的进入、离开、延续、按秒触发、改地形后流场重算、导出导入后继续推进都有用例；四种地形各有一个测试夹具里的最小样例，数值对照 master；`playtest5-targeting.test.js` #1 改为 `rewritten` 并写 `next` 引用，`pnpm case-map` 通过；`app/server` 内 `tsc --noEmit` 通过；黄金摘要不变，或变动单独提交并记录；mission-core 文档（规格、模块、伤害、费用阻挡与投射物）同步。
 
 ### 阶段 C：接线
@@ -162,7 +161,7 @@ flowchart LR
 - 目标：`app/client` 用真实数据驱动舞台；与 `app/client` 的 field 落地一起进行。
 - 范围：`app/client`（field、audio、资源接入）、`app/data`、`assets-extractor`、拼装 `BattleSpec` 的适配层；引擎只在契约不够时改动。
 - 交付：
-  - `app/client` 接上 `createMissionStage`、`createMissionResourcePort`、`createMissionSkeletonLoader`、`set-appearances` 与指针事件流；快照与事件到 renderer 输入的转换在 `app/client/field`。
+  - `app/client` 接上 `createMissionStage`、`createMissionResourcePort`、`set-appearances` 与指针事件流；快照与事件到 renderer 输入的转换在 `app/client/field`。
   - `app/data` 提供真实的 `MissionAppearance` 与动画角色表（`json:anim-roles/<seasonId>`）；法线、粗糙度、遮罩贴图在 `app/data` 或 `assets-extractor` 标 `colorSpace: "linear"`。
   - `modelScaleY`、`mirrorX`、敌人缩放与偏移（`enemy_scales.py`、`enemy_model_offsets.py` 的结果）编成 `json:prefab/*` 表现数据，不计入 `contentHash`。
   - `app/data` 把未知的 `skillTriggerType` 映射为 `DEFAULT` 并警告。
@@ -181,7 +180,6 @@ flowchart LR
 - 目标：探索项与延后项有归属。
 - 探索项（结论写入模块文档或提交决定稿）：
   - 倒下与离场的官方概念：从提取器与官方数据（gamedata、prefab、动画控制器）查清官方如何区分倒下、撤退、死亡、移除，据此确认 `downed`、`removed` 的语义与命名，同步事件表与 renderer 的淡出规则。
-  - Spine 运行时替换：比较（a）引入 spine-runtimes `3.8` 分支的 spine-ts core 源码、去掉 `@pixi/*`；（b）资源转到 4.x 后用官方 `@esotericsoftware/spine-threejs`；（c）继续用 pixi-spine。比较体积、维护与画面一致性；替换只改 `actor/skeleton/`，用演员录制用例与截图对比验收。
 - 延后项（只在条件满足时做）：
   - 条件效果改为事件驱动：只有剖析显示它是热点时。
   - 组件表的密集数组存储：只有剖析数据支持时。
@@ -195,22 +193,22 @@ flowchart LR
 
 ### 上游画面行为
 
-master 0.2.2 §27、0.2.3 §28：
+master 0.2.2 与 0.2.3 设计记录中的表现条目：
 
-- 骨刺按有效隐匿切换 A/B 形态（§27.17a），形态表是表现数据。
-- 攻击后摇站定的插值（§27.37），读 `components['attack:stand']`。
-- 推拉滑行、飞行单位死亡悬停、死亡 clip 上限 8 s（§27.38）。滑行时长 T = 0.14·√D 等 [ASSUMED] 参数照搬，加 `TRACE: assumed/*` 并补说明表。
-- 无模板遮罩时闭眼（§27.40）。
-- 迟到的攻击完整播放（§27.41）。
-- 静止姿态复用（§28.8）。
-- 推拉时保持朝向（§28.9），读 `displace` 的 `keepFacing`、`duration`。
-- 晚加载模型的入场动画（§28.22）。
+- 骨刺按有效隐匿切换 A/B 形态，形态表是表现数据。
+- 攻击后摇站定的插值，读 `components['attack:stand']`。
+- 推拉滑行、飞行单位死亡悬停、死亡 clip 上限 8 s。滑行时长 T = 0.14·√D 等 [ASSUMED] 参数照搬，加 `TRACE: assumed/*` 并补说明表。
+- 无模板遮罩时闭眼。
+- 迟到的攻击完整播放。
+- 静止姿态复用。
+- 推拉时保持朝向，读 `displace` 的 `keepFacing`、`duration`。
+- 晚加载模型的入场动画。
 
 ### 特效种类
 
 - 通用种类（引擎只提供 `mission:` 种类）：弹道、命中火花、伤害数字、死亡溶解、持续光环、范围预警、光束与链。
 - 炮台开火闪光与后坐、炮台与箱子的碎裂。
-- 内容特有的种类放在内容包（如 `app/season` 或模组），按内容或模组 id 命名空间：雪暴（§27.32）、剑气（§27.36）、克莱门莎爆炸占位（§28.1）。
+- 内容特有的种类放在内容包（如 `app/season` 或模组），按内容或模组 id 命名空间：雪暴、剑气、克莱门莎爆炸占位。
 - 内容 `fx` 的 kind（约 140 种）经 `cue:<kind>` 绑定到种类，或明确标为 `null`。
 - 地形效果的画面（沼泽层数、活性源石与深水的受击提示等），随阶段 B 的地形事件绑定。
 
