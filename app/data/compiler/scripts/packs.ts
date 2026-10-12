@@ -8,7 +8,6 @@ import {
   fileAddress,
   type Need,
   type NeedsList,
-  needsListIssues,
   type RawCatalog,
   type RawEntry,
   rawCatalogIssues,
@@ -27,6 +26,7 @@ import {
   droppedKeys,
   type PackBuild,
 } from '#compiler/media/pack/manifest.js';
+import { needsListIssuesWithPackTypes } from '#schema/pack-layout.js';
 import { seasonPacketDirectory } from '#schema/packet-file.js';
 import { dataWorkspace } from '#workspace.js';
 
@@ -119,7 +119,7 @@ async function readNeedsList(
   path: string,
 ): Promise<readonly Need[]> {
   const value = await readJson(files, path);
-  const issues = needsListIssues(value);
+  const issues = needsListIssuesWithPackTypes(value);
   if (issues.length > 0) {
     throw new BuildReadError(
       path,

@@ -132,7 +132,6 @@ function reduce(x0: number): Reduced {
 }
 
 /** 正弦，弧度。fdlibm 5.3 的算法，只用正确舍入的运算，各引擎逐位一致。 */
-// TRACE: source/deterministic-math
 export function sin(x: number): number {
   if (!Number.isFinite(x)) {
     return Number.NaN;
@@ -154,7 +153,6 @@ export function sin(x: number): number {
 }
 
 /** 余弦，弧度。fdlibm 5.3 的算法，只用正确舍入的运算，各引擎逐位一致。 */
-// TRACE: source/deterministic-math
 export function cos(x: number): number {
   if (!Number.isFinite(x)) {
     return Number.NaN;
@@ -252,7 +250,6 @@ const INFINITE_X = [0, -0, PI, -PI];
 const INFINITE_BOTH = [PI_OVER_4, -PI_OVER_4, 3 * PI_OVER_4, -3 * PI_OVER_4];
 
 /** 点 (x, y) 的辐角，范围 (−π, π]。fdlibm 的算法，只用正确舍入的运算，各引擎逐位一致。 */
-// TRACE: source/deterministic-math
 export function atan2(y: number, x: number): number {
   if (Number.isNaN(x) || Number.isNaN(y)) {
     return Number.NaN;

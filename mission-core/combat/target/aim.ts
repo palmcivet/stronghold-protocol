@@ -43,7 +43,6 @@ const ENEMY_QUERY = [
 ] as const;
 
 /** 这一下攻击会打到的单位，和出手用的是同一份名单。 */
-// TRACE: source/block-targets
 export function attackTargetIds(
   state: BattleWorld,
   registry: BattleRegistry,

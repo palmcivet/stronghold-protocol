@@ -4,11 +4,7 @@
 // --full 另按 gamedata 全表列出全部干员、皮肤、召唤物与敌人（可选需求）；compiler/input/base/absent.json 列出的键标为可选并写明原因。
 
 import { join, resolve } from 'node:path';
-import {
-  type Need,
-  type NeedsList,
-  needsListIssues,
-} from 'arknights-assets-catalog';
+import type { Need, NeedsList } from 'arknights-assets-catalog';
 import {
   type BuildFiles,
   BuildReadError,
@@ -39,6 +35,7 @@ import {
   uniqueNeeds,
 } from '#compiler/media/need/input.js';
 import { seasonNeeds } from '#compiler/media/need/season.js';
+import { needsListIssuesWithPackTypes } from '#schema/pack-layout.js';
 import { seasonPacketDirectory } from '#schema/packet-file.js';
 import { dataWorkspace } from '#workspace.js';
 
@@ -219,7 +216,7 @@ async function writeNeeds(
   path: string,
   list: NeedsList,
 ): Promise<void> {
-  const issues = needsListIssues(list);
+  const issues = needsListIssuesWithPackTypes(list);
   if (issues.length > 0) {
     throw new BuildReadError(
       path,

@@ -3,9 +3,7 @@
     "repo": "sganggs/Stronghold-Protocol",
     "commit": "1db8e510"
   },
-  "caseByCase": [
-    "sim/**"
-  ],
+  "caseByCase": ["sim/**"],
   "rules": [
     {
       "match": "content/**",
@@ -4043,7 +4041,7 @@
     },
     "sim/playtest6_limits.test.js::docs: research 11 is indexed; SIM / META / DATA / PLAYING / BALANCE state the 999 cap and the 300000 cancel": {
       "status": "not-migrated",
-      "reason": "检查参考实现自己的文档；核心的限伤写在 docs/mission-core/05-damage.md"
+      "reason": "检查参考实现自己的文档；核心的限伤写在 docs/mission-core/06-damage.md"
     },
     "sim/portal-appear.test.js::normalizeRoute: DISAPPEAR → WAIT → MOVE gains the twin APPEAR at the move target": {
       "status": "moved",

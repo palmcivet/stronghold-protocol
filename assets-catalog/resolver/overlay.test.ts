@@ -9,7 +9,6 @@ import type {
   PackAsset,
   PackManifest,
   PackRefs,
-  PackType,
 } from '#schema/pack-manifest.js';
 
 const HASH_A = 'aa'.repeat(32);
@@ -31,11 +30,11 @@ function image(
 }
 
 function layer(
-  type: PackType,
+  type: string,
   id: string,
   assets: Record<AssetKey, PackAsset>,
   refs?: PackRefs,
-  path = `/res/packs/${type}/${id}/manifest.json`,
+  path = `/packs/${type}/${id}/manifest.json`,
   fileRoot = '../../../files/',
 ): AssetLayer {
   const manifest: PackManifest = {
@@ -71,7 +70,7 @@ describe('overlay order', () => {
       },
     },
     undefined,
-    '/res/local/manifest.json',
+    '/local/manifest.json',
     '../files/',
   );
 
@@ -81,7 +80,7 @@ describe('overlay order', () => {
     expect(found?.pack.type).toBe('local');
     expect(found?.files.map((file) => file.format)).toEqual(['webp']);
     expect(found?.files[0]?.url).toBe(
-      `${ORIGIN}/res/files/image/char/avatar/char_002_amiya.webp?v=${HASH_B.slice(0, 12)}`,
+      `${ORIGIN}/files/image/char/avatar/char_002_amiya.webp?v=${HASH_B.slice(0, 12)}`,
     );
     expect(found?.asset.preloadGroup).toBeNull();
   });
@@ -109,7 +108,7 @@ describe('overlay order', () => {
     const resolver = createAssetResolver([base, season, mod, local]);
     expect(resolver.entry('image:only/base')?.pack.type).toBe('base');
     expect(resolver.entry('image:only/base')?.files[0]?.url).toBe(
-      `${ORIGIN}/res/files/image/only/base.png?v=${HASH_A.slice(0, 12)}`,
+      `${ORIGIN}/files/image/only/base.png?v=${HASH_A.slice(0, 12)}`,
     );
     expect(resolver.has('image:only/base')).toBe(true);
     expect(resolver.has('image:nowhere')).toBe(false);
@@ -271,9 +270,9 @@ describe('fallback chain', () => {
       expect.objectContaining({ code: 'fallback-kind' }),
     );
     expect(resolver.resolve(spine)?.files.map((file) => file.url)).toEqual([
-      `${ORIGIN}/res/files/spine/enemy/enemy_1007_slime/a.skel?v=${HASH_A.slice(0, 12)}`,
-      `${ORIGIN}/res/files/spine/enemy/enemy_1007_slime/a.atlas?v=${HASH_A.slice(0, 12)}`,
-      `${ORIGIN}/res/files/spine/enemy/enemy_1007_slime/a.png?v=${HASH_A.slice(0, 12)}`,
+      `${ORIGIN}/files/spine/enemy/enemy_1007_slime/a.skel?v=${HASH_A.slice(0, 12)}`,
+      `${ORIGIN}/files/spine/enemy/enemy_1007_slime/a.atlas?v=${HASH_A.slice(0, 12)}`,
+      `${ORIGIN}/files/spine/enemy/enemy_1007_slime/a.png?v=${HASH_A.slice(0, 12)}`,
     ]);
   });
 });
@@ -368,10 +367,7 @@ describe('manifest checks', () => {
   test('the manifest url must be absolute', () => {
     expect(() =>
       createAssetResolver([
-        {
-          ...layer('base', 'base', {}),
-          url: '/res/packs/base/1/manifest.json',
-        },
+        { ...layer('base', 'base', {}), url: '/packs/base/1/manifest.json' },
       ]),
     ).toThrow(expect.objectContaining({ code: 'invalid-url' }));
   });

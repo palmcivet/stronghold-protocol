@@ -6,4 +6,4 @@ export {
   type UpstreamInput,
   type UpstreamIssue,
   type UpstreamSource,
-} from "#data/asset/upstream.js"
+} from '#data/asset/upstream.js';

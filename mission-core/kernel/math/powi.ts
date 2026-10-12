@@ -50,7 +50,6 @@ function plainPower(x: number, n: number): number {
  * xⁿ，n 是整数。平方乘在双倍精度里进行，最后只舍入一次，结果实际上是正确舍入的。
  * n 不是整数时抛出 RangeError。
  */
-// TRACE: source/deterministic-math
 export function powi(x: number, n: number): number {
   if (!Number.isInteger(n)) {
     throw new RangeError(`powi exponent must be an integer: ${n}`);

@@ -24,6 +24,12 @@
       "source": "./schema/pack-refs.ts",
       "import": "./dist/schema/pack-refs.js",
       "default": "./dist/schema/pack-refs.js"
+    },
+    "./pack-layout": {
+      "types": "./dist/schema/pack-layout.d.ts",
+      "source": "./schema/pack-layout.ts",
+      "import": "./dist/schema/pack-layout.js",
+      "default": "./dist/schema/pack-layout.js"
     }
   },
   "imports": {

@@ -24,6 +24,9 @@
     "check": "tsc --noEmit && tsc -p tsconfig.test.json --noEmit",
     "test": "vitest run"
   },
+  "dependencies": {
+    "@alliance/data": "workspace:*"
+  },
   "devDependencies": {
     "@types/node": "catalog:",
     "typescript": "catalog:",

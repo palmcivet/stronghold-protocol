@@ -91,7 +91,6 @@ export interface EffectDefinition {
   readonly grantsTags: readonly TagKey[];
   readonly modifiers: readonly AttributeModifier[];
   /** 身上已有这些效果时，挡住别的效果。名单用免疫名，例如冻结是 frozen。 */
-  // TRACE: source/immunity-names
   readonly immunity: readonly string[];
   /**
    * 这个效果自己被挡住时，单位免疫名单里对应的名字。

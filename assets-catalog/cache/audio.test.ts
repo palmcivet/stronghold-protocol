@@ -50,7 +50,7 @@ function setup(
 
 const voice = (n: number) => ({
   key: `audio:voice/cn/char_002_amiya/CN_00${n}` as AssetKey,
-  url: `https://cdn.example/res/files/audio/voice/cn/char_002_amiya/CN_00${n}.mp3?v=abababababab`,
+  url: `https://cdn.example/files/audio/voice/cn/char_002_amiya/CN_00${n}.mp3?v=abababababab`,
 });
 
 test('the url is requested as given: no extensionless route', async () => {

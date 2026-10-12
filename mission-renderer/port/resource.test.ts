@@ -6,9 +6,6 @@ import {
   type PackAsset,
   type PackFile,
   type PackManifest,
-  packFileRoot,
-  packManifestAddress,
-  RESOURCE_ROOT,
 } from 'arknights-assets-catalog';
 import {
   LinearFilter,
@@ -61,7 +58,7 @@ const manifest: PackManifest = {
   schemaVersion: 1,
   pack,
   requires: [],
-  fileRoot: packFileRoot(pack),
+  fileRoot: '../../../files/',
   assets: {
     [IMAGE]: asset('image', singleFile('png'), FALLBACK_IMAGE),
     [FALLBACK_IMAGE]: asset('image', singleFile('png')),
@@ -73,12 +70,9 @@ const manifest: PackManifest = {
   },
 };
 
-const manifestUrl = new URL(
-  `${RESOURCE_ROOT}${packManifestAddress(pack)}`,
-  ORIGIN,
-);
-const imageUrl = `${ORIGIN}/res/files/image/char/avatar/char_002_amiya.png?v=${HASH.slice(0, 12)}`;
-const fallbackImageUrl = `${ORIGIN}/res/files/image/char/avatar/default.png?v=${HASH.slice(0, 12)}`;
+const manifestUrl = new URL('/packs/base/1.0.0-r1/manifest.json', ORIGIN);
+const imageUrl = `${ORIGIN}/files/image/char/avatar/char_002_amiya.png?v=${HASH.slice(0, 12)}`;
+const fallbackImageUrl = `${ORIGIN}/files/image/char/avatar/default.png?v=${HASH.slice(0, 12)}`;
 
 function loadersWith(
   overrides: Partial<MissionResourceLoaders> = {},

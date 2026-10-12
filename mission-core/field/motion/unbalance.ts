@@ -9,7 +9,6 @@ import type { BattleWorld, UnitState } from '#unit/record/index.js';
  * 失衡的秒数。推按受力等级（≤ −3 没有，≥ 3 按 3）；拉按作用时间，受力等级低于 −1 时减半；
  * 失衡硬直的保底是 UNBALANCE_MIN，推不动的一下与静态刚体都按它。
  */
-// TRACE: source/unbalance
 export const PUSH_UNBALANCE: Readonly<Record<number, number>> = Object.freeze({
   [-2]: 0.2,
   [-1]: 0.4,

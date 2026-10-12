@@ -303,7 +303,6 @@ function openSwing(
   before: number,
 ): void {
   // 这一拍之前冷却就已经在前摇以内（没有目标、被打断或刚解除控制）：从头走完整个前摇
-  // TRACE: source/enemy-swing
   if (timing.wind > READY_EPSILON && before < timing.wind - READY_EPSILON) {
     timer.phase = 'windup';
     timer.lead = 1;

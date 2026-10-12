@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'vitest';
 import {
-  emptyLocalManifest,
   isPackManifest,
   packManifestIssues,
   packRefsIssues,
@@ -154,22 +153,39 @@ describe('pack manifest guard', () => {
       packManifestIssues({
         ...BASE,
         schemaVersion: '1',
-        pack: { type: 'theme', id: '', version: '', contentHash: 'x' },
-        requires: [{ type: 'mod', id: 'base', version: 1 }],
+        pack: { type: '', id: '', version: '', contentHash: 'x' },
+        requires: [{ type: '', id: 'base', version: 1 }],
         fileRoot: '../files',
       }),
     ).toEqual([
       { path: 'schemaVersion', message: 'expected one of 1' },
-      {
-        path: 'pack.type',
-        message: 'expected one of "base", "season", "mod", "local", "upstream"',
-      },
+      { path: 'pack.type', message: 'expected a non-empty string' },
       { path: 'pack.id', message: 'expected a non-empty string' },
       { path: 'pack.version', message: 'expected a non-empty string' },
       { path: 'pack.contentHash', message: 'expected a lowercase hex SHA-256' },
-      { path: 'requires[0].type', message: 'expected one of "base", "season"' },
+      { path: 'requires[0].type', message: 'expected a non-empty string' },
       { path: 'requires[0].version', message: 'expected a non-empty string' },
       { path: 'fileRoot', message: "expected a trailing '/'" },
+    ]);
+  });
+
+  test('pack types are any non-empty string named by the pack author', () => {
+    expect(
+      packManifestIssues({
+        ...BASE,
+        pack: { ...BASE.pack, type: 'theme' },
+        requires: [{ type: 'mod', id: 'boss-bgm', version: '1' }],
+      }),
+    ).toEqual([]);
+    expect(
+      packManifestIssues({
+        ...BASE,
+        pack: { ...BASE.pack, type: 7 },
+        requires: [{ type: null, id: 'base', version: '1' }],
+      }),
+    ).toEqual([
+      { path: 'pack.type', message: 'expected a non-empty string' },
+      { path: 'requires[0].type', message: 'expected a non-empty string' },
     ]);
   });
 
@@ -270,18 +286,5 @@ describe('refs leaves', () => {
     ]);
     const { refs: _refs, ...withoutRefs } = BASE;
     expect(isPackManifest(withoutRefs)).toBe(true);
-  });
-});
-
-describe('empty local manifest', () => {
-  test('passes the pack manifest guard and resolves its file root beside /res/files/', () => {
-    const manifest = emptyLocalManifest();
-    expect(packManifestIssues(manifest)).toEqual([]);
-    expect(manifest.pack.type).toBe('local');
-    expect(manifest.assets).toEqual({});
-    expect(
-      new URL(manifest.fileRoot, 'https://cdn.example/res/local/manifest.json')
-        .pathname,
-    ).toBe('/res/files/');
   });
 });

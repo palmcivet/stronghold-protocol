@@ -9,18 +9,6 @@ export {
   VERSION_PARAM,
 } from '#address/file.js';
 export {
-  FILES_DIRECTORY,
-  LOCAL_DIRECTORY,
-  MANIFEST_FILE,
-  PACKS_DIRECTORY,
-  type PublishedPack,
-  type PublishedPackType,
-  packDirectory,
-  packFileRoot,
-  packManifestAddress,
-  RESOURCE_ROOT,
-} from '#address/pack.js';
-export {
   AUDIO_BUFFER_BYTES,
   AUDIO_BUFFER_COUNT,
   type AudioBufferCache,
@@ -91,16 +79,12 @@ export {
 export { fieldPath, indexPath, type SchemaIssue } from '#schema/issue.js';
 export {
   isNeedsList,
-  NEEDS_PACK_TYPES,
   type Need,
   type NeedsList,
-  type NeedsPackType,
   needsListIssues,
 } from '#schema/needs-list.js';
 export {
-  emptyLocalManifest,
   isPackManifest,
-  PACK_TYPES,
   type PackAsset,
   type PackFile,
   type PackInfo,
@@ -108,11 +92,8 @@ export {
   type PackRefNode,
   type PackRefs,
   type PackRequirement,
-  type PackType,
   packManifestIssues,
   packRefsIssues,
-  REQUIRED_PACK_TYPES,
-  type RequiredPackType,
 } from '#schema/pack-manifest.js';
 export {
   isRawCatalog,

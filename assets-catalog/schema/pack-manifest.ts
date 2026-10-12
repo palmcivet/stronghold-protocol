@@ -1,4 +1,3 @@
-import { type PublishedPack, packFileRoot } from '#address/pack.js';
 import type { AssetKey, AssetKind } from '#key/asset-key.js';
 import type { AssetFile } from '#schema/asset-file.js';
 import type { AssetColorSpace } from '#schema/color-space.js';
@@ -12,21 +11,7 @@ import {
 } from '#schema/issue.js';
 import { checkEntryHead } from '#schema/raw-catalog.js';
 
-export const PACK_TYPES = [
-  'base',
-  'season',
-  'mod',
-  'local',
-  'upstream',
-] as const;
-
-export type PackType = (typeof PACK_TYPES)[number];
-
-export const REQUIRED_PACK_TYPES = ['base', 'season'] as const;
-
-export type RequiredPackType = (typeof REQUIRED_PACK_TYPES)[number];
-
-/** One layer of the asset overlay. Base, season, mod, local and upstream packs share this format. */
+/** One layer of the asset overlay. Every layer shares this format; the pack author names the pack types. */
 export interface PackManifest {
   readonly schemaVersion: 1;
   readonly pack: PackInfo;
@@ -39,7 +24,8 @@ export interface PackManifest {
 }
 
 export interface PackInfo {
-  readonly type: PackType;
+  /** Pack type named by the pack author, such as `base`. Any non-empty string. */
+  readonly type: string;
   readonly id: string;
   readonly version: string;
   /** SHA-256 of this manifest after normalization, excluding this field. */
@@ -47,7 +33,8 @@ export interface PackInfo {
 }
 
 export interface PackRequirement {
-  readonly type: RequiredPackType;
+  /** Type of the required pack. Any non-empty string. */
+  readonly type: string;
   readonly id: string;
   readonly version: string;
 }
@@ -110,7 +97,7 @@ export function packManifestIssues(value: unknown): readonly SchemaIssue[] {
   check.oneOf(root.schemaVersion, 'schemaVersion', [1]);
   const pack = check.record(root.pack, 'pack');
   if (pack) {
-    check.oneOf(pack.type, 'pack.type', PACK_TYPES);
+    check.text(pack.type, 'pack.type');
     check.text(pack.id, 'pack.id');
     check.text(pack.version, 'pack.version');
     const hash = pack.contentHash;
@@ -125,7 +112,7 @@ export function packManifestIssues(value: unknown): readonly SchemaIssue[] {
     if (!requirement) {
       return;
     }
-    check.oneOf(requirement.type, fieldPath(path, 'type'), REQUIRED_PACK_TYPES);
+    check.text(requirement.type, fieldPath(path, 'type'));
     check.text(requirement.id, fieldPath(path, 'id'));
     check.text(requirement.version, fieldPath(path, 'version'));
   });
@@ -164,25 +151,4 @@ export function packManifestIssues(value: unknown): readonly SchemaIssue[] {
 
 export function isPackManifest(value: unknown): value is PackManifest {
   return packManifestIssues(value).length === 0;
-}
-
-/** `contentHash` of `emptyLocalManifest()`: SHA-256 of its canonical JSON without `pack.contentHash` and `fileRoot`. */
-const EMPTY_LOCAL_CONTENT_HASH =
-  '83ff2ec26e3d2df78a7096c0333053daa90d7292633c1bb6dab6e89eba11fa98';
-
-/** The local overlay with no entries. Served when the local manifest is missing, so the layer is always present. */
-export function emptyLocalManifest(): PackManifest {
-  const pack: PublishedPack = {
-    type: 'local',
-    id: 'local',
-    version: '0',
-    contentHash: EMPTY_LOCAL_CONTENT_HASH,
-  };
-  return {
-    schemaVersion: 1,
-    pack,
-    requires: [],
-    fileRoot: packFileRoot(pack),
-    assets: {},
-  };
 }

@@ -1,144 +1,197 @@
-export const COMPRESSIBLE_EXTENSIONS: ReadonlySet<string> = new Set([
-  ".html",
-  ".htm",
-  ".js",
-  ".mjs",
-  ".css",
-  ".json",
-  ".map",
-  ".webmanifest",
-  ".txt",
-  ".md",
-  ".csv",
-  ".xml",
-  ".atlas",
-  ".skel",
-  ".bin",
-  ".wasm",
-  ".svg",
-  ".ico",
-  ".otf",
-  ".ttf",
-  ".wav",
-])
+import {
+  FILES_DIRECTORY,
+  LOCAL_DIRECTORY,
+  PACKS_DIRECTORY,
+  RESOURCE_ROOT,
+} from '@alliance/data/pack-layout';
 
-export const GZIP_MIN_BYTES: number = 512
-export const GZIP_CACHE_MAX_FILE: number = 8 << 20
-export const GZIP_CACHE_MAX_TOTAL: number = 96 << 20
-
-const LONG_CACHE: string = "public, max-age=86400"
-const IMMUTABLE_CACHE: string = "public, max-age=31536000, immutable"
-/** Vite output (hashed file names) and vendored scripts, under the site root. */
-const LONG_CACHE_DIRECTORIES: readonly string[] = ["assets", "vendor"]
-/** Resource directory under the site root, laid out by `RESOURCE_ROOT` in assets-catalog. */
-const RESOURCE_DIRECTORY = "res"
-const MANIFEST_CACHE = "public, max-age=300"
-
-export const MEDIA_TYPES: Readonly<Record<string, string>> = {
-  ".html": "text/html; charset=utf-8",
-  ".htm": "text/html; charset=utf-8",
-  ".js": "text/javascript; charset=utf-8",
-  ".mjs": "text/javascript; charset=utf-8",
-  ".css": "text/css; charset=utf-8",
-  ".json": "application/json; charset=utf-8",
-  ".map": "application/json; charset=utf-8",
-  ".webmanifest": "application/manifest+json; charset=utf-8",
-  ".txt": "text/plain; charset=utf-8",
-  ".md": "text/markdown; charset=utf-8",
-  ".csv": "text/csv; charset=utf-8",
-  ".xml": "application/xml; charset=utf-8",
-  ".atlas": "text/plain; charset=utf-8",
-  ".skel": "application/octet-stream",
-  ".bin": "application/octet-stream",
-  ".wasm": "application/wasm",
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".gif": "image/gif",
-  ".webp": "image/webp",
-  ".avif": "image/avif",
-  ".svg": "image/svg+xml; charset=utf-8",
-  ".ico": "image/x-icon",
-  ".mp3": "audio/mpeg",
-  ".ogg": "audio/ogg",
-  ".oga": "audio/ogg",
-  ".opus": "audio/ogg",
-  ".wav": "audio/wav",
-  ".m4a": "audio/mp4",
-  ".aac": "audio/aac",
-  ".webm": "video/webm",
-  ".mp4": "video/mp4",
-  ".woff2": "font/woff2",
-  ".woff": "font/woff",
-  ".otf": "font/otf",
-  ".ttf": "font/ttf",
+/** The path segment a layout directory such as `"/res/"` or `"files/"` stands for. */
+function segmentOf(directory: string): string {
+  return directory.replace(/^\/|\/$/g, '');
 }
 
+export const COMPRESSIBLE_EXTENSIONS: ReadonlySet<string> = new Set([
+  '.html',
+  '.htm',
+  '.js',
+  '.mjs',
+  '.css',
+  '.json',
+  '.map',
+  '.webmanifest',
+  '.txt',
+  '.md',
+  '.csv',
+  '.xml',
+  '.atlas',
+  '.skel',
+  '.bin',
+  '.wasm',
+  '.svg',
+  '.ico',
+  '.otf',
+  '.ttf',
+  '.wav',
+]);
+
+export const GZIP_MIN_BYTES: number = 512;
+export const GZIP_CACHE_MAX_FILE: number = 8 << 20;
+export const GZIP_CACHE_MAX_TOTAL: number = 96 << 20;
+
+const LONG_CACHE: string = 'public, max-age=86400';
+const IMMUTABLE_CACHE: string = 'public, max-age=31536000, immutable';
+/** Vite output (hashed file names) and vendored scripts, under the site root. */
+const LONG_CACHE_DIRECTORIES: readonly string[] = ['assets', 'vendor'];
+/** Resource directory under the site root and its published directories. */
+const RESOURCE_DIRECTORY = segmentOf(RESOURCE_ROOT);
+const LOCAL_SEGMENT = segmentOf(LOCAL_DIRECTORY);
+const PACKS_SEGMENT = segmentOf(PACKS_DIRECTORY);
+const FILES_SEGMENT = segmentOf(FILES_DIRECTORY);
+const MANIFEST_CACHE = 'public, max-age=300';
+
+export const MEDIA_TYPES: Readonly<Record<string, string>> = {
+  '.html': 'text/html; charset=utf-8',
+  '.htm': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.map': 'application/json; charset=utf-8',
+  '.webmanifest': 'application/manifest+json; charset=utf-8',
+  '.txt': 'text/plain; charset=utf-8',
+  '.md': 'text/markdown; charset=utf-8',
+  '.csv': 'text/csv; charset=utf-8',
+  '.xml': 'application/xml; charset=utf-8',
+  '.atlas': 'text/plain; charset=utf-8',
+  '.skel': 'application/octet-stream',
+  '.bin': 'application/octet-stream',
+  '.wasm': 'application/wasm',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+  '.avif': 'image/avif',
+  '.svg': 'image/svg+xml; charset=utf-8',
+  '.ico': 'image/x-icon',
+  '.mp3': 'audio/mpeg',
+  '.ogg': 'audio/ogg',
+  '.oga': 'audio/ogg',
+  '.opus': 'audio/ogg',
+  '.wav': 'audio/wav',
+  '.m4a': 'audio/mp4',
+  '.aac': 'audio/aac',
+  '.webm': 'video/webm',
+  '.mp4': 'video/mp4',
+  '.woff2': 'font/woff2',
+  '.woff': 'font/woff',
+  '.otf': 'font/otf',
+  '.ttf': 'font/ttf',
+};
+
 export function mediaType(extension: string): string {
-  return MEDIA_TYPES[extension.toLowerCase()] ?? "application/octet-stream"
+  return MEDIA_TYPES[extension.toLowerCase()] ?? 'application/octet-stream';
 }
 
 /** Accept-Encoding 里 gzip 的 q 大于 0。 */
 export function acceptsGzip(header: string | undefined): boolean {
-  if (!header) return false
-  let gzipQ: number | null = null
-  let starQ: number | null = null
-  for (const part of header.split(",")) {
-    const [token, ...params] = part.trim().toLowerCase().split(";")
-    let q = 1
-    for (const param of params) {
-      const match = /^\s*q=([0-9.]+)\s*$/.exec(param)
-      if (match?.[1]) q = Number(match[1])
-    }
-    if (!Number.isFinite(q)) q = 0
-    if (token === "gzip" || token === "x-gzip") gzipQ = q
-    else if (token === "*") starQ = q
+  if (!header) {
+    return false;
   }
-  if (gzipQ !== null) return gzipQ > 0
-  return starQ !== null && starQ > 0
+  let gzipQ: number | null = null;
+  let starQ: number | null = null;
+  for (const part of header.split(',')) {
+    const [token, ...params] = part.trim().toLowerCase().split(';');
+    let q = 1;
+    for (const param of params) {
+      const match = /^\s*q=([0-9.]+)\s*$/.exec(param);
+      if (match?.[1]) {
+        q = Number(match[1]);
+      }
+    }
+    if (!Number.isFinite(q)) {
+      q = 0;
+    }
+    if (token === 'gzip' || token === 'x-gzip') {
+      gzipQ = q;
+    } else if (token === '*') {
+      starQ = q;
+    }
+  }
+  if (gzipQ !== null) {
+    return gzipQ > 0;
+  }
+  return starQ !== null && starQ > 0;
 }
 
-export type ByteRange = { readonly start: number; readonly end: number } | "unsatisfiable" | null
+export type ByteRange =
+  | { readonly start: number; readonly end: number }
+  | 'unsatisfiable'
+  | null;
 
 /** 单个 `bytes=` 区间。多段或畸形返回 null，由调用方送整文件。 */
-export function parseRange(header: string | undefined, size: number): ByteRange {
-  if (typeof header !== "string") return null
-  const match = /^\s*bytes\s*=\s*(\d*)\s*-\s*(\d*)\s*$/i.exec(header)
-  if (!match) return null
-  const startText = match[1] ?? ""
-  const endText = match[2] ?? ""
-  if (startText === "" && endText === "") return null
-  if (startText === "") {
-    const suffix = Number(endText)
-    if (suffix === 0 || size === 0) return "unsatisfiable"
-    return { start: Math.max(0, size - suffix), end: size - 1 }
+export function parseRange(
+  header: string | undefined,
+  size: number,
+): ByteRange {
+  if (typeof header !== 'string') {
+    return null;
   }
-  const start = Number(startText)
-  const end = endText === "" ? size - 1 : Math.min(Number(endText), size - 1)
-  if (endText !== "" && Number(endText) < start) return null
-  if (start >= size) return "unsatisfiable"
-  return { start, end }
+  const match = /^\s*bytes\s*=\s*(\d*)\s*-\s*(\d*)\s*$/i.exec(header);
+  if (!match) {
+    return null;
+  }
+  const startText = match[1] ?? '';
+  const endText = match[2] ?? '';
+  if (startText === '' && endText === '') {
+    return null;
+  }
+  if (startText === '') {
+    const suffix = Number(endText);
+    if (suffix === 0 || size === 0) {
+      return 'unsatisfiable';
+    }
+    return { start: Math.max(0, size - suffix), end: size - 1 };
+  }
+  const start = Number(startText);
+  const end = endText === '' ? size - 1 : Math.min(Number(endText), size - 1);
+  if (endText !== '' && Number(endText) < start) {
+    return null;
+  }
+  if (start >= size) {
+    return 'unsatisfiable';
+  }
+  return { start, end };
 }
 
 export function fileEtag(size: number, mtimeMs: number, gzip: boolean): string {
-  const base = `${size.toString(16)}-${Math.floor(mtimeMs).toString(16)}`
-  return `"${base}${gzip ? "-gz" : ""}"`
+  const base = `${size.toString(16)}-${Math.floor(mtimeMs).toString(16)}`;
+  return `"${base}${gzip ? '-gz' : ''}"`;
 }
 
 function stripWeak(tag: string): string {
-  return tag.trim().replace(/^W\//, "")
+  return tag.trim().replace(/^W\//, '');
 }
 
-export function isNotModified(ifNoneMatch: string | undefined, ifModifiedSince: string | undefined, etag: string, mtime: Date): boolean {
-  if (typeof ifNoneMatch === "string") {
-    if (ifNoneMatch.trim() === "*") return true
-    return ifNoneMatch.split(",").some((tag) => stripWeak(tag) === etag)
+export function isNotModified(
+  ifNoneMatch: string | undefined,
+  ifModifiedSince: string | undefined,
+  etag: string,
+  mtime: Date,
+): boolean {
+  if (typeof ifNoneMatch === 'string') {
+    if (ifNoneMatch.trim() === '*') {
+      return true;
+    }
+    return ifNoneMatch.split(',').some((tag) => stripWeak(tag) === etag);
   }
-  if (typeof ifModifiedSince === "string") {
-    const time = Date.parse(ifModifiedSince)
-    if (Number.isFinite(time)) return Math.floor(mtime.getTime() / 1000) * 1000 <= time
+  if (typeof ifModifiedSince === 'string') {
+    const time = Date.parse(ifModifiedSince);
+    if (Number.isFinite(time)) {
+      return Math.floor(mtime.getTime() / 1000) * 1000 <= time;
+    }
   }
-  return false
+  return false;
 }
 
 /**
@@ -146,22 +199,50 @@ export function isNotModified(ifNoneMatch: string | undefined, ifModifiedSince: 
  * a manifest is cached for a few minutes (with its ETag), and the local overlay is never cached.
  * Other files: a `v=` address is immutable; Vite output and vendored scripts are cached for a day.
  */
-export function cacheControl(extension: string, segments: readonly string[], query: string): string {
-  if (extension === ".html" || extension === ".htm") return "no-cache"
-  const first = segments[0]
-  const second = segments[1]
-  if (first === RESOURCE_DIRECTORY) {
-    if (second === "local") return "no-cache"
-    if (/(^|&)v=/.test(query)) return IMMUTABLE_CACHE
-    if (second === "packs") return MANIFEST_CACHE
-    if (second === "files") return LONG_CACHE
-    return "no-cache"
+export function cacheControl(
+  extension: string,
+  segments: readonly string[],
+  query: string,
+): string {
+  if (extension === '.html' || extension === '.htm') {
+    return 'no-cache';
   }
-  if (/(^|&)v=/.test(query)) return IMMUTABLE_CACHE
-  if (segments.length > 1 && first && LONG_CACHE_DIRECTORIES.includes(first)) return LONG_CACHE
-  return "no-cache"
+  const first = segments[0];
+  const second = segments[1];
+  if (first === RESOURCE_DIRECTORY) {
+    if (second === LOCAL_SEGMENT) {
+      return 'no-cache';
+    }
+    if (/(^|&)v=/.test(query)) {
+      return IMMUTABLE_CACHE;
+    }
+    if (second === PACKS_SEGMENT) {
+      return MANIFEST_CACHE;
+    }
+    if (second === FILES_SEGMENT) {
+      return LONG_CACHE;
+    }
+    return 'no-cache';
+  }
+  if (/(^|&)v=/.test(query)) {
+    return IMMUTABLE_CACHE;
+  }
+  if (segments.length > 1 && first && LONG_CACHE_DIRECTORIES.includes(first)) {
+    return LONG_CACHE;
+  }
+  return 'no-cache';
 }
 
-export function shouldGzip(extension: string, size: number, rangeHeader: string | undefined, acceptEncoding: string | undefined): boolean {
-  return COMPRESSIBLE_EXTENSIONS.has(extension) && size >= GZIP_MIN_BYTES && !rangeHeader && acceptsGzip(acceptEncoding)
+export function shouldGzip(
+  extension: string,
+  size: number,
+  rangeHeader: string | undefined,
+  acceptEncoding: string | undefined,
+): boolean {
+  return (
+    COMPRESSIBLE_EXTENSIONS.has(extension) &&
+    size >= GZIP_MIN_BYTES &&
+    !rangeHeader &&
+    acceptsGzip(acceptEncoding)
+  );
 }

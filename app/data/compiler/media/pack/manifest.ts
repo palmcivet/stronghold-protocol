@@ -6,12 +6,16 @@ import {
   type PackFile,
   type PackManifest,
   type PackRequirement,
-  packFileRoot,
   packManifestIssues,
   type RawEntry,
 } from 'arknights-assets-catalog';
 import { fallbackTargetOf } from '#compiler/media/pack/fallback.js';
 import { baseRefs, seasonRefs } from '#compiler/media/pack/refs.js';
+import {
+  packFileRoot,
+  packTypeIssues,
+  type RequiredPackType,
+} from '#schema/pack-layout.js';
 
 export type PackKind = 'base' | 'season';
 
@@ -72,7 +76,9 @@ export interface PackInput {
   readonly type: PackKind;
   readonly id: string;
   readonly version: string;
-  readonly requires: readonly PackRequirement[];
+  readonly requires: readonly (PackRequirement & {
+    readonly type: RequiredPackType;
+  })[];
   /** Needs of this pack, as the needs list gives them. */
   readonly needs: readonly Need[];
   /** Raw entries by key from every catalog that may hold a needed key. */
@@ -188,7 +194,7 @@ export function buildPack(input: PackInput): PackBuild {
     pack: { ...pack, contentHash },
     fileRoot,
   };
-  const issues = packManifestIssues(manifest);
+  const issues = [...packManifestIssues(manifest), ...packTypeIssues(manifest)];
   if (issues.length > 0) {
     throw new Error(
       `${input.type} pack ${input.id} is invalid: ${issues.map((issue) => `${issue.path}: ${issue.message}`).join('; ')}`,

@@ -337,7 +337,6 @@ export function markDeployed(unit: UnitState): void {
 }
 
 /** 把友方排成最晚部署的：仇恨序取当前所有单位里最大的加一。 */
-// TRACE: source/latest-deployed
 export function markLatestDeployed(world: BattleWorld, unit: UnitState): void {
   if (unit.side !== 'ally') {
     return;

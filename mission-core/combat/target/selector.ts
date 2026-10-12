@@ -53,7 +53,6 @@ export function selectUnits(
 }
 
 /** 内容加进攻击范围的绝对格子，换范围、换位置之后都留着，直到内容重新设置。不进技能触发的初始范围。 */
-// TRACE: source/extra-range
 export const EXTRA_RANGE = defineComponent<TileCoord[]>('target:extra-range', {
   create: () => [],
 });
@@ -213,7 +212,6 @@ function rangeExtendOf(unit: UnitState, registry: BattleRegistry): number {
 }
 
 /** 永久的攻击距离：整场部署期间一直在、不随技能或限时效果结束的延伸（模组、天赋、常驻增益）。技能触发只看它。 */
-// TRACE: source/range-extend-base
 export const RANGE_EXTEND_BASE = 'rangeExtendBase';
 
 /** 只算永久延伸的攻击范围格子（面向 RIGHT），给技能触发的初始范围用。 */

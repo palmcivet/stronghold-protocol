@@ -1,23 +1,14 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "lib": [
-      "es2024",
-      "dom"
-    ],
-    "types": [
-      "node"
-    ],
-    "customConditions": [
-      "source"
-    ],
+    "lib": ["es2024", "dom"],
+    "types": ["node"],
+    "customConditions": ["source"],
     "outDir": "dist",
     "rootDir": ".",
     "tsBuildInfoFile": "dist/.tsbuildinfo"
   },
-  "include": [
-    "**/*.ts"
-  ],
+  "include": ["**/*.ts"],
   "exclude": [
     "dist",
     "dist-test",

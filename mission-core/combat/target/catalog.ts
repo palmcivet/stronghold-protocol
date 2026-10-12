@@ -318,7 +318,6 @@ function blockRank(
     return blockerOf(state, source.id) === unit.id ? 0 : 1;
   }
   // 优先攻击空中单位的（速射手）范围里的飞行敌人和自己挡着的敌人同级，再由 priority 把飞行的排前
-  // TRACE: source/fly-over-block
   if (targetPriorityOf(state, source.id) === 'fly' && isFlying(unit)) {
     return 0;
   }

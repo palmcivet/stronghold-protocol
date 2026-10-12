@@ -257,3 +257,12 @@ test('the built manifest passes the catalog schema', () => {
   const manifest: PackManifest = build.manifest;
   expect(manifest.schemaVersion).toBe(1);
 });
+
+test('a requirement on a pack type that cannot be required fails the build', () => {
+  const requires = [
+    { type: 'mod', id: 'boss-bgm', version: '1' },
+  ] as unknown as PackInput['requires'];
+  expect(() =>
+    buildPack(baseInput({ type: 'season', id: 'act2autochess', requires })),
+  ).toThrow('requires[0].type: expected one of "base", "season"');
+});

@@ -5,9 +5,6 @@ import {
   fileAddress,
   isPackManifest,
   type PackManifest,
-  packFileRoot,
-  packManifestAddress,
-  RESOURCE_ROOT,
   spineSource,
 } from 'arknights-assets-catalog';
 import { expect, test } from 'vitest';
@@ -40,7 +37,7 @@ const base: PackManifest = {
   schemaVersion: 1,
   pack,
   requires: [],
-  fileRoot: packFileRoot(pack),
+  fileRoot: '../../../files/',
   assets: {
     'image:char/avatar/char_002_amiya': {
       kind: 'image',
@@ -95,7 +92,7 @@ const base: PackManifest = {
   },
 };
 
-const baseUrl = new URL(`${RESOURCE_ROOT}${packManifestAddress(pack)}`, ORIGIN);
+const baseUrl = new URL('/packs/base/1.0.0-r1/manifest.json', ORIGIN);
 
 test('the same bytes under two keys stay two assets with two addresses', () => {
   expect(isPackManifest(base)).toBe(true);
@@ -105,10 +102,10 @@ test('the same bytes under two keys stay two assets with two addresses', () => {
   expect(avatar?.key).toBe('image:char/avatar/char_002_amiya');
   expect(portrait?.key).toBe('image:skin/portrait/char_002_amiya_1');
   expect(avatar?.files[0]?.url).toBe(
-    `${ORIGIN}/res/files/image/char/avatar/char_002_amiya.png?v=${SAME_BYTES.slice(0, 12)}`,
+    `${ORIGIN}/files/image/char/avatar/char_002_amiya.png?v=${SAME_BYTES.slice(0, 12)}`,
   );
   expect(portrait?.files[0]?.url).toBe(
-    `${ORIGIN}/res/files/image/skin/portrait/char_002_amiya_1.png?v=${SAME_BYTES.slice(0, 12)}`,
+    `${ORIGIN}/files/image/skin/portrait/char_002_amiya_1.png?v=${SAME_BYTES.slice(0, 12)}`,
   );
   expect(avatar?.asset.preloadGroup).toBe('shop');
   expect(portrait?.asset.preloadGroup).toBeNull();
@@ -138,10 +135,10 @@ test('refs lead to keys, keys to files, and the spine cache keeps one model per 
     throw new Error('missing spine sources');
   }
   expect(first.skel).toBe(
-    `${ORIGIN}/res/files/${fileAddress('spine:enemy/enemy_1007_slime', { name: 'enemy_1007_slime.skel', format: 'skel' })}?v=${SAME_BYTES.slice(0, 12)}`,
+    `${ORIGIN}/files/${fileAddress('spine:enemy/enemy_1007_slime', { name: 'enemy_1007_slime.skel', format: 'skel' })}?v=${SAME_BYTES.slice(0, 12)}`,
   );
   expect(second.skel).toBe(
-    `${ORIGIN}/res/files/spine/enemy/enemy_1007_slime_2/enemy_1007_slime.skel?v=${SAME_BYTES.slice(0, 12)}`,
+    `${ORIGIN}/files/spine/enemy/enemy_1007_slime_2/enemy_1007_slime.skel?v=${SAME_BYTES.slice(0, 12)}`,
   );
   const one = await cache.acquire(first);
   const two = await cache.acquire(second);

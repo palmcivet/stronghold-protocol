@@ -6,14 +6,11 @@ import {
   type SchemaIssue,
 } from '#schema/issue.js';
 
-export const NEEDS_PACK_TYPES = ['base', 'season'] as const;
-
-export type NeedsPackType = (typeof NEEDS_PACK_TYPES)[number];
-
 /** The keys one pack asks the extractor for. */
 export interface NeedsList {
   readonly schemaVersion: 1;
-  readonly pack: { readonly type: NeedsPackType; readonly id: string };
+  /** `type` is named by the pack author, any non-empty string. */
+  readonly pack: { readonly type: string; readonly id: string };
   readonly needs: readonly Need[];
 }
 
@@ -34,7 +31,7 @@ export function needsListIssues(value: unknown): readonly SchemaIssue[] {
   check.oneOf(root.schemaVersion, 'schemaVersion', [1]);
   const pack = check.record(root.pack, 'pack');
   if (pack) {
-    check.oneOf(pack.type, 'pack.type', NEEDS_PACK_TYPES);
+    check.text(pack.type, 'pack.type');
     check.text(pack.id, 'pack.id');
   }
   const needs = check.list(root.needs, 'needs');

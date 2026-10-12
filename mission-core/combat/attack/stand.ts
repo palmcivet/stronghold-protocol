@@ -35,7 +35,6 @@ export const ATTACK_STAND = defineComponent<AttackStand>('attack:stand', {
 });
 
 /** 命中之后站 seconds 秒。不停止移动的攻击者不站。 */
-// TRACE: source/attack-stand
 export function standAfterStrike(
   state: BattleWorld,
   unit: UnitState,

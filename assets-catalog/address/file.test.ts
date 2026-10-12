@@ -101,8 +101,7 @@ describe('file address of each kind', () => {
 });
 
 describe('file url', () => {
-  const manifestUrl =
-    'https://cdn.example/res/packs/base/1.0.0-r1/manifest.json';
+  const manifestUrl = 'https://cdn.example/packs/base/1.0.0-r1/manifest.json';
 
   test('the address resolves against fileRoot and the manifest url, with ?v=<12 hex>', () => {
     const url = fileUrl({
@@ -112,7 +111,7 @@ describe('file url', () => {
       file: { role: 'main', name: null, format: 'mp3', bytes: 1, hash: HASH },
     });
     expect(url).toBe(
-      'https://cdn.example/res/files/audio/bgm/m_bat_autochess_loop.mp3?v=0123456789ab',
+      'https://cdn.example/files/audio/bgm/m_bat_autochess_loop.mp3?v=0123456789ab',
     );
   });
 
@@ -124,7 +123,7 @@ describe('file url', () => {
       file: { role: 'main', name: null, format: 'mp3', bytes: 1, hash: HASH },
     });
     expect(new URL(url).pathname).toBe(
-      '/res/files/audio/voice/cn/char_002_amiya/CN_001.mp3',
+      '/files/audio/voice/cn/char_002_amiya/CN_001.mp3',
     );
     expect(url).not.toContain('/media/');
   });
@@ -160,7 +159,7 @@ describe('file url', () => {
   test('a relative manifest url is rejected', () => {
     expect(() =>
       fileUrl({
-        manifestUrl: '/res/packs/base/1/manifest.json',
+        manifestUrl: '/packs/base/1/manifest.json',
         fileRoot: '../../../files/',
         key: 'image:x',
         file: { role: 'main', name: null, format: 'png', bytes: 1, hash: HASH },

@@ -109,7 +109,6 @@ export function carriesAttribute(
  * 这是最大生命自己的规则：读到的值和上一次结算的不同时，在场单位的当前生命按比例缩放，夹在 0 到新上限之间，不取整。
  * 结算发生在拍内第一次读到最大生命时，没人读时在拍末。
  */
-// TRACE: assumed/max-hp-ratio
 export function maxHpOf(unit: UnitState, registry: BattleRegistry): number {
   const value = maxHpValue(unit, registry);
   const seen = unit.maxHpSeen;

@@ -28,7 +28,7 @@ test('bad needs lists report each problem with its path', () => {
   expect(
     needsListIssues({
       schemaVersion: 2,
-      pack: { type: 'mod', id: '' },
+      pack: { type: '', id: '' },
       needs: [
         { key: 'image:x.png', required: true },
         { key: 'image:a', required: 'yes' },
@@ -39,7 +39,7 @@ test('bad needs lists report each problem with its path', () => {
     }),
   ).toEqual([
     { path: 'schemaVersion', message: 'expected one of 1' },
-    { path: 'pack.type', message: 'expected one of "base", "season"' },
+    { path: 'pack.type', message: 'expected a non-empty string' },
     { path: 'pack.id', message: 'expected a non-empty string' },
     {
       path: 'needs[0].key',
@@ -55,4 +55,13 @@ test('bad needs lists report each problem with its path', () => {
     { path: 'needs[4].absent', message: 'expected a non-empty string' },
   ]);
   expect(isNeedsList({ ...LIST, needs: undefined })).toBe(false);
+});
+
+test('the pack type is any non-empty string named by the pack author', () => {
+  expect(
+    needsListIssues({ ...LIST, pack: { type: 'mod', id: 'boss-bgm' } }),
+  ).toEqual([]);
+  expect(needsListIssues({ ...LIST, pack: { type: 3, id: 'base' } })).toEqual([
+    { path: 'pack.type', message: 'expected a non-empty string' },
+  ]);
 });

@@ -89,14 +89,9 @@
             "Idle": 9,
             "Start": 1
           },
-          "events": [
-            "OnAttack",
-            "OnStart"
-          ],
+          "events": ["OnAttack", "OnStart"],
           "hits": {
-            "Attack": [
-              0.433
-            ]
+            "Attack": [0.433]
           },
           "bounds": {
             "x": -227.579,
@@ -165,14 +160,9 @@
             "Idle": 9,
             "Start": 1
           },
-          "events": [
-            "OnAttack",
-            "OnStart"
-          ],
+          "events": ["OnAttack", "OnStart"],
           "hits": {
-            "Attack": [
-              0.433
-            ]
+            "Attack": [0.433]
           },
           "bounds": {
             "x": 410.785,
@@ -254,34 +244,12 @@
             "Skill_End_3": 0.3,
             "Start": 0.833
           },
-          "events": [
-            "OnAttack",
-            "OnStart"
-          ],
+          "events": ["OnAttack", "OnStart"],
           "hits": {
-            "Attack": [
-              0.433,
-              1
-            ],
-            "Skill": [
-              0.467
-            ],
-            "Skill_2": [
-              0.467
-            ],
-            "Skill_3": [
-              0.6,
-              0.8,
-              1,
-              1.2,
-              1.4,
-              1.6,
-              1.8,
-              2,
-              2.2,
-              2.833,
-              2.933
-            ]
+            "Attack": [0.433, 1],
+            "Skill": [0.467],
+            "Skill_2": [0.467],
+            "Skill_3": [0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.833, 2.933]
           },
           "bounds": {
             "x": -322.335,
@@ -293,9 +261,7 @@
         "back": {
           "skel": "/assets/spine/op/char_010_chen/back/char_010_chen.skel",
           "atlas": "/assets/spine/op/char_010_chen/back/char_010_chen.atlas",
-          "textures": [
-            "/assets/spine/op/char_010_chen/back/char_010_chen.png"
-          ],
+          "textures": ["/assets/spine/op/char_010_chen/back/char_010_chen.png"],
           "pma": false,
           "anims": {
             "idle": "Idle",
@@ -350,18 +316,10 @@
             "Skill_End": 0.6,
             "Start": 0.833
           },
-          "events": [
-            "OnAttack",
-            "OnStart"
-          ],
+          "events": ["OnAttack", "OnStart"],
           "hits": {
-            "Attack": [
-              0.433,
-              1
-            ],
-            "Skill": [
-              0.467
-            ]
+            "Attack": [0.433, 1],
+            "Skill": [0.467]
           },
           "bounds": {
             "x": -173.082,
@@ -437,14 +395,9 @@
             "Idle": 2,
             "Start": 1
           },
-          "events": [
-            "OnAttack",
-            "OnStart"
-          ],
+          "events": ["OnAttack", "OnStart"],
           "hits": {
-            "Attack": [
-              0.5
-            ]
+            "Attack": [0.5]
           },
           "bounds": {
             "x": -139.612,
@@ -513,14 +466,9 @@
             "Idle": 2,
             "Start": 1
           },
-          "events": [
-            "OnAttack",
-            "OnStart"
-          ],
+          "events": ["OnAttack", "OnStart"],
           "hits": {
-            "Attack": [
-              0.5
-            ]
+            "Attack": [0.5]
           },
           "bounds": {
             "x": -158.167,
@@ -579,16 +527,10 @@
           "Move_B": 0.5,
           "Skill_Begin": 1
         },
-        "events": [
-          "OnAttack"
-        ],
+        "events": ["OnAttack"],
         "hits": {
-          "Attack_A": [
-            0.533
-          ],
-          "Attack_B": [
-            0.533
-          ]
+          "Attack_A": [0.533],
+          "Attack_B": [0.533]
         },
         "bounds": null
       }
@@ -637,13 +579,9 @@
           "Move_End": 0.5,
           "Move_Loop": 2
         },
-        "events": [
-          "OnAttack"
-        ],
+        "events": ["OnAttack"],
         "hits": {
-          "Attack": [
-            0.333
-          ]
+          "Attack": [0.333]
         },
         "bounds": {
           "x": -135.754,
@@ -656,9 +594,7 @@
         "group": "spine/enemy/enemy_1305_mhslim",
         "skel": "enemy_1305_mhslim.skel",
         "atlas": "enemy_1305_mhslim.atlas",
-        "textures": [
-          "enemy_1305_mhslim.png"
-        ],
+        "textures": ["enemy_1305_mhslim.png"],
         "pma": true,
         "anims": {
           "idle": "Idle",
@@ -692,13 +628,9 @@
           "Idle": 2,
           "Move": 1
         },
-        "events": [
-          "OnAttack"
-        ],
+        "events": ["OnAttack"],
         "hits": {
-          "Attack": [
-            0.667
-          ]
+          "Attack": [0.667]
         },
         "bounds": {
           "x": -118.121,
@@ -798,10 +730,7 @@
           "Idle": 0.933,
           "Start": 1
         },
-        "events": [
-          "OnAttack",
-          "OnStart"
-        ],
+        "events": ["OnAttack", "OnStart"],
         "hits": {},
         "bounds": {
           "x": -162.531,
@@ -817,9 +746,7 @@
         "group": "spine/token/token_10002_kalts_mon3tr",
         "skel": "token_10002_kalts_mon3tr.skel",
         "atlas": "token_10002_kalts_mon3tr.atlas",
-        "textures": [
-          "token_10002_kalts_mon3tr.png"
-        ],
+        "textures": ["token_10002_kalts_mon3tr.png"],
         "pma": true,
         "anims": {
           "idle": "Idle",
@@ -850,20 +777,11 @@
           "Skill_2": 1.267,
           "Start": 1.667
         },
-        "events": [
-          "OnAttack",
-          "OnStart"
-        ],
+        "events": ["OnAttack", "OnStart"],
         "hits": {
-          "Attack": [
-            0.233
-          ],
-          "Skill": [
-            0.367
-          ],
-          "Skill_2": [
-            0.667
-          ]
+          "Attack": [0.233],
+          "Skill": [0.367],
+          "Skill_2": [0.667]
         },
         "bounds": {
           "x": -518.63,

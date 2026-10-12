@@ -185,7 +185,6 @@ function attackFilter(
 }
 
 /** 持续时的攻击范围比自身范围大的技能：基础策略的条件放到触发范围（持续时的范围）上，每拍都问。 */
-// TRACE: source/active-range
 function activeRange(
   state: BattleWorld,
   registry: BattleRegistry,
@@ -378,7 +377,6 @@ function injuredIn(
 }
 
 /** 自己挡着的、还活着且打得到的敌人。被阻挡的敌人总是阻挡者的目标，在不在范围里都算。 */
-// TRACE: source/blocked-first
 function holdsEnemy(
   state: BattleWorld,
   unit: UnitState,
@@ -425,7 +423,6 @@ function flyingBlocked(attacker: UnitState, target: UnitState): boolean {
 }
 
 /** 内容登记的技能触发区域，按登记的键。 */
-// TRACE: source/trigger-area
 export const TRIGGER_AREAS = defineComponent<Record<string, TriggerArea>>(
   'skill:trigger-areas',
   { create: () => ({}) },

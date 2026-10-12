@@ -21,12 +21,18 @@
     "#case-map/*.js": {
       "source": "./case-map/*.ts",
       "default": "./dist/case-map/*.js"
+    },
+    "#trace/*.js": {
+      "source": "./trace/*.ts",
+      "default": "./dist/trace/*.js"
     }
   },
   "scripts": {
     "build": "tsc -b",
     "case-map": "node dist/case-map/cli.js",
     "check": "tsc --noEmit && tsc -p tsconfig.test.json --noEmit",
+    "format": "biome check --write",
+    "lint": "biome lint",
     "test": "vitest run"
   },
   "dependencies": {
@@ -34,6 +40,7 @@
     "valibot": "^1.5.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "catalog:",
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",

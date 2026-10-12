@@ -444,7 +444,7 @@ test('a spine source takes skel, atlas, pages and meta from the resolved entry f
       format: 'skel',
       bytes: 1,
       hash: HASH,
-      url: 'https://cdn.test/res/files/spine/enemy/x/x.skel',
+      url: 'https://cdn.test/files/spine/enemy/x/x.skel',
     },
     {
       role: 'atlas',
@@ -452,7 +452,7 @@ test('a spine source takes skel, atlas, pages and meta from the resolved entry f
       format: 'atlas',
       bytes: 1,
       hash: HASH,
-      url: 'https://cdn.test/res/files/spine/enemy/x/x.atlas',
+      url: 'https://cdn.test/files/spine/enemy/x/x.atlas',
     },
     {
       role: 'page',
@@ -460,7 +460,7 @@ test('a spine source takes skel, atlas, pages and meta from the resolved entry f
       format: 'png',
       bytes: 1,
       hash: HASH,
-      url: 'https://cdn.test/res/files/spine/enemy/x/x.png',
+      url: 'https://cdn.test/files/spine/enemy/x/x.png',
     },
     {
       role: 'page',
@@ -468,7 +468,7 @@ test('a spine source takes skel, atlas, pages and meta from the resolved entry f
       format: 'png',
       bytes: 1,
       hash: HASH,
-      url: 'https://cdn.test/res/files/spine/enemy/x/x2.png',
+      url: 'https://cdn.test/files/spine/enemy/x/x2.png',
     },
     {
       role: 'meta',
@@ -476,18 +476,18 @@ test('a spine source takes skel, atlas, pages and meta from the resolved entry f
       format: 'json',
       bytes: 1,
       hash: HASH,
-      url: 'https://cdn.test/res/files/spine/enemy/x/x.meta.json',
+      url: 'https://cdn.test/files/spine/enemy/x/x.meta.json',
     },
   ];
   expect(spineSource(resolvedSpine(files))).toEqual({
     key: 'spine:enemy/x',
-    skel: 'https://cdn.test/res/files/spine/enemy/x/x.skel',
-    atlas: 'https://cdn.test/res/files/spine/enemy/x/x.atlas',
+    skel: 'https://cdn.test/files/spine/enemy/x/x.skel',
+    atlas: 'https://cdn.test/files/spine/enemy/x/x.atlas',
     pages: [
-      'https://cdn.test/res/files/spine/enemy/x/x.png',
-      'https://cdn.test/res/files/spine/enemy/x/x2.png',
+      'https://cdn.test/files/spine/enemy/x/x.png',
+      'https://cdn.test/files/spine/enemy/x/x2.png',
     ],
-    meta: 'https://cdn.test/res/files/spine/enemy/x/x.meta.json',
+    meta: 'https://cdn.test/files/spine/enemy/x/x.meta.json',
   });
   expect(
     spineSource(resolvedSpine(files.filter((file) => file.role !== 'meta')))
@@ -741,9 +741,9 @@ test('the cache key is the asset key: the same bytes under two keys are two mode
     unload: () => {},
   });
   const shared = {
-    skel: '/res/files/spine/x/x.skel',
-    atlas: '/res/files/spine/x/x.atlas',
-    pages: ['/res/files/spine/x/x.png'],
+    skel: '/files/spine/x/x.skel',
+    atlas: '/files/spine/x/x.atlas',
+    pages: ['/files/spine/x/x.png'],
     meta: null,
   };
   const front = await cache.acquire({

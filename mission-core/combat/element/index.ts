@@ -39,7 +39,6 @@ function creditOf(
 }
 
 /** 内置元素的 order：一样满时神经、侵蚀、灼燃、凋亡、坏死依次在前。 */
-// TRACE: source/element-order
 export const ELEMENT_ORDER = {
   neural: 0,
   erosion: 1,

@@ -9,7 +9,6 @@ const PM600 = powerOfTwo(-600);
  * √(x² + y²)，只用正确舍入的乘、加与 Math.sqrt，各引擎逐位一致。
  * 量级超出 2^±500 时先乘精确的 2 的幂缩放，避免溢出与下溢。
  */
-// TRACE: source/deterministic-math
 export function hypot(x: number, y: number): number {
   if (x === Number.POSITIVE_INFINITY || x === Number.NEGATIVE_INFINITY) {
     return Number.POSITIVE_INFINITY;

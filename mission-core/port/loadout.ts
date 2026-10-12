@@ -122,7 +122,6 @@ const clean6 = (v: unknown): unknown =>
     : Math.round(v * 1e6) / 1e6;
 
 /** Stats with a module: the no-module `statsBase` + the module's flat `attr`, rounded to six decimals. */
-// TRACE: source/loadout-compose
 export function composeStats(statsBase: any, attr: any): any {
   const s = { ...(statsBase || {}) };
   for (const [f, v] of Object.entries(attr || {})) {
@@ -135,7 +134,6 @@ export function composeStats(statsBase: any, attr: any): any {
  * Talents with a module: apply ModuleRecord.talentChanges to the no-module talents (override of an existing index:
  * module values win, base keys the module does not restate are kept; otherwise appended; empty placeholders dropped).
  */
-// TRACE: source/loadout-compose
 export function composeTalents(base: any, changes: any): any {
   const talents: TalentRecord[] = (Array.isArray(base) ? base : []).map(
     (t: TalentRecord) => ({ ...t }),
@@ -258,7 +256,6 @@ export function loadoutRecord(rec: any, lo: any): any {
  * @param {object|null} rec loadoutRecord(…) output (or a data/chess.json record: its default module)
  * @returns {number[][]|null}
  */
-// TRACE: source/loadout-range
 export function attackRangeGrid(rec: any): any {
   if (!rec || typeof rec !== 'object') {
     return null;
@@ -323,7 +320,6 @@ export function traitRangeExtend(rec: any): any {
  * @param {number} [extend]
  * @returns {Array<[number, number]>}
  */
-// TRACE: source/range-extend
 export function extendedGrid(grid: any, extend: any = 0): any {
   const out: GridCell[] = [];
   const seen = new Set();

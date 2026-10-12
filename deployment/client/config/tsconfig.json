@@ -7,5 +7,12 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo"
   },
   "include": ["**/*.ts"],
-  "exclude": ["dist", "dist-test", "node_modules", "**/*.test.ts", "vitest.config.ts"]
+  "exclude": [
+    "dist",
+    "dist-test",
+    "node_modules",
+    "**/*.test.ts",
+    "vitest.config.ts"
+  ],
+  "references": [{ "path": "../../../app/data" }]
 }

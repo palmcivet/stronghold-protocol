@@ -4,7 +4,6 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   type AssetKey,
-  NEEDS_PACK_TYPES,
   type Need,
   parseAssetKey,
   type RawCatalog,
@@ -25,7 +24,7 @@ import { SOUND_ROOT, VOICE_REPO } from '#source/voice/adapter.js';
 import { YUANYAN_REPO } from '#source/yuanyan/adapter.js';
 import { DirectoryRepoCache, mp3, otf, png, writeTree } from './fixture.js';
 
-const PACK_TYPE = NEEDS_PACK_TYPES[0];
+const PACK_TYPE = 'base';
 const need = (key: string, required = true): Need => ({
   key: key as AssetKey,
   required,

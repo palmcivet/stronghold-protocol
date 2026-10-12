@@ -224,7 +224,6 @@ function reviseApplication(
  * 友方倒下或撤下时取下身上的效果，定义写了 keepOnDown 的留着；取下的各调用一次 onRemove。
  * 条件效果之后按条件照常重新判定。
  */
-// TRACE: source/down-effects
 export function dropEffectsOnDown(
   state: BattleWorld,
   registry: BattleRegistry,

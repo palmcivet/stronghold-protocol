@@ -1,10 +1,11 @@
 #!/usr/bin/env node
-// pnpm extract:media：把 .cache/needs 下的全部需求清单交给 assets-extractor，结果写进提取缓存。
+// 把 .cache/needs 下的全部需求清单交给 assets-extractor，结果写进提取缓存。
 // 其余参数原样传给 `extract` 命令，例如 --offline、--force、--proxy <url>。
 
-import { readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { extractCommand } from 'arknights-assets-extractor';
+import { needsPackTypeError } from '#compiler/media/need/check.js';
 import { dataWorkspace } from '#workspace.js';
 
 const workspace = dataWorkspace();
@@ -20,11 +21,26 @@ function needListFiles(): string[] {
   }
 }
 
+/** Unreadable lists are left to the extractor, which reports them as before. */
+function readText(path: string): string {
+  try {
+    return readFileSync(path, 'utf8');
+  } catch {
+    return '';
+  }
+}
+
 const needs = needListFiles();
+const packTypeError = needsPackTypeError(
+  needs.map((path) => ({ path: resolve(path), text: readText(path) })),
+);
 if (needs.length === 0) {
   console.error(
     `extract:media: no need lists in ${workspace.needsDir}; run pnpm compile:needs first`,
   );
+  process.exitCode = 2;
+} else if (packTypeError !== null) {
+  console.error(packTypeError);
   process.exitCode = 2;
 } else {
   extractCommand([

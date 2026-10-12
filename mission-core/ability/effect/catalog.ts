@@ -341,7 +341,6 @@ function definitions(
  * 第二次寒冷让单位冻结，时长取已有寒冷的剩余与这次寒冷（已按抵抗缩短）中更长的，冻结本身不再按抵抗缩短。
  * 敌人身上的这对寒冷变成冻结，不再留下寒冷；友方的寒冷照样留着。
  */
-// TRACE: assumed/cold-pair-max
 function freezeFromCold(
   state: BattleWorld,
   registry: BattleRegistry,
