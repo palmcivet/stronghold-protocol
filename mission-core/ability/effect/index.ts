@@ -277,6 +277,28 @@ export function removeEffect(
   registry.requireEffect(effectId).onRemove?.(unitId, ctx);
 }
 
+/**
+ * 把身上这个效果（非条件挂上的那条）的剩余拍数补到 ticks。不发 status，不改层数与 onTick 的节奏。
+ * 身上没有、或它一直持续时返回 false。
+ */
+export function sustainEffect(
+  unit: UnitState,
+  effectId: string,
+  ticks: number,
+): boolean {
+  const existing = unit.effects.find(
+    (effect) =>
+      effect.id === effectId && !effect.dropped && effect.source === null,
+  );
+  if (!existing || existing.permanent) {
+    return false;
+  }
+  if (existing.remaining < ticks) {
+    existing.remaining = ticks;
+  }
+  return true;
+}
+
 /** 按条件挂上或取下一条条件效果。source 区分同一单位上的多条条件效果。 */
 export function holdConditionalEffect(
   state: BattleWorld,

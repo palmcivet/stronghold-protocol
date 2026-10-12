@@ -145,6 +145,12 @@ export function createContext(
     registerShift(definition) {
       registry.registerShift(definition);
     },
+    registerTerrain(definition) {
+      registry.registerTerrain(definition);
+    },
+    registerZone(definition) {
+      registry.registerZone(definition);
+    },
     registerSystem(system) {
       registry.registerSystem(system);
     },
@@ -205,6 +211,12 @@ export function createContext(
     },
     shift(actionId, unitId, input) {
       return applyShift(state, registry, ctx, actionId, unitId, input);
+    },
+    setTerrain(x, y, terrain) {
+      gridOf(state).setTerrain(x, y, terrain);
+    },
+    terrainAt(x, y) {
+      return gridOf(state).terrainAt(x, y);
     },
     setObstacle(x, y, on, kind) {
       gridOf(state).setObstacle(x, y, on, kind);

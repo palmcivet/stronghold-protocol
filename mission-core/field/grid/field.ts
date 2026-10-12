@@ -39,6 +39,10 @@ export interface FieldSource {
   readonly originX: number;
   readonly originY: number;
   readonly unblockable: Uint8Array;
+  /** 地形给的权重。取捷径时沿途累计的权重不能比官方路线多。 */
+  readonly tieBreak: Uint8Array;
+  /** 地面寻路走进每一格的代价，缺省 1。 */
+  readonly stepCost: Int32Array;
   readonly obstacle: Uint8Array;
   readonly version: number;
   inBounds(x: number, y: number): boolean;
@@ -82,7 +86,8 @@ export function buildField(
   const dest = source.key(destX, destY);
   field.dest = dest;
   const official = spfa(source, dest, ignore, null);
-  const preferred = spfa(source, dest, ignore, source.unblockable);
+  const penalty = source.unblockable;
+  const preferred = spfa(source, dest, ignore, penalty);
   const dist = preferred.dist;
   const walk = (x: number, y: number): boolean =>
     source.walkable(x, y, ignore) &&
@@ -112,9 +117,9 @@ export function buildField(
       return false;
     }
     const key = source.key(x, y);
-    const penalty = key >= 0 ? (source.unblockable[key] ?? 0) : 0;
+    const here = key >= 0 ? (penalty[key] ?? 0) : 0;
     return (
-      penalty === 0 ||
+      here === 0 ||
       (onChain[key] === fromKey && (dist[key] ?? -1) >= (dist[toKey] ?? -1))
     );
   };
@@ -146,20 +151,25 @@ export function buildField(
   order.sort(
     (left, right) => (dist[left] ?? 0) - (dist[right] ?? 0) || left - right,
   );
-  const through = (from: number, to: number): number => {
-    const start = source.point(from);
-    const goal = source.point(to);
-    let crossed = -(source.unblockable[from] ?? 0);
-    crossTiles(start.x, start.y, goal.x, goal.y, (x, y) => {
-      const key = source.key(x, y);
-      if (key >= 0) {
-        crossed += source.unblockable[key] ?? 0;
-      }
-    });
-    return crossed;
-  };
+  const sum =
+    (weights: Uint8Array) =>
+    (from: number, to: number): number => {
+      const start = source.point(from);
+      const goal = source.point(to);
+      let crossed = -(weights[from] ?? 0);
+      crossTiles(start.x, start.y, goal.x, goal.y, (x, y) => {
+        const key = source.key(x, y);
+        if (key >= 0) {
+          crossed += weights[key] ?? 0;
+        }
+      });
+      return crossed;
+    };
+  const through = sum(penalty);
+  const weighed = sum(source.tieBreak);
   const next = new Int32Array(count).fill(-1);
   const cost = new Int32Array(count);
+  const weight = new Int32Array(count);
   for (const key of order) {
     const officialNext = nextOfficial[key] ?? -1;
     const preferredNext = nextPreferred[key] ?? -1;
@@ -168,9 +178,12 @@ export function buildField(
     }
     let use = officialNext;
     let best = through(key, officialNext) + (cost[officialNext] ?? 0);
+    let bestWeight = weighed(key, officialNext) + (weight[officialNext] ?? 0);
     if (preferredNext >= 0 && preferredNext !== officialNext) {
       const preferredCost =
         through(key, preferredNext) + (cost[preferredNext] ?? 0);
+      const preferredWeight =
+        weighed(key, preferredNext) + (weight[preferredNext] ?? 0);
       const officialPoint = source.point(officialNext);
       const preferredPoint = source.point(preferredNext);
       const here = source.point(key);
@@ -184,13 +197,18 @@ export function buildField(
           preferredPoint.x,
           preferredPoint.y,
         );
-      if (preferredCost < best || (preferredCost === best && skipsOfficial)) {
+      if (
+        preferredWeight <= bestWeight &&
+        (preferredCost < best || (preferredCost === best && skipsOfficial))
+      ) {
         use = preferredNext;
         best = preferredCost;
+        bestWeight = preferredWeight;
       }
     }
     next[key] = use;
     cost[key] = best;
+    weight[key] = bestWeight;
   }
   field.dist = dist;
   field.parent = preferred.parent;
@@ -253,7 +271,7 @@ function spfa(
       const step =
         !ignore && ((source.obstacle[neighbor] ?? 0) & OB_CRATE) !== 0
           ? OBSTACLE_COST
-          : 1;
+          : (source.stepCost[neighbor] ?? 1);
       const nextDist = (dist[current] ?? 0) + step;
       const nextPen = penalty
         ? (pen[current] ?? 0) + (penalty[neighbor] ?? 0)

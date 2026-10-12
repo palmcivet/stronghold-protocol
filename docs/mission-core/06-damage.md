@@ -26,7 +26,7 @@ export const guardHalf: MissionModule = {
 }
 ```
 
-`DamageInfo` 的必填字段是 `sourceId`、`targetId`、`amount`、`kind`；其余可选：倍率 `mul`，穿透 `defIgnorePct`、`defIgnoreFlat`、`resIgnorePct`、`resIgnoreFlat`，`element`，开关 `canDodge`、`sourceless`、`ignoreSleep`、`ignoreSelect`、`cancel`，以及表示这一击来自攻击计时的 `attack`。签名见 [API 参考](./15-api.md#伤害)。
+`DamageInfo` 的必填字段是 `sourceId`、`targetId`、`amount`、`kind`；其余可选：倍率 `mul`，穿透 `defIgnorePct`、`defIgnoreFlat`、`resIgnorePct`、`resIgnoreFlat`，`element`，开关 `canDodge`、`sourceless`、`noSp`（不触发受击回复）、`ignoreSleep`、`ignoreSelect`、`cancel`，表示这一击来自攻击计时的 `attack`，以及伤害标签 `tags`（kebab-case，例如环境伤害 `terrain`、持续伤害 `dot`）。签名见 [API 参考](./15-api.md#伤害)。
 
 `dealDamage(info)` 走伤害步骤。`kind` 收成 `physical`、`arts`、`true`、`elemental`、`element`。`phys` 记成 `physical`。
 
@@ -86,7 +86,7 @@ export const guardHalf: MissionModule = {
 
 阶段名单从包根的 `DAMAGE_STAGES` 导出。`modify` 收到的改动随阶段而定：`hit` 与 `element-hit` 是 `HitChange`，`hp` 是 `HpChange`，`effect` 是 `EffectChange`。
 
-改写伤害数值的逻辑注册成伤害修饰（`registerDamageModifier`），同一阶段按 `priority` 从小到大、相同按注册先后调用。只读字段是来源、记功者、目标、`sourceless`、`attack` 和元素。
+改写伤害数值的逻辑注册成伤害修饰（`registerDamageModifier`），同一阶段按 `priority` 从小到大、相同按注册先后调用。只读字段是来源、记功者、目标、`sourceless`、`attack`、伤害标签 `tags`（没写时是空名单）和元素。
 
 - `hit`：进入伤害步骤之前（非元素）。可写 `amount`、`mul`、`kind`、`cancel`。非有限的数额与倍率不生效
 - `element-hit`：元素进槽之前。可写 同上。同上；种类改离 `element` 后再走 `hit` 阶段

@@ -24,6 +24,8 @@ const TILE_LEGEND: Readonly<
       readonly tileKey: string;
       readonly desc: string;
       readonly special?: string;
+      /** 核心官方地形模块的地形 id，写进地块规格的 terrain。 */
+      readonly terrain?: string;
     }
   >
 > = {
@@ -56,21 +58,25 @@ const TILE_LEGEND: Readonly<
   m: {
     tileKey: 'tile_mire',
     special: 'mire',
+    terrain: 'mire',
     desc: '沼泽：停留叠加减速减攻速',
   },
   g: {
     tileKey: 'tile_smog',
     special: 'smog',
+    terrain: 'smog',
     desc: '排气格栅：其上干员不会成为敌方远程攻击目标',
   },
   d: {
     tileKey: 'tile_deepsea',
     special: 'deepsea',
+    terrain: 'deepsea',
     desc: '深水区：不可部署（拒绝部署），敌人持续受伤、减速、减攻速',
   },
   i: {
     tileKey: 'tile_infection',
     special: 'infection',
+    terrain: 'infection',
     desc: '活性源石：单位受持续真实伤害，攻击力与攻速提升',
   },
 };
@@ -125,6 +131,7 @@ function tileGlyph(tile: any): string {
     case 'tile_smog':
       return 'g';
     case 'tile_deepsea':
+    case 'tile_deepwater':
       return 'd';
     case 'tile_infection':
       return 'i';
@@ -295,6 +302,7 @@ export function buildStages(
             groundPassable: tile.passableMask === 'ALL',
             flyPassable: tile.passableMask !== 'NONE',
             special: TILE_LEGEND[glyph]?.special || null,
+            terrain: TILE_LEGEND[glyph]?.terrain || null,
             bb,
           };
         }

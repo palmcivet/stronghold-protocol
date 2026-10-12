@@ -85,6 +85,7 @@ battle.snapshot().tick // 1
 - [伤害](./06-damage.md)、[技能](./07-skill.md)、[攻击](./08-attack.md)、[计时](./09-timer.md)
 - [效果与属性](./10-effect.md)、[选择器](./11-selector.md)、[费用、阻挡与投射物](./12-field.md)
 - [黄金回放与源码扫描](./13-testing.md)
+- [地形与装置作用区](./14-terrain.md)：地块上的地形、站位、部署与寻路代价，装置按朝向圈出的作用区，官方地形
 
 ## 下一步
 

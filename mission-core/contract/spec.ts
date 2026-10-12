@@ -47,6 +47,8 @@ export interface TileSpec {
   readonly walkableBy: readonly string[];
   /** 保护目标。恐惧选落点时跳过。 */
   readonly objective?: boolean;
+  /** 已注册的地形 id。缺省没有地形。 */
+  readonly terrain?: string;
 }
 
 /** 调用方已经归一化的属性。生命写入使用 hp。 */

@@ -36,6 +36,8 @@ export const MISSION_EVENT_BINDINGS: MissionEventBindings = Object.freeze({
   'ammo-used': { effect: null, sound: null },
   status: { effect: null, sound: 'status' },
   'element-burst': { effect: null, sound: 'element' },
+  'terrain-enter': { effect: null, sound: null },
+  'terrain-leave': { effect: null, sound: null },
 });
 
 /** The binding of a core battle event, or undefined for any other key. */

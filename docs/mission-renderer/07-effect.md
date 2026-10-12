@@ -47,13 +47,19 @@ export const stage = createMissionStage(null, {
 
 - 核心事件：事件名本身，kebab-case，不带冒号，如 `damaged`。
 - 内容的线索种类：`cue:<kind>`。`cue` 是保留的命名空间，裸的 `cue` 不能绑定。
-- 模组事件：`<namespace>:<event>`，必须带命名空间。经声明合并加入 `BattleEventMap` 的扩展事件（`MissionExtensionEventType`，即 `Exclude<BattleEventType, CoreEventType>`）在编译期检查这一点，不带命名空间的扩展事件编译不过。
+- 模组事件：`<namespace>:<event>`，必须带命名空间。经声明合并加入 `BattleEventMap` 的事件类型是 `MissionExtensionEventType`（即 `Exclude<BattleEventType, CoreEventType>`），不带命名空间时编译不过。
 
 `data` 是事件数据。内容经 `CueMap` 声明的种类、模组经 `BattleEventMap` 声明的事件有类型；运行时才注册的模组事件，`data` 是普通记录。
 
 ## 线索绑定
 
-绑定表的方法：`bind`、`declare`、`declared`、`get`、`keys`、`seal` 与只读的 `sealed`。新建的绑定表已经带上 `MISSION_EVENT_BINDINGS`，即每个核心事件的默认绑定，类型是 `MissionEventBindings`（以 `MissionCoreEventCueKey`，即除裸 `cue` 外的 `CoreEventType` 为键的 `Record`）。核心事件的完整由类型保证：漏掉任何一个核心事件都编译不过。扩展事件不在默认表里，模组加入事件不会让渲染器编译失败；它们在运行时用 `bind` 绑定，没绑定时走 `onUnboundCue`。`bind` 新增或改绑一个键：
+绑定表的方法：`bind`、`declare`、`declared`、`get`、`keys`、`seal` 与只读的 `sealed`。新建的绑定表已经带上 `MISSION_EVENT_BINDINGS`：
+
+- 它是每个核心事件的默认绑定，类型是 `MissionEventBindings`
+- `MissionEventBindings` 以 `MissionCoreEventCueKey`（除裸 `cue` 外的 `CoreEventType`）为键，漏掉任何一个核心事件都编译不过
+- 扩展事件不在默认表里，模组加入事件不会让渲染器编译失败；它们在运行时用 `bind` 绑定，没绑定时走 `onUnboundCue`
+
+`bind` 新增或改绑一个键：
 
 - `effect` 为 `null` 表示明确不画特效，`sound` 为 `null` 表示明确不发声。
 - 不带冒号的键必须是核心事件；带冒号的键必须是 kebab-case 的 `<namespace>:<name>`。不合规时抛出 `RangeError`。

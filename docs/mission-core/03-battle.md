@@ -88,7 +88,7 @@ export function replay(spec: BattleSpec, modules: readonly MissionModule[]) {
 | `schedule` | `engine:schedule` |
 | `spawn` | `engine:spawn` |
 | `cost` | `cost` |
-| `status` | `engine:conditional-effects`、`engine:status-timers` |
+| `status` | `engine:terrain`、`engine:zones`、`engine:conditional-effects`、`engine:status-timers` |
 | `enemy` | `block-before`、`engine:enemy-route`、`leak`、`block-after`、`engine:enemy-attack` |
 | `ally` | `engine:ally-timers` |
 | `projectile` | `engine:projectile` |
@@ -113,7 +113,15 @@ export function replay(spec: BattleSpec, modules: readonly MissionModule[]) {
 
 一条事件是 `{ tick, type, data }`，`data` 的类型由 `type` 决定（`EventData<type>`）。
 
-`BattleEventMap` 是事件名到数据的表，保持开放：模块经声明合并加入自己的事件，事件名写成 `<namespace>:<event>`。核心自己的事件名列在封闭的 `CORE_EVENT_TYPES`（`as const` 数组）里，`CoreEventType` 是它的元素类型；核心新增事件而没有列进 `CORE_EVENT_TYPES` 时编译不过。模块加入的事件不在其中，`Exclude<BattleEventType, CoreEventType>` 即全部扩展事件。写成 `Intercept<数据>` 的事件可拦截，只用于否决与保留（`cancel`、`prevented`、`keep`），改数值走 [伤害修饰](./06-damage.md#伤害修饰)：发出者用 `ctx.intercept`，订阅者按订阅顺序同步收到可写的 `data`，发出者在返回后读回改写。其余事件只读：用 `ctx.emit` 发出，`data` 是 `Readonly`；在分发中发出时排进队列，等最外层这一条分发完按先进先出分发，所以订阅者里再发事件不会压栈。
+`BattleEventMap` 是事件名到数据的表，保持开放：模块经声明合并加入自己的事件，事件名写成 `<namespace>:<event>`。
+
+- `CORE_EVENT_TYPES` 是核心事件名的封闭 `as const` 数组，`CoreEventType` 是它的元素类型
+- 核心新增事件而没有列进 `CORE_EVENT_TYPES` 时编译不过
+- 模块加入的事件不在其中，`Exclude<BattleEventType, CoreEventType>` 即全部扩展事件
+
+写成 `Intercept<数据>` 的事件可拦截，只用于否决与保留（`cancel`、`prevented`、`keep`），改数值走 [伤害修饰](./06-damage.md#伤害修饰)。发出者用 `ctx.intercept`，订阅者按订阅顺序同步收到可写的 `data`，发出者在返回后读回改写。
+
+其余事件只读：用 `ctx.emit` 发出，`data` 是 `Readonly`；在分发中发出时排进队列，等最外层这一条分发完按先进先出分发，所以订阅者里再发事件不会压栈。
 
 ```ts
 import type { Intercept } from "arknights-mission-core"
@@ -147,7 +155,7 @@ declare module "arknights-mission-core" {
 - `hit`：`dealDamage` 进入步骤之前，`hit` 阶段的伤害修饰改写之后。数据是改写后的数额、种类与 `cancel`
 - `element-hit`：元素进槽之前，`element-hit` 阶段的伤害修饰改写之后
 - `fatal`（可拦截）：这一下会把生命扣到 0。`data.prevented = true` 时生命留在 1 和最大生命里较小的那个
-- `damaged`：生命已经写下。`amount` 是这一下的数额，`applied` 是实际扣掉的生命（结算前减结算后，不含溢出），`hp` 是结算后的生命
+- `damaged`：生命已经写下。`amount` 是这一下的数额，`applied` 是实际扣掉的生命（结算前减结算后，不含溢出），`hp` 是结算后的生命。不触发受击回复的一击带 `noSp: true`
 - `loss`：`loseHp` 扣了生命
 - `heal`：治疗写下生命或护盾
 - `displace`：坐标被改了。`duration` 是位移秒数（推和拉是这次失衡的秒数，画面按它滑动；直接 `displace` 是 0），`keepFacing` 为真时画面保持原朝向：推和拉缺省保持，`keepFacing: false` 或直接 `displace` 不保持
@@ -160,6 +168,7 @@ declare module "arknights-mission-core" {
 - `ammo-used`：弹药技能用掉一发
 - `status`：状态施加成功，`stacks` 是施加后的层数
 - `element-burst`：元素槽蓄满
+- `terrain-enter`、`terrain-leave`：单位进入、离开一格地形，带地形 id 与判定时的格子
 - `cue`：画面线索
 
 无来源的命中和伤害里，`sourceId` 是空字符串，`creditId` 仍是调用时给的来源。

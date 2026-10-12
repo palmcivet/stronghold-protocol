@@ -14,6 +14,7 @@ import {
   straightClear,
 } from '#field/grid/sight.js';
 import { defineResource, type ResourceStore } from '#kernel/world/resource.js';
+import type { TerrainDefinition } from '#port/definition.js';
 
 export type { FlowField } from '#field/grid/field.js';
 export type { GridPoint } from '#field/grid/sight.js';
@@ -30,10 +31,15 @@ export interface FieldOptions {
   readonly ignoreObstacles?: boolean;
 }
 
-/** 格子里会变的部分：障碍位与障碍改动的次数。 */
+/** 按 id 找地形定义；没注册时抛错。 */
+export type TerrainLookup = (id: string) => TerrainDefinition;
+
+/** 格子里会变的部分：障碍位、改动的次数，以及改过地形的格子（没改过时不写）。 */
 export interface GridState {
   readonly version: number;
   readonly obstacle: readonly number[];
+  /** [格子序号, 地形 id 或 null]，按第一次改动的顺序。 */
+  readonly terrain?: readonly (readonly [number, string | null])[];
 }
 
 export interface FieldGrid extends FieldSource {
@@ -54,6 +60,14 @@ export interface FieldGrid extends FieldSource {
   isObstacle(x: number, y: number): boolean;
   isCrate(x: number, y: number): boolean;
   isBlocked(x: number, y: number): boolean;
+  /** 这一格当前的地形 id。没有地块或没有地形时返回 null。 */
+  terrainAt(x: number, y: number): string | null;
+  /** 规格里有地形，或改过地形。为假时站位系统什么都不做。 */
+  terrained(): boolean;
+  /** 改一格的地形。没有地块的格子不改；改了时网格版本加一，流场作废。 */
+  setTerrain(x: number, y: number, terrain: string | null): void;
+  /** 接上地形定义，按定义重算部署、寻路代价与罚分。规格与改过的地形 id 都必须已注册。 */
+  attachTerrains(lookup: TerrainLookup): void;
   flowField(x: number, y: number, options?: FieldOptions): FlowField;
   fieldLength(field: FlowField, key: number): number;
   waypoints(
@@ -120,6 +134,12 @@ export function createGrid(
         y1: originY + rows - 1,
       };
   const specs = new Array<TileSpec | null>(count).fill(null);
+  const base = new Array<TileSpec | null>(count).fill(null);
+  const terrains = new Array<string | null>(count).fill(null);
+  const changed = new Map<number, string | null>();
+  const tieBreak = new Uint8Array(count);
+  const stepCost = new Int32Array(count).fill(1);
+  let lookup: TerrainLookup | null = null;
   const ground = new Uint8Array(count);
   const fly = new Uint8Array(count);
   const unblockable = new Uint8Array(count);
@@ -134,6 +154,8 @@ export function createGrid(
     const y = Number(rowText);
     const index = (y - originY) * cols + (x - originX);
     specs[index] = tile;
+    base[index] = tile;
+    terrains[index] = tile.terrain ?? null;
     const walks = allowsGround(tile.walkableBy);
     const flies = allowsFly(tile.walkableBy);
     ground[index] = walks ? 1 : 0;
@@ -141,6 +163,38 @@ export function createGrid(
     const blockable = walks && tile.deployable && tile.height <= 0;
     unblockable[index] = walks && !blockable ? 1 : 0;
   }
+
+  const initiallyTerrained = terrains.some((id) => id !== null);
+
+  /** 按这一格的地块与地形重算合并后的地块、不可阻挡位、罚分与代价。 */
+  const settle = (index: number): void => {
+    const tile = base[index];
+    if (!tile) {
+      return;
+    }
+    const id = terrains[index] ?? null;
+    const definition = id !== null && lookup ? lookup(id) : null;
+    const deployable = tile.deployable && definition?.deployable !== false;
+    if ((tile.terrain ?? null) === id && deployable === tile.deployable) {
+      specs[index] = tile;
+    } else {
+      const { terrain: _terrain, ...rest } = tile;
+      specs[index] =
+        id === null
+          ? { ...rest, deployable }
+          : { ...rest, deployable, terrain: id };
+    }
+    const walks = ground[index] === 1;
+    const blockable = walks && deployable && tile.height <= 0;
+    unblockable[index] = walks && !blockable ? 1 : 0;
+    tieBreak[index] = Math.min(255, definition?.tieBreak ?? 0);
+    stepCost[index] = definition?.pathCost ?? 1;
+  };
+  const settleAll = (): void => {
+    for (let index = 0; index < count; index += 1) {
+      settle(index);
+    }
+  };
 
   let version = 0;
   const fields = new Map<string, FlowField>();
@@ -181,6 +235,8 @@ export function createGrid(
     originY,
     rect,
     unblockable,
+    tieBreak,
+    stepCost,
     obstacle,
     get version() {
       return version;
@@ -236,6 +292,35 @@ export function createGrid(
     },
     isBlocked(x, y) {
       return (bits(x, y) & OB_BLOCK) !== 0;
+    },
+    terrained: () => initiallyTerrained || changed.size > 0,
+    terrainAt(x, y) {
+      const key = keyOf(Math.round(x), Math.round(y));
+      return key < 0 ? null : (terrains[key] ?? null);
+    },
+    setTerrain(x, y, terrain) {
+      const key = keyOf(x, y);
+      if (key < 0 || !base[key] || (terrains[key] ?? null) === terrain) {
+        return;
+      }
+      if (terrain !== null && lookup) {
+        lookup(terrain);
+      }
+      terrains[key] = terrain;
+      changed.set(key, terrain);
+      settle(key);
+      version += 1;
+      fields.clear();
+    },
+    attachTerrains(next) {
+      lookup = next;
+      for (const id of terrains) {
+        if (id !== null) {
+          next(id);
+        }
+      }
+      settleAll();
+      fields.clear();
     },
     flowField(x, y, options) {
       const allowDiagonal = options?.allowDiagonal ?? true;
@@ -321,13 +406,28 @@ export function createGrid(
         4 * Math.max(cols, rows, 1),
       );
     },
-    state: () => ({ version, obstacle: [...obstacle] }),
+    state: () =>
+      changed.size === 0
+        ? { version, obstacle: [...obstacle] }
+        : { version, obstacle: [...obstacle], terrain: [...changed] },
     restore(state) {
       if (state.obstacle.length !== obstacle.length) {
         throw new Error('grid state does not match the tiles');
       }
       obstacle.set(state.obstacle);
       version = state.version;
+      changed.clear();
+      for (let index = 0; index < count; index += 1) {
+        terrains[index] = base[index]?.terrain ?? null;
+      }
+      for (const [index, id] of state.terrain ?? []) {
+        if (index < 0 || index >= count || !base[index]) {
+          throw new Error('grid state does not match the tiles');
+        }
+        terrains[index] = id;
+        changed.set(index, id);
+      }
+      settleAll();
       fields.clear();
     },
   };

@@ -100,6 +100,7 @@ export interface TileSpec {
   readonly deployable: boolean
   readonly walkableBy: readonly string[]
   readonly objective?: boolean
+  readonly terrain?: string
 }
 
 export interface SkillSpec {
@@ -378,10 +379,12 @@ export interface DamageInfo {
   element?: string
   canDodge?: boolean
   sourceless?: boolean
+  noSp?: boolean
   ignoreSleep?: boolean
   ignoreSelect?: boolean
   cancel?: boolean
   attack?: boolean
+  tags?: readonly string[]
 }
 
 export interface DamagePreview {
@@ -604,6 +607,131 @@ mod.deriveSeed satisfies typeof deriveSeed
 
 `planFearMove` 返回包内的落点类型，落点怎么选见 [架构设计](./16-architecture.md#恐惧落点)。
 
+## 地形
+
+```ts
+import type {
+  ComponentKey,
+  ContentContext,
+  TerrainDefinition,
+  TerrainStanding,
+  UnitSide,
+} from "arknights-mission-core"
+import type * as mod from "arknights-mission-core"
+import * as core from "arknights-mission-core"
+
+export interface TerrainAffects {
+  readonly sides?: readonly UnitSide[]
+  readonly airborne?: boolean
+}
+
+export interface TerrainDefinitionShape {
+  readonly id: string
+  readonly effect?: string
+  readonly linger?: number | ((ctx: ContentContext) => number)
+  readonly period?: number
+  readonly affects?: TerrainAffects
+  readonly pathCost?: number
+  readonly tieBreak?: number
+  readonly deployable?: boolean
+  onEnter?(unitId: string, ctx: ContentContext): void
+  onStay?(unitId: string, ctx: ContentContext, count: number): void
+  onLeave?(unitId: string, ctx: ContentContext): void
+}
+
+export interface TerrainStandingShape {
+  readonly terrain: string
+  readonly since: number
+  readonly count: number
+}
+
+export declare function defineTerrain(
+  id: string,
+  definition: Omit<TerrainDefinition, "id">,
+): TerrainDefinition
+
+export declare function terrainSource(id: string): string
+
+export declare const TERRAIN_STANDING: ComponentKey<TerrainStanding>
+
+// ---cut-after---
+;({}) as mod.TerrainAffects satisfies TerrainAffects
+;({}) as mod.TerrainDefinition satisfies TerrainDefinitionShape
+;({}) as TerrainStanding satisfies TerrainStandingShape
+core.defineTerrain satisfies typeof defineTerrain
+core.terrainSource satisfies typeof terrainSource
+core.TERRAIN_STANDING satisfies typeof TERRAIN_STANDING
+```
+
+## 装置作用区
+
+```ts
+import type {
+  ComponentKey,
+  ContentContext,
+  Direction,
+  TagKey,
+  ZoneDefinition,
+  ZoneStanding,
+} from "arknights-mission-core"
+import type * as mod from "arknights-mission-core"
+import * as core from "arknights-mission-core"
+
+export interface ZoneVisit {
+  readonly deviceId: string
+  readonly facing: Direction
+  readonly moved: { readonly dx: number; readonly dy: number } | null
+}
+
+export interface ZoneDefinitionShape {
+  readonly id: string
+  readonly source: TagKey
+  onStay(unitId: string, ctx: ContentContext, visit: ZoneVisit): void
+  onLeave?(unitId: string, ctx: ContentContext): void
+}
+
+export interface ZoneStandingShape {
+  readonly x: number
+  readonly y: number
+  readonly zones: Readonly<Record<string, string>>
+}
+
+export declare function defineZone(
+  id: string,
+  definition: Omit<ZoneDefinition, "id">,
+): ZoneDefinition
+
+export declare const ZONE_STANDING: ComponentKey<ZoneStanding>
+
+// ---cut-after---
+;({}) as mod.ZoneVisit satisfies ZoneVisit
+;({}) as mod.ZoneDefinition satisfies ZoneDefinitionShape
+;({}) as ZoneStanding satisfies ZoneStandingShape
+core.defineZone satisfies typeof defineZone
+core.ZONE_STANDING satisfies typeof ZONE_STANDING
+```
+
+## 官方地形
+
+```ts
+import type { ExtensibleKey, TagKey } from "arknights-mission-core"
+import * as core from "arknights-mission-core"
+
+export declare const OFFICIAL_TERRAINS: {
+  readonly mire: ExtensibleKey<"terrain">
+  readonly smog: ExtensibleKey<"terrain">
+  readonly deepsea: ExtensibleKey<"terrain">
+  readonly infection: ExtensibleKey<"terrain">
+  readonly airflow: ExtensibleKey<"zone">
+}
+
+export declare const BLOWER: TagKey
+
+// ---cut-after---
+core.OFFICIAL_TERRAINS satisfies typeof OFFICIAL_TERRAINS
+core.BLOWER satisfies typeof BLOWER
+```
+
 ## 内置模块
 
 ```ts
@@ -616,6 +744,7 @@ mod.deployModule satisfies MissionModule
 mod.blockModule satisfies MissionModule
 mod.leakModule satisfies MissionModule
 mod.redeployModule satisfies MissionModule
+mod.officialTerrainModule satisfies MissionModule
 ```
 
 | 模块 | id | 见 |
@@ -625,6 +754,7 @@ mod.redeployModule satisfies MissionModule
 | `blockModule` | `block` | [阻挡](./12-field.md#阻挡) |
 | `leakModule` | `leak` | [泄漏](./12-field.md#泄漏) |
 | `redeployModule` | `redeploy` | [再部署](./12-field.md#再部署) |
+| `officialTerrainModule` | `official-terrain` | [官方地形](./14-terrain.md#官方地形) |
 
 ## 常量
 

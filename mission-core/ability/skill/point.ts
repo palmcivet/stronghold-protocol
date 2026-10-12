@@ -93,7 +93,7 @@ export function bindSkillSignals(
   });
   ctx.subscribe('damaged', (event) => {
     const unitId = event.data.targetId;
-    if (typeof unitId !== 'string') {
+    if (typeof unitId !== 'string' || event.data.noSp === true) {
       return;
     }
     noteHurt(state, registry, ctx, unitId);

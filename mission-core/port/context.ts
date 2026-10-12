@@ -125,6 +125,13 @@ export interface ContentContext extends Registration {
     on: boolean,
     kind?: 'block' | 'crate',
   ): void;
+  /**
+   * 改一格的地形（null 去掉地形）。id 必须已注册；没有地块的格子不改。改了时网格版本加一，流场重算；
+   * 站在上面的单位在下一次站位系统里离开旧地形、进入新地形。
+   */
+  setTerrain(x: number, y: number, terrain: string | null): void;
+  /** 这一格当前的地形 id。没有时返回 null。 */
+  terrainAt(x: number, y: number): string | null;
   launchProjectile(projectile: ProjectileLaunch): void;
   /** 当前费用。不够时不扣，返回 false。 */
   spendCost(side: UnitSide, amount: number): boolean;
@@ -213,6 +220,7 @@ export interface ContentContext extends Registration {
     amount: number,
     options?: GainSpOptions,
   ): number;
+  /** 这一格的地块。deployable 已与地形的 deployable 取「与」，terrain 是当前的地形。 */
   tile(x: number, y: number): TileSpec | null;
   projectiles(): readonly ProjectileView[];
   /** 没有这个单位时返回 null。 */

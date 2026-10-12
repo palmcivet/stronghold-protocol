@@ -53,6 +53,8 @@ export const openingBuff: MissionModule = {
 | `registerTimer` | `timer` |
 | `registerDeployStrategy` | `deploy` |
 | `registerShift` | `shift` |
+| `registerTerrain` | `terrain` |
+| `registerZone` | `zone` |
 | `registerSystem` | 槽名不在 `PHASE_SLOTS` 里时是 `phase` |
 | `registerTag` | 规格写到未注册的标签时是 `tag`，见 [世界、组件、资源与标签](./05-world.md) |
 
@@ -91,7 +93,7 @@ export const nearestFirst: MissionModule = {
 - `replace(key, definition)` 换掉当前那一项
 - `wrap(key, (inner) => definition)` 拿到当前那一项，返回新的一项
 
-只有标成可扩展的 id 能被 `replace` 或 `wrap`，否则抛出 `ExtensionRefusedError`；键里的契约与版本要与标记时一致，替换项的 id 要与键相同。`contract` 是注册表名：`skill-body`、`skill-trigger`、`selector`、`damage-step`、`stacking`、`condition`、`deploy`、`element`，包根的 `EXTENSIBLE_CONTRACTS` 就是这份名单。`replace` 与 `wrap` 都作用在当前那一项上，按调用先后一层层叠：先 `replace` 再 `wrap`，包住的是替换后的那一项。内置的技能体、技能触发、选择器、伤害步骤、叠加策略、条件与元素已经标成可扩展；系统与组件不开放替换。每次替换按安装它的模块记进替换链，计入 `contentHash`。
+只有标成可扩展的 id 能被 `replace` 或 `wrap`，否则抛出 `ExtensionRefusedError`；键里的契约与版本要与标记时一致，替换项的 id 要与键相同。`contract` 是注册表名：`skill-body`、`skill-trigger`、`selector`、`damage-step`、`stacking`、`condition`、`deploy`、`element`、`terrain`、`zone`，包根的 `EXTENSIBLE_CONTRACTS` 就是这份名单。`replace` 与 `wrap` 都作用在当前那一项上，按调用先后一层层叠：先 `replace` 再 `wrap`，包住的是替换后的那一项。内置的技能体、技能触发、选择器、伤害步骤、叠加策略、条件与元素已经标成可扩展；系统与组件不开放替换。每次替换按安装它的模块记进替换链，计入 `contentHash`。
 
 `subscribe(type, handler)` 返回取消订阅的函数。处理函数收到事件和 `ContentContext`，缓冲里仍保留这条事件，直到 `drainEvents`。可拦截的事件（`BattleEventMap` 里写成 `Intercept<数据>`）在 `ctx.intercept` 时同步分发，处理函数拿到可写的 `data`；只读事件用 `ctx.emit` 发出，处理函数里再发的只读事件排队，等当前这条分发完按先进先出分发。见 [战斗](./03-battle.md#事件)。
 
@@ -127,7 +129,7 @@ export const nearestFirst: MissionModule = {
 
 `dealDamage`、`previewDamage`、`loseHp`、`heal`、`addElement` 见 [伤害](./06-damage.md)。`applyEffect`、`removeEffect` 见 [效果与属性](./10-effect.md)。`unitsInRange`、`select`、`hitRect` 见 [选择器](./11-selector.md)。`shouldCast`、`castSkill`、`gainSp`、`readySkill`、`configureSkill` 见 [技能](./07-skill.md)。`setModifier`、`clearModifier`、`hasModifier` 见 [带时限的修饰](./10-effect.md#带时限的修饰)。
 
-`spawnUnit(spec)` 放入单位并标成在场，授予规格标签，送出 `spawn`。`kind: "device"` 时放入的是装置，倒下就是被摧毁并被移除。`removeUnit(unitId)` 让单位离场且不再回来，送出 `removed`，下一次快照起不再出现。它不装技能计时。规格里有未注册的标签时抛出 `UnknownRegistrationError`。规格写了部署策略时，`canStand` 为假就不放入。`displace(unitId, x, y)` 改坐标，清掉这条路线已经算好的路径，送出 `displace`。同样，有部署策略且 `canStand` 为假时坐标不动。`shift` 见 [费用、阻挡与投射物](./12-field.md)。`setObstacle(x, y, on, kind?)` 在格子上摆障碍，`kind` 缺省 `block`，也可以是 `crate`。
+`spawnUnit(spec)` 放入单位并标成在场，授予规格标签，送出 `spawn`。`kind: "device"` 时放入的是装置，倒下就是被摧毁并被移除。`removeUnit(unitId)` 让单位离场且不再回来，送出 `removed`，下一次快照起不再出现。它不装技能计时。规格里有未注册的标签时抛出 `UnknownRegistrationError`。规格写了部署策略时，`canStand` 为假就不放入。`displace(unitId, x, y)` 改坐标，清掉这条路线已经算好的路径，送出 `displace`。同样，有部署策略且 `canStand` 为假时坐标不动。`shift` 见 [费用、阻挡与投射物](./12-field.md)。`setObstacle(x, y, on, kind?)` 在格子上摆障碍，`kind` 缺省 `block`，也可以是 `crate`。`setTerrain(x, y, id | null)` 改一格的地形，`terrainAt(x, y)` 读当前地形，见 [地形](./14-terrain.md)。
 
 `launchProjectile` 从来源单位的坐标发出一发，送出 `projectile`。可选 `speed` 是格/秒，缺省 `PROJECTILE_SPEED`（12）。`projectiles()` 读出仍在飞的那些，带当前 `x`、`y`。投射物槽里朝目标飞；目标已离场则消掉，不结算。`retain` 为真时落到最后坐标再结算。没有 `attack` 时到达后按 `amount` 造成 `physical` 伤害。超过 `PROJECTILE_MAX_AGE`（10 秒）仍未飞到，就落在目标当前位置并结算。普攻只在 `attackShape.projectile` 上写了种类时改走投射物。
 

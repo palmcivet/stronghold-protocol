@@ -3159,9 +3159,12 @@
       "reason": "近地悬浮算空中单位，groundOnly 溅射跳过"
     },
     "sim/playtest5-targeting.test.js::#1 a 近地悬浮 enemy walks the ground path through blockers, cannot be displaced (失衡免疫) and ignores deep water": {
-      "status": "pending",
-      "step": "ECS 6",
-      "reason": "选择器排序与对空限制"
+      "status": "rewritten",
+      "next": [
+        "mission-core/test/combat/target/targeting.spec.ts::#1 近地悬浮：算空中单位，地面阻挡者挡不住、近战打不到、对地溅射不波及；仍走地面路线；推不动",
+        "mission-core/test/field/terrain/official.spec.ts::深水区 > #1 近地悬浮的敌人站在深水区上不受影响"
+      ],
+      "reason": "近地悬浮算空中单位：走地面路线、推不动由目标用例断言；官方地形缺省不影响空中单位，深水区对它无效"
     },
     "sim/playtest5-targeting.test.js::#1 掠海漂移体 stunned ⇒ 爬行模式 for good (PRTS): a ground unit — blocked, hit by melee — that only attacks its blocker": {
       "status": "moved",

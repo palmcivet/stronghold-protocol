@@ -78,7 +78,7 @@ export const marking: MissionModule = {
 
 每一项有 `condition`、`effect`，可选的 `value` 与 `params`。
 
-单位规格的 `conditionalEffects` 列出按条件挂上的效果。系统 `engine:conditional-effects` 在效果计时器之前，每拍对在场、未倒下的单位求条件，成立时挂上一条永久记录，不成立时取下。条件在成立的那一拍挂上、不成立的那一拍取下。每拍检查属于假定，尚无官方资料印证。条件按 id 注册（`registerCondition`）。内置 `enemies-in-range`：攻击范围内的敌方不少于 `params.count`（缺省 1）。规格里的条件 id 与效果 id 在创建时检查，未注册时报 `UnknownRegistrationError`。
+单位规格的 `conditionalEffects` 列出按条件挂上的效果。系统 `engine:conditional-effects` 在效果计时器之前，每拍对在场、未倒下的单位求条件，成立时挂上一条永久记录，不成立时取下。条件在成立的那一拍挂上、不成立的那一拍取下。每拍检查属于假定，尚无官方资料印证。条件按 id 注册（`registerCondition`）。内置 `enemies-in-range`：攻击范围内的敌方不少于 `params.count`（缺省 1）。内置 `on-terrain`：单位正受 `params.terrain` 这种地形影响，缺省任一地形，见 [地形](./14-terrain.md)。规格里的条件 id 与效果 id 在创建时检查，未注册时报 `UnknownRegistrationError`。
 
 ## 属性
 

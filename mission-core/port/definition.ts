@@ -1,5 +1,11 @@
 import type { PhaseSlot } from '#contract/phase.js';
-import type { AttackShape, SkillMoment, TileCoord } from '#contract/spec.js';
+import type {
+  AttackShape,
+  Direction,
+  SkillMoment,
+  TileCoord,
+  UnitSide,
+} from '#contract/spec.js';
 import type {
   ExtensibleKey,
   ExtensionRecord,
@@ -166,6 +172,8 @@ export interface DamageInfo {
   canDodge?: boolean;
   /** 无来源。不用来源的伤害乘算和穿透，击杀仍记在 sourceId。起飞挡不住它。 */
   sourceless?: boolean;
+  /** 不触发受击回复。 */
+  noSp?: boolean;
   /** 沉睡挡不住这一击。 */
   ignoreSleep?: boolean;
   /** 起飞的对地规避挡不住这一击。 */
@@ -174,6 +182,8 @@ export interface DamageInfo {
   cancel?: boolean;
   /** 这一击来自攻击计时，而不是技能或流失。 */
   attack?: boolean;
+  /** 伤害标签，kebab-case。伤害修饰与订阅者按它区分来路，例如环境伤害 `terrain`、持续伤害 `dot`。 */
+  tags?: readonly string[];
 }
 
 /** 这一次伤害结算的方式。 */
@@ -211,6 +221,8 @@ export interface DamageOrigin {
   readonly element?: string;
   /** 这一击来自攻击计时。 */
   readonly attack: boolean;
+  /** 这一击的伤害标签，没写时是空名单。 */
+  readonly tags: readonly string[];
 }
 
 /** hit 与 element-hit 阶段修饰可写的数据。非有限的数额或倍率不生效。 */
@@ -371,6 +383,58 @@ export interface ShiftDefinition {
   ): ShiftPlan | null;
 }
 
+/** 地形影响谁。缺省只影响两边的地面单位：飞行、空中与路线隐藏的单位不受影响。 */
+export interface TerrainAffects {
+  /** 受影响的阵营。缺省两边。 */
+  readonly sides?: readonly UnitSide[];
+  /** 为真时空中单位（飞行、浮空、近地悬浮）也受影响。 */
+  readonly airborne?: boolean;
+}
+
+/** 一种地块地形。站上去时进入，离开时离开；数值由定义它的模块决定。 */
+export interface TerrainDefinition {
+  readonly id: string;
+  /** 站在上面时施加的效果 id。没有 linger 时按来源 `terrain:<id>` 单独挂一条，离开只取下这一条。 */
+  readonly effect?: string;
+  /**
+   * 秒，或在战斗里按 notes 算出秒数的函数。给了时站在上面每拍把效果的剩余时长补到这么长，离开后效果继续计时到期。
+   * 补时不发 status，也不打断 onTick 的节奏。
+   */
+  readonly linger?: number | ((ctx: ContentContext) => number);
+  /** 秒。给了时进入那一拍与之后每隔这么久调用一次 onStay。 */
+  readonly period?: number;
+  readonly affects?: TerrainAffects;
+  /** 地面寻路走进这一格的代价，正整数。缺省 1。 */
+  readonly pathCost?: number;
+  /** 寻路权重，非负整数。少踩不可阻挡格的捷径沿途累计的权重不能比官方路线多。缺省 0。 */
+  readonly tieBreak?: number;
+  /** 为 false 时这一格拒绝部署，与地块规格的 deployable 取「与」。缺省 true。 */
+  readonly deployable?: boolean;
+  onEnter?(unitId: string, ctx: ContentContext): void;
+  /** count 从 1 起，是这次停留里第几次触发。 */
+  onStay?(unitId: string, ctx: ContentContext, count: number): void;
+  onLeave?(unitId: string, ctx: ContentContext): void;
+}
+
+/** 单位这一拍所在的作用区：放出它的装置、装置的朝向、单位上一拍以来的位移。 */
+export interface ZoneVisit {
+  readonly deviceId: string;
+  readonly facing: Direction;
+  /** 上一拍以来的位移（格）。上一拍没有记录时为 null。 */
+  readonly moved: { readonly dx: number; readonly dy: number } | null;
+}
+
+/**
+ * 装置作用区。带 source 标签的在场单位按自己的攻击范围与朝向圈出一片格子；单位站在里面时每拍调 onStay，
+ * 离开时调 onLeave。同一格被同一种作用区的几台装置覆盖时，入场晚的那台算数。
+ */
+export interface ZoneDefinition {
+  readonly id: string;
+  readonly source: TagKey;
+  onStay(unitId: string, ctx: ContentContext, visit: ZoneVisit): void;
+  onLeave?(unitId: string, ctx: ContentContext): void;
+}
+
 export interface DeployStrategyDefinition {
   readonly id: string;
   opening(ctx: ContentContext): readonly string[];
@@ -468,6 +532,13 @@ export interface BattleRegistry extends ExtensibleRegistry {
   requireDeployStrategy(id: string): DeployStrategyDefinition;
   registerShift(definition: ShiftDefinition): void;
   requireShift(id: string): ShiftDefinition;
+  registerTerrain(definition: TerrainDefinition): void;
+  requireTerrain(id: string): TerrainDefinition;
+  hasTerrain(id: string): boolean;
+  registerZone(definition: ZoneDefinition): void;
+  requireZone(id: string): ZoneDefinition;
+  /** 按注册先后。 */
+  zones(): readonly ZoneDefinition[];
   registerSystem(system: PhaseSystem): void;
   systemsIn(slot: PhaseSlot): readonly PhaseSystem[];
   /** 全部系统的执行顺序：按阶段槽，再按槽内顺序。 */
@@ -491,6 +562,8 @@ export interface ExtensibleDefinitions {
   condition: ConditionDefinition;
   deploy: DeployStrategyDefinition;
   element: ElementDefinition;
+  terrain: TerrainDefinition;
+  zone: ZoneDefinition;
 }
 
 export type ExtensibleContract = keyof ExtensibleDefinitions;
@@ -504,6 +577,8 @@ export const EXTENSIBLE_CONTRACTS = [
   'condition',
   'deploy',
   'element',
+  'terrain',
+  'zone',
 ] as const satisfies readonly ExtensibleContract[];
 
 /** 标记可扩展 id 并替换或包装它。只有标记过的 id 可以替换，版本要与标记时一致。 */

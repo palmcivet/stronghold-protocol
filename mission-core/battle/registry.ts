@@ -38,6 +38,8 @@ import {
   type SkillHookDefinition,
   type SkillTriggerDefinition,
   type StackingDefinition,
+  type TerrainDefinition,
+  type ZoneDefinition,
 } from '#port/definition.js';
 
 /** 引擎自己做的替换记在这个名下。 */
@@ -56,6 +58,8 @@ export function createRegistry(): BattleRegistry {
   const timers = createOrderedTable<ContentTimerDefinition>('timer');
   const strategies = createTable<DeployStrategyDefinition>('deploy');
   const shifts = createTable<ShiftDefinition>('shift');
+  const terrains = createTable<TerrainDefinition>('terrain');
+  const zones = createOrderedTable<ZoneDefinition>('zone');
   const steps = createOrderedTable<DamageStepDefinition>('damage-step', {
     compare: byPriority,
   });
@@ -86,6 +90,8 @@ export function createRegistry(): BattleRegistry {
     condition: conditions,
     deploy: strategies,
     element: elements,
+    terrain: terrains,
+    zone: zones,
   };
   const tableOf = <C extends ExtensibleContract>(
     key: ExtensibleKey<C>,
@@ -145,6 +151,12 @@ export function createRegistry(): BattleRegistry {
     requireDeployStrategy: (id) => strategies.require(id),
     registerShift: (definition) => shifts.register(definition),
     requireShift: (id) => shifts.require(id),
+    registerTerrain: (definition) => terrains.register(definition),
+    requireTerrain: (id) => terrains.require(id),
+    hasTerrain: (id) => terrains.has(id),
+    registerZone: (definition) => zones.register(definition),
+    requireZone: (id) => zones.require(id),
+    zones: () => zones.ordered(),
     registerSystem(system) {
       requireSlot(system.slot);
       systems.register(system);

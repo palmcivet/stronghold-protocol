@@ -249,6 +249,7 @@ export function registerDamageSteps(
         true,
         info.kind,
         info.attack === true,
+        info.noSp === true,
       );
     },
   });
@@ -388,6 +389,7 @@ export function loseLife(
     false,
     'true',
     false,
+    false,
   );
 }
 
@@ -404,6 +406,7 @@ function applyLife(
   damaged: boolean,
   kind: string,
   attack: boolean,
+  noSp: boolean,
 ): void {
   const before = unit.attributes.hp ?? 0;
   if (before - amount <= 0) {
@@ -436,6 +439,7 @@ function applyLife(
       hp,
       sourceless,
       ...(attack ? { attack: true } : {}),
+      ...(noSp ? { noSp: true } : {}),
     });
   } else {
     emit(state, 'loss', { unitId: unit.id, amount, hp });
@@ -596,11 +600,17 @@ function cloneInfo(request: DamageInfo): DamageInfo {
   if (request.element !== undefined) {
     info.element = request.element;
   }
+  if (request.tags !== undefined) {
+    info.tags = [...request.tags];
+  }
   if (request.canDodge !== undefined) {
     info.canDodge = request.canDodge;
   }
   if (request.sourceless !== undefined) {
     info.sourceless = request.sourceless;
+  }
+  if (request.noSp !== undefined) {
+    info.noSp = request.noSp;
   }
   if (request.ignoreSleep !== undefined) {
     info.ignoreSleep = request.ignoreSleep;
@@ -634,6 +644,7 @@ function originOf(info: DamageInfo): DamageOrigin {
     targetId: info.targetId,
     sourceless: info.sourceless === true,
     attack: info.attack === true,
+    tags: info.tags ?? [],
     ...(info.element !== undefined ? { element: info.element } : {}),
   };
 }

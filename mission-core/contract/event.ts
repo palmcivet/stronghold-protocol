@@ -66,6 +66,8 @@ export type DamagedEvent = {
   readonly hp: number;
   readonly sourceless: boolean;
   readonly attack?: true;
+  /** 这一击不触发受击回复。 */
+  readonly noSp?: true;
 };
 
 /** 流失：不经伤害步骤的扣血。 */
@@ -158,6 +160,16 @@ export type ElementBurstEvent = {
   readonly element: string;
 };
 
+// MARK: terrain
+
+/** 单位进入或离开一格地形。x、y 是站位系统判定时所站的格子。 */
+export type TerrainEvent = {
+  readonly unitId: string;
+  readonly terrain: string;
+  readonly x: number;
+  readonly y: number;
+};
+
 // MARK: cue
 
 /** 画面线索的种类到附带数据。内容与模组经声明合并加入自己的种类。 */
@@ -212,6 +224,8 @@ interface CoreBattleEventMap {
   'ammo-used': AmmoUsedEvent;
   status: StatusEvent;
   'element-burst': ElementBurstEvent;
+  'terrain-enter': TerrainEvent;
+  'terrain-leave': TerrainEvent;
   cue: CueEvent;
 }
 
@@ -268,6 +282,8 @@ export const CORE_EVENT_TYPES = coreEventTypes([
   'ammo-used',
   'status',
   'element-burst',
+  'terrain-enter',
+  'terrain-leave',
   'cue',
 ] as const);
 

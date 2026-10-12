@@ -86,6 +86,7 @@ export type {
   ProjectileEvent,
   SkillEvent,
   StatusEvent,
+  TerrainEvent,
   UnitEvent,
 } from '#contract/event.js';
 export { CORE_EVENT_TYPES } from '#contract/event.js';
@@ -185,6 +186,23 @@ export {
   SHIFT_PULL,
   SHIFT_PUSH,
 } from '#field/motion/index.js';
+export {
+  defineTerrain,
+  TERRAIN_STANDING,
+  type TerrainStanding,
+  terrainSource,
+} from '#field/terrain/index.js';
+export {
+  BLOWER,
+  OFFICIAL_TERRAIN_DEFAULTS,
+  OFFICIAL_TERRAINS,
+  officialTerrainModule,
+} from '#field/terrain/official.js';
+export {
+  defineZone,
+  ZONE_STANDING,
+  type ZoneStanding,
+} from '#field/zone/index.js';
 export { createRandom, deriveSeed, type Random } from '#kernel/random/index.js';
 export {
   ExtensionRefusedError,
@@ -260,6 +278,10 @@ export type {
   SkillTriggerDefinition,
   StackingDefinition,
   SystemOrderEntry,
+  TerrainAffects,
+  TerrainDefinition,
+  ZoneDefinition,
+  ZoneVisit,
 } from '#port/definition.js';
 export {
   DAMAGE_STAGES,

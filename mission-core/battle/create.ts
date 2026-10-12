@@ -40,6 +40,12 @@ import type { BattleLedger, BattleResult } from '#contract/result.js';
 import type { BattleSnapshot } from '#contract/snapshot.js';
 import type { BattleSpec, UnitSpec } from '#contract/spec.js';
 import { registerBuiltinShifts } from '#field/motion/index.js';
+import {
+  bindTerrains,
+  registerTerrainCondition,
+  registerTerrainSystem,
+} from '#field/terrain/index.js';
+import { registerZoneSystem } from '#field/zone/index.js';
 import { drainEvents, emit } from '#kernel/event/index.js';
 import { canonicalJson, hashText } from '#kernel/hash/index.js';
 import { UnknownRegistrationError } from '#kernel/registry/error.js';
@@ -110,6 +116,7 @@ export function createBattle(
   }
   registerBuiltinStackings(registry);
   registerBuiltinConditions(registry);
+  registerTerrainCondition(registry, state);
   registerEffectTimer(registry, state);
   registerEffectCatalog(state, registry);
   registerBuiltinElements(state, registry);
@@ -119,8 +126,11 @@ export function createBattle(
   registerBuiltinShifts(registry);
   registerEngineSystems(registry, state);
   registerConditionSystem(registry, state);
+  registerTerrainSystem(registry, state);
+  registerZoneSystem(registry, state);
   const installed = installModules(spec, modules, ctx, registry);
   registry.systemOrder();
+  bindTerrains(state, registry);
   validateUnits(spec, registry);
   for (const unit of spec.units) {
     grantSpecTags(registry, requireSpecUnit(state, unit), unit);
@@ -162,6 +172,7 @@ export function createBattle(
   );
   if (archive) {
     importWorld(state, archive, units);
+    bindTerrains(state, registry);
   }
   let stepping = false;
   return {

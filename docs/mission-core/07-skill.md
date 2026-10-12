@@ -18,6 +18,7 @@ description: 技力、充能和触发在 skill-point 上走，技能体在 skill
 - 技能体是 `passive`
 - 正在持续的 `duration`、`ammo`、`toggle`
 - 单位带 `no-sp`、路线隐藏、不在场、已倒地，或生命不大于 0
+- `hurt`：这次 `damaged` 带 `noSp`
 
 眩晕、冻结、浮空让单位不能行动，不暂停 `time` 的回复。`no-sp` 挡住时间、攻击、受击和 `gainSp`。
 
@@ -42,7 +43,7 @@ description: 技力、充能和触发在 skill-point 上走，技能体在 skill
 - `DEFAULT`：这里的攻击范围只加永久攻击距离 `rangeExtendBase`，不加 `rangeExtend`。治疗技能看攻击范围内有没有生命未满的友方；否则看攻击范围内有没有可选的敌人，自己挡着的敌人不在范围里也算。打不中飞行单位时不包括飞行敌人。普攻的 `attackShape.filters` 不过筛的敌人不算
 - `ACTIVE_RANGE`：条件和 `DEFAULT` 相同，只是范围换成触发范围（技能持续时的攻击范围）；没有触发范围时同 `DEFAULT`。触发范围也加 `rangeExtendBase`，技能带 `no-range-extend` 标记时不加。不等攻击
 - `SKILL_RANGE`：要求友方时，在触发范围里找生命比例不超过 `triggerHpAtMost` 的受伤友方；没有触发范围则用攻击范围。不要求友方且没有触发范围时同 `DEFAULT`。否则触发范围内有敌人即可，不看不可选中和隐匿，飞行也算
-- `TAKE_DAMAGE`：这次 `damaged` 正在询问
+- `TAKE_DAMAGE`：这次 `damaged` 正在询问，带 `noSp` 的不问
 - `SP_FULL`：总是满足。`ALWAYS` 归一化成这个 id
 - `CUSTOM_RANGE`：没有触发范围时同 `DEFAULT`。否则触发范围内有可选的敌人，飞行也算
 - `SEARCH`：条件和 `DEFAULT` 相同
