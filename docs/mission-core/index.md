@@ -3,18 +3,29 @@ title: 作战核心
 description: arknights-mission-core 用一份规格跑一场战斗，按固定节拍推进，读出快照、事件和胜负。
 ---
 
-# 作战核心
+# arknights-mission-core
 
-`arknights-mission-core` 执行一场战斗。调用方准备一份 `BattleSpec` 和零个或多个 `MissionModule`，`createBattle` 返回一场 `Battle`。同一份规格、同一组模块、同一个种子，每次 `step` 的结果相同。随机数只来自这场战斗自己的发生器。
+`arknights-mission-core` 执行一场战斗。调用方准备一份 `BattleSpec` 和零个或多个 `MissionModule`，`createBattle` 返回一场 `Battle`。同一份规格、同一组模块、同一个种子，每次 `step` 的结果相同。
 
-语言是 TypeScript。运行时是 Node.js 20，同一套模块也可以放进浏览器。
+## 边界
+
+- 输入是纯数据的规格与玩家输入，输出是快照、事件、结果与账本
+- 随机数只来自这场战斗自己的发生器；不读时钟，不用各引擎结果不同的 `Math` 函数
+- 不画画面、不放声音，也不认玩家与房间：单位只带对核心不透明的 `owner`
+- 没有运行时依赖，Node.js 20 及以上与浏览器都能运行
+
+## 最小示例
 
 ```ts
-import { createBattle, TICK, type BattleSpec, type MissionModule } from "arknights-mission-core"
+import {
+  type BattleSpec,
+  createBattle,
+  type MissionModule,
+} from "arknights-mission-core"
 
 const spec: BattleSpec = {
   seed: 1,
-  modules: ["trace"],
+  modules: ["arm"],
   tiles: [{ x: 0, y: 0, height: 0, deployable: true, walkableBy: ["ground"] }],
   units: [
     {
@@ -23,7 +34,7 @@ const spec: BattleSpec = {
       x: 0,
       y: 0,
       facing: "RIGHT",
-      attributes: { hp: 1000, maxHp: 1000, atk: 200, def: 0, aspd: 100, bat: 1 },
+      attributes: { hp: 1000, maxHp: 1000, atk: 200, def: 0, aspd: 100 },
       skills: [],
       attackRange: [{ x: 1, y: 0 }],
       tags: ["can-hit-fly"],
@@ -38,48 +49,45 @@ const spec: BattleSpec = {
   },
 }
 
-const trace: MissionModule = {
-  id: "trace",
+const arm: MissionModule = {
+  id: "arm",
   install(reg) {
     reg.subscribe("attack-hit", (event) => {
-      console.log(event.tick, event.type)
+      console.log(event.tick, event.data.unitId)
     })
     reg.registerSystem({
       id: "arm",
       slot: "schedule",
       priority: 0,
       run(ctx) {
-        if (ctx.tick() === 0) ctx.startTimer("guard", "attack")
+        if (ctx.tick() === 0) {
+          ctx.startTimer("guard", "attack")
+        }
       },
     })
   },
 }
 
-const battle = createBattle(spec, [trace])
+export const battle = createBattle(spec, [arm])
+battle.drainEvents() // 开场的 deploy 事件
 battle.step()
-const snap = battle.snapshot()
-const events = battle.drainEvents()
-const result = battle.result()
+battle.snapshot().tick // 1
 ```
 
-`TICK` 是 `1 / 30`，一拍的游戏秒数。`snapshot().tick` 在第一次 `step` 之前是 0。每一拍先走完阶段槽，再把拍数加 1。
+一拍是 `TICK`（`1 / 30` 游戏秒）。`snapshot().tick` 在第一次 `step` 之前是 0，每一拍走完阶段槽后加 1。
 
-## 包布局
+## 核心概念
 
-顶层分三类：边界、运行时、领域组。每个顶层目录有一个路径别名，包内用别名引用，不写相对路径。
+- [规格](./02-spec.md)：地块、单位、技能与刷出
+- [战斗](./03-battle.md)：推进、输入、快照、事件、结果、账本与导出
+- [模块](./04-module.md)：登记规则，发命令，做查询
+- [世界、组件、资源与标签](./05-world.md)：按带类型的键存取状态
+- [伤害](./06-damage.md)、[技能](./07-skill.md)、[攻击](./08-attack.md)、[计时](./09-timer.md)
+- [效果与属性](./10-effect.md)、[选择器](./11-selector.md)、[费用、阻挡与投射物](./12-field.md)
+- [黄金回放与源码扫描](./13-testing.md)
 
-| 路径 | 别名 | 内容 |
-| --- | --- | --- |
-| `contract/` | `#contract/*.js` | 对外的纯数据：规格、事件、快照、结果、阶段槽 |
-| `port/` | `#port/*.js` | 内容端口：`module.ts`（`MissionModule`、`Registration`）、`definition.ts`（各类定义与 `BattleRegistry`）、`context.ts`（`ContentContext`）、`tag.ts`（核心标签），练度与装备的数值合成 |
-| `test/` | `#test/*.js` | 黄金回放、源码扫描、测试夹具，与按组分目录的用例 `test/<组>/<领域>/` |
-| `kernel/` | `#kernel/*.js` | 运行时内核，只引用 `contract/`：`math/`、`tick/`、`random/`、`timer/`（通用计时）、`registry/`（通用注册表）、`schedule/`（阶段槽排序）、`event/`、`world/`（世界、组件、资源、标签、导出与导入） |
-| `battle/` | `#battle/*.js` | 组装与推进：建战斗、组装 `BattleRegistry`、每拍的系统、上下文、快照、帧时钟、无头推进 |
-| `unit/` | `#unit/*.js` | 单位与生命周期：`record/`、`deploy/`、`block/`、`leak/` |
-| `combat/` | `#combat/*.js` | 战斗：`attack/`、`target/`、`damage/`、`projectile/`、`element/` |
-| `ability/` | `#ability/*.js` | 技能与效果：`skill/`、`effect/`（效果、属性、叠加策略、条件） |
-| `field/` | `#field/*.js` | 场地与移动：`direction/`、`grid/`、`body/`、`motion/` |
-| `economy/` | `#economy/*.js` | 费用 |
-| `ledger/` | `#ledger/*.js` | 按单位 `owner` 记的账本 |
+## 下一步
 
-例如 `#kernel/tick/index.js`、`#combat/damage/formula.js`。包只有根导出 `arknights-mission-core`。
+- [快速开始](./01-quick-start.md)：装上内置模块，跑完一场有敌人的战斗
+- [API 参考](./15-api.md)：公开函数与类型的签名
+- [架构设计](./16-architecture.md)：包布局、依赖方向与确定性数学

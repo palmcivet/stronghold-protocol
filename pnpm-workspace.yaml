@@ -1,10 +1,9 @@
 packages:
   - "app/*"
-  - "app/compat/upstream"
+  - "app/compat/*"
   - "assets-catalog"
   - "assets-extractor"
   - "deployment"
-  - "deployment/client/config"
   - "docs"
   - "mission-core"
   - "mission-renderer"

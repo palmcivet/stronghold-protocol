@@ -1,65 +1,53 @@
 ---
 title: 资源目录
-description: arknights-assets-catalog 是运行时资源库：资源键、清单 schema 与类型守卫、地址布局、覆盖层解析和句柄缓存。
+description: arknights-assets-catalog 把资源键解析成文件地址：定义清单格式与守卫，把多份清单叠成覆盖层，并缓存 Spine 与音频。
 ---
 
-# 资源目录
+# arknights-assets-catalog
 
-`arknights-assets-catalog` 是运行时的资源库。它回答一个问题：**给我一个资源键，我该去哪里取哪些文件**。
+`arknights-assets-catalog` 回答一个问题：**给定一个资源键，该去哪里取哪些文件**。
 
-- 零运行时依赖，能直接在浏览器里运行，不引用 `node:*`。
-- 不做网络和文件读写：清单由调用方加载，`fetch` 由调用方注入。
-- 不认识赛季、干员或敌人。领域 id 到键的映射写在清单的 `refs` 里，形状由打包方决定。
+应用按键使用资源，例如 `image:avatar/knight`。文件放在哪里、有哪些格式、哪一层覆盖哪一层，都写在清单里。本包定义清单的格式，把多份清单叠成覆盖层，按键算出带版本参数的文件地址，并缓存加载好的 Spine 与音频。
 
-构建期的下载、转换与原始目录生成在 [资源提取](../assets-extractor/index.md) 中。
+## 边界
 
-## 快速上手
+- 零运行时依赖，浏览器和 Node 都支持，不引用 `node:*`
+- 不发请求、不读文件：清单由调用方加载，加载函数由调用方提供
+- 不认识业务：领域 id 到键的映射写在清单的 `refs` 里，形状由写清单的一方决定
+- 不规定发布位置：清单放在哪个地址、每层叫什么类型，由使用方决定
+
+## 最小示例
 
 ```ts
-import { createAssetResolver, isPackManifest, spineSource } from "arknights-assets-catalog"
+import { createAssetResolver, isPackManifest } from "arknights-assets-catalog"
 
-const baseUrl = new URL("/res/packs/base/78.0.0+r1/manifest.json", location.href)
-const base = await (await fetch(baseUrl)).json()
-if (!isPackManifest(base)) throw new Error("bad base manifest")
+const manifestUrl = "https://cdn.example/packs/base/manifest.json"
+const manifest: unknown = await (await fetch(manifestUrl)).json()
+if (!isPackManifest(manifest)) {
+  throw new Error(`not a pack manifest: ${manifestUrl}`)
+}
 
-const resolver = createAssetResolver([
-  { manifest: base, url: baseUrl },
-  // 赛季、模组、本地清单依次叠在上面
-])
+const resolver = createAssetResolver([{ manifest, url: manifestUrl }])
 
-const key = resolver.ref("chars.char_002_amiya.avatar") // "image:char/avatar/char_002_amiya"
+const key = resolver.ref("heroes.knight.avatar")
+console.log(key) // "image:avatar/knight"
 const avatar = key ? resolver.resolve(key) : null
-avatar?.files[0]?.url // "https://…/res/files/image/char/avatar/char_002_amiya.png?v=c2a1…"
+console.log(avatar?.files[0]?.url)
+// "https://cdn.example/files/image/avatar/knight.png?v=9f9f9f9f9f9f"
 ```
 
-## 在资源系统中的位置
-
-四种清单的类型都在本包。构建期与运行时的代码各取所需，只通过键与这些清单交接：
-
-```mermaid
-flowchart LR
-  needs[需求清单<br/>NeedsList] --> extractor[资源提取<br/>arknights-assets-extractor]
-  extractor --> raw[原始目录<br/>RawCatalog]
-  extractor --> files[(规范化文件<br/>files/address)]
-  raw --> packer[打包方<br/>使用本包的应用]
-  packer --> manifest[包清单<br/>PackManifest]
-  manifest --> resolver[解析器<br/>createAssetResolver]
-  files --> resolver
-  resolver --> cache[Spine 与音频缓存]
-```
-
-| 阶段 | 读 | 写 | 用到本包的 |
-| --- | --- | --- | --- |
-| 提取 | 需求清单 | 规范化文件、原始目录、Spine 侧车 | 键、守卫、`fileAddress` |
-| 打包 | 原始目录 | 包清单 | 键、守卫、发布布局 |
-| 运行时 | 包清单 | — | 解析器、地址、缓存 |
+清单的内容见 [快速开始](./01-quick-start.md)。
 
 ## 核心概念
 
-| 概念 | 说明 | 页面 |
-| --- | --- | --- |
-| 资源键 `AssetKey` | `<kind>:<path>`，资源的唯一身份，跨包只传键 | [资源键](./01-key.md) |
-| 清单与类型守卫 | 需求清单、原始目录、包清单、Spine 侧车的类型，以及逐字段报错的守卫 | [清单](./02-schema.md) |
-| 地址 | 键与文件到相对地址、包清单的发布位置；所有种类同一格式 | [地址](./03-address.md) |
-| 解析器 | 多份清单叠成覆盖层，按键查找，沿 `fallbackId` 回退 | [解析](./04-resolver.md) |
-| 缓存 | Spine 句柄与解码音频，以键为缓存键 | [缓存](./05-cache.md) |
+- [资源键](./02-key.md)：`<kind>:<path>`，资源唯一的身份
+- [清单](./03-manifest.md)：需求清单、原始清单、包清单与 Spine 元数据，以及检查它们的守卫
+- [地址](./04-address.md)：键与文件到相对地址，再按清单解析成绝对地址
+- [解析](./05-resolver.md)：多份包清单叠成覆盖层，按键查找，沿回退链取下一个
+- [缓存](./06-cache.md)：以键为缓存键的 Spine 句柄缓存与音频解码缓存
+
+## 下一步
+
+- 从零跑通一遍：[快速开始](./01-quick-start.md)
+- 查接口：[核心接口](./07-api.md)
+- 了解整体设计：[架构设计](./09-architecture.md)

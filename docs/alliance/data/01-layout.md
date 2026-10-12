@@ -5,9 +5,9 @@ description: 卫戍协议这一季的数据放在 app/data，编译和读取在�
 
 # 目录
 
-卫戍协议的数据构建器依赖资源目录，资源目录不依赖卫戍协议。
+卫戍协议的数据构建器依赖 `arknights-assets-catalog`，`arknights-assets-catalog` 不依赖卫戍协议。
 
-构建器调用资源提取的 `extract` 命令，并复用它的文件端口与缓存布局；键、清单类型、守卫与地址来自资源目录。运行时（`runtime/`）只读数据包，不引用资源提取。
+构建器调用 `arknights-assets-extractor` 的 `extract` 命令，并复用它的文件端口与缓存布局；键、清单类型、守卫与地址来自 `arknights-assets-catalog`。运行时（`runtime/`）只读数据包，不引用 `arknights-assets-extractor`。
 
 构建器自行处理这些逻辑：读官方活动表，把干员收成这一季的棋子，把敌人收成这一季的敌人记录，写出羁绊、波次、地图和难度；推导基础与赛季的资源需求，派生动画角色表与棋盘 tiles，写出两份资源清单。它决定要哪些资源键，再交给提取器去取字节。整条资源流水线见 [资源从哪里来](./03-resource.md)。
 
@@ -28,13 +28,13 @@ app/data/
       derive/             动画角色表；board/ 为棋盘 tiles（atlas、material、surface、png）
       pack/               清单构建、回退、refs、fonts.css
       spine/              anim-role，把 Spine 动画名收成角色表
-    input/                base/ 的版本与上游缺失表 absent.json，season/<id>/ 的版本与 tuning，research/ 研究表
+    input/                base/、season/<id>/ 的版本与配置，research/ 研究表
     scripts/              needs、extract、packet、derive、packs、emotes 命令
   workspace.ts            目录路径，供 Vite 配置导入（@alliance/data/workspace），不依赖构建器
   runtime/
     packet/               读取赛季 JSON
     port/                 运行时的文件端口与读取错误
-  schema/                 赛季文件名；资源包 refs 的类型与守卫（@alliance/data/refs）
+  schema/                 赛季文件名、refs 类型与守卫、发布布局
   test/                   同时用到多个源文件的用例，文件名用 .spec.ts
   .cache/                 needs/、assets/（提取缓存）、derived/、build-data-report.json
   product/

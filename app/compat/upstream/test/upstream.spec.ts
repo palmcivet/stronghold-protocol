@@ -3,7 +3,7 @@ import { type PackAsset, packManifestIssues } from 'arknights-assets-catalog';
 import {
   buildUpstreamManifest,
   type UpstreamIssue,
-} from 'arknights-compat-upstream';
+} from '@alliance/compat-upstream';
 import { describe, expect, it } from 'vitest';
 
 const BACKEND = 'http://127.0.0.1:3000/';

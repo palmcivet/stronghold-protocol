@@ -7,7 +7,7 @@ description: 对局进程对外的线路接口。浏览器和外壳通过这些�
 
 对局进程对浏览器和外壳提供两项操作：`GET /healthz`，以及路径 `/ws` 上的 WebSocket。页面、赛季 JSON 和媒体由站点提供，不在这份契约里。
 
-线路上的事实来自当前实现：`server/index.js` 的健康检查与升级，`server/net.js` 的会话，`shared/protocol.js` 的消息校验，`server/lobby.js` 的房间，`server/match/Match.js` 的对局与作战帧。消息名和字段以各页为准。
+线路上的事实来自当前实现：`app/server/entry/index.ts` 的健康检查与升级，`app/server/connection/session.ts` 的会话，`@alliance/contract` 的 `message.ts`（`C2S`、`S2C`、`validateC2S`）的消息校验，`app/server/room/index.ts` 的房间，`app/server/match/` 的对局与作战帧。消息名和字段以各页为准。
 
 ## 帧
 
@@ -19,11 +19,14 @@ description: 对局进程对外的线路接口。浏览器和外壳通过这些�
 
 ## 消息名
 
-| 方向 | 消息 |
-|---|---|
-| 客户端 → 服务端 | `hello` `ping` `room.create` `room.join` `room.leave` `room.ready` `room.setDifficulty` `room.addBot` `room.removeBot` `room.kick` `room.start` `room.loadout` `room.spectate` `room.removeSpectator` |
-| 客户端 → 服务端 | `g.infoReady` `g.band` `g.bandSkip` `g.bandFocus` `g.buy` `g.refresh` `g.freeze` `g.levelUp` `g.sell` `g.move` `g.equip` `g.art` `g.destroy` `g.reward` `g.choice` `g.ready` `g.emote` `g.watch` `g.autoplay` `g.pause` `g.unitStats` `g.leave` |
-| 客户端 → 服务端 | `b.progress` `b.result` |
-| 服务端 → 客户端 | `welcome` `ok` `error` `pong` `room.state` `room.closed` |
-| 服务端 → 客户端 | `m.public` `m.private` `m.field` `m.toast` `m.ticker` `m.emote` `m.result` `m.unitStats` |
-| 服务端 → 客户端 | `b.start` `b.pool` `b.end`；`combatMode` 为 `server` 时还有 `b.snap` `b.ev` |
+客户端 → 服务端：
+
+- 会话与房间：`hello` `ping` `room.create` `room.join` `room.leave` `room.ready` `room.setDifficulty` `room.addBot` `room.removeBot` `room.kick` `room.start` `room.loadout` `room.spectate` `room.removeSpectator`
+- 对局：`g.infoReady` `g.band` `g.bandSkip` `g.bandFocus` `g.buy` `g.refresh` `g.freeze` `g.levelUp` `g.sell` `g.move` `g.equip` `g.art` `g.destroy` `g.reward` `g.choice` `g.ready` `g.emote` `g.watch` `g.autoplay` `g.pause` `g.unitStats` `g.leave`
+- 作战：`b.progress` `b.result`
+
+服务端 → 客户端：
+
+- 会话与房间：`welcome` `ok` `error` `pong` `room.state` `room.closed`
+- 对局：`m.public` `m.private` `m.field` `m.toast` `m.ticker` `m.emote` `m.result` `m.unitStats`
+- 作战：`b.start` `b.pool` `b.end`；`combatMode` 为 `server` 时还有 `b.snap` `b.ev`

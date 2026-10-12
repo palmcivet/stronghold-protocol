@@ -1,21 +1,31 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { type DefaultTheme, defineConfig } from 'vitepress';
 import { generateSidebar } from 'vitepress-sidebar';
 import type { VitePressSidebarOptions } from 'vitepress-sidebar/types';
+import { noticeLinks } from './plugins/notice-links';
+import { typecheck } from './plugins/typecheck';
 
 const docsRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-const sectionNames = readdirSync(docsRoot, { withFileTypes: true })
-  .filter(
-    (entry) =>
-      entry.isDirectory() &&
-      !entry.name.startsWith('.') &&
-      entry.name !== 'node_modules',
-  )
-  .map((entry) => entry.name)
-  .sort((left, right) => left.localeCompare(right, 'en'));
+/** Sidebar label of a section home. */
+const OVERVIEW_TEXT = '概览';
+
+/** Top navigation order. A section appears once it has an `index.md`. */
+const SECTION_ORDER = [
+  'alliance',
+  'guides',
+  'mission-core',
+  'mission-renderer',
+  'assets-catalog',
+  'assets-extractor',
+  'license',
+];
+
+const sectionNames = SECTION_ORDER.filter((section) =>
+  existsSync(join(docsRoot, section, 'index.md')),
+);
 
 function sectionOptions(section: string): VitePressSidebarOptions {
   return {
@@ -32,6 +42,7 @@ function sectionOptions(section: string): VitePressSidebarOptions {
     removePrefixAfterOrdering: true,
     prefixSeparator: '-',
     collapsed: false,
+    includeRootIndexFile: true,
   };
 }
 
@@ -51,6 +62,29 @@ function toDirectoryLink(link: string | undefined): string | undefined {
   return link?.replace(/\/index(\.md)?$/, '/').replace(/^index\.md$/, '');
 }
 
+/**
+ * Moves the section home to the top of its sidebar, labelled as the overview.
+ * The theme prefixes links with the group base and skips empty links, so the home link is the base itself from the site root.
+ */
+function withOverviewFirst(
+  base: string,
+  items: DefaultTheme.SidebarItem[],
+): DefaultTheme.SidebarItem[] {
+  const home = items.find((item) => item.link === 'index.md');
+  if (!home) {
+    return withDirectoryLinks(items);
+  }
+  const overview: DefaultTheme.SidebarItem = {
+    text: OVERVIEW_TEXT,
+    base: '/',
+    link: base.replace(/^\//, ''),
+  };
+  return [
+    overview,
+    ...withDirectoryLinks(items.filter((item) => item !== home)),
+  ];
+}
+
 function withDirectoryLinks(
   items: DefaultTheme.SidebarItem[],
 ): DefaultTheme.SidebarItem[] {
@@ -59,16 +93,6 @@ function withDirectoryLinks(
     link: toDirectoryLink(item.link),
     items: item.items && withDirectoryLinks(item.items),
   }));
-}
-
-function firstLink(items: DefaultTheme.SidebarItem[]): string | undefined {
-  for (const item of items) {
-    const link = item.link ?? (item.items && firstLink(item.items));
-    if (link) {
-      return link;
-    }
-  }
-  return undefined;
 }
 
 const generated = generateSidebar(sectionNames.map(sectionOptions)) as Record<
@@ -82,34 +106,86 @@ const sidebar: Record<
 > = Object.fromEntries(
   Object.entries(generated).map(([path, group]) => [
     path,
-    { base: group.base, items: withDirectoryLinks(group.items) },
+    { base: group.base, items: withOverviewFirst(group.base, group.items) },
   ]),
 );
 
-const nav: DefaultTheme.NavItem[] = sectionNames.map((section) => {
-  const sectionSidebar = sidebar[`/${section}/`];
-  const link = sectionSidebar ? firstLink(sectionSidebar.items) : undefined;
+const nav: DefaultTheme.NavItem[] = sectionNames.map((section) => ({
+  text: sectionTitle(section),
+  link: `/${section}/`,
+  activeMatch: `^/${section}/`,
+}));
 
-  return {
-    text: sectionTitle(section),
-    link: `/${section}/${link ?? ''}`,
-  };
+const examples = typecheck({
+  modules: [
+    'assets-catalog',
+    'assets-extractor',
+    'alliance',
+    'mission-renderer',
+    'mission-core',
+  ],
 });
 
 export default defineConfig({
   title: '卫戍协议：盟约',
   description: 'Stronghold Protocol: Alliance 的项目文档',
+  locales: {
+    root: {
+      label: '简体中文',
+      lang: 'zh-CN',
+    },
+  },
   base: process.env.VITEPRESS_BASE ?? '/',
   cleanUrls: true,
-  ignoreDeadLinks: [/^https?:\/\//, /LICENSE(?:\.md)?$/, /releases\/latest$/],
+  srcExclude: ['README.md'],
+  markdown: {
+    config: (md) => {
+      examples.markdown(md);
+      md.use(
+        noticeLinks({
+          page: 'license/02-notice.md',
+          links: {
+            'LICENSE.md': '/license/01-gpl',
+            'assets-extractor/source/local-client/python/LICENSE.md':
+              'https://github.com/palmcivet/stronghold-protocol/blob/main/assets-extractor/source/local-client/python/LICENSE.md',
+          },
+        }),
+      );
+    },
+    codeCopyButtonTitle: '复制代码',
+    container: {
+      tipLabel: '提示',
+      infoLabel: '信息',
+      warningLabel: '警告',
+      dangerLabel: '危险',
+      detailsLabel: '详细信息',
+    },
+  },
+  buildEnd: examples.buildEnd,
   themeConfig: {
     nav,
     sidebar,
-    outline: 'deep',
+    outline: { level: 'deep', label: '本页目录' },
+    langMenuLabel: '选择语言',
+    sidebarMenuLabel: '目录',
+    returnToTopLabel: '返回顶部',
+    darkModeSwitchLabel: '外观',
+    lightModeSwitchTitle: '切换到浅色主题',
+    darkModeSwitchTitle: '切换到深色主题',
+    docFooter: {
+      prev: '上一页',
+      next: '下一页',
+    },
+    lastUpdatedText: '最后更新于',
+    editLink: {
+      text: '编辑此页',
+      pattern:
+        'https://https://github.com/palmcivet/stronghold-protocol/edit/main/docs/:path',
+    },
     socialLinks: [
       {
         icon: 'github',
-        link: 'https://github.com/sganggs/Stronghold-Protocol',
+        link: 'https://github.com/palmcivet/stronghold-protocol',
       },
     ],
   },

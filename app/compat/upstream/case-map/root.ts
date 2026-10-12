@@ -19,7 +19,7 @@ export function findUp(start: string, marker: string): string {
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
-/** arknights-compat-upstream 包的根目录，源码与 dist 下运行结果相同。 */
+/** @alliance/compat-upstream 包的根目录，源码与 dist 下运行结果相同。 */
 export const PACKAGE_ROOT: string = findUp(HERE, 'package.json');
 
 /** pnpm 工作区的根目录。 */

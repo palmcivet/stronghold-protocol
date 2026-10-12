@@ -9,7 +9,7 @@ interface Recording {
   readonly pending: Promise<unknown>[];
 }
 
-const RECORDING = Symbol.for('arknights-compat-upstream.case-map');
+const RECORDING = Symbol.for('@alliance/compat-upstream.case-map');
 
 function recording(): Recording {
   const scope = globalThis as { [RECORDING]?: Recording };

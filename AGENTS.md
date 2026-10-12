@@ -9,7 +9,7 @@
 ## 技术栈
 
 - Three + React
-- Node 20
+- Node 22
 - PNPM 10 + Vite + Vitest
 
 ## 格式与工具

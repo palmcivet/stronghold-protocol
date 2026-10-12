@@ -23,7 +23,7 @@ import {
 import {
   buildUpstreamManifest,
   type UpstreamIssue,
-} from 'arknights-compat-upstream';
+} from '@alliance/compat-upstream';
 
 /** Where a master backend keeps its data and its art. Its `data/assets.json` is read; its art is served from `/assets/`. */
 export interface CompatSourceOptions {

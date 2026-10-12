@@ -50,15 +50,13 @@ description: 一场战斗的开始、进度、结果和共享血池。默认在�
 
 `result` 的字段：
 
-| 字段 | 约束 |
-|---|---|
-| `reason` | `cleared`、`timeout`、`forced` |
-| `time` | 有限数字，0–100000 |
-| `killed` `total` | 可选整数，`0`–`100000` |
-| `perPlayer` | 1–4 名玩家，键为玩家 id，值见下表。不能为空 |
-| `unspawned` | 可选，最多 400 条。必有 `enemyKey`。`sourcePlayerId` 与 `tag` 可以没有，也可以是 `null`。`time` 可选 |
-| `errors` | 可选整数，`0`–`1000000000` |
-| `bossHpLeft` | 可选，`0` 到 `1e13` 的有限数字 |
+- `reason`：`cleared`、`timeout`、`forced`
+- `time`：有限数字，0–100000
+- `killed` `total`：可选整数，`0`–`100000`
+- `perPlayer`：1–4 名玩家，键为玩家 id，值见下表。不能为空
+- `unspawned`：可选，最多 400 条。必有 `enemyKey`。`sourcePlayerId` 与 `tag` 可以没有，也可以是 `null`。`time` 可选
+- `errors`：可选整数，`0`–`1000000000`
+- `bossHpLeft`：可选，`0` 到 `1e13` 的有限数字
 
 `perPlayer` 的一条必有 `killed`、`total`（均为 `0`–`100000` 的整数，且 `killed` 不超过 `total`）、`leaked`（最多 400）、`perfect`、`layerGains`（最多 40 个盟约）和 `unitsEnd`（最多 64）。`unitStats` 可选，最多 160。`coins`、`damageDealt`、`bossDamage`、`healingDone`、`deaths` 可以不出现；出现时是 `0` 到 `1e13` 的有限数字。
 
@@ -84,10 +82,8 @@ description: 一场战斗的开始、进度、结果和共享血池。默认在�
 
 服务端 → 客户端。
 
-| 字段 | 含义 |
-|---|---|
-| `battleId` `fieldId` | 哪一场 |
-| `reason` | `cleared`（血池空）、`forced`（队伍生命空）、`takeover`（换了权威；停止汇报，画面可以继续） |
+- `battleId` `fieldId`：哪一场
+- `reason`：`cleared`（血池空）、`forced`（队伍生命空）、`takeover`（换了权威；停止汇报，画面可以继续）
 
 ## `b.snap` 与 `b.ev`
 

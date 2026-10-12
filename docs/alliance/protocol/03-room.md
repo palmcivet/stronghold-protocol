@@ -19,20 +19,51 @@ description: 建房、入座、准备、观战，以及房间状态推送。
 
 成功且带 `rid` 时先回复 `ok`，再推送状态。失败回复 `error`。
 
-| 消息 | 字段 | 谁可以发 | 失败 |
-|---|---|---|---|
-| `room.create` | `mode`，`difficulty` | 不在进行中的对局里的会话 | 同一网络房间数超限时 `RATE` |
-| `room.join` | `code`：字母数字，长度放宽到 6 再规范化 | 同上 | `ROOM_NOT_FOUND`、`ROOM_FULL`、`ROOM_STARTED` |
-| `room.leave` | 无 | 在房间内的玩家或观战者 | `NOT_IN_ROOM` |
-| `room.ready` | `ready`：布尔 | 大厅中的玩家座位 | 观战者为 `SPECTATOR` |
-| `room.setDifficulty` | `difficulty` | 大厅中的房主 | `NOT_HOST`。改难度会使其他真人变为未准备 |
-| `room.addBot` | 无 | 大厅中的合作房房主 | `NOT_HOST`、`ROOM_FULL`；独立模拟不能加 |
-| `room.removeBot` | `seat`：0–3 | 大厅中的房主 | 该座不是机器人时 `BAD_TARGET` |
-| `room.kick` | `seat`：0–3，`playerId` | 开局前的房主 | 不能踢自己，不能用这条踢机器人。`playerId` 必须仍是该座上的人，否则 `BAD_TARGET` |
-| `room.start` | 无 | 房主 | 其他真人未连接或未准备时 `NOT_READY`。房主自己的开始视为房主已准备。同一网络进行中的对局超限时 `RATE` |
-| `room.loadout` | `entries` | 会话。对局已过确认信息阶段时，本局配装不再更换 | 见下文 |
-| `room.spectate` | `code` | 合作房间，大厅或对局中 | 独立模拟或观战座满为 `ROOM_FULL`。已是玩家时 `ALREADY` |
-| `room.removeSpectator` | `playerId` | 房主，任何时候 | 没有这个观战者时 `BAD_TARGET` |
+- `room.create`
+  - 字段：`mode`，`difficulty`
+  - 谁可以发：不在进行中的对局里的会话
+  - 失败：同一网络房间数超限时 `RATE`
+- `room.join`
+  - 字段：`code`，字母数字，长度放宽到 6 再规范化
+  - 谁可以发：不在进行中的对局里的会话
+  - 失败：`ROOM_NOT_FOUND`、`ROOM_FULL`、`ROOM_STARTED`
+- `room.leave`
+  - 谁可以发：在房间内的玩家或观战者
+  - 失败：`NOT_IN_ROOM`
+- `room.ready`
+  - 字段：`ready`，布尔
+  - 谁可以发：大厅中的玩家座位
+  - 失败：观战者为 `SPECTATOR`
+- `room.setDifficulty`
+  - 字段：`difficulty`
+  - 谁可以发：大厅中的房主
+  - 失败：`NOT_HOST`。改难度会使其他真人变为未准备
+- `room.addBot`
+  - 谁可以发：大厅中的合作房房主
+  - 失败：`NOT_HOST`、`ROOM_FULL`；独立模拟不能加
+- `room.removeBot`
+  - 字段：`seat`，0–3
+  - 谁可以发：大厅中的房主
+  - 失败：该座不是机器人时 `BAD_TARGET`
+- `room.kick`
+  - 字段：`seat`，0–3，`playerId`
+  - 谁可以发：开局前的房主
+  - 失败：不能踢自己，不能用这条踢机器人。`playerId` 必须仍是该座上的人，否则 `BAD_TARGET`
+- `room.start`
+  - 谁可以发：房主
+  - 失败：其他真人未连接或未准备时 `NOT_READY`。房主自己的开始视为房主已准备。同一网络进行中的对局超限时 `RATE`
+- `room.loadout`
+  - 字段：`entries`
+  - 谁可以发：会话。对局已过确认信息阶段时，本局配装不再更换
+  - 失败：见下文
+- `room.spectate`
+  - 字段：`code`
+  - 谁可以发：合作房间，大厅或对局中
+  - 失败：独立模拟或观战座满为 `ROOM_FULL`。已是玩家时 `ALREADY`
+- `room.removeSpectator`
+  - 字段：`playerId`
+  - 谁可以发：房主，任何时候
+  - 失败：没有这个观战者时 `BAD_TARGET`
 
 机器人显示名按空座顺序取：`AI·华法琳`、`AI·阿米娅`、`AI·惊蛰`、`AI·杜宾`、`AI·凯尔希`、`AI·可露希尔`。
 
@@ -56,15 +87,13 @@ description: 建房、入座、准备、观战，以及房间状态推送。
 
 推送给房间内的玩家和观战者。
 
-| 字段 | 含义 |
-|---|---|
-| `code` | 房间码 |
-| `hostId` | 房主 `playerId`；没有真人时房间会被拆掉 |
-| `mode` | `solo` 或 `coop` |
-| `difficulty` | 当前难度 |
-| `inMatch` | 是否有进行中的对局 |
-| `seats` | 长度 4。空座为 `null`。有人时为 `{ seat, playerId, name, isBot, ready, connected }` |
-| `spectators` | `{ playerId, name, connected }` 的列表 |
+- `code`：房间码
+- `hostId`：房主 `playerId`；没有真人时房间会被拆掉
+- `mode`：`solo` 或 `coop`
+- `difficulty`：当前难度
+- `inMatch`：是否有进行中的对局
+- `seats`：长度 4。空座为 `null`。有人时为 `{ seat, playerId, name, isBot, ready, connected }`
+- `spectators`：`{ playerId, name, connected }` 的列表
 
 `connected` 对已离开的玩家为假。大厅里有人断线时座位先保持，60 秒内重连可以回来；超时后该会话下次恢复会收到 `room.closed`。对局中断线不腾座位。
 
@@ -74,12 +103,10 @@ description: 建房、入座、准备、观战，以及房间状态推送。
 
 发给被移出房间的会话。字段 `reason`：
 
-| 值 | 何时 |
-|---|---|
-| `timeout` | 大厅断线超过 60 秒 |
-| `kicked` | `room.kick` 或 `room.removeSpectator`。被踢的人可以用同一房间码再加入，没有封禁 |
-| `empty` | 观战者所在房间的最后一名玩家离开 |
-| `shutdown` | 进程关闭 |
+- `timeout`：大厅断线超过 60 秒
+- `kicked`：`room.kick` 或 `room.removeSpectator`。被踢的人可以用同一房间码再加入，没有封禁
+- `empty`：观战者所在房间的最后一名玩家离开
+- `shutdown`：进程关闭
 
 当时不在线的人，把原因记到下次 `hello` 再送出。踢人或大厅超时如果发生在一局结束之后，恢复时还会在 `room.closed` 之后再收到该局最后的公开状态和结算。
 

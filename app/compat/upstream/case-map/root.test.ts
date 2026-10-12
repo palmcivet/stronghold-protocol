@@ -12,7 +12,7 @@ test('the package root is the compat upstream package and the default master che
   const manifest = JSON.parse(
     readFileSync(join(PACKAGE_ROOT, 'package.json'), 'utf8'),
   ) as { name: string };
-  expect(manifest.name).toBe('arknights-compat-upstream');
+  expect(manifest.name).toBe('@alliance/compat-upstream');
   expect(DEFAULT_REPO_DIR).toBe(join(PACKAGE_ROOT, 'repo'));
 });
 

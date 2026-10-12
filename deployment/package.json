@@ -4,9 +4,37 @@
   "private": true,
   "license": "GPL-3.0-or-later",
   "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./static-policy": {
+      "types": "./client/config/dist/static-policy.d.ts",
+      "source": "./client/config/static-policy.ts",
+      "import": "./client/config/dist/static-policy.js",
+      "default": "./client/config/dist/static-policy.js"
+    }
+  },
+  "imports": {
+    "#static-policy.js": {
+      "source": "./client/config/static-policy.ts",
+      "default": "./client/config/dist/static-policy.js"
+    }
+  },
   "scripts": {
+    "build": "tsc -b client/config",
+    "check": "tsc -p client/config --noEmit && tsc -p client/config/tsconfig.test.json --noEmit",
+    "format": "biome check --write",
+    "lint": "biome lint",
+    "test": "vitest run --root client/config"
+  },
+  "dependencies": {
+    "@alliance/data": "workspace:*"
   },
   "devDependencies": {
+    "@biomejs/biome": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:",
     "zx": "^8.8.5"
   }
 }
