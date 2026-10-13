@@ -35,6 +35,7 @@ console.log(stage.view.map?.cols) // 1
 - `initialMap`：缺省为 `null`；传入时等同于紧接着 `dispatch({ type: "set-map", map })`
 - `terrain`：地面的创建参数，见 [地面](./04-ground.md)；缺省时不建地面，`terrain` 与 `canvas` 都是 `null`
 - `actors`：骨骼运行时与资源端口，见 [演员](./06-actor.md)；缺省时演员照常建立，但没有模型
+- `impostor`：替身图集的页面尺寸、页数、取整网格，以及重画间隔与每单位像素数，见 [演员](./06-actor.md#替身)；缺省时骨骼都直接绘制
 - `effects`、`cues`、`hud`：特效表、线索绑定与头顶条读数表，见 [特效与线索绑定](./07-effect.md)
 - `onAudioCue`：收到音效线索，见 [音效线索](./08-audio.md)
 - `onPointer`：收到 `pointer` 拾取后的指针事件
@@ -77,6 +78,7 @@ console.log(stage.view.map?.cols) // 1
 - `tiles` 里没有列出的格子不建地面
 - 地面另外读格子上可选的 `glyph`、`device`、`surface`；没有 `glyph` 时按 `device`、`objective`、`height`、`walkableBy` 推出
 - 相机 `MissionCamera` 的 `x`、`y`、`width`、`height`、`margin` 都以格为单位；`(x, y)` 是矩形的左下角，`margin` 是四周留白
+- 地图的 `enemyPreview` 是敌人预览区的矩形（`MissionTileRect`，以格为单位，`(x, y)` 是左下角）；只有它里面的通道与预览格画成玻璃，没有时都不画
 
 ## 命令
 
@@ -129,7 +131,7 @@ console.log(stage.view.map?.cols) // 1
 `update(deltaSeconds)` 按 `MISSION_VIEW_SYSTEM_ORDER` 运行视图系统，再推进地面：
 
 1. `ingest`：取出到期的事件；本地模式下先推进渲染时钟，并换上插值后的单位
-2. `lifecycle`、`position`、`facing`、`skeleton`：演员的建立、位置、朝向与动画
+2. `lifecycle`、`position`、`facing`、`skeleton`、`impostor`：演员的建立、位置、朝向、动画与替身
 3. `hud`：头顶条
 4. `effect`：推进已有特效，启动本帧线索的特效
 5. `audio`：音效线索与目标门闪烁
@@ -151,11 +153,11 @@ console.log(stage.view.map?.cols) // 1
 `pick(screenX, screenY)` 的坐标相对于容器左上角：
 
 1. 没有地图时返回 `empty`
-2. 换算成棋盘坐标；未调用 `resize` 时缩放为 1、原点为 (0, 0)
-3. 在 `view.units` 中找中心距离不超过 0.4 格的单位，跳过带 `hidden` 标记的
+2. 按视口变换换算成画布坐标；未调用 `resize` 时缩放为 1、原点为 (0, 0)
+3. 用地面画面的同一个透视投影把画布坐标还原到棋盘上。每个单位在它自己高度的平面上还原，在 `view.units` 中找中心距离不超过 0.4 格的单位，跳过带 `hidden` 标记的
    - 取最近的；一样近时取画在上层的：先比高度，高的优先；再比行，行号小的优先
    - 找到时返回 `unit`
-4. 落在 `map.tiles` 里的格子上时返回 `tile`
+4. 格子从最高的表面往下逐层还原；落在抬高的平面上时，只有那一格确实这么高才算。落在 `map.tiles` 里的格子上时返回 `tile`
 5. 其余返回 `empty`
 
 ## 画布

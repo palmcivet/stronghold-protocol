@@ -120,6 +120,9 @@ export interface SkillSpec {
   readonly triggerRange?: readonly TileCoord[]
   readonly triggerAllies?: boolean
   readonly triggerHpAtMost?: number
+  readonly allyTargets?: boolean
+  readonly triggerEnemies?: boolean
+  readonly castWithoutEnemy?: boolean
   readonly activateOnDeploy?: boolean
   readonly hooks?: SkillHooks
 }
@@ -537,13 +540,112 @@ export interface AttackTiming {
 
 export declare function registerAttackResolver(resolver: AttackResolver): void
 
+export interface AttackSubstituteDefinitionShape {
+  readonly id: string
+  offer(unitId: string, ctx: mod.ContentContext): readonly string[]
+}
+
+export interface AttackSegmentShape {
+  readonly hits: number
+  readonly scale: number
+  readonly kind?: string
+  readonly tags?: readonly string[]
+}
+
+export interface AttackSegmentDefinitionShape {
+  readonly id: string
+  segments(
+    attackerId: string,
+    targetId: string,
+    ctx: mod.ContentContext,
+  ): AttackSegmentShape | null
+}
+
+export declare const ADDITION_TAG: string
+
 // ---cut-after---
+;({}) as mod.AttackSegment satisfies AttackSegmentShape
+;({}) as AttackSegmentShape satisfies mod.AttackSegment
+;({}) as mod.AttackSegmentDefinition satisfies AttackSegmentDefinitionShape
+;({}) as AttackSegmentDefinitionShape satisfies mod.AttackSegmentDefinition
+mod.ADDITION_TAG satisfies typeof ADDITION_TAG
+;({}) as mod.AttackSubstituteDefinition satisfies AttackSubstituteDefinitionShape
+;({}) as AttackSubstituteDefinitionShape satisfies mod.AttackSubstituteDefinition
 ;({}) as mod.AttackTiming satisfies AttackTiming
 ;({}) as AttackTiming satisfies mod.AttackTiming
 mod.registerAttackResolver satisfies typeof registerAttackResolver
 ```
 
 `readAttackTiming`、`consumeAttackTiming`、`independentDt` 与 `setAttackTargetThisTick` 的参数是引擎内部的世界、单位记录与注册表，它们如何配合见 [架构设计](./16-architecture.md#攻击的持有状态)。
+
+## 身体与朝向
+
+```ts
+import type {
+  BoardSpan,
+  BodyRect,
+  BodyUnit,
+  Direction,
+  KeyCollection,
+} from "arknights-mission-core"
+import * as mod from "arknights-mission-core"
+
+export declare function bodyRect(unit: BodyUnit): BodyRect | null
+
+export declare function bodyKeys(unit: BodyUnit, span: BoardSpan): readonly string[]
+
+export declare function bodyOnTile(unit: BodyUnit, x: number, y: number): boolean
+
+export declare function bodyInKeys(
+  unit: BodyUnit,
+  keys: KeyCollection,
+  span: BoardSpan,
+): boolean
+
+export declare function bodyDist(unit: BodyUnit, x: number, y: number): number
+
+export declare function bodyInRadius(
+  unit: BodyUnit,
+  x: number,
+  y: number,
+  radius: number,
+): boolean
+
+export declare function rotateOffset(
+  dRow: number,
+  dCol: number,
+  facing: Direction,
+): readonly [number, number]
+
+export declare function offsetTile(
+  row: number,
+  col: number,
+  dRow: number,
+  dCol: number,
+  facing: Direction,
+): readonly [number, number]
+
+export declare function frontTile(
+  row: number,
+  col: number,
+  facing: Direction,
+  steps?: number,
+): readonly [number, number]
+
+export declare function oppositeDirection(facing: Direction): Direction
+
+// ---cut-after---
+mod.bodyRect satisfies typeof bodyRect
+mod.bodyKeys satisfies typeof bodyKeys
+mod.bodyOnTile satisfies typeof bodyOnTile
+mod.bodyInKeys satisfies typeof bodyInKeys
+mod.bodyDist satisfies typeof bodyDist
+mod.bodyInRadius satisfies typeof bodyInRadius
+mod.rotateOffset satisfies typeof rotateOffset
+mod.offsetTile satisfies typeof offsetTile
+mod.frontTile satisfies typeof frontTile
+mod.oppositeDirection satisfies typeof oppositeDirection
+```
 
 ## 场地与随机数
 
@@ -727,9 +829,29 @@ export declare const OFFICIAL_TERRAINS: {
 
 export declare const BLOWER: TagKey
 
+export declare const FUNNEL: TagKey
+
+export declare const FUNNEL_DAMAGE_TAG: string
+
+export declare const FUNNEL_DEFAULTS: {
+  readonly init: number
+  readonly delta: number
+  readonly max: number
+  readonly drones: number
+}
+
+export declare const BOSS: TagKey
+
+export declare const ELITE: TagKey
+
 // ---cut-after---
 core.OFFICIAL_TERRAINS satisfies typeof OFFICIAL_TERRAINS
 core.BLOWER satisfies typeof BLOWER
+core.FUNNEL satisfies typeof FUNNEL
+core.FUNNEL_DAMAGE_TAG satisfies typeof FUNNEL_DAMAGE_TAG
+core.FUNNEL_DEFAULTS satisfies typeof FUNNEL_DEFAULTS
+core.BOSS satisfies typeof BOSS
+core.ELITE satisfies typeof ELITE
 ```
 
 ## 内置模块
@@ -745,6 +867,8 @@ mod.blockModule satisfies MissionModule
 mod.leakModule satisfies MissionModule
 mod.redeployModule satisfies MissionModule
 mod.officialTerrainModule satisfies MissionModule
+mod.officialRankModule satisfies MissionModule
+mod.officialFunnelModule satisfies MissionModule
 ```
 
 | 模块 | id | 见 |
@@ -755,6 +879,317 @@ mod.officialTerrainModule satisfies MissionModule
 | `leakModule` | `leak` | [泄漏](./12-field.md#泄漏) |
 | `redeployModule` | `redeploy` | [再部署](./12-field.md#再部署) |
 | `officialTerrainModule` | `official-terrain` | [官方地形](./14-terrain.md#官方地形) |
+| `officialRankModule` | `official-rank` | [官方等级标签](./05-world.md#官方等级标签) |
+| `officialFunnelModule` | `official-funnel` | [官方浮游单元](./08-attack.md#官方浮游单元) |
+
+## 技能与模块的选择
+
+```ts
+import type {
+  ChessRecord,
+  GridCell,
+  LoadoutRequest,
+  RangeGrid,
+  TalentChange,
+  TalentRecord,
+} from "arknights-mission-core"
+import * as mod from "arknights-mission-core"
+
+export declare function resolveRecordLoadout(
+  rec: unknown,
+  loadout?: LoadoutRequest | null,
+): ResolvedRecordLoadout | null
+
+export declare function loadoutRecord<R extends ChessRecord | null | undefined>(
+  rec: R,
+  lo: ResolvedRecordLoadout | null | undefined,
+): R | ChessRecord
+
+export declare function composeStats(
+  statsBase: Readonly<Record<string, number>> | null | undefined,
+  attr: Readonly<Record<string, number>> | null | undefined,
+): Record<string, number>
+
+export declare function composeTalents(
+  base: readonly TalentRecord[] | null | undefined,
+  changes: readonly TalentChange[] | null | undefined,
+): TalentRecord[]
+
+export declare function attackRangeGrid(rec: unknown): RangeGrid | GridCell[] | null
+
+export declare function traitRangeExtend(rec: unknown): number
+
+export declare function extendedGrid(grid: unknown, extend?: number): GridCell[]
+
+export interface ResolvedRecordLoadout {
+  readonly skillIndex: number | null
+  readonly moduleId: string | null
+  readonly skillIsDefault: boolean
+  readonly moduleIsDefault: boolean
+  readonly isDefault: boolean
+}
+
+// ---cut-after---
+mod.resolveRecordLoadout satisfies typeof resolveRecordLoadout
+mod.loadoutRecord satisfies typeof loadoutRecord
+mod.composeStats satisfies typeof composeStats
+mod.composeTalents satisfies typeof composeTalents
+mod.attackRangeGrid satisfies typeof attackRangeGrid
+mod.traitRangeExtend satisfies typeof traitRangeExtend
+mod.extendedGrid satisfies typeof extendedGrid
+;({}) as mod.ResolvedRecordLoadout satisfies ResolvedRecordLoadout
+;({}) as ResolvedRecordLoadout satisfies mod.ResolvedRecordLoadout
+```
+
+`ChessRecord`、`SkillRecord`、`ModuleRecord`、`TalentRecord`、`TalentChange`、`TraitRecord`、`ModuleState` 是记录里这些工具读的字段；其他字段原样保留。
+
+## 事件数据
+
+核心事件的 `data` 类型。可拦截的事件在 `BattleEventMap` 里包成 `Intercept<数据>`。
+
+```ts
+import type { BattleInput, UnitSide } from "arknights-mission-core"
+import * as mod from "arknights-mission-core"
+
+/** 普攻出手前。订阅者把 cancel 改成 true 时这一下不打出去。 */
+export type AttackEvent = {
+  readonly unitId: string;
+  readonly targetIds: readonly string[];
+  cancel: boolean;
+  /** 改成 true 时这一下不用掉弹药、不送 ammo-used，照样算一次攻击。缺省没有。 */
+  noAmmo?: boolean;
+  /** 出手时正在生效的主动技能的下标（见 attack-hit）。 */
+  readonly skillSlot?: number;
+  /** 这一下没有普通目标，目标由登记的普攻替代给出：不结算伤害，只算一次攻击。 */
+  readonly substitute?: true;
+};
+
+/** 一次普攻打了出去。noAmmo 为真时这一下不用掉弹药。 */
+export type AttackHitEvent = {
+  readonly unitId: string;
+  readonly noAmmo?: true;
+  /** 这一下的目标由普攻替代给出，没有结算伤害。只在这时带 targetIds。 */
+  readonly substitute?: true;
+  readonly targetIds?: readonly string[];
+  /** 出手时正在生效的主动技能在单位技能列表里的下标，从 0 数起。没有生效的主动技能时没有这个字段。 */
+  readonly skillSlot?: number;
+};
+
+/** 一次伤害进入减伤之前，hit 阶段的伤害修饰都已执行。数值的修改走伤害修饰。 */
+export type HitEvent = {
+  readonly sourceId: string;
+  /** 记功的单位。sourceless 时 sourceId 是空串，creditId 仍是出手者。 */
+  readonly creditId: string;
+  readonly targetId: string;
+  readonly amount: number;
+  readonly kind: string;
+  /** hit 阶段的修饰取消了这一击。 */
+  readonly cancel: boolean;
+  readonly sourceless: boolean;
+  readonly element?: string;
+  /** 来自普攻时，出手那一刻正在生效的主动技能的下标（见 attack-hit）。投射物到达时仍是出手时的值。 */
+  readonly skillSlot?: number;
+  /** 普攻带附加段时，本体与附加段共用的 id。 */
+  readonly attackId?: string;
+};
+
+/** 元素损伤进槽之前，element-hit 阶段的伤害修饰都已执行。字段与 hit 相同，另带倍率。 */
+export type ElementHitEvent = HitEvent & { readonly mul: number };
+
+/** 麻痹打断敌人的一次普攻，用掉一层之前。订阅者把 keep 改成 true 时这一层留着；这次普攻照样被打断。 */
+export type PalsyInterruptEvent = {
+  readonly unitId: string;
+  /** 用掉之前的层数。 */
+  readonly stacks: number;
+  keep: boolean;
+};
+
+/** 生命降到 0。订阅者把 prevented 改成 true 时留 1 点生命。 */
+export type FatalEvent = {
+  readonly sourceId: string;
+  readonly creditId: string;
+  readonly targetId: string;
+  readonly amount: number;
+  readonly kind: string;
+  prevented: boolean;
+  readonly sourceless: boolean;
+};
+
+export type DamagedEvent = {
+  readonly sourceId: string;
+  readonly creditId: string;
+  readonly targetId: string;
+  readonly amount: number;
+  /** 实际扣掉的生命：结算前的生命减去结算后的生命，不含溢出。 */
+  readonly applied: number;
+  readonly kind: string;
+  /** 结算之后的生命。 */
+  readonly hp: number;
+  readonly sourceless: boolean;
+  readonly attack?: true;
+  /** 这一击不触发受击回复。 */
+  readonly noSp?: true;
+  /** 官方红字：见 `DamageInfo.red`。 */
+  readonly red?: true;
+  /** 普攻带附加段时，本体与附加段共用的 id。 */
+  readonly attackId?: string;
+};
+
+/** 闪避掉的一击。`miss` 表示这一击没闪开时会是红字，官方此时显示 MISS。 */
+export type DodgedEvent = {
+  readonly sourceId: string;
+  readonly targetId: string;
+  readonly kind: string;
+  readonly miss?: true;
+};
+
+/** 流失：不经伤害步骤的扣血。 */
+export type LossEvent = {
+  readonly unitId: string;
+  readonly amount: number;
+  readonly hp: number;
+};
+
+export type HealEvent = {
+  readonly unitId: string;
+  /** 没有来源时是空串。 */
+  readonly sourceId: string;
+  /** 实际加上的生命。 */
+  readonly amount: number;
+  readonly hp: number;
+};
+
+export type UnitEvent = {
+  readonly unitId: string;
+};
+
+/** 这一拍开始时接受的玩家输入。 */
+export type InputEvent = {
+  readonly input: BattleInput;
+};
+
+/** 这一拍开始时拒绝的玩家输入与原因，世界不变。 */
+export type InputRefusedEvent = {
+  readonly input: BattleInput;
+  readonly reason: string;
+};
+
+/** 倒下。有部署策略时带上倒下的格子与能否站在那里。 */
+export type DownedEvent = {
+  readonly unitId: string;
+  readonly x?: number;
+  readonly y?: number;
+  readonly canStand?: boolean;
+};
+
+/** 被移到 x、y。duration 是位移时长（秒），keepFacing 为真时画面保持原朝向。 */
+export type DisplaceEvent = {
+  readonly unitId: string;
+  readonly x: number;
+  readonly y: number;
+  readonly duration: number;
+  readonly keepFacing: boolean;
+};
+
+export type BlockEvent = {
+  readonly blockerId: string;
+  readonly enemyId: string;
+};
+
+export type CostEvent = {
+  readonly side: UnitSide;
+  readonly value: number;
+};
+
+export type ProjectileEvent = {
+  readonly id: string;
+  readonly sourceId: string;
+  readonly targetId: string;
+};
+
+export type SkillEvent = {
+  readonly unitId: string;
+  readonly skillId: string;
+  readonly reason: string;
+};
+
+export type AmmoUsedEvent = {
+  readonly unitId: string;
+  readonly skillId: string;
+  readonly left: number;
+};
+
+export type StatusEvent = {
+  readonly unitId: string;
+  readonly statusId: string;
+  readonly stacks: number;
+  /** 施加之前身上没有这个效果（条件效果挂上的也算有）：这次是新开始，不是刷新、加层或排进等待链。 */
+  readonly entered: boolean;
+};
+
+export type ElementBurstEvent = {
+  readonly sourceId: string;
+  readonly targetId: string;
+  readonly element: string;
+};
+
+
+/** 单位进入或离开一格地形。x、y 是站位系统判定时所站的格子。 */
+export type TerrainEvent = {
+  readonly unitId: string;
+  readonly terrain: string;
+  readonly x: number;
+  readonly y: number;
+};
+
+// ---cut-after---
+;({}) as mod.AttackEvent satisfies AttackEvent
+;({}) as AttackEvent satisfies mod.AttackEvent
+;({}) as mod.AttackHitEvent satisfies AttackHitEvent
+;({}) as AttackHitEvent satisfies mod.AttackHitEvent
+;({}) as mod.HitEvent satisfies HitEvent
+;({}) as HitEvent satisfies mod.HitEvent
+;({}) as mod.ElementHitEvent satisfies ElementHitEvent
+;({}) as ElementHitEvent satisfies mod.ElementHitEvent
+;({}) as mod.PalsyInterruptEvent satisfies PalsyInterruptEvent
+;({}) as PalsyInterruptEvent satisfies mod.PalsyInterruptEvent
+;({}) as mod.FatalEvent satisfies FatalEvent
+;({}) as FatalEvent satisfies mod.FatalEvent
+;({}) as mod.DamagedEvent satisfies DamagedEvent
+;({}) as DamagedEvent satisfies mod.DamagedEvent
+;({}) as mod.DodgedEvent satisfies DodgedEvent
+;({}) as DodgedEvent satisfies mod.DodgedEvent
+;({}) as mod.LossEvent satisfies LossEvent
+;({}) as LossEvent satisfies mod.LossEvent
+;({}) as mod.HealEvent satisfies HealEvent
+;({}) as HealEvent satisfies mod.HealEvent
+;({}) as mod.UnitEvent satisfies UnitEvent
+;({}) as UnitEvent satisfies mod.UnitEvent
+;({}) as mod.InputEvent satisfies InputEvent
+;({}) as InputEvent satisfies mod.InputEvent
+;({}) as mod.InputRefusedEvent satisfies InputRefusedEvent
+;({}) as InputRefusedEvent satisfies mod.InputRefusedEvent
+;({}) as mod.DownedEvent satisfies DownedEvent
+;({}) as DownedEvent satisfies mod.DownedEvent
+;({}) as mod.DisplaceEvent satisfies DisplaceEvent
+;({}) as DisplaceEvent satisfies mod.DisplaceEvent
+;({}) as mod.BlockEvent satisfies BlockEvent
+;({}) as BlockEvent satisfies mod.BlockEvent
+;({}) as mod.CostEvent satisfies CostEvent
+;({}) as CostEvent satisfies mod.CostEvent
+;({}) as mod.ProjectileEvent satisfies ProjectileEvent
+;({}) as ProjectileEvent satisfies mod.ProjectileEvent
+;({}) as mod.SkillEvent satisfies SkillEvent
+;({}) as SkillEvent satisfies mod.SkillEvent
+;({}) as mod.AmmoUsedEvent satisfies AmmoUsedEvent
+;({}) as AmmoUsedEvent satisfies mod.AmmoUsedEvent
+;({}) as mod.StatusEvent satisfies StatusEvent
+;({}) as StatusEvent satisfies mod.StatusEvent
+;({}) as mod.ElementBurstEvent satisfies ElementBurstEvent
+;({}) as ElementBurstEvent satisfies mod.ElementBurstEvent
+;({}) as mod.TerrainEvent satisfies TerrainEvent
+;({}) as TerrainEvent satisfies mod.TerrainEvent
+```
 
 ## 常量
 
@@ -764,7 +1199,7 @@ mod.officialTerrainModule satisfies MissionModule
 | `FRAME_CATCHUP` | 150 |
 | `PHASE_SLOTS` | 十个阶段槽，按执行顺序 |
 | `CORE_EVENT_TYPES` | 全部核心事件名，封闭；元素类型是 `CoreEventType` |
-| `BATTLE_INPUT_TYPES` | `retreat`、`redeploy`、`cast` |
+| `BATTLE_INPUT_TYPES` | `deploy`、`retreat`、`redeploy`、`cast` |
 | `DAMAGE_STAGES` | 伤害修饰的阶段 |
 | `EXTENSIBLE_CONTRACTS` | 可扩展的注册表名 |
 | `MODIFIER_OPS` | `add`、`percent`、`mul`、`independent` |
@@ -778,3 +1213,23 @@ mod.officialTerrainModule satisfies MissionModule
 | `PROJECTILE_KIND_SPEEDS` | 各投射物种类的速度 |
 | `BLOCK_RADIUS` 等 | 阻挡接触半径，见 [阻挡](./12-field.md#阻挡) |
 | `PUSH_TILES` 等 | 推拉的距离表，见 [位移](./12-field.md#位移) |
+| `PULL_ORIGIN` | 拉到面前时的落点：出手者前方 0.5 格 |
+| `SHIFT_PUSH`、`SHIFT_PULL`、`SHIFT_FEAR`、`SHIFT_ATTRACT` | 内置位移的 id：`push`、`pull`、`fear`、`attract` |
+| `BLOCK_RADIUS_DEVICE_SQ`、`BLOCK_RADIUS_FLY_SQ` | 装置与对空的阻挡接触半径的平方 |
+| `UNIT_SIDES` | `ally`、`enemy` |
+| `UNIT_KINDS` | `operator`、`enemy`、`token`、`device` |
+| `MOTIONS` | `WALK`、`FLY` |
+| `DIRECTIONS` | `UP`、`RIGHT`、`DOWN`、`LEFT` |
+| `ATTACK_DAMAGE_KINDS` | 普攻的伤害种类：`physical`、`arts`、`heal` |
+| `PROJECTILE_KINDS` | 投射物种类：`arrow`、`bolt`、`orb`、`bomb`、`boomerang` |
+| `SP_TYPES` | 技力类型：`time`、`attack`、`hurt`、`none` |
+| `SKILL_OPERATIONS` | 技能操作：`MANUAL`、`AUTO` |
+| `STACKINGS` | 叠加策略：`refresh`、`extend`、`stack`、`independent`、`strongest`、`keep` |
+| `MULTIPLIER_ATTRIBUTES` | 基础值为 1 的乘区属性，如 `dmgDealt`、`physTaken`、`healingTaken` |
+| `ENEMIES_IN_RANGE` | 内置条件：攻击范围内的敌人不少于 `count`（缺省 1） |
+| `CHARGE_TIMER`、`AMMO_TIMER`、`BOOMERANG_TIMER` | 内置计时器的 id：`charge`、`ammo`、`boomerang` |
+| `CHARGE_CAP_ATTRIBUTE` | 充能上限读的属性 `times` |
+| `AMMO_CAP_ATTRIBUTE`、`AMMO_SCALE_ATTRIBUTE` | 弹药上限读 `ammoMax`，弹药倍率读 `atk_scale` |
+| `BOOMERANGS_OUT_ATTRIBUTE` | 飞出去的回旋镖数 `boomerangsOut` |
+| `TIMER_RATE_ATTRIBUTE` | 计时器速率读的属性 `timerRate` |
+| `REDEPLOY_MUL_ATTRIBUTE` | 再部署倍率读的属性 `redeployMul` |

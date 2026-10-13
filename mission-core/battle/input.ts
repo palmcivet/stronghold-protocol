@@ -1,7 +1,11 @@
 import type { BattleInput, CommandRefusal } from '#contract/input.js';
 import { emit } from '#kernel/event/index.js';
 import type { ContentContext } from '#port/context.js';
-import { orderRedeploy, retreatUnit } from '#unit/deploy/command.js';
+import {
+  deployUnit,
+  orderRedeploy,
+  retreatUnit,
+} from '#unit/deploy/command.js';
 import { engineOf } from '#unit/record/index.js';
 
 /** 输入被拒绝的原因：命令的原因，加上输入本身不成立、不是友方单位与技能放不出。 */
@@ -39,6 +43,8 @@ function applyInput(
     return 'not-ally';
   }
   switch (input.type) {
+    case 'deploy':
+      return deployUnit(ctx, input.unitId, input.tile, input.facing);
     case 'retreat':
       return retreatUnit(ctx, input.unitId);
     case 'redeploy':

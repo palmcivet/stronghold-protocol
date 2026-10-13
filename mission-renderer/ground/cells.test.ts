@@ -57,4 +57,52 @@ describe('terrain cells', () => {
     expect(cells.get(cellKey(0, 0))?.surface).toBe('plateL');
     expect(cells.get(cellKey(1, 0))?.surface).toBe('plateR');
   });
+
+  it('rotates and flips road slabs by the hash of (row, column), as master does', () => {
+    // master layout.js: hash2(r, c) = ((r * 73856093) ^ (c * 19349663)) >>> 0
+    const master = (row: number, col: number) =>
+      (Math.imul(row, 73856093) ^ Math.imul(col, 19349663)) >>> 0;
+    const tiles: BoardTile[] = [];
+    for (let y = 0; y < 3; y += 1) {
+      for (let x = 0; x < 4; x += 1) {
+        tiles.push({ x, y, ...tile, glyph: 'r' });
+      }
+    }
+    const cells = classifyCells({ cols: 4, rows: 3, tiles });
+    for (const { x, y } of tiles) {
+      const hash = master(y, x);
+      expect([
+        cells.get(cellKey(x, y))?.rot,
+        cells.get(cellKey(x, y))?.flipX,
+      ]).toEqual([(hash % 4) * 90, ((hash >> 3) & 1) === 1]);
+    }
+  });
+
+  it('draws lane and pen hatches as glass only inside the enemy preview rectangle', () => {
+    const tiles: BoardTile[] = [
+      { x: 0, y: 0, ...tile, glyph: 'p' },
+      { x: 1, y: 0, ...tile, glyph: 'f' },
+      { x: 2, y: 0, ...tile, glyph: 'p' },
+      { x: 3, y: 0, ...tile, glyph: 'r' },
+    ];
+    const inPen = classifyCells({
+      cols: 4,
+      rows: 1,
+      tiles,
+      enemyPreview: { x: 1, y: 0, width: 3, height: 1 },
+    });
+    expect(tiles.map(({ x }) => inPen.get(cellKey(x, 0))?.glass)).toEqual([
+      false,
+      true,
+      true,
+      false,
+    ]);
+    const none = classifyCells(mapOf(tiles, 4));
+    expect(tiles.map(({ x }) => none.get(cellKey(x, 0))?.glass)).toEqual([
+      false,
+      false,
+      false,
+      false,
+    ]);
+  });
 });

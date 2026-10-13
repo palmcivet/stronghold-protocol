@@ -5,6 +5,10 @@ description: MissionModule 在 install 里登记规则。战斗跑起来之后�
 
 # 模块
 
+**模块**是一组规则：它在 `install` 里登记系统、事件订阅、注册项与标签。战斗跑起来之后，模块经同一份 `ContentContext` 发命令、做查询。
+
+下例在第 0 拍给 `guard` 施加 `fragile`：
+
 ```ts
 import type { MissionModule } from "arknights-mission-core"
 
@@ -55,6 +59,8 @@ export const openingBuff: MissionModule = {
 | `registerShift` | `shift` |
 | `registerTerrain` | `terrain` |
 | `registerZone` | `zone` |
+| `registerAttackSubstitute` | `attack-substitute` |
+| `registerAttackSegment` | `attack-segment` |
 | `registerSystem` | 槽名不在 `PHASE_SLOTS` 里时是 `phase` |
 | `registerTag` | 规格写到未注册的标签时是 `tag`，见 [世界、组件、资源与标签](./05-world.md) |
 
@@ -93,7 +99,11 @@ export const nearestFirst: MissionModule = {
 - `replace(key, definition)` 换掉当前那一项
 - `wrap(key, (inner) => definition)` 拿到当前那一项，返回新的一项
 
-只有标成可扩展的 id 能被 `replace` 或 `wrap`，否则抛出 `ExtensionRefusedError`；键里的契约与版本要与标记时一致，替换项的 id 要与键相同。`contract` 是注册表名：`skill-body`、`skill-trigger`、`selector`、`damage-step`、`stacking`、`condition`、`deploy`、`element`、`terrain`、`zone`，包根的 `EXTENSIBLE_CONTRACTS` 就是这份名单。`replace` 与 `wrap` 都作用在当前那一项上，按调用先后一层层叠：先 `replace` 再 `wrap`，包住的是替换后的那一项。内置的技能体、技能触发、选择器、伤害步骤、叠加策略、条件与元素已经标成可扩展；系统与组件不开放替换。每次替换按安装它的模块记进替换链，计入 `contentHash`。
+- 只有标成可扩展的 id 能被 `replace` 或 `wrap`，否则抛出 `ExtensionRefusedError`；键里的契约与版本要与标记时一致，替换项的 id 要与键相同。
+- `contract` 是注册表名：`skill-body`、`skill-trigger`、`selector`、`damage-step`、`stacking`、`condition`、`deploy`、`element`、`terrain`、`zone`，包根的 `EXTENSIBLE_CONTRACTS` 就是这份名单。
+- `replace` 与 `wrap` 都作用在当前那一项上，按调用先后一层层叠：先 `replace` 再 `wrap`，包住的是替换后的那一项。
+- 内置的技能体、技能触发、选择器、伤害步骤、叠加策略、条件与元素已经标成可扩展；系统与组件不开放替换。
+- 每次替换按安装它的模块记进替换链，计入 `contentHash`。
 
 `subscribe(type, handler)` 返回取消订阅的函数。处理函数收到事件和 `ContentContext`，缓冲里仍保留这条事件，直到 `drainEvents`。可拦截的事件（`BattleEventMap` 里写成 `Intercept<数据>`）在 `ctx.intercept` 时同步分发，处理函数拿到可写的 `data`；只读事件用 `ctx.emit` 发出，处理函数里再发的只读事件排队，等当前这条分发完按先进先出分发。见 [战斗](./03-battle.md#事件)。
 
@@ -103,7 +113,18 @@ export const nearestFirst: MissionModule = {
 
 系统 id 在一场战斗里唯一，重复登记时创建失败。顺序规则与 `systemOrder()` 见 [战斗](./03-battle.md#阶段槽)。
 
-计时器登记后，要用 `startTimer(unitId, timerId)` 才开始推进。系统里可以用 `advanceStartedTimers(slot)` 推进这个槽上所有已经开始的计时器，内置的友方槽就是这样走的。规格 `timers` 里列出的 id，引擎自己启动。定义上的 `sides` 不包含这个单位的阵营时，`startTimer` 不启动，视图保持未开始。`advanceTimer` 推进一份，还没开始会失败。`timerView` 没开始时是 `{ started: false }`。攻击视图有 `phase`、`elapsed`。技力视图有 `phase`、`elapsed`、`sp`、`charges`、`active`、`activations`。`charge` 有 `stored`、`elapsed`。`ammo` 有 `ammo`、`elapsed`。`boomerang` 有 `out`、`elapsed`。出手要读的 `readAttackTiming` 见 [计时](./09-timer.md)。
+- 计时器登记后，要用 `startTimer(unitId, timerId)` 才开始推进。
+- 系统里可以用 `advanceStartedTimers(slot)` 推进这个槽上所有已经开始的计时器，内置的友方槽就是这样走的。
+- 规格 `timers` 里列出的 id，引擎自己启动。
+- 定义上的 `sides` 不包含这个单位的阵营时，`startTimer` 不启动，视图保持未开始。
+- `advanceTimer` 推进一份，还没开始会失败。
+- `timerView` 没开始时是 `{ started: false }`。
+- 攻击视图有 `phase`、`elapsed`。
+- 技力视图有 `phase`、`elapsed`、`sp`、`charges`、`active`、`activations`。
+- `charge` 有 `stored`、`elapsed`。
+- `ammo` 有 `ammo`、`elapsed`。
+- `boomerang` 有 `out`、`elapsed`。
+- 出手要读的 `readAttackTiming` 见 [计时](./09-timer.md)。
 
 部署策略：
 
@@ -127,17 +148,54 @@ export const nearestFirst: MissionModule = {
 
 ## 命令和查询
 
-`dealDamage`、`previewDamage`、`loseHp`、`heal`、`addElement` 见 [伤害](./06-damage.md)。`applyEffect`、`removeEffect` 见 [效果与属性](./10-effect.md)。`unitsInRange`、`select`、`hitRect` 见 [选择器](./11-selector.md)。`shouldCast`、`castSkill`、`gainSp`、`readySkill`、`configureSkill` 见 [技能](./07-skill.md)。`setModifier`、`clearModifier`、`hasModifier` 见 [带时限的修饰](./10-effect.md#带时限的修饰)。
+- `dealDamage`、`previewDamage`、`loseHp`、`heal`、`addElement` 见 [伤害](./06-damage.md)。
+- `applyEffect`、`removeEffect` 见 [效果与属性](./10-effect.md)。
+- `unitsInRange`、`select`、`hitRect` 见 [选择器](./11-selector.md)。
+- `shouldCast`、`castSkill`、`gainSp`、`readySkill`、`configureSkill` 见 [技能](./07-skill.md)。
+- `setModifier`、`clearModifier`、`hasModifier` 见 [带时限的修饰](./10-effect.md#带时限的修饰)。
 
-`spawnUnit(spec)` 放入单位并标成在场，授予规格标签，送出 `spawn`。`kind: "device"` 时放入的是装置，倒下就是被摧毁并被移除。`removeUnit(unitId)` 让单位离场且不再回来，送出 `removed`，下一次快照起不再出现。它不装技能计时。规格里有未注册的标签时抛出 `UnknownRegistrationError`。规格写了部署策略时，`canStand` 为假就不放入。`displace(unitId, x, y)` 改坐标，清掉这条路线已经算好的路径，送出 `displace`。同样，有部署策略且 `canStand` 为假时坐标不动。`shift` 见 [费用、阻挡与投射物](./12-field.md)。`setObstacle(x, y, on, kind?)` 在格子上摆障碍，`kind` 缺省 `block`，也可以是 `crate`。`setTerrain(x, y, id | null)` 改一格的地形，`terrainAt(x, y)` 读当前地形，见 [地形](./14-terrain.md)。
+- `spawnUnit(spec)` 放入单位并标成在场，授予规格标签，送出 `spawn`。
+- `kind: "device"` 时放入的是装置，倒下就是被摧毁并被移除。
+- `spawnUnit` 不装技能计时。
+- `removeUnit(unitId)` 让单位离场且不再回来，送出 `removed`，下一次快照起不再出现。
+- 规格里有未注册的标签时抛出 `UnknownRegistrationError`。
+- 规格写了部署策略时，`canStand` 为假就不放入。
+- `displace(unitId, x, y)` 改坐标，清掉这条路线已经算好的路径，送出 `displace`。
+- 有部署策略且 `canStand` 为假时，`displace` 不改坐标。
+- `shift` 见 [费用、阻挡与投射物](./12-field.md)。
+- `setObstacle(x, y, on, kind?)` 在格子上摆障碍，`kind` 缺省 `block`，也可以是 `crate`。
+- `setTerrain(x, y, id | null)` 改一格的地形，`terrainAt(x, y)` 读当前地形，见 [地形](./14-terrain.md)。
 
-`launchProjectile` 从来源单位的坐标发出一发，送出 `projectile`。可选 `speed` 是格/秒，缺省 `PROJECTILE_SPEED`（12）。`projectiles()` 读出仍在飞的那些，带当前 `x`、`y`。投射物槽里朝目标飞；目标已离场则消掉，不结算。`retain` 为真时落到最后坐标再结算。没有 `attack` 时到达后按 `amount` 造成 `physical` 伤害。超过 `PROJECTILE_MAX_AGE`（10 秒）仍未飞到，就落在目标当前位置并结算。普攻只在 `attackShape.projectile` 上写了种类时改走投射物。
+- `launchProjectile` 从来源单位的坐标发出一发，送出 `projectile`。
+- 可选 `speed` 是格/秒，缺省 `PROJECTILE_SPEED`（12）。
+- `projectiles()` 读出仍在飞的那些，带当前 `x`、`y`。
+- 投射物槽里朝目标飞；目标已离场则消掉，不结算。
+- `retain` 为真时落到最后坐标再结算。
+- 没有 `attack` 时到达后按 `amount` 造成 `physical` 伤害。
+- 超过 `PROJECTILE_MAX_AGE`（10 秒）仍未飞到，就落在目标当前位置并结算。
+- 普攻只在 `attackShape.projectile` 上写了种类时改走投射物。
 
-`retreatUnit(unitId)` 撤下在场的单位：开着的技能以 `retreat` 结束，开始再部署计时，送出 `retreat`。不算倒下，不送 `downed`，账本不记。`redeployUnit(unitId, order?)` 让等待再部署的单位回来。`order` 可以给 `tile`（落点）、`delay`（再等的秒数，0 是立即）、`cost`（回来时扣的费用，0 是免费）与 `keepSp`（保留技力与充能）；不给的按规则：等再部署计时、扣单位的 `cost`、按入场重新打开技能。`delay` 是 0 时这一拍就回来；不是 0 时排下，由再部署模块从排下时的计时起算，到点执行，没装再部署模块时拒绝（`no-redeploy`）。两条命令与玩家的 `retreat`、`redeploy` 输入同一段实现，生效返回 `null`，否则返回原因（见 [战斗](./03-battle.md#玩家输入)），不送 `input-refused`。`unbalanced(unitId)` 读这一拍是否失衡，`cutUnbalance(unitId)` 立刻结束失衡，见 [费用、阻挡与投射物](./12-field.md#失衡)。
+- `retreatUnit(unitId)` 撤下在场的单位：开着的技能以 `retreat` 结束，开始再部署计时，送出 `retreat`。
+- 撤下不算倒下，不送 `downed`，账本不记。
+- `redeployUnit(unitId, order?)` 让等待再部署的单位回来。
+- `order` 可以给 `tile`（落点）、`delay`（再等的秒数，0 是立即）、`cost`（回来时扣的费用，0 是免费）与 `keepSp`（保留技力与充能）；不给的按规则：等再部署计时、扣单位的 `cost`、按入场重新打开技能。
+- `delay` 是 0 时这一拍就回来；不是 0 时排下，由再部署模块从排下时的计时起算，到点执行，没装再部署模块时拒绝（`no-redeploy`）。
+- 两条命令与玩家的 `retreat`、`redeploy` 输入同一段实现，生效返回 `null`，否则返回原因（见 [战斗](./03-battle.md#玩家输入)），不送 `input-refused`。
+- `unbalanced(unitId)` 读这一拍是否失衡，`cutUnbalance(unitId)` 立刻结束失衡，见 [费用、阻挡与投射物](./12-field.md#失衡)。
 
-`spendCost(side, amount)` 从该阵营的池里扣。不够、或数额不是有限非负数时返回 false，池子不动。0 视为已经付过，返回 true。`addCost(side, amount)` 加上去，结果不超过规格里的上限。`costOf(side)` 读当前数量。见 [费用、阻挡与投射物](./12-field.md)。
+- `spendCost(side, amount)` 从该阵营的池里扣。
+- 费用不够，或数额不是有限非负数时，`spendCost` 返回 false，池子不动。
+- 0 视为已经付过，返回 true。
+- `addCost(side, amount)` 加上去，结果不超过规格里的上限。
+- `costOf(side)` 读当前数量。
+- 见 [费用、阻挡与投射物](./12-field.md)。
 
-`schedule(tick, run)` 把回调交给 `schedule` 槽。`finish(winner)` 写下胜负。`tick()` 读当前拍数。`tile(x, y)` 读地块，没有则是 `null`。`random` 是这场战斗的发生器。`field()` 读规格的 `notes`，`script(unitId)` 读单位规格的 `script`，都是只读的纯数据，没有时是空记录。
+- `schedule(tick, run)` 把回调交给 `schedule` 槽。
+- `finish(winner)` 写下胜负。
+- `tick()` 读当前拍数。
+- `tile(x, y)` 读地块，没有则是 `null`。
+- `random` 是这场战斗的发生器。
+- `field()` 读规格的 `notes`，`script(unitId)` 读单位规格的 `script`，都是只读的纯数据，没有时是空记录。
 
 `component(key)` 返回 `defineComponent` 定义的按单位组件表，`resource(key)` 返回 `defineResource` 定义的本场资源。`hasTag`、`grantTag`、`revokeTag`、`tagSources` 按 `defineTag` 的键查询和授予标签。见 [世界、组件、资源与标签](./05-world.md)。
 
@@ -145,6 +203,14 @@ export const nearestFirst: MissionModule = {
 
 ## 随机数
 
-`random` 实现 `Random`。直接调用返回 `[0, 1)`。`int(n)` 返回 `[0, n)` 的整数。`range(a, b)` 返回 `[a, b)`。`chance(p)` 在下一次取样小于 `p` 时为真。`pick` 在空数组上返回 `undefined`。`shuffle` 就地打乱。`weighted` 用非负权重；总权重不大于 0 时返回 `undefined`。`state()` 读内部状态，`restore(state)` 回到读出时的状态。
+- `random` 实现 `Random`。
+- 直接调用返回 `[0, 1)`。
+- `int(n)` 返回 `[0, n)` 的整数。
+- `range(a, b)` 返回 `[a, b)`。
+- `chance(p)` 在下一次取样小于 `p` 时为真。
+- `pick` 在空数组上返回 `undefined`。
+- `shuffle` 就地打乱。
+- `weighted` 用非负权重；总权重不大于 0 时返回 `undefined`。
+- `state()` 读内部状态，`restore(state)` 回到读出时的状态。
 
 `createRandom(seed)` 和 `deriveSeed(seed, salt)` 也从包根导出。战斗本身用规格里的 `seed`，内容用上下文上的 `random`。

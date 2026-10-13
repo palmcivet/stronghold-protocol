@@ -25,6 +25,17 @@ export interface MissionAnimRoles {
   readonly stun: MissionAnimClip | null;
 }
 
+/**
+ * A form of a model: another set of clips, in force while the unit holds every tag of `tags`, none of `without`, and
+ * when `blocked` is given, is blocked or not as it says.
+ */
+export interface MissionAppearanceForm {
+  readonly tags: readonly string[];
+  readonly without?: readonly string[];
+  readonly blocked?: boolean;
+  readonly roles: MissionAnimRoles;
+}
+
 /** How one unit is drawn. Presentation only: none of it changes the battle. */
 export interface MissionAppearance {
   readonly spine: AssetKey;
@@ -45,6 +56,10 @@ export interface MissionAppearance {
   readonly tint?: number;
   /** Whether the unit shows its health bar. Defaults to true. */
   readonly hpBar?: boolean;
+  /** Forms checked in order; the first in force replaces `roles`. Without one in force the model plays `roles`. */
+  readonly forms?: readonly MissionAppearanceForm[];
+  /** Tiles the model floats above the ground, as a flying unit does. It keeps the lift through its death clip. */
+  readonly hover?: number;
 }
 
 export type MissionAppearances = Readonly<Record<string, MissionAppearance>>;

@@ -5,6 +5,7 @@ import {
   type ContentContext,
   createBattle,
   HEAL_FREE,
+  ISOLATED,
   type MissionModule,
   NO_ALLY_HEAL,
   NO_HEAL,
@@ -231,4 +232,45 @@ test('带 ally-target 的友方照常是治疗攻击与治疗链的目标', () =
   );
   h.run(60);
   expect(h.first('m')).toEqual(['t', 'u']);
+});
+
+// 对照 master：治疗选人（Battle.injuredAlliesInKeys）只看禁疗，不看孤立；治疗链（chainHealNext）跳过孤立的友方。
+test('只带孤立的受伤友方照常被治疗攻击选中；治疗链不跳到它', () => {
+  const single = open(
+    [medic(), wounded('i', 3, [ISOLATED.id], 0.2), wounded('w', 4, [], 0.5)],
+    [],
+  );
+  single.run(60);
+  expect(single.first('m')).toEqual(['i']);
+
+  const chain = open(
+    [
+      medic(
+        { chain: { count: 3, falloff: 0 } },
+        { x: 0, attackRange: [0, 1, 2, 3, 4, 5].map((x) => ({ x, y: 0 })) },
+      ),
+      wounded('a', 3, [], 0.5),
+      wounded('i', 4, [ISOLATED.id], 0.4),
+      wounded('c', 5, [], 0.7),
+    ],
+    [],
+  );
+  chain.run(60);
+  // 首个目标照常选它，之后从它跳到相邻的 a（chainHealNext 只拦候选，不拦起点）
+  expect(chain.first('m')).toEqual(['i', 'a']);
+
+  const hop = open(
+    [
+      medic(
+        { chain: { count: 3, falloff: 0 } },
+        { x: 0, attackRange: [0, 1, 2, 3, 4, 5].map((x) => ({ x, y: 0 })) },
+      ),
+      wounded('a', 3, [], 0.3),
+      wounded('i', 4, [ISOLATED.id], 0.4),
+      wounded('c', 5, [], 0.7),
+    ],
+    [],
+  );
+  hop.run(60);
+  expect(hop.first('m')).toEqual(['a']);
 });

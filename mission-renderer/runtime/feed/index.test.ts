@@ -5,7 +5,7 @@ import {
   type UnitSnapshot,
 } from 'arknights-mission-core';
 import { describe, expect, it } from 'vitest';
-import { createMissionFeed } from '#runtime/feed/index.js';
+import { createMissionFeed, moveStart } from '#runtime/feed/index.js';
 
 function unit(id: string, x: number): UnitSnapshot {
   return {
@@ -110,5 +110,73 @@ describe('local feed', () => {
 
     expect(sample?.snapshot.tick).toBe(5);
     expect(feed.takeEvents()).toEqual([]);
+  });
+
+  it('runs past the newest frame along the last velocity for at most the extrapolation window, then holds', () => {
+    // no delay to steer back to: the clock runs on at the speed and stops 0.12 s past the newest frame
+    const feed = createMissionFeed({ speed: 1, delay: 0 });
+    feed.push(frame(0, 0));
+    feed.push(frame(3, 0.3));
+    const newest = 3 * TICK;
+    let passed = false;
+    for (let step = 0; step < 40; step += 1) {
+      feed.advance(0.02);
+      const sample = feed.sample();
+      expect(sample?.time).toBe(feed.renderTime);
+      if (feed.renderTime > newest) {
+        passed = true;
+        expect(sample?.units[0]?.x).toBeCloseTo(
+          0.3 + 3 * (feed.renderTime - newest),
+          9,
+        );
+      }
+    }
+    expect(passed).toBe(true);
+    expect(feed.renderTime).toBeLessThanOrEqual(newest + 0.12 + 1e-12);
+    expect(feed.sample()?.units[0]?.x).toBeLessThanOrEqual(
+      0.3 + 3 * 0.12 + 1e-9,
+    );
+  });
+
+  it('keeps still a unit the newest frame shows blocked, stunned, standing or jumping, and honours a zero window', () => {
+    const held = (patch: Partial<UnitSnapshot>, x = 0.3) => {
+      const feed = createMissionFeed({ speed: 1, delay: 0 });
+      feed.push(frame(0, 0));
+      feed.push({ tick: 3, units: [{ ...unit('guard', x), ...patch }] });
+      for (let step = 0; step < 40; step += 1) {
+        feed.advance(0.02);
+      }
+      expect(feed.renderTime).toBeGreaterThan(3 * TICK);
+      return feed.sample()?.units[0]?.x;
+    };
+    expect(held({ blockedBy: 'e' })).toBe(0.3);
+    expect(held({ tags: ['stun'] })).toBe(0.3);
+    expect(held({ downed: true })).toBe(0.3);
+    expect(
+      held({ components: { 'attack:stand': { until: 9, cutAt: null } } }),
+    ).toBe(0.3);
+    expect(held({}, 3)).toBe(3);
+    const off = createMissionFeed({ speed: 1, delay: 0, maxExtrapolate: 0 });
+    off.push(frame(0, 0));
+    off.push(frame(3, 0.3));
+    for (let step = 0; step < 40; step += 1) {
+      off.advance(0.02);
+    }
+    expect(off.sample()?.time).toBeCloseTo(3 * TICK, 9);
+    expect(off.sample()?.units[0]?.x).toBeCloseTo(0.3, 9);
+  });
+
+  it('holds a unit still until its attack stand ends inside the interval, unless a cut lands there or the stand outlasts it', () => {
+    const standing = (until: number | null, cutAt: number | null = null) => ({
+      ...unit('guard', 0),
+      components: { 'attack:stand': { until, cutAt } },
+    });
+    expect(moveStart(standing(2), 0, 4 * TICK)).toBeCloseTo(2 * TICK, 12);
+    expect(moveStart(standing(4), 0, 4 * TICK)).toBeCloseTo(4 * TICK, 12);
+    expect(moveStart(standing(9), 0, 4 * TICK)).toBe(0);
+    expect(moveStart(standing(2, 1), 0, 4 * TICK)).toBe(0);
+    expect(moveStart(standing(2, 0), 0, 4 * TICK)).toBeCloseTo(2 * TICK, 12);
+    expect(moveStart(standing(null), 0, 4 * TICK)).toBe(0);
+    expect(moveStart(unit('guard', 0), 0, 4 * TICK)).toBe(0);
   });
 });

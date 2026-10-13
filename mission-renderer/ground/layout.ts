@@ -510,7 +510,7 @@ function tube(
 function buildFences(builder: GeometryBuilder, cells: TerrainCells): void {
   const fence = (x: number, y: number): boolean => {
     const cell = cells.get(cellKey(x, y));
-    return Boolean(cell && cell.drawn && cell.glyph === 'b');
+    return Boolean(cell?.drawn && cell.glyph === 'b');
   };
   const rail = { inset: 0.07, height: 0.26, radius: 0.032, post: 0.038 };
   const posts = new Set<string>();
@@ -629,14 +629,14 @@ function outsideTiles(
   for (let y = minY; y <= maxY; y += 1) {
     for (let x = minX; x <= maxX; x += 1) {
       const cell = cells.get(cellKey(x, y));
-      if (!cell || !cell.drawn) {
+      if (!cell?.drawn) {
         outside.add(cellKey(x, y));
         stack.push([x, y]);
       }
     }
   }
-  while (stack.length > 0) {
-    const [x, y] = stack.pop()!;
+  for (let top = stack.pop(); top; top = stack.pop()) {
+    const [x, y] = top;
     for (const [, dx, dy] of DIRECTIONS) {
       const nx = x + dx;
       const ny = y + dy;
@@ -705,7 +705,7 @@ export function buildTerrainLayout(
         [dx, dy],
       ] as const) {
         const neighbor = cellAt(cell.x + ax, cell.y + ay);
-        if (neighbor && neighbor.drawn && topHeight(neighbor) > zt + 0.05) {
+        if (neighbor?.drawn && topHeight(neighbor) > zt + 0.05) {
           raised = true;
         }
       }
@@ -720,7 +720,7 @@ export function buildTerrainLayout(
     const [inset, drop] = cell.raised ? BEVEL.block : BEVEL.low;
     const isBasin = cell.glyph === 'd';
     bevelTop(
-      cell.glyph === 'p' ? glass : board,
+      cell.glass ? glass : board,
       uvTable,
       cell,
       zt,
@@ -736,7 +736,7 @@ export function buildTerrainLayout(
     const box = { x0, x1, y0, y1 };
     for (const [direction, dx, dy] of DIRECTIONS) {
       const neighbor = cellAt(cell.x + dx, cell.y + dy);
-      const neighborDrawn = Boolean(neighbor && neighbor.drawn);
+      const neighborDrawn = Boolean(neighbor?.drawn);
       if (!neighbor || !neighborDrawn) {
         const sideTint = cell.sideTint;
         if (zEdge > 0.001) {
@@ -830,11 +830,7 @@ export function buildTerrainLayout(
 
   const zone = (cell: TerrainCell | undefined): boolean =>
     Boolean(
-      cell &&
-        cell.drawn &&
-        cell.content &&
-        cell.glyph !== 'a' &&
-        cell.glyph !== 'A',
+      cell?.drawn && cell.content && cell.glyph !== 'a' && cell.glyph !== 'A',
     );
   const outside = outsideTiles(map, cells);
   for (const cell of sorted) {
@@ -854,7 +850,7 @@ export function buildTerrainLayout(
   }
 
   for (const cell of sorted) {
-    if (cell.device === 'platform') {
+    if (cell.device === 'platform' && cell.drawn) {
       buildPlatform(board, decal, uvTable, cell);
     }
     if (cell.device === 'blower') {

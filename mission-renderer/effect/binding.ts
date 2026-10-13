@@ -1,6 +1,7 @@
 import type {
   MissionCueBinding,
   MissionCueKey,
+  MissionEffectKindId,
   MissionEventBindings,
   MissionExtensionEventType,
 } from '#contract/cue.js';
@@ -9,17 +10,27 @@ import { isNamespacedId } from '#runtime/registry/index.js';
 
 /** The engine's binding of every core battle event. */
 export const MISSION_EVENT_BINDINGS: MissionEventBindings = Object.freeze({
-  attack: { effect: null, sound: 'attack' },
+  attack: { effect: 'mission:muzzle-flash', sound: 'attack' },
   'attack-hit': { effect: null, sound: 'hit' },
-  hit: { effect: null, sound: 'hit' },
+  hit: { effect: 'mission:hit-spark', sound: 'hit' },
   'element-hit': { effect: null, sound: 'element' },
   fatal: { effect: null, sound: 'downed' },
   'palsy-interrupt': { effect: null, sound: null },
-  damaged: { effect: 'mission:hit-flash', sound: 'damage' },
+  damaged: {
+    effect: ['mission:hit-flash', 'mission:damage-number'],
+    sound: 'damage',
+  },
+  dodged: { effect: 'mission:damage-number', sound: null },
   loss: { effect: null, sound: null },
-  heal: { effect: 'mission:heal-flash', sound: 'heal' },
+  heal: {
+    effect: ['mission:heal-flash', 'mission:damage-number'],
+    sound: 'heal',
+  },
   downed: { effect: null, sound: 'downed' },
-  removed: { effect: null, sound: null },
+  removed: {
+    effect: ['mission:death-dissolve', 'mission:shatter'],
+    sound: null,
+  },
   deploy: { effect: 'mission:deploy-ring', sound: 'deploy' },
   retreat: { effect: null, sound: null },
   input: { effect: null, sound: null },
@@ -30,15 +41,26 @@ export const MISSION_EVENT_BINDINGS: MissionEventBindings = Object.freeze({
   unblocked: { effect: null, sound: null },
   cost: { effect: null, sound: null },
   leak: { effect: null, sound: 'leak' },
-  projectile: { effect: null, sound: 'projectile' },
+  projectile: { effect: 'mission:projectile', sound: 'projectile' },
   'skill-start': { effect: null, sound: 'skill' },
   'skill-end': { effect: null, sound: null },
   'ammo-used': { effect: null, sound: null },
   status: { effect: null, sound: 'status' },
-  'element-burst': { effect: null, sound: 'element' },
+  'element-burst': { effect: 'mission:element-burst', sound: 'element' },
   'terrain-enter': { effect: null, sound: null },
   'terrain-leave': { effect: null, sound: null },
 });
+
+/** The effect kinds a binding starts, in order; empty when it draws nothing. */
+export function effectsOf(
+  binding: MissionCueBinding,
+): readonly MissionEffectKindId[] {
+  const effect = binding.effect;
+  if (effect === null) {
+    return [];
+  }
+  return typeof effect === 'string' ? [effect] : effect;
+}
 
 /** The binding of a core battle event, or undefined for any other key. */
 export function eventBindingOf(key: string): MissionCueBinding | undefined {
@@ -106,7 +128,12 @@ export function createMissionCueBindings(): MissionCueBindings {
       checkKey(key);
       bindings.set(
         key,
-        Object.freeze({ effect: binding.effect, sound: binding.sound }),
+        Object.freeze({
+          effect: Array.isArray(binding.effect)
+            ? Object.freeze([...binding.effect])
+            : binding.effect,
+          sound: binding.sound,
+        }),
       );
     },
     declare(...kinds) {
@@ -149,15 +176,14 @@ export function sealMissionCues(
     }
   }
   for (const key of bindings.keys()) {
-    const id = bindings.get(key)?.effect;
-    if (!id) {
-      continue;
-    }
-    const kind = table.get(id);
-    if (!kind) {
-      problems.push(`"${key}" draws "${id}", which is not registered`);
-    } else if (!(kind.accepts as readonly string[]).includes(key)) {
-      problems.push(`"${key}" draws "${id}", which does not accept it`);
+    const binding = bindings.get(key);
+    for (const id of binding ? effectsOf(binding) : []) {
+      const kind = table.get(id);
+      if (!kind) {
+        problems.push(`"${key}" draws "${id}", which is not registered`);
+      } else if (!(kind.accepts as readonly string[]).includes(key)) {
+        problems.push(`"${key}" draws "${id}", which does not accept it`);
+      }
     }
   }
   if (problems.length > 0) {

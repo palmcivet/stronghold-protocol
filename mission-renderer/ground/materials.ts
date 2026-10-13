@@ -25,6 +25,7 @@ import {
   Vector2,
   Vector4,
   type WebGLRenderer,
+  type WebGLRenderTarget,
 } from 'three';
 import { ORIGINIUM, type Vec3 } from '#ground/palette.js';
 
@@ -491,11 +492,14 @@ export function smogMaterial(
 }
 
 /** A studio environment for image-based light: bright sky with light panels above the horizon, dark void below. */
-export function environmentTexture(renderer: WebGLRenderer): Texture {
+export function environmentTarget(renderer: WebGLRenderer): WebGLRenderTarget {
   const width = 256;
   const height = 128;
   const data = new Uint8Array(width * height * 4);
-  const stops: readonly (readonly [number, readonly number[]])[] = [
+  const stops: readonly [
+    readonly [number, readonly number[]],
+    ...(readonly [number, readonly number[]])[],
+  ] = [
     [0, [223, 231, 239]],
     [0.32, [185, 195, 204]],
     [0.5, [109, 117, 125]],
@@ -504,12 +508,14 @@ export function environmentTexture(renderer: WebGLRenderer): Texture {
   ];
   for (let y = 0; y < height; y += 1) {
     const t = y / (height - 1);
-    let from = stops[0]!;
-    let to = stops[stops.length - 1]!;
+    let from = stops[0];
+    let to = stops[stops.length - 1] ?? stops[0];
     for (let index = 0; index < stops.length - 1; index += 1) {
-      if (t >= stops[index]![0] && t <= stops[index + 1]![0]) {
-        from = stops[index]!;
-        to = stops[index + 1]!;
+      const lower = stops[index];
+      const upper = stops[index + 1];
+      if (lower && upper && t >= lower[0] && t <= upper[0]) {
+        from = lower;
+        to = upper;
         break;
       }
     }
@@ -550,7 +556,7 @@ export function environmentTexture(renderer: WebGLRenderer): Texture {
   const target = generator.fromEquirectangular(equirect);
   generator.dispose();
   equirect.dispose();
-  return target.texture;
+  return target;
 }
 
 /** The dash pattern of the cyan field border. */

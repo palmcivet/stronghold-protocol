@@ -158,6 +158,7 @@ export const calmMire: MissionModule = {
 - 数值从 `ctx.field()` 的 `special` 块读，块名与键名跟关卡数据一致。没写的项用 `OFFICIAL_TERRAIN_DEFAULTS`。
 - 攻速写成绝对值小于 1 的小数时，按百分点换算，例如 -0.6 是攻速 -60。
 - 四种地块地形都不影响空中单位。
+- 沼泽在进入时先陷入一次，这是参考实现的假定：PRTS 只写「每秒触发一次」，没有写进入时是否先触发。
 - 地形与作用区 id 都标成可扩展，可扩展键在 `OFFICIAL_TERRAINS`。内容模块可以 `replace` 或 `wrap`。
 - 拒绝部署跟地块规格的 `deployable` 走，地形本身不拒绝。
 

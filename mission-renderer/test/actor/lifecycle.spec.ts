@@ -9,6 +9,7 @@ import {
   type RecordedTick,
   recordDuel,
 } from '#test/actor/fixture.js';
+import { defined } from '#test/defined.js';
 
 const REMOVE_AT = 90;
 
@@ -67,7 +68,7 @@ describe('actor lifecycle', () => {
     const h = staged();
     await h.play(duel.slice(0, 2));
     expect([...h.stage.actors.actors.keys()].sort()).toEqual(['e', 'g']);
-    const guard = h.instanceOf('g')!;
+    const guard = defined(h.instanceOf('g'));
     expect(guard.calls[0]).toBe('tint ff8080');
     expect(h.stage.actors.actors.get('e')?.root.scale.x).toBe(-1);
     expect(h.stage.actors.actors.get('g')?.root.position.toArray()).toEqual([
@@ -78,7 +79,7 @@ describe('actor lifecycle', () => {
   it('plays the attack on each attack event and returns to idle', async () => {
     const h = staged();
     await h.play(duel.slice(0, downedAt));
-    const calls = h.instanceOf('g')!.calls;
+    const calls = defined(h.instanceOf('g')).calls;
     expect(
       calls.filter((call) => call === 'play 0 Attack').length,
     ).toBeGreaterThan(0);
@@ -88,8 +89,8 @@ describe('actor lifecycle', () => {
   it('holds the fallen pose once downed, drops the health bar, then fades out and releases the actor after removal', async () => {
     const h = staged();
     await h.play(duel.slice(0, downedAt + 1));
-    const enemy = h.stage.actors.actors.get('e')!;
-    const model = h.instanceOf('e')!;
+    const enemy = defined(h.stage.actors.actors.get('e'));
+    const model = defined(h.instanceOf('e'));
     expect(enemy.phase).toBe('downed');
     expect(model.calls.at(-1)).toBe('play 0 Die');
     expect(h.stage.hud.bar('e')).toBeNull();
@@ -122,9 +123,9 @@ describe('actor lifecycle', () => {
 
   it('releases pushed events to the audio cues on the next update', async () => {
     const h = staged();
-    const attack = duel.find((tick) =>
-      tick.events.some((event) => event.type === 'attack'),
-    )!;
+    const attack = defined(
+      duel.find((tick) => tick.events.some((event) => event.type === 'attack')),
+    );
     h.stage.dispatch({ type: 'push-snapshot', snapshot: attack.snapshot });
     for (const event of attack.events) {
       h.stage.dispatch({ type: 'push-event', event });

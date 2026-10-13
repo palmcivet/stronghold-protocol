@@ -1,16 +1,18 @@
+import type { TileCoord } from 'arknights-mission-core';
 import {
   BufferAttribute,
   BufferGeometry,
   Color,
   DirectionalLight,
+  Fog,
   Group,
   HemisphereLight,
   type Material,
   Mesh,
   MirroredRepeatWrapping,
   Object3D,
-  OrthographicCamera,
   PCFShadowMap,
+  PerspectiveCamera,
   RepeatWrapping,
   Scene,
   type Texture,
@@ -23,7 +25,6 @@ import {
   type TerrainSurface,
   type TerrainUvTable,
 } from '#ground/atlas.js';
-
 import {
   backdropGeometry,
   buildTerrainLayout,
@@ -31,6 +32,7 @@ import {
   overlayQuads,
   shadowCatcherGeometry,
   smogCards,
+  type TerrainDevice,
   type TerrainGeometry,
   type TerrainLayout,
 } from '#ground/layout.js';
@@ -39,7 +41,7 @@ import {
   boardMaterial,
   dashTexture,
   decalMaterial,
-  environmentTexture,
+  environmentTarget,
   type FocusUniforms,
   focusUniforms,
   gateMaterial,
@@ -68,6 +70,11 @@ import type {
   TerrainProp,
 } from '#ground/pack.js';
 import { BACKDROP, PLATFORM_DEVICE_HEIGHT } from '#ground/palette.js';
+import {
+  frameProjection,
+  type MissionProjection,
+  syncPerspectiveCamera,
+} from '#runtime/camera/projection.js';
 
 /** Lighting rig tuned against the official screenshots: bright tops, darker sides, soft shadows. */
 export const TERRAIN_LIGHTING = Object.freeze({
@@ -124,17 +131,45 @@ export interface TerrainSceneOptions {
   readonly pack: TerrainPack;
   /** When present, the scene gets image-based light and the key light's shadows. */
   readonly renderer?: WebGLRenderer | null;
+  /** How the camera projects the board. Defaults to the whole map framed with the official optics. */
+  readonly projection?: MissionProjection | null;
+  /** Distance fog in scene units; null or missing draws no fog. */
+  readonly fog?: TerrainFog | null;
+  /** Whether the key light casts shadows when there is a renderer. Defaults to true. */
+  readonly shadows?: boolean;
+}
+
+/** Linear fog: `color`, starting at `near` and full at `far`, in tiles from the camera. */
+export interface TerrainFog {
+  readonly color: number;
+  readonly near: number;
+  readonly far: number;
 }
 
 export interface TerrainScene {
   readonly scene: Scene;
-  readonly camera: OrthographicCamera;
+  readonly camera: PerspectiveCamera;
+  /** Points the camera to project like `projection`. */
+  setProjection(projection: MissionProjection): void;
   readonly ground: Group;
   readonly layout: TerrainLayout;
   /** The lit rectangle in scene space: x0, z0, x1, z1 (the focus falloff eases towards it). */
   readonly litField: Vector4;
   setFocus(rect: TerrainFocusRect | null): void;
   flashObjective(): void;
+  /** Turn the wind device at a tile to blow along a direction. False when there is no turnable wind device there. */
+  setBlowerFacing(
+    x: number,
+    y: number,
+    direction: TerrainDevice['direction'],
+  ): boolean;
+  /**
+   * Shows the map's crates only on the tiles given, where the battle's device units stand; null shows every crate,
+   * as before a battle. False when the map has no crate.
+   */
+  setCrateTiles(tiles: readonly TileCoord[] | null): boolean;
+  /** Turns the key light's shadows on or off. False without a renderer, or when they already are. */
+  setShadows(on: boolean): boolean;
   update(deltaSeconds: number): void;
   destroy(): void;
 }
@@ -205,6 +240,18 @@ function propGeometry(
  * Build the official board as a Three scene for a map: the board's tiles, decals, railings, gates, devices, animated
  * special terrain, the field border and the background, lit by a key light with soft shadows.
  */
+/** Write a shader uniform the material declares. */
+function setUniform(
+  material: { readonly uniforms: Record<string, { value: unknown }> },
+  name: string,
+  value: number,
+): void {
+  const uniform = material.uniforms[name];
+  if (uniform) {
+    uniform.value = value;
+  }
+}
+
 export function createTerrainScene(options: TerrainSceneOptions): TerrainScene {
   const { map, pack } = options;
   const renderer = options.renderer ?? null;
@@ -212,7 +259,7 @@ export function createTerrainScene(options: TerrainSceneOptions): TerrainScene {
   const focus: FocusUniforms = focusUniforms();
   const images = pack.images;
   const textures: BoardTextures = {
-    diffuse: images.diffuse!,
+    diffuse: images.diffuse,
     normal: images.normal ?? null,
     roughness: images.roughness ?? null,
     emissive: images.emissive ?? null,
@@ -241,6 +288,7 @@ export function createTerrainScene(options: TerrainSceneOptions): TerrainScene {
     textures.background.wrapT = MirroredRepeatWrapping;
   }
 
+  const dash = dashTexture();
   const materials = {
     board: boardMaterial(textures, focus, TERRAIN_LIGHTING.emissive),
     glass: glassMaterial(textures, focus, TERRAIN_LIGHTING.emissive),
@@ -250,7 +298,7 @@ export function createTerrainScene(options: TerrainSceneOptions): TerrainScene {
     gateStart: gateMaterial(textures.gate ?? null, true),
     gateEnd: gateMaterial(textures.gate ?? null, true),
     gateEndAlpha: gateMaterial(textures.gate ?? null, false),
-    edge: glowMaterial(dashTexture()),
+    edge: glowMaterial(dash),
     water: waterMaterial(textures, focus),
     mire: mireMaterial(textures, focus),
     infection: infectionMaterial(textures, focus),
@@ -261,14 +309,17 @@ export function createTerrainScene(options: TerrainSceneOptions): TerrainScene {
     ),
     shadow: shadowCatcherMaterial(),
   };
-  const owned: { dispose(): void }[] = Object.values(materials);
+  const owned: { dispose(): void }[] = [...Object.values(materials), dash];
 
   const scene = new Scene();
+  if (options.fog) {
+    scene.fog = new Fog(options.fog.color, options.fog.near, options.fog.far);
+  }
   const ground = new Group();
   ground.name = 'terrain';
   scene.add(ground);
 
-  const castsShadow = renderer !== null;
+  const castsShadow = renderer !== null && options.shadows !== false;
   const addMesh = (
     name: string,
     geometry: BufferGeometry,
@@ -282,8 +333,8 @@ export function createTerrainScene(options: TerrainSceneOptions): TerrainScene {
     owned.push(geometry);
     const mesh = new Mesh(geometry, material);
     mesh.name = name;
-    mesh.castShadow = castsShadow && (flags.cast ?? true);
-    mesh.receiveShadow = castsShadow && (flags.receive ?? true);
+    mesh.castShadow = renderer !== null && (flags.cast ?? true);
+    mesh.receiveShadow = renderer !== null && (flags.receive ?? true);
     mesh.renderOrder = flags.order ?? 0;
     ground.add(mesh);
     return mesh;
@@ -304,20 +355,46 @@ export function createTerrainScene(options: TerrainSceneOptions): TerrainScene {
   }
 
   const blowerProp = pack.meshes.blower;
+  /** Wind devices built from the prop, by tile, with the direction they point. */
+  const blowers = new Map<
+    string,
+    { mesh: Mesh; z: number; direction: TerrainDevice['direction'] }
+  >();
+  const blowerBuffer = (
+    x: number,
+    y: number,
+    z: number,
+    direction: TerrainDevice['direction'],
+  ): BufferGeometry | null => {
+    const geometry = blowerProp
+      ? propGeometry(blowerProp, 1, {
+          x,
+          y,
+          z: z + 0.078,
+          quarterTurns: BLOWER_TURNS[direction],
+        })
+      : null;
+    return geometry ? toBuffer(geometry) : null;
+  };
+  const crates = new Map<string, Mesh>();
   for (const device of layout.devices) {
     const placement: BoardPlacement = { x: device.x, y: device.y, z: device.z };
     if (device.kind === 'blower') {
-      const geometry = blowerProp
-        ? propGeometry(blowerProp, 1, {
-            ...placement,
-            z: device.z + 0.078,
-            quarterTurns: BLOWER_TURNS[device.direction],
-          })
-        : null;
+      const geometry = blowerBuffer(
+        device.x,
+        device.y,
+        device.z,
+        device.direction,
+      );
       if (geometry) {
-        addMesh('terrain-blower', toBuffer(geometry), materials.wind, {
+        const mesh = addMesh('terrain-blower', geometry, materials.wind, {
           cast: false,
           receive: false,
+        });
+        blowers.set(`${device.x},${device.y}`, {
+          mesh,
+          z: device.z,
+          direction: device.direction,
         });
       } else {
         addMesh(
@@ -334,10 +411,13 @@ export function createTerrainScene(options: TerrainSceneOptions): TerrainScene {
         crate && !(crate instanceof Object3D)
           ? terrainGeometryOf(objToBoard(crate, 0.01))
           : boxGeometry(0.9, 0.675);
-      addMesh(
-        'terrain-crate',
-        boardBuffer(boxProjectUv(base, top, side), placement),
-        materials.board,
+      crates.set(
+        `${device.x},${device.y}`,
+        addMesh(
+          'terrain-crate',
+          boardBuffer(boxProjectUv(base, top, side), placement),
+          materials.board,
+        ),
       );
     }
   }
@@ -468,26 +548,22 @@ export function createTerrainScene(options: TerrainSceneOptions): TerrainScene {
   key.shadow.camera.far = distance + 30;
   key.shadow.camera.updateProjectionMatrix();
   if (renderer) {
-    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.enabled = castsShadow;
     renderer.shadowMap.type = PCFShadowMap;
     renderer.shadowMap.autoUpdate = false;
     renderer.shadowMap.needsUpdate = true;
-    scene.environment = environmentTexture(renderer);
+    const environment = environmentTarget(renderer);
+    owned.push(environment);
+    scene.environment = environment.texture;
     scene.environmentIntensity = TERRAIN_LIGHTING.environment;
   }
 
-  const camera = new OrthographicCamera(
-    -map.cols / 2,
-    map.cols / 2,
-    map.rows / 2,
-    -map.rows / 2,
-    0.1,
-    200,
-  );
-  camera.up.set(0, 0, -1);
-  camera.position.set(cx, 40, -cy);
-  camera.lookAt(cx, 0, -cy);
-  camera.updateProjectionMatrix();
+  const camera = new PerspectiveCamera();
+  const initial =
+    options.projection ?? frameProjection(map.cols, map.rows, null, 1);
+  if (initial) {
+    syncPerspectiveCamera(camera, initial);
+  }
 
   const gateStart = materials.gateStart;
   const gateEnd = materials.gateEnd;
@@ -524,6 +600,54 @@ export function createTerrainScene(options: TerrainSceneOptions): TerrainScene {
     setFocus(rect) {
       applyFocusTarget(rect);
     },
+    setProjection(projection) {
+      syncPerspectiveCamera(camera, projection);
+    },
+    setBlowerFacing(x, y, direction) {
+      const blower = blowers.get(`${x},${y}`);
+      if (!blower) {
+        return false;
+      }
+      if (blower.direction === direction) {
+        return true;
+      }
+      const geometry = blowerBuffer(x, y, blower.z, direction);
+      if (!geometry) {
+        return false;
+      }
+      const old = blower.mesh.geometry;
+      const index = owned.indexOf(old);
+      if (index >= 0) {
+        owned.splice(index, 1);
+      }
+      old.dispose();
+      owned.push(geometry);
+      blower.mesh.geometry = geometry;
+      blower.direction = direction;
+      return true;
+    },
+    setShadows(on) {
+      if (
+        !renderer ||
+        (renderer.shadowMap.enabled === on && key.castShadow === on)
+      ) {
+        return false;
+      }
+      renderer.shadowMap.enabled = on;
+      key.castShadow = on;
+      renderer.shadowMap.needsUpdate = true;
+      return true;
+    },
+    setCrateTiles(tiles) {
+      const shown =
+        tiles === null
+          ? null
+          : new Set(tiles.map((tile) => `${tile.x},${tile.y}`));
+      for (const [key, mesh] of crates) {
+        mesh.visible = shown === null || shown.has(key);
+      }
+      return crates.size > 0;
+    },
     flashObjective() {
       flashes.push({ elapsed: 0 });
       if (flashes.length > FLASH_LIMIT) {
@@ -554,14 +678,23 @@ export function createTerrainScene(options: TerrainSceneOptions): TerrainScene {
           focusVector.w + ((target[3] ?? 0) - focusVector.w) * k,
         );
       }
-      gateStart.uniforms.uPulse!.value =
-        (TERRAIN_LIGHTING.gateGain * gatePulse(time)) / 0.18;
-      gateEnd.uniforms.uPulse!.value =
-        (TERRAIN_LIGHTING.gateGain * gatePulse(time, 0.5)) / 0.18;
-      gateEndAlpha.uniforms.uPulse!.value = 0.9;
+      setUniform(
+        gateStart,
+        'uPulse',
+        (TERRAIN_LIGHTING.gateGain * gatePulse(time)) / 0.18,
+      );
+      setUniform(
+        gateEnd,
+        'uPulse',
+        (TERRAIN_LIGHTING.gateGain * gatePulse(time, 0.5)) / 0.18,
+      );
+      setUniform(gateEndAlpha, 'uPulse', 0.9);
       let flash = 0;
       for (let index = flashes.length - 1; index >= 0; index -= 1) {
-        const item = flashes[index]!;
+        const item = flashes[index];
+        if (!item) {
+          continue;
+        }
         item.elapsed += dt;
         if (item.elapsed > FLASH_SECONDS) {
           flashes.splice(index, 1);
@@ -570,7 +703,7 @@ export function createTerrainScene(options: TerrainSceneOptions): TerrainScene {
         }
       }
       for (const material of [gateEnd, gateEndAlpha]) {
-        (material.uniforms.uFlash!.value as Color).setRGB(
+        (material.uniforms.uFlash?.value as Color | undefined)?.setRGB(
           flash,
           flash * 0.12,
           flash * 0.1,
@@ -582,7 +715,7 @@ export function createTerrainScene(options: TerrainSceneOptions): TerrainScene {
         materials.infection,
         materials.smog,
       ]) {
-        material.uniforms.uTime!.value = time;
+        setUniform(material, 'uTime', time);
       }
     },
     destroy() {

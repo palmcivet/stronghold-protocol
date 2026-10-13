@@ -245,6 +245,12 @@ export function createMissionResourcePort<
 
   // MARK: image, model and json
 
+  function disposeTexture(value: unknown): void {
+    if (isTexture(value)) {
+      value.dispose();
+    }
+  }
+
   async function loadFile(kind: FileKind, key: AssetKey): Promise<unknown> {
     requireKind(key, ACCEPTED_KINDS[kind]);
     return settle(key, async (entry) => {
@@ -279,6 +285,8 @@ export function createMissionResourcePort<
     load.references -= 1;
     if (load.references <= 0) {
       loads.delete(key);
+      // The last reference is gone: a loaded Three texture leaves the GPU with it.
+      load.promise.then(disposeTexture, () => undefined);
     }
   }
 

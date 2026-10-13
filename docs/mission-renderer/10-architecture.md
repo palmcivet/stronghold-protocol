@@ -52,6 +52,7 @@ description: 源码结构、依赖边界、命名规则、每帧视图系统的�
 | `position` | 摆放根节点 |
 | `facing` | 设置朝向 |
 | `skeleton` | 推进动画 |
+| `impostor` | 替身取槽、轮流重画 |
 | `hud` | 更新头顶条与读数 |
 | `effect` | 推进与启动特效 |
 | `audio` | 发出音效线索 |

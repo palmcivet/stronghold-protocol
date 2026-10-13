@@ -9,6 +9,7 @@ import {
   canonicalKind,
   clamp01,
   mitigate,
+  NO_PENETRATION,
   type Penetration,
 } from '#combat/damage/formula.js';
 import { healBlocked, healsThrough } from '#combat/damage/heal.js';
@@ -141,6 +142,13 @@ export function registerDamageSteps(
       if (!(chance > 0) || !(state.random() < chance)) {
         return;
       }
+      const miss = officialRed(state, registry, target, info, null);
+      emit(state, 'dodged', {
+        sourceId: info.sourceless === true ? '' : info.sourceId,
+        targetId: target.id,
+        kind: info.kind,
+        ...(miss ? { miss: true } : {}),
+      });
       info.amount = 0;
       info.cancel = true;
     },
@@ -153,9 +161,12 @@ export function registerDamageSteps(
         return;
       }
       const target = requireUnit(state, info.targetId);
+      const expected = expectedDamage(registry, target, info);
       if (countHit(target, info)) {
+        info.red = redMark(info.amount, expected);
         return;
       }
+      info.red = officialRed(state, registry, target, info, expected);
       info.amount = mitigate(
         info.amount,
         info.kind,
@@ -250,9 +261,67 @@ export function registerDamageSteps(
         info.kind,
         info.attack === true,
         info.noSp === true,
+        info.red === true,
+        info.attackId,
       );
     },
   });
+}
+
+/** 官方红字的判定：最终伤害不小于期望伤害的 1.5 倍；1e-9 只吸收二进制舍入。0 对 0 也是红字。 */
+export function redMark(final: number, expected: number): boolean {
+  const landed = Number.isFinite(final) ? Math.max(0, final) : 0;
+  const base = Number.isFinite(expected) ? Math.max(0, expected) : 0;
+  return landed + 1e-9 >= base * 1.5;
+}
+
+/** 期望伤害：与这一击同样减免，不计穿透与减免后的倍率，只乘这一击自带的 `mul`。 */
+function expectedDamage(
+  registry: BattleRegistry,
+  target: UnitState,
+  info: DamageInfo,
+): number {
+  const value =
+    mitigate(
+      info.amount,
+      info.kind,
+      Math.max(0, attributeOf(target, registry, 'def')),
+      Math.min(100, Math.max(0, attributeOf(target, registry, 'res'))),
+      attributeOf(target, registry, 'elementalRes'),
+      NO_PENETRATION,
+    ) * (Number.isFinite(info.mul) ? (info.mul ?? 1) : 1);
+  return Number.isFinite(value) && value > 0 ? value : 0;
+}
+
+/** 这一击按当前数额结算到护盾之前会不会是红字。不掷随机数，不改数额。 */
+function officialRed(
+  state: BattleWorld,
+  registry: BattleRegistry,
+  target: UnitState,
+  info: DamageInfo,
+  expected: number | null,
+): boolean {
+  const base = expected ?? expectedDamage(registry, target, info);
+  const any = hasTag(target, HIT_COUNT);
+  const arts = hasTag(target, HIT_COUNT_ARTS);
+  if (any || arts) {
+    return redMark(arts && !any && info.kind === 'physical' ? 0 : 1, base);
+  }
+  const source =
+    info.sourceless === true ? null : findUnit(state, info.sourceId);
+  let landed =
+    mitigate(
+      info.amount,
+      info.kind,
+      Math.max(0, attributeOf(target, registry, 'def')),
+      Math.min(100, Math.max(0, attributeOf(target, registry, 'res'))),
+      attributeOf(target, registry, 'elementalRes'),
+      penetration(state, registry, info),
+    ) * takenMultiplier(target, registry, source, info);
+  if (!(landed > 0) || !Number.isFinite(landed)) {
+    landed = 0;
+  }
+  return redMark(landed, base);
 }
 
 export function runDamage(
@@ -407,6 +476,8 @@ function applyLife(
   kind: string,
   attack: boolean,
   noSp: boolean,
+  red = false,
+  attackId?: string,
 ): void {
   const before = unit.attributes.hp ?? 0;
   if (before - amount <= 0) {
@@ -440,6 +511,8 @@ function applyLife(
       sourceless,
       ...(attack ? { attack: true } : {}),
       ...(noSp ? { noSp: true } : {}),
+      ...(red ? { red: true } : {}),
+      ...(attackId !== undefined ? { attackId } : {}),
     });
   } else {
     emit(state, 'loss', { unitId: unit.id, amount, hp });
@@ -603,6 +676,9 @@ function cloneInfo(request: DamageInfo): DamageInfo {
   if (request.tags !== undefined) {
     info.tags = [...request.tags];
   }
+  if (request.attackId !== undefined) {
+    info.attackId = request.attackId;
+  }
   if (request.canDodge !== undefined) {
     info.canDodge = request.canDodge;
   }
@@ -623,6 +699,9 @@ function cloneInfo(request: DamageInfo): DamageInfo {
   }
   if (request.attack !== undefined) {
     info.attack = request.attack;
+  }
+  if (request.skillSlot !== undefined) {
+    info.skillSlot = request.skillSlot;
   }
   return info;
 }
@@ -765,6 +844,8 @@ function publishHit(
     cancel: change.cancel,
     sourceless: change.sourceless,
     ...(change.element !== undefined ? { element: change.element } : {}),
+    ...(info.skillSlot !== undefined ? { skillSlot: info.skillSlot } : {}),
+    ...(info.attackId !== undefined ? { attackId: info.attackId } : {}),
   };
   emit(state, 'hit', hit);
 }

@@ -10,10 +10,12 @@ import {
 } from '#ability/skill/constants.js';
 import {
   allyTriggerMet,
+  allyTriggerTarget,
   areaTriggerMet,
   shouldCast,
 } from '#ability/skill/trigger.js';
 import { attackWillHit } from '#combat/attack/index.js';
+import { attackInterval } from '#combat/attack/timing.js';
 import type { SkillMoment } from '#contract/spec.js';
 import { routeHidden } from '#field/grid/route.js';
 import { reached, TICK } from '#kernel/tick/index.js';
@@ -84,6 +86,10 @@ export function bindSkillSignals(
   registry: BattleRegistry,
   ctx: ContentContext,
 ): void {
+  registry.registerAttackSubstitute({
+    id: 'skill:ally-cast',
+    offer: (unitId, offerCtx) => castForAlly(state, registry, offerCtx, unitId),
+  });
   ctx.subscribe('attack-hit', (event) => {
     const unitId = event.data.unitId;
     if (typeof unitId !== 'string') {
@@ -227,7 +233,7 @@ export function advanceSkillPoint(
         skill.pending &&
         skill.triggerAllies &&
         skill.trigger !== 'SKILL_RANGE' &&
-        !allyTriggerMet(state, registry, unitId, skill.id)
+        !allyTriggerMet(state, registry, ctx, unitId, skill.id)
       ) {
         finishSkill(registry, ctx, unit, skill, 'withdrawn');
         addCharge(registry, unit, skill, 1);
@@ -294,6 +300,7 @@ export function activateSkill(
   unitId: string,
   skillId: string,
   reason: string,
+  beforeAttack = false,
 ): boolean {
   const unit = requireUnit(state, unitId);
   const skill = requireSkill(unit, skillId);
@@ -319,6 +326,7 @@ export function activateSkill(
   ctx.emit('skill-start', { unitId, skillId, reason });
   if (isInstantBody(skill.body) && !skill.pending) {
     finishSkill(registry, ctx, unit, skill, 'instant');
+    paceCast(state, registry, unit, skill, beforeAttack);
   }
   sync(unit);
   return true;
@@ -378,6 +386,7 @@ function openSkill(
   skill.sp = 0;
   skill.charges = 0;
   skill.effectsApplied = false;
+  skill.nextCastAt = Number.NEGATIVE_INFINITY;
   skill.opReadyAt =
     initial && skill.operation === 'MANUAL'
       ? state.tick * TICK + AUTO_OP_COOLDOWN
@@ -420,7 +429,11 @@ function consider(
   if (!canAsk(unit, skill, time)) {
     return;
   }
+  const waits = paced(skill, time);
   if (isTickRule(skill.trigger)) {
+    if (waits) {
+      return;
+    }
     if (shouldCast(state, registry, ctx, unit.id, skill.id)) {
       activateSkill(state, registry, ctx, unit.id, skill.id, skill.trigger);
     }
@@ -430,27 +443,35 @@ function consider(
     return;
   }
   // 内容的触发区域每拍都问，攻击者与不攻击的都一样，不等攻击
-  if (!skill.heal && areaTriggerMet(state, registry, unit)) {
+  if (
+    !waits &&
+    !skill.heal &&
+    areaTriggerMet(state, registry, unit, skill, false)
+  ) {
     activateSkill(state, registry, ctx, unit.id, skill.id, 'DEFAULT');
     return;
   }
-  const readyRange = shouldCast(state, registry, ctx, unit.id, skill.id);
+  const readyRange =
+    shouldCast(state, registry, ctx, unit.id, skill.id) ||
+    (!skill.heal && areaTriggerMet(state, registry, unit, skill, true));
   if (hasTag(unit, NO_ATTACK)) {
-    if (readyRange) {
+    if (readyRange && !waits) {
       activateSkill(state, registry, ctx, unit.id, skill.id, 'DEFAULT');
     }
     return;
   }
-  if (!attackWillHit(state, registry, ctx, unit) || !readyRange) {
+  if (!attackWillHit(state, registry, ctx, unit)) {
     return;
   }
+  // 带友方条件的技能自己给出替换这一下攻击的目标，不要求基础条件（范围里有敌人）
   if (
-    skill.triggerAllies &&
-    !allyTriggerMet(state, registry, unit.id, skill.id)
+    skill.triggerAllies
+      ? !allyTriggerMet(state, registry, ctx, unit.id, skill.id)
+      : !readyRange
   ) {
     return;
   }
-  activateSkill(state, registry, ctx, unit.id, skill.id, 'DEFAULT');
+  activateSkill(state, registry, ctx, unit.id, skill.id, 'DEFAULT', true);
 }
 
 function recoverTime(
@@ -713,6 +734,39 @@ function settleCost(
   }
 }
 
+/**
+ * 普攻没有目标时的替代：castWithoutEnemy 的 DEFAULT 技能在友方条件满足时释放，替换这一下普攻。要等下一次攻击的技能
+ * （带 hit 钩子）返回选中的友方作为这一下的目标；释放后已经结束的技能不再要普攻。
+ */
+function castForAlly(
+  state: BattleWorld,
+  registry: BattleRegistry,
+  ctx: ContentContext,
+  unitId: string,
+): readonly string[] {
+  const unit = state.units.get(unitId);
+  if (!unit) {
+    return [];
+  }
+  const time = state.tick * TICK;
+  for (const skill of unit.skills) {
+    if (
+      !skill.castWithoutEnemy ||
+      skill.trigger !== 'DEFAULT' ||
+      !canAsk(unit, skill, time)
+    ) {
+      continue;
+    }
+    const target = allyTriggerTarget(state, registry, ctx, unitId, skill.id);
+    if (target === null) {
+      continue;
+    }
+    activateSkill(state, registry, ctx, unitId, skill.id, 'DEFAULT', true);
+    return skill.pending ? [target] : [];
+  }
+  return [];
+}
+
 function canActivate(unit: UnitState, skill: SkillInstance): boolean {
   if (skill.body === 'passive' || skill.charges < 1) {
     return false;
@@ -724,6 +778,40 @@ function canActivate(unit: UnitState, skill: SkillInstance): boolean {
     return false;
   }
   return (unit.attributes.hp ?? 0) > 0;
+}
+
+/**
+ * 没有自己攻击的立即技能释放之后，每拍判定的下一次释放至少隔一个攻击间隔。紧接在一次攻击之前的释放由攻击定节奏，
+ * 不记；受击与从不自动释放的技能不走每拍判定，也不记。
+ */
+function paceCast(
+  state: BattleWorld,
+  registry: BattleRegistry,
+  unit: UnitState,
+  skill: SkillInstance,
+  beforeAttack: boolean,
+): void {
+  if (
+    beforeAttack ||
+    skill.trigger === 'TAKE_DAMAGE' ||
+    skill.trigger === 'NEVER' ||
+    (unit.attributes.hp ?? 0) <= 0
+  ) {
+    return;
+  }
+  const interval = attackInterval(unit, registry);
+  if (interval > 0) {
+    skill.nextCastAt = state.tick * TICK + interval;
+  }
+}
+
+/** 每拍判定的释放还在等上一次立即释放之后的攻击间隔。 */
+function paced(skill: SkillInstance, time: number): boolean {
+  return (
+    isInstantBody(skill.body) &&
+    skill.hooks.hit === undefined &&
+    !reached(time, skill.nextCastAt)
+  );
 }
 
 function canAsk(unit: UnitState, skill: SkillInstance, time: number): boolean {

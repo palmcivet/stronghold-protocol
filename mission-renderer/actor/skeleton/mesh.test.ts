@@ -12,6 +12,7 @@ import {
   createSkeletonMesh,
   type SkeletonBatchPart,
 } from '#actor/skeleton/mesh.js';
+import { defined } from '#test/defined.js';
 
 const page = new Texture();
 
@@ -53,9 +54,9 @@ describe('skeleton mesh', () => {
       [0, 12, 0],
       [12, 6, 1],
     ]);
-    expect((drawn.mesh.material as MeshBasicMaterial[])[1]!.blending).toBe(
-      AdditiveBlending,
-    );
+    expect(
+      defined((drawn.mesh.material as MeshBasicMaterial[])[1]).blending,
+    ).toBe(AdditiveBlending);
     expect(Array.from(geometry.getAttribute('uv').array).slice(0, 4)).toEqual([
       0, 0, 1, 0,
     ]);
@@ -88,8 +89,8 @@ describe('skeleton mesh', () => {
     drawn.end();
     expect(drawn.clipping).toBe(false);
     const materials = drawn.mesh.material as MeshBasicMaterial[];
-    const order = drawn.mesh.geometry.groups.map(
-      (group) => group.materialIndex!,
+    const order = drawn.mesh.geometry.groups.map((group) =>
+      defined(group.materialIndex),
     );
     const stencil = materials.findIndex((material) => !material.colorWrite);
     const clipped = materials.findIndex(
@@ -105,7 +106,7 @@ describe('skeleton mesh', () => {
       clipped,
       stencil,
     ]);
-    expect(materials[stencil]!.stencilZPass).toBe(InvertStencilOp);
+    expect(defined(materials[stencil]).stencilZPass).toBe(InvertStencilOp);
     expect(drawn.bounds()).toEqual({ x: 0, y: 0, width: 4, height: 1 });
   });
 
@@ -131,8 +132,8 @@ describe('skeleton mesh', () => {
     const attributes = ['position', 'uv', 'color'].map(
       (name) => geometry.getAttribute(name) as BufferAttribute,
     );
-    const index = geometry.getIndex()!;
-    const version = attributes[0]!.version;
+    const index = defined(geometry.getIndex());
+    const version = defined(attributes[0]).version;
     drawn.begin();
     drawn.append(quad(5));
     drawn.append(quad(6));
@@ -146,10 +147,14 @@ describe('skeleton mesh', () => {
       ),
     ).toBe(true);
     expect(geometry.getIndex()).toBe(index);
-    expect(attributes[0]!.version).toBeGreaterThan(version);
-    expect(attributes[0]!.usage).toBe(DynamicDrawUsage);
-    expect(attributes[0]!.updateRanges).toEqual([{ start: 0, count: 24 }]);
-    expect(Array.from(attributes[0]!.array.slice(0, 3))).toEqual([5, 0, 0]);
+    expect(defined(attributes[0]).version).toBeGreaterThan(version);
+    expect(defined(attributes[0]).usage).toBe(DynamicDrawUsage);
+    expect(defined(attributes[0]).updateRanges).toEqual([
+      { start: 0, count: 24 },
+    ]);
+    expect(Array.from(defined(attributes[0]).array.slice(0, 3))).toEqual([
+      5, 0, 0,
+    ]);
     expect(Array.from(index.array.slice(6, 12))).toEqual([4, 5, 6, 6, 7, 4]);
     expect(drawn.bounds()).toEqual({ x: 5, y: 0, width: 2, height: 1 });
   });

@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { createMissionHudReaders } from '#actor/hud/readout.js';
 import { createMissionStage } from '#runtime/stage/index.js';
 import { recordDuel } from '#test/actor/fixture.js';
+import { defined } from '#test/defined.js';
 
 describe('hud readouts', () => {
   it('draws the content readouts on the bars and seals the reader table', () => {
@@ -21,7 +22,10 @@ describe('hud readouts', () => {
     const stage = createMissionStage(null, { hud: readers });
     expect(readers.sealed).toBe(true);
     const [first] = recordDuel(0, 1000);
-    stage.dispatch({ type: 'push-snapshot', snapshot: first!.snapshot });
+    stage.dispatch({
+      type: 'push-snapshot',
+      snapshot: defined(first).snapshot,
+    });
     stage.update(TICK);
     expect(stage.hud.readouts('g')).toEqual({
       magazine: null,

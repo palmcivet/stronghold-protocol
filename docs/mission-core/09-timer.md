@@ -5,7 +5,7 @@ description: 充能、弹药和回旋持有是单位身上各自的计时器，�
 
 # 计时
 
-`kernel/timer/` 只有通用的计时器定义与启动、视图、计数和计秒的工厂；单位身上的计时编排在 `unit/record/timer.ts`。攻击、充能、弹药、回旋的计时器在 `combat/attack/` 定义，技力与技能持续在 `ability/skill/`。
+**独立计时**是单位身上各自走的计时器：内置的充能、弹药与回旋持有，以及内容登记的计时。它们在友方槽里排在攻击之后，按 `timerRate` 推进。
 
 独立计时和 `attack`、`skill-point`、`skill-body`、`trait`、`redeploy`、`status` 分开。单位规格的 `timers` 列出 id，引擎调用 `startTimer`。友方槽按登记顺序推进，这三条排在该单位的攻击之后。没有新的阶段槽。
 
@@ -34,11 +34,19 @@ export const fieldTime: MissionModule = {
 }
 ```
 
-内置的三条用 `independentDt(unit, registry)` 按 `timerRate` 推进；它的参数是引擎内部的单位记录与注册表，内容计时拿不到。定义可以写 `sides`。没写时两边都能 `startTimer`。这三条写了 `sides: ["ally"]`，点在敌人身上，或对敌人调用 `startTimer`，都不会启动，视图保持 `{ started: false }`。攻击计时没有 `sides`，敌人槽照常推进已经开始的攻击。
+- 内置的三条用 `independentDt(unit, registry)` 按 `timerRate` 推进；它的参数是引擎内部的单位记录与注册表，内容计时拿不到。
+- 定义可以写 `sides`。
+- 没写时两边都能 `startTimer`。
+- 内置的三条写了 `sides: ["ally"]`，点在敌人身上，或对敌人调用 `startTimer`，都不会启动，视图保持 `{ started: false }`。
+- 攻击计时没有 `sides`，敌人槽照常推进已经开始的攻击。
 
 ## 速度
 
-属性 `timerRate` 缺省 `TIMER_RATE`（1）。本拍推进的秒数是 `TICK * timerRate`。没写这个键时按 1，状态仍可以修饰它。`mul` 0.5 把钟放慢一半，`mul` 2 加快一倍。三种内置计时都走这一条，不用在各自的 `advance` 里再写一遍。
+- 属性 `timerRate` 缺省 `TIMER_RATE`（1）。
+- 本拍推进的秒数是 `TICK * timerRate`。
+- 没写这个键时按 1，状态仍可以修饰它。
+- `mul` 0.5 把钟放慢一半，`mul` 2 加快一倍。
+- 三种内置计时都走这一条，不用在各自的 `advance` 里再写一遍。
 
 ## 充能
 
@@ -58,7 +66,11 @@ id 是 `ammo`。视图有 `ammo`、`elapsed`。启动和每次 `deploy` 时补�
 
 ## 回旋持有
 
-id 是 `boomerang`。视图有 `out`、`elapsed`。`elapsed` 按 `independentDt` 走。飞行中的数量读单位上的 `boomerangsOut`，攻击形状写入这个字段，并抄到属性 `boomerangsOut`。这里不发射、不命中、不飞回。
+- id 是 `boomerang`。
+- 视图有 `out`、`elapsed`。
+- `elapsed` 按 `independentDt` 走。
+- 飞行中的数量读单位上的 `boomerangsOut`，攻击形状写入这个字段，并抄到属性 `boomerangsOut`。
+- 回旋计时不发射、不命中、不飞回。
 
 `deploy` 时，带了这条计时的单位把 `boomerangsOut` 写成 0，并把回旋世代加一。飞出时记下世代。回程落地只在世代对得上时把数量减一。世代对不上的回旋落地不改这个数。
 

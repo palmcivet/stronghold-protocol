@@ -198,14 +198,10 @@ function vitestList(
 ): Promise<string | null> {
   const cli = join(repoRoot, 'node_modules', 'vitest', 'vitest.mjs');
   return new Promise((resolvePromise) => {
-    const child = spawn(
-      process.execPath,
-      [cli, 'list', `--json=${outFile}`],
-      {
-        cwd: join(repoRoot, packageDir),
-        stdio: ['ignore', 'ignore', 'pipe'],
-      },
-    );
+    const child = spawn(process.execPath, [cli, 'list', `--json=${outFile}`], {
+      cwd: join(repoRoot, packageDir),
+      stdio: ['ignore', 'ignore', 'pipe'],
+    });
     let stderr = '';
     child.stderr.on('data', (chunk: Buffer) => {
       stderr += chunk.toString('utf8');

@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { buildUpstreamManifest } from '@alliance/compat-upstream';
 import {
   type AssetKey,
   createAssetResolver,
@@ -7,7 +8,6 @@ import {
   type PackManifest,
   packManifestIssues,
 } from 'arknights-assets-catalog';
-import { buildUpstreamManifest } from '@alliance/compat-upstream';
 import { describe, expect, it } from 'vitest';
 
 const UPSTREAM_URL = 'http://127.0.0.1:3000/data/assets.json';

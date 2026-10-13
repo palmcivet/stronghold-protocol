@@ -8,6 +8,7 @@ import type {
   CommandRefusal,
   RedeployOrder,
   TriggerArea,
+  TriggerCadence,
 } from '#contract/input.js';
 import type { PhaseSlot } from '#contract/phase.js';
 import type {
@@ -187,9 +188,15 @@ export interface ContentContext extends Registration {
   setExtraRange(unitId: string, tiles: readonly TileCoord[] | null): void;
   /**
    * 登记（area）或撤下（null）一块技能触发区域：绝对格子，或某个单位当前的攻击范围。区域里有敌人（飞行的也算）时，
-   * 这名单位的非治疗、非 TAKE_DAMAGE / NEVER 技能每拍都按 DEFAULT 释放，不等攻击。
+   * 这名单位的非治疗、非 TAKE_DAMAGE / NEVER 技能按 DEFAULT 释放。cadence 缺省 tick：每拍判定，不等攻击；
+   * attack：只在下一次普攻之前判定，不攻击的单位每拍判定。
    */
-  setTriggerArea(unitId: string, key: string, area: TriggerArea | null): void;
+  setTriggerArea(
+    unitId: string,
+    key: string,
+    area: TriggerArea | null,
+    cadence?: TriggerCadence,
+  ): void;
   /** 释放技能。成功返回 true。充能不够或正在持续时返回 false。 */
   castSkill(unitId: string, skillId: string): boolean;
   /** 命令：撤下在场的单位，与玩家的 retreat 输入同一段实现。生效返回 null，否则返回原因。 */

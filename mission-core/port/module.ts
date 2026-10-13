@@ -3,6 +3,8 @@ import type { ExtensibleKey } from '#kernel/registry/extensible.js';
 import type { TagKey } from '#kernel/world/tag.js';
 import type { ContentContext } from '#port/context.js';
 import type {
+  AttackSegmentDefinition,
+  AttackSubstituteDefinition,
   AttributeDefinition,
   ConditionDefinition,
   ContentTimerDefinition,
@@ -47,6 +49,9 @@ export interface Registration {
   registerTerrain(definition: TerrainDefinition): void;
   /** 注册装置作用区：带 source 标签的装置按攻击范围与朝向圈出的格子。 */
   registerZone(definition: ZoneDefinition): void;
+  /** 注册普攻替代：普攻没有目标时依次问，第一个返回非空目标表的给出这一下的目标。 */
+  registerAttackSubstitute(definition: AttackSubstituteDefinition): void;
+  registerAttackSegment(definition: AttackSegmentDefinition): void;
   registerSystem(system: PhaseSystem): void;
   /** 让单位规格可以按 id 写这个标签。建战斗时规格里的标签必须都已注册。 */
   registerTag(key: TagKey): void;

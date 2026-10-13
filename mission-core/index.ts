@@ -21,6 +21,13 @@ export {
 export { runSteps } from '#battle/headless.js';
 export type { InputRefusal } from '#battle/input.js';
 export {
+  FUNNEL,
+  FUNNEL_DAMAGE_TAG,
+  FUNNEL_DEFAULTS,
+  officialFunnelModule,
+} from '#combat/attack/official.js';
+export {
+  ADDITION_TAG,
   type AttackImpact,
   type AttackResolver,
   BOOMERANG_RETURN_SPEED,
@@ -69,6 +76,7 @@ export type {
   CueMap,
   DamagedEvent,
   DisplaceEvent,
+  DodgedEvent,
   DownedEvent,
   ElementBurstEvent,
   ElementHitEvent,
@@ -96,6 +104,7 @@ export type {
   CommandRefusal,
   RedeployOrder,
   TriggerArea,
+  TriggerCadence,
 } from '#contract/input.js';
 export { BATTLE_INPUT_TYPES } from '#contract/input.js';
 export { PHASE_SLOTS, type PhaseSlot } from '#contract/phase.js';
@@ -152,12 +161,16 @@ export {
 } from '#contract/spec.js';
 export { costModule } from '#economy/index.js';
 export {
+  type BoardSpan,
+  type BodyRect,
+  type BodyUnit,
   bodyDist,
   bodyInKeys,
   bodyInRadius,
   bodyKeys,
   bodyOnTile,
   bodyRect,
+  type KeyCollection,
 } from '#field/body/index.js';
 export {
   frontTile,
@@ -240,6 +253,9 @@ export type {
   UnitView,
 } from '#port/context.js';
 export type {
+  AttackSegment,
+  AttackSegmentDefinition,
+  AttackSubstituteDefinition,
   AttributeDefinition,
   AttributeModifier,
   ConditionDefinition,
@@ -289,7 +305,19 @@ export {
   MODIFIER_OPS,
   type ModifierOp,
 } from '#port/definition.js';
-export type { LoadoutRequest, ResolvedRecordLoadout } from '#port/loadout.js';
+export type {
+  ChessRecord,
+  GridCell,
+  LoadoutRequest,
+  ModuleRecord,
+  ModuleState,
+  RangeGrid,
+  ResolvedRecordLoadout,
+  SkillRecord,
+  TalentChange,
+  TalentRecord,
+  TraitRecord,
+} from '#port/loadout.js';
 export {
   attackRangeGrid,
   composeStats,
@@ -366,3 +394,4 @@ export {
   redeployModule,
 } from '#unit/deploy/redeploy.js';
 export { leakModule } from '#unit/leak/index.js';
+export { BOSS, ELITE, officialRankModule } from '#unit/rank/official.js';

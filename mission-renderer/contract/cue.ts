@@ -66,9 +66,12 @@ export type MissionCue<K extends MissionCueKey = MissionCueKey> = {
 /** Namespaced effect kind id, `<namespace>:<name>`. The engine's kinds use `mission:`. */
 export type MissionEffectKindId = `${string}:${string}`;
 
-/** What a cue draws and plays. Null marks a cue that draws no effect, or plays no sound, on purpose. */
+/**
+ * What a cue draws and plays. Null marks a cue that draws no effect, or plays no sound, on purpose. A list of effect
+ * kinds starts each of them, in order.
+ */
 export interface MissionCueBinding {
-  readonly effect: MissionEffectKindId | null;
+  readonly effect: MissionEffectKindId | readonly MissionEffectKindId[] | null;
   readonly sound: MissionAudioCueType | null;
 }
 

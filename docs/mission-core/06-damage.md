@@ -5,6 +5,10 @@ description: dealDamage 按已登记的伤害步骤结算。流失、治疗和�
 
 # 伤害
 
+**伤害**由 `dealDamage` 按已登记的伤害步骤逐个结算。流失、治疗与元素槽各有自己的入口，不走伤害步骤。
+
+下例在 `hp` 阶段把打在 `guard` 上的伤害减半：
+
 ```ts
 import type { MissionModule } from "arknights-mission-core"
 
@@ -30,7 +34,11 @@ export const guardHalf: MissionModule = {
 
 `dealDamage(info)` 走伤害步骤。`kind` 收成 `physical`、`arts`、`true`、`elemental`、`element`。`phys` 记成 `physical`。
 
-目标不存在或已倒地时不进入步骤。进入之前，直接授予的 `invulnerable` 会挡下。沉睡会挡下，除非 `ignoreSleep`，或来源带有 `hit-sleep`。起飞会挡下来源是地面敌人的一击，除非 `ignoreSelect`、`sourceless`，或来源自己在飞行。起飞只在命中事件之前查一次。
+- 目标不存在或已倒地时不进入步骤。
+- 进入之前，直接授予的 `invulnerable` 会挡下。
+- 沉睡会挡下，除非 `ignoreSleep`，或来源带有 `hit-sleep`。
+- 起飞会挡下来源是地面敌人的一击，除非 `ignoreSelect`、`sourceless`，或来源自己在飞行。
+- 起飞只在命中事件之前查一次。
 
 不是预览、且种类不是 `element` 时，先跑 `hit` 阶段的[伤害修饰](#伤害修饰)，可以改 `amount`、`kind`、`cancel`、`mul`；再送出只读的 `hit`，带改写后的值。`cancel` 为真则不再进入步骤。
 
@@ -54,17 +62,45 @@ export const guardHalf: MissionModule = {
 
 没有 `element` 标识时数额变成 0。目标没有生命、正在爆发、带 `burst-lock`，或这个槽已锁定时，数额变成 0。不是预览时先跑 `element-hit` 阶段的伤害修饰，再送出只读的 `element-hit`。种类被改离 `element` 后会再送出 `hit`，后面的步骤按新种类继续。
 
-否则按抗性收成进槽的量。单位带了 `elementRes` 就用它，没有则用元素定义上的 `resistance`。抗性按 0 到 100 的百分数，系数是 `max(0.05, 1 - 抗性 / 100)`。进槽量是数额 × 乘数 × `elemTaken` × 这个系数。预览不进槽。蓄满则爆发。
+- 数额不为 0 时，按抗性收成进槽的量。
+- 单位带了 `elementRes` 就用它，没有则用元素定义上的 `resistance`。
+- 抗性按 0 到 100 的百分数，系数是 `max(0.05, 1 - 抗性 / 100)`。
+- 进槽量是数额 × 乘数 × `elemTaken` × 这个系数。
+- 预览不进槽。
+- 蓄满则爆发。
 
 ### 闪避
 
-预览、已经取消，或种类是 `element` 时不闪。`canDodge` 缺省时，只有物理和法术会闪。法术看 `dodgeArts`，其他种类看 `dodgePhys`。骰子小于这个概率则数额变成 0 并取消。多个闪避来源先合成一个概率：1 减去各来源落空概率的乘积。只有一条且只有一层时，用原来的概率。
+- 预览、已经取消，或种类是 `element` 时不闪。
+- `canDodge` 缺省时，只有物理和法术会闪。
+- 法术看 `dodgeArts`，其他种类看 `dodgePhys`。
+- 骰子小于这个概率则数额变成 0 并取消，并送出 `dodged`。
+- 多个闪避来源先合成一个概率：1 减去各来源落空概率的乘积。
+- 只有一个来源且只有一层时，用这个来源原来的概率。
 
 ### 减伤
 
-减伤之后至少保留原伤害的 0.05。物理减去有效防御。法术按有效法抗的百分比减。`elemental` 按 `elementalRes` 减。真实和未知种类保持原值。穿透把这一击自己的无视和来源属性加在一起。`sourceless` 不用来源的穿透和乘区。
+- 减伤之后至少保留原伤害的 0.05。
+- 物理减去有效防御。
+- 法术按有效法抗的百分比减。
+- `elemental` 按 `elementalRes` 减。
+- 真实和未知种类保持原值。
+- 穿透把这一击自己的无视和来源属性加在一起。
+- `sourceless` 不用来源的穿透和乘区。
 
 带 `hit-count` 时，这一下变成 1，并跳过减伤、乘区和首领限伤。只带 `hit-count-arts` 时，物理变成 0，其他种类变成 1。
+
+### 红字
+
+官方红字是一击的显示标记，不改结算。
+
+- 期望伤害：与这一击同样减免，不计穿透，不乘减免后的倍率，只乘这一击自带的 `mul`
+- 最终伤害：减免与全部乘区之后、护盾之前的数额
+- 最终伤害不小于期望伤害的 1.5 倍时是红字；0 对 0 也是红字
+- 带 `hit-count` 时，最终伤害是计下的 1 或 0，期望伤害照常计算
+- `hp` 阶段的伤害修饰改写数额不影响红字
+- 减伤步骤把结果写进 `DamageInfo.red`，`damaged` 随之带 `red: true`
+- 被闪避的一击按同样的判定算出 `dodged` 的 `miss`，不再掷随机数
 
 ### 乘区
 
@@ -76,9 +112,20 @@ export const guardHalf: MissionModule = {
 
 ### 护盾和生命
 
-护盾先看状态上的次数，再看属性 `shieldHits`。命中次数的护盾直接吃掉这一下。然后按状态上的数值护盾和属性 `shield` 扣。状态按施加先后用，较早的先扣。效果定义写了 `shieldType`（如 `["arts"]`、`["physical", "arts"]`，`phys` 与 `physical` 同义）时，它的次数护盾和数值护盾只挡这些种类的伤害，别的种类越过它；属性上的护盾不分种类。只带护盾的效果（修饰只有 `shield`、`shieldHits`，没有标签、`scale`、`onApply`、`onTick`）在次数与数值都用完时取下并调用 `onRemove`；带别的东西的留到到期。
+- 护盾先看状态上的次数，再看属性 `shieldHits`。
+- 命中次数的护盾直接吃掉这一下。
+- 次数护盾之后，按状态上的数值护盾和属性 `shield` 扣。
+- 状态按施加先后用，较早的先扣。
+- 效果定义写了 `shieldType`（如 `["arts"]`、`["physical", "arts"]`，`phys` 与 `physical` 同义）时，它的次数护盾和数值护盾只挡这些种类的伤害，别的种类越过它；属性上的护盾不分种类。
+- 只带护盾的效果（修饰只有 `shield`、`shieldHits`，没有标签、`scale`、`onApply`、`onTick`）在次数与数值都用完时取下并调用 `onRemove`；带别的东西的留到到期。
 
-生命步骤把当前 `hp` 减去数额。会扣到 0 时先送出 `fatal`。`prevented` 为真时，生命留在 1 和最大生命里较小的那个。否则写下剩余生命，再送出 `damaged`。生命不大于 0 时倒地：标成已倒地、离场，送出 `downed`。有部署策略时，落点用 `downedTile`，坐标写成这个格子，事件里带上坐标和 `canStand`。内置策略 `deploy` 的落点见 [模块](./04-module.md)。
+- 生命步骤把当前 `hp` 减去数额。
+- 会扣到 0 时先送出 `fatal`。
+- `prevented` 为真时，生命留在 1 和最大生命里较小的那个。
+- 没有被 `prevented` 时，写下剩余生命，再送出 `damaged`。
+- 生命不大于 0 时倒地：标成已倒地、离场，送出 `downed`。
+- 有部署策略时，落点用 `downedTile`，坐标写成这个格子，事件里带上坐标和 `canStand`。
+- 内置策略 `deploy` 的落点见 [模块](./04-module.md)。
 
 ## 伤害修饰
 
@@ -109,7 +156,17 @@ export const guardHalf: MissionModule = {
 
 ## 治疗
 
-`heal(unitId, amount, options?)` 要求数额是正数。目标带 `no-heal` 或 `no-ally-heal` 时，只有 `self` 或来源就是目标才治。带 `heal-free` 时，`regen` 或 `ignoreHealFree` 才治。来源的 `attackShape.healThrough` 认这个目标时，`no-heal` 与 `heal-free` 都不拦它，`no-ally-heal` 照样拦（见 [攻击](./08-attack.md)）。治疗量是数额 × 来源的 `healingDealt` × 目标的 `healingTaken`。没有来源时 `healingDealt` 按 1。写回的生命不超过最大生命。`overheal` 把超出的部分转成护盾，这份护盾不超过最大生命，并施加 `overheal` 状态。`overhealDuration` 是秒，缺省一直留着。状态结束时，还没被打掉的这份护盾从单位上减去。送出 `heal`。
+- `heal(unitId, amount, options?)` 要求数额是正数。
+- 目标带 `no-heal` 或 `no-ally-heal` 时，只有 `self` 或来源就是目标才治。
+- 带 `heal-free` 时，`regen` 或 `ignoreHealFree` 才治。
+- 来源的 `attackShape.healThrough` 认这个目标时，`no-heal` 与 `heal-free` 都不拦它，`no-ally-heal` 照样拦（见 [攻击](./08-attack.md)）。
+- 治疗量是数额 × 来源的 `healingDealt` × 目标的 `healingTaken`。
+- 没有来源时 `healingDealt` 按 1。
+- 写回的生命不超过最大生命。
+- `overheal` 把超出的部分转成护盾，这份护盾不超过最大生命，并施加 `overheal` 状态。
+- `overhealDuration` 是秒，缺省一直留着。
+- 状态结束时，还没被打掉的这份护盾从单位上减去。
+- 送出 `heal`。
 
 ## 元素
 
@@ -117,6 +174,16 @@ export const guardHalf: MissionModule = {
 
 内置标识是 `burn`、`neural`、`apoptosis`、`erosion`、`necrosis`。槽上限先看单位基础属性 `gaugeMax`，没有则用定义上的 `cap`。内置定义的 `cap` 是 1000。
 
-快照里元素槽的显示值取最满的一槽（锁住的槽优先）。一样满时取定义上 `order` 小的那种。内置的 `order` 是 `ELEMENT_ORDER`：`neural` 0、`erosion` 1、`burn` 2、`apoptosis` 3、`necrosis` 4。模块加的元素用 `order` 排进它们之间，例如 1.5 排在侵蚀和灼燃之间；不写 `order` 时排在全部写了的之后。`order` 相同（包括都没写）时按 id 的字典序。
+- 快照里元素槽的显示值取最满的一槽（锁住的槽优先）。
+- 一样满时取定义上 `order` 小的那种。
+- 内置的 `order` 是 `ELEMENT_ORDER`：`neural` 0、`erosion` 1、`burn` 2、`apoptosis` 3、`necrosis` 4。
+- 模块加的元素用 `order` 排进它们之间，例如 1.5 排在侵蚀和灼燃之间；不写 `order` 时排在全部写了的之后。
+- `order` 相同（包括都没写）时按 id 的字典序。
 
-`kind` 为 `element` 的伤害写入 `info.element` 这一个槽。`addElement(unitId, elementId, amount)` 把数量直接加进这个标识的槽。蓄满后这个槽锁定，并调用 `onBurst`。爆发是无来源伤害，不吃填槽者的伤害乘算和穿透，击杀仍记在填槽者上。爆发期间该单位任何元素都不再进槽。内置的五种会施加爆发状态。冷却结束时该单位的槽归零。
+- `kind` 为 `element` 的伤害写入 `info.element` 这一个槽。
+- `addElement(unitId, elementId, amount)` 把数量直接加进这个标识的槽。
+- 蓄满后这个槽锁定，并调用 `onBurst`。
+- 爆发是无来源伤害，不吃填槽者的伤害乘算和穿透，击杀仍记在填槽者上。
+- 爆发期间该单位任何元素都不再进槽。
+- 内置的五种会施加爆发状态。
+- 冷却结束时该单位的槽归零。

@@ -4,7 +4,9 @@ import { endSkillsOnDown, resetSkills } from '#ability/skill/point.js';
 import { peekGauges } from '#combat/element/gauge.js';
 import { clearElements } from '#combat/element/index.js';
 import type { CommandRefusal, RedeployOrder } from '#contract/input.js';
-import type { TileCoord } from '#contract/spec.js';
+import type { Direction, TileCoord } from '#contract/spec.js';
+import { isDirection } from '#field/direction/index.js';
+import { gridOf } from '#field/grid/index.js';
 import { landShift } from '#field/motion/index.js';
 import { emit } from '#kernel/event/index.js';
 import { readTimer } from '#kernel/timer/index.js';
@@ -46,6 +48,49 @@ export const REDEPLOY_PLAN = defineComponent<RedeployPlan>(
     }),
   },
 );
+
+/**
+ * 第一次部署：把还没上过场的单位放到 tile。格子按部署策略的 canStand，费用是单位的 cost。
+ * 生效时坐标、朝向写下，标成在场，送出 deploy。
+ */
+export function deployUnit(
+  ctx: ContentContext,
+  unitId: string,
+  tile: TileCoord,
+  facing: Direction | undefined,
+): CommandRefusal | null {
+  const { world: state } = engineOf(ctx);
+  const unit = state.units.get(unitId);
+  if (!unit || unit.removed) {
+    return 'unknown-unit';
+  }
+  if (unit.fielded || unit.downed || unit.deployEpoch > 0) {
+    return 'not-reserve';
+  }
+  if (
+    !tile ||
+    !(Number.isInteger(tile.x) && Number.isInteger(tile.y)) ||
+    (facing !== undefined && !isDirection(facing))
+  ) {
+    return 'bad-order';
+  }
+  if (!gridOf(state).inBounds(tile.x, tile.y) || !tileOpen(ctx, unit, tile)) {
+    return 'tile-blocked';
+  }
+  if (!ctx.spendCost(unit.side, stat(unit, 'cost'))) {
+    return 'no-cost';
+  }
+  unit.x = tile.x;
+  unit.y = tile.y;
+  if (facing !== undefined) {
+    unit.facing = facing;
+  }
+  unit.fielded = true;
+  markDeployed(unit);
+  markLatestDeployed(state, unit);
+  emit(state, 'deploy', { unitId: unit.id });
+  return null;
+}
 
 /** 撤下在场的单位：结束技能、开始再部署计时，送出 retreat。不算倒下。 */
 export function retreatUnit(

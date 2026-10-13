@@ -151,6 +151,9 @@ function arrive(
       amount: projectile.amount,
       hitCount: attack.hitCount,
       shape: attack.shape,
+      ...(attack.skillSlot !== undefined
+        ? { skillSlot: attack.skillSlot }
+        : {}),
     });
   } else {
     ctx.dealDamage({

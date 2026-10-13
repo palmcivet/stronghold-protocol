@@ -136,6 +136,21 @@ describe('renderer resource port', () => {
     expect(image).toHaveBeenCalledTimes(2);
   });
 
+  it('disposes a texture when its last reference is released, not before', async () => {
+    const port = createMissionResourcePort(
+      loadersWith({ image: async () => new Texture() }),
+    );
+    const texture = (await port.image(BOARD)) as Texture;
+    await port.image(BOARD);
+    const dispose = vi.spyOn(texture, 'dispose');
+    port.release(BOARD);
+    await Promise.resolve();
+    expect(dispose).not.toHaveBeenCalled();
+    port.release(BOARD);
+    await Promise.resolve();
+    expect(dispose).toHaveBeenCalledTimes(1);
+  });
+
   it('retries a failed image load before it gives up', async () => {
     let calls = 0;
     const image = vi.fn(async (url: string) => {

@@ -8,6 +8,7 @@ import type { MissionPointerEvent } from '#contract/pointer.js';
 import type { MissionMap } from '#contract/view.js';
 import { createMissionStage } from '#runtime/stage/index.js';
 import { recordDuel } from '#test/actor/fixture.js';
+import { defined } from '#test/defined.js';
 
 const MAP: MissionMap = {
   cols: 3,
@@ -42,8 +43,8 @@ function push(
 describe('mission stage', () => {
   it('keeps waiting events and the newest snapshot when the update mode changes', () => {
     const stage = createMissionStage(MAP);
-    const before = duel[attackTick - 2]!;
-    const frame = duel[attackTick]!;
+    const before = defined(duel[attackTick - 2]);
+    const frame = defined(duel[attackTick]);
     push(stage, before.snapshot, frame.events);
     stage.dispatch({
       type: 'set-update-mode',
@@ -89,12 +90,14 @@ describe('mission stage', () => {
         { x: 2, y: 0 },
       ],
     });
-    const squares = stage.terrain!.highlights.children;
+    const squares = defined(stage.terrain).highlights.children;
     expect(squares.map((square) => square.position.x)).toEqual([0, 2]);
-    expect(squares[1]!.position.y).toBeGreaterThan(squares[0]!.position.y);
-    expect(stage.terrain!.surfaceHeight(2, 0)).toBeGreaterThan(0);
+    expect(defined(squares[1]).position.y).toBeGreaterThan(
+      defined(squares[0]).position.y,
+    );
+    expect(defined(stage.terrain).surfaceHeight(2, 0)).toBeGreaterThan(0);
     stage.dispatch({ type: 'reset' });
-    expect(stage.terrain!.highlights.children).toEqual([]);
+    expect(defined(stage.terrain).highlights.children).toEqual([]);
   });
 
   it('streams pointer presses, moves and releases with what lies under them', () => {
@@ -102,7 +105,7 @@ describe('mission stage', () => {
     const stage = createMissionStage(MAP, {
       onPointer: (event) => void events.push(event),
     });
-    push(stage, duel[0]!.snapshot, []);
+    push(stage, defined(duel[0]).snapshot, []);
     expect(stage.pointer('down', 32, 32)).toEqual({
       phase: 'down',
       screenX: 32,

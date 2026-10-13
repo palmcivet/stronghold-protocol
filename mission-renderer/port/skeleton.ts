@@ -13,6 +13,8 @@ export interface MissionSkeletonData {
   readonly animations: readonly string[];
   /** Seconds of each animation. */
   readonly durations: Readonly<Record<string, number>>;
+  /** The skeleton has clipping attachments; an impostor of it draws on a clip page. */
+  readonly clipping: boolean;
 }
 
 export interface MissionSkeletonEvent {
@@ -34,8 +36,8 @@ export interface MissionSkeletonBounds {
 export interface MissionSkeletonInstance {
   readonly data: MissionSkeletonData;
   readonly object3d: Object3D;
-  /** Replaces what plays on `track`. */
-  play(track: number, animation: string, loop: boolean): void;
+  /** Replaces what plays on `track`, starting `start` seconds into the animation (0 by default). */
+  play(track: number, animation: string, loop: boolean, start?: number): void;
   /** Plays `animation` on `track` after what is playing there, `delay` seconds after it starts (0 waits for its end). */
   queue(track: number, animation: string, loop: boolean, delay?: number): void;
   clear(track: number): void;

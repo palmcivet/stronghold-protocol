@@ -127,6 +127,26 @@ describe('terrain layout', () => {
     ]);
     expect(layout.buckets.board.position.length).toBeGreaterThan(0);
   });
+
+  it('builds no platform on a tile outside the drawn board', () => {
+    const layout = buildTerrainLayout(
+      map([
+        {
+          x: 0,
+          y: 0,
+          height: 0,
+          deployable: false,
+          walkableBy: [],
+          device: 'platform',
+          glyph: '#',
+        },
+      ]),
+      uv,
+    );
+
+    expect(layout.buckets.board.position.length).toBe(0);
+    expect(layout.buckets.decal.position.length).toBe(0);
+  });
 });
 
 describe('overlay quads', () => {

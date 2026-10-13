@@ -148,6 +148,12 @@ export function createContext(
     registerTerrain(definition) {
       registry.registerTerrain(definition);
     },
+    registerAttackSubstitute(definition) {
+      registry.registerAttackSubstitute(definition);
+    },
+    registerAttackSegment(definition) {
+      registry.registerAttackSegment(definition);
+    },
     registerZone(definition) {
       registry.registerZone(definition);
     },
@@ -334,9 +340,9 @@ export function createContext(
       requireUnit(state, unitId);
       setExtraRange(state, unitId, tiles);
     },
-    setTriggerArea(unitId, key, area) {
+    setTriggerArea(unitId, key, area, cadence) {
       requireUnit(state, unitId);
-      setTriggerArea(state, unitId, key, area);
+      setTriggerArea(state, unitId, key, area, cadence);
     },
     castSkill(unitId, skillId) {
       return activateSkill(state, registry, ctx, unitId, skillId, 'manual');

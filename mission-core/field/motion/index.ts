@@ -248,11 +248,11 @@ function pullShift(): ShiftDefinition {
     instant: true,
     plan(unitId, input, ctx) {
       const { world: state, registry } = engineOf(ctx);
-      if (input.toX === undefined || input.toY === undefined) {
+      const aim = pullAim(state, input);
+      if (!aim) {
         return null;
       }
-      const centerX = input.centerX ?? input.toX;
-      const centerY = input.centerY ?? input.toY;
+      const { toX, toY, centerX, centerY } = aim;
       const still = staticBody(state, unitId);
       if (still) {
         if (blockedByCenter(state, still, centerX, centerY)) {
@@ -278,8 +278,8 @@ function pullShift(): ShiftDefinition {
       if (!(hold > 0)) {
         return null;
       }
-      const dx = input.toX - unit.x;
-      const dy = input.toY - unit.y;
+      const dx = toX - unit.x;
+      const dy = toY - unit.y;
       const distance = hypot(dx, dy);
       if (!(distance > 1e-6)) {
         return { x: unit.x, y: unit.y, unbalance: hold };
@@ -309,6 +309,38 @@ function pullShift(): ShiftDefinition {
         travel > 1e-6 ? slide(gridOf(state), unit, ux, uy, travel) : null;
       return { ...(landing ?? { x: unit.x, y: unit.y }), unbalance: hold };
     },
+  };
+}
+
+interface PullAim {
+  readonly toX: number;
+  readonly toY: number;
+  readonly centerX: number;
+  readonly centerY: number;
+}
+
+function pullAim(state: BattleWorld, input: ShiftInput): PullAim | null {
+  if (input.toX !== undefined && input.toY !== undefined) {
+    return {
+      toX: input.toX,
+      toY: input.toY,
+      centerX: input.centerX ?? input.toX,
+      centerY: input.centerY ?? input.toY,
+    };
+  }
+  if (input.pullerId === undefined) {
+    return null;
+  }
+  const puller = state.units.get(input.pullerId);
+  if (!puller) {
+    return null;
+  }
+  const [row, col] = directionVector(puller.facing);
+  return {
+    toX: puller.x + col * PULL_ORIGIN,
+    toY: puller.y + row * PULL_ORIGIN,
+    centerX: input.centerX ?? puller.x,
+    centerY: input.centerY ?? puller.y,
   };
 }
 

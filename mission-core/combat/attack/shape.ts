@@ -12,9 +12,10 @@ import { hypot } from '#kernel/math/hypot.js';
 import { powi } from '#kernel/math/powi.js';
 import { hasTag } from '#kernel/world/tag.js';
 import type { ContentContext } from '#port/context.js';
-import type { BattleRegistry } from '#port/definition.js';
+import type { AttackSegment, BattleRegistry } from '#port/definition.js';
 import {
   CAN_HIT_FLY,
+  ISOLATED,
   REVEAL,
   STEALTH,
   STEALTH_OFF,
@@ -65,6 +66,8 @@ export interface AttackImpact {
   readonly amount: number;
   readonly hitCount: number;
   readonly shape: AttackShape;
+  /** 出手那一刻正在生效的主动技能的下标。 */
+  readonly skillSlot?: number;
 }
 
 export interface AttackResolver {
@@ -132,7 +135,7 @@ export function retainOnMiss(shape: AttackShape): boolean {
 
 function resolveStrike(
   state: BattleWorld,
-  _registry: BattleRegistry,
+  registry: BattleRegistry,
   ctx: ContentContext,
   impact: AttackImpact,
 ): void {
@@ -147,13 +150,66 @@ function resolveStrike(
   const hits = Math.max(0, Math.floor(impact.hitCount));
   const amount = scaled(impact.amount * primaryFactor(impact.shape));
   const damage = damageOf(impact.shape);
+  const extra =
+    damage === 'heal'
+      ? []
+      : additions(registry, ctx, impact.sourceId, targetId);
+  const attackId =
+    extra.length > 0
+      ? `${impact.sourceId}:${targetId}:${state.tick}`
+      : undefined;
   for (let hit = 0; hit < hits; hit += 1) {
     const current = state.units.get(targetId);
     if (!present(state, current)) {
       return;
     }
-    pay(ctx, impact.sourceId, targetId, amount, damage);
+    pay(ctx, impact, targetId, amount, damage, attackId);
   }
+  for (const segment of extra) {
+    const count = Math.max(0, Math.floor(segment.hits));
+    const value = scaled(impact.amount * segment.scale);
+    for (let hit = 0; hit < count; hit += 1) {
+      if (!present(state, state.units.get(targetId)) || !(value > 0)) {
+        return;
+      }
+      ctx.dealDamage({
+        sourceId: impact.sourceId,
+        targetId,
+        amount: value,
+        kind: segment.kind ?? damage,
+        tags: [...(segment.tags ?? []), ADDITION_TAG],
+        ...(attackId !== undefined ? { attackId } : {}),
+        ...(impact.skillSlot !== undefined
+          ? { skillSlot: impact.skillSlot }
+          : {}),
+      });
+    }
+  }
+}
+
+/** 附加段的伤害标签。 */
+export const ADDITION_TAG = 'addition';
+
+/** 这一击落到目标上时的附加段，按登记顺序；倍率不是有限正数或段数不足 1 的略过。 */
+function additions(
+  registry: BattleRegistry,
+  ctx: ContentContext,
+  attackerId: string,
+  targetId: string,
+): AttackSegment[] {
+  const out: AttackSegment[] = [];
+  for (const definition of registry.attackSegments()) {
+    const segment = definition.segments(attackerId, targetId, ctx);
+    if (
+      segment &&
+      Number.isFinite(segment.scale) &&
+      segment.scale > 0 &&
+      segment.hits >= 1
+    ) {
+      out.push(segment);
+    }
+  }
+  return out;
 }
 
 // MARK: splash
@@ -193,7 +249,7 @@ function resolveSplash(
     if (!hitsFlying(attacker) && isFlying(unit)) {
       continue;
     }
-    pay(ctx, impact.sourceId, unit.id, amount, damage);
+    pay(ctx, impact, unit.id, amount, damage);
   }
 }
 
@@ -233,7 +289,7 @@ function resolveBounce(
     seen.add(next.id);
     pay(
       ctx,
-      impact.sourceId,
+      impact,
       next.id,
       scaled(impact.amount * powi(1 - falloff, jump)),
       damage,
@@ -277,7 +333,7 @@ function resolveChain(
     seen.add(next.id);
     pay(
       ctx,
-      impact.sourceId,
+      impact,
       next.id,
       scaled(impact.amount * powi(1 - falloff, jump)),
       'heal',
@@ -290,19 +346,29 @@ function resolveChain(
 
 function pay(
   ctx: ContentContext,
-  sourceId: string,
+  impact: AttackImpact,
   targetId: string,
   amount: number,
   damage: AttackDamageKind,
+  attackId?: string,
 ): void {
   if (!(amount > 0)) {
     return;
   }
+  const sourceId = impact.sourceId;
   if (damage === 'heal') {
     ctx.heal(targetId, amount, { sourceId });
     return;
   }
-  ctx.dealDamage({ sourceId, targetId, amount, kind: damage, attack: true });
+  ctx.dealDamage({
+    sourceId,
+    targetId,
+    amount,
+    kind: damage,
+    attack: true,
+    ...(impact.skillSlot !== undefined ? { skillSlot: impact.skillSlot } : {}),
+    ...(attackId !== undefined ? { attackId } : {}),
+  });
 }
 
 function damageOf(shape: AttackShape): AttackDamageKind {
@@ -449,8 +515,10 @@ function lowestAlly(
     if (seen.has(unit.id) || unit.side !== attacker.side) {
       continue;
     }
+    // master chainHealNext：治疗链不跳到孤立的友方，治疗者自己除外
     if (
       !present(state, unit) ||
+      (unit.id !== attacker.id && hasTag(unit, ISOLATED)) ||
       healBlocked(state, registry, ctx, attacker.id, unit)
     ) {
       continue;

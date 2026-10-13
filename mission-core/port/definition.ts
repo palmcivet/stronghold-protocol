@@ -182,6 +182,15 @@ export interface DamageInfo {
   cancel?: boolean;
   /** 这一击来自攻击计时，而不是技能或流失。 */
   attack?: boolean;
+  /** 来自普攻时，出手那一刻正在生效的主动技能的下标。只随 hit 事件带出，不影响结算。 */
+  skillSlot?: number;
+  /**
+   * 官方红字：减免与全部倍率之后、护盾之前的数额达到期望伤害的 1.5 倍。期望伤害同样减免，但不计穿透与减免后的倍率，
+   * 只乘这一击自带的 `mul`。由减伤步骤写入，只用于显示，不改结算。
+   */
+  red?: boolean;
+  /** 同一次普攻打出的伤害共用的 id：攻击本体与附加段。普攻之外没有。 */
+  attackId?: string;
   /** 伤害标签，kebab-case。伤害修饰与订阅者按它区分来路，例如环境伤害 `terrain`、持续伤害 `dot`。 */
   tags?: readonly string[];
 }
@@ -360,6 +369,8 @@ export interface ShiftInput {
   /** 定向推只免去夹角修正，离起点太近照样修正。 */
   readonly fixedAngle?: boolean;
   readonly inward?: boolean;
+  /** 拉到这名单位面前：没给 toX、toY 时，终点是它朝向前方 PULL_ORIGIN 格，急停中心缺省是它的位置。 */
+  readonly pullerId?: string;
   /** 立即完成的位移在画面上是否保持原朝向。缺省 true。 */
   readonly keepFacing?: boolean;
 }
@@ -435,6 +446,37 @@ export interface ZoneDefinition {
   onLeave?(unitId: string, ctx: ContentContext): void;
 }
 
+/**
+ * 普攻到了出手时点却没有目标时的替代。offer 可以做点什么（例如放一个替换这一下普攻的技能），返回这一下要打向的单位；
+ * 返回空表时这一下照常不出手。
+ */
+export interface AttackSubstituteDefinition {
+  readonly id: string;
+  offer(unitId: string, ctx: ContentContext): readonly string[];
+}
+
+/** 附加在一次普攻上的几段伤害：段数、相对攻击伤害的倍率、种类与伤害标签。 */
+export interface AttackSegment {
+  readonly hits: number;
+  readonly scale: number;
+  /** 缺省与这次攻击相同。 */
+  readonly kind?: string;
+  readonly tags?: readonly string[];
+}
+
+/**
+ * 普攻的附加段。普攻落到单个目标上时，按登记顺序问每个定义要附加段。附加段跟在攻击本体之后结算，
+ * 与本体共用一个 `attackId`，不算普攻（`attack` 为假），带 `addition` 标签。
+ */
+export interface AttackSegmentDefinition {
+  readonly id: string;
+  segments(
+    attackerId: string,
+    targetId: string,
+    ctx: ContentContext,
+  ): AttackSegment | null;
+}
+
 export interface DeployStrategyDefinition {
   readonly id: string;
   opening(ctx: ContentContext): readonly string[];
@@ -468,6 +510,8 @@ export interface ProjectileImpact {
   readonly leg?: 'out' | 'back';
   /** 飞回的速度。有这个数时，飞出到达后朝来源再飞一发，回程不结算伤害。 */
   readonly returnSpeed?: number;
+  /** 出手那一刻正在生效的主动技能的下标，到达时带进伤害。 */
+  readonly skillSlot?: number;
 }
 
 export interface ProjectileLaunch {
@@ -539,6 +583,11 @@ export interface BattleRegistry extends ExtensibleRegistry {
   requireZone(id: string): ZoneDefinition;
   /** 按注册先后。 */
   zones(): readonly ZoneDefinition[];
+  registerAttackSubstitute(definition: AttackSubstituteDefinition): void;
+  /** 按注册先后，引擎的在前。 */
+  attackSubstitutes(): readonly AttackSubstituteDefinition[];
+  registerAttackSegment(definition: AttackSegmentDefinition): void;
+  attackSegments(): readonly AttackSegmentDefinition[];
   registerSystem(system: PhaseSystem): void;
   systemsIn(slot: PhaseSlot): readonly PhaseSystem[];
   /** 全部系统的执行顺序：按阶段槽，再按槽内顺序。 */

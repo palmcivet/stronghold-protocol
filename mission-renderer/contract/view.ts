@@ -26,10 +26,20 @@ export type {
   MissionPointerPhase,
 } from '#contract/pointer.js';
 
+/** A rectangle of tiles: `x`, `y` is the lowest column and row it covers. */
+export interface MissionTileRect {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+}
+
 export interface MissionMap {
   readonly cols: number;
   readonly rows: number;
   readonly tiles: readonly TileSpec[];
+  /** Where the enemy preview stands. The lane and pen hatches inside it are drawn as glass; without it none are. */
+  readonly enemyPreview?: MissionTileRect;
 }
 
 export interface MissionCamera {

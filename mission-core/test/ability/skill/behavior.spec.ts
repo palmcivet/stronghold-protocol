@@ -1,9 +1,11 @@
 import {
+  ALLY_TARGET,
   type BattleSpec,
   type ContentContext,
   createBattle,
   defineEffect,
   type MissionModule,
+  NO_ATTACK,
   redeployModule,
   type SkillSpec,
   type UnitSpec,
@@ -1040,6 +1042,185 @@ test('内容的触发区域里有敌人时非治疗技能每拍按 DEFAULT 放�
   expect(h.view('bd').activations).toBe(1);
   expect(h.view('md').activations).toBe(0);
   expect(h.view('off').activations).toBe(0);
+});
+
+test('判定时机为 attack 的触发区域不每拍判定：没有攻击目标就不放；普攻之前由它自己触发；不攻击的单位每拍判定它；改回 tick 后每拍判定', () => {
+  const ready = () => [skill({ trigger: 'DEFAULT', spCost: 5, initSp: 5 })];
+  const h = arena(
+    [
+      shooter('idle', ready(), { attackRange: [] }),
+      shooter('hit', ready(), { y: 1, attackRange: [] }),
+      shooter('ctl', ready(), { y: 2, attackRange: [] }),
+      shooter('still', ready(), {
+        y: 3,
+        attackRange: [],
+        tags: [NO_ATTACK.id],
+      }),
+      shooter('back', ready(), { y: 4, attackRange: [] }),
+      dummy('e', 5, 0),
+      dummy('f', 5, 1),
+      dummy('g', 5, 2),
+      dummy('k', 5, 3),
+      dummy('m', 5, 4),
+    ],
+    {
+      0: (ctx) => {
+        ctx.setTriggerArea('idle', 'beam', [{ x: 5, y: 0 }], 'attack');
+        ctx.setExtraRange('hit', [{ x: 5, y: 1 }]);
+        ctx.setTriggerArea('hit', 'beam', [{ x: 5, y: 1 }], 'attack');
+        ctx.setExtraRange('ctl', [{ x: 5, y: 2 }]);
+        ctx.setTriggerArea('still', 'beam', [{ x: 5, y: 3 }], 'attack');
+        ctx.setTriggerArea('back', 'beam', [{ x: 5, y: 4 }], 'attack');
+        ctx.setTriggerArea('back', 'beam', [{ x: 5, y: 4 }], 'tick');
+      },
+    },
+    {
+      tiles: [0, 1, 2, 3, 4, 5, 6].flatMap((x) =>
+        [0, 1, 2, 3, 4].map((y) => ({
+          x,
+          y,
+          height: 0,
+          deployable: true,
+          walkableBy: ['ground'],
+        })),
+      ),
+    },
+  );
+  h.run(2);
+  expect(h.view('idle').activations).toBe(0);
+  expect(h.view('still').activations).toBe(1);
+  expect(h.view('back').activations).toBe(1);
+  h.run(60);
+  expect(h.of('attack-hit', 'ctl').length).toBeGreaterThan(0);
+  expect(h.view('ctl').activations).toBe(0);
+  expect(h.view('idle').activations).toBe(0);
+  expect(h.view('hit').activations).toBe(1);
+});
+
+test('带 ally-target 的友方在敌人条件里算敌人：靠攻击生效的技能算，自己挑目标的立即技能、治疗技能不算，allyTargets 覆盖缺省', () => {
+  const near = (patch: Partial<SkillSpec> = {}) => [
+    skill({
+      trigger: 'CUSTOM_RANGE',
+      triggerRange: [{ x: 1, y: 0 }],
+      spCost: 5,
+      initSp: 5,
+      ...patch,
+    }),
+  ];
+  const device = (id: string, y: number, tags = [ALLY_TARGET.id]) =>
+    ally(id, {
+      x: 1,
+      y,
+      attackRange: [],
+      tags,
+      attributes: { hp: 1000, atk: 0 },
+    });
+  const h = arena(
+    [
+      shooter('dur', near(), { attackRange: [] }),
+      shooter('ins', near({ body: 'instant', duration: 0 }), {
+        y: 1,
+        attackRange: [],
+      }),
+      shooter(
+        'flag',
+        near({ body: 'instant', duration: 0, allyTargets: true }),
+        {
+          y: 2,
+          attackRange: [],
+        },
+      ),
+      shooter('none', near(), { x: 3, attackRange: [] }),
+      shooter('med', near({ heal: true, allyTargets: true }), {
+        x: 3,
+        y: 1,
+        attackRange: [],
+      }),
+      device('d0', 0),
+      device('d1', 1),
+      device('d2', 2),
+      device('plain', 0, []),
+      device('d4', 1),
+    ].map((unit) =>
+      unit.id === 'plain' || unit.id === 'd4' ? { ...unit, x: 4 } : unit,
+    ),
+  );
+  h.run(2);
+  expect(h.view('dur').activations).toBe(1);
+  expect(h.view('ins').activations).toBe(0);
+  expect(h.view('flag').activations).toBe(1);
+  expect(h.view('none').activations).toBe(0);
+  expect(h.view('med').activations).toBe(0);
+});
+
+test('triggerEnemies 的治疗技能，范围里只有敌人也满足基础条件；不带的要有受伤友方', () => {
+  const heal = (triggerEnemies: boolean) => [
+    skill({
+      trigger: 'ACTIVE_RANGE',
+      heal: true,
+      triggerEnemies,
+      spCost: 5,
+      initSp: 5,
+    }),
+  ];
+  const near = { attackRange: [{ x: 1, y: 0 }] };
+  const h = arena([
+    shooter('mix', heal(true), near),
+    shooter('med', heal(false), { y: 1, ...near }),
+    dummy('e', 1, 0),
+    dummy('f', 1, 1),
+  ]);
+  h.run(2);
+  expect(h.view('mix').activations).toBe(1);
+  expect(h.view('med').activations).toBe(0);
+});
+
+test('生效的主动技能的下标随 attack-hit 与 hit 带出；被动技能不算；投射物到达时仍是出手时的下标；技能结束后不再带', () => {
+  const seen: string[] = [];
+  const kit = (duration: number) => [
+    skill({ id: 'p', body: 'passive', spCost: 0 }),
+    skill({ id: 's', duration, spCost: 5, initSp: 5 }),
+  ];
+  const h = arena(
+    [
+      shooter('m', kit(1), { attackRange: [{ x: 1, y: 0 }] }),
+      shooter('r', kit(0.2), {
+        y: 1,
+        attackRange: [0, 1, 2, 3, 4, 5].map((x) => ({ x, y: 0 })),
+        attackShape: { projectile: 'arrow' },
+      }),
+      dummy('e', 1, 0),
+      dummy('f', 5, 1),
+    ],
+    {},
+    {},
+    [],
+    (ctx) => {
+      ctx.subscribe('attack-hit', (event) => {
+        seen.push(
+          `${event.tick}:a:${event.data.unitId}:${event.data.skillSlot}`,
+        );
+      });
+      ctx.subscribe('hit', (event) => {
+        seen.push(
+          `${event.tick}:h:${event.data.sourceId}:${event.data.skillSlot}`,
+        );
+      });
+    },
+  );
+  h.run(150);
+  const of = (kind: string, id: string) =>
+    seen.filter((line) => line.includes(`:${kind}:${id}:`));
+  expect(of('a', 'm')[0]).toMatch(/^0:a:m:1$/);
+  expect(of('h', 'm')[0]).toMatch(/^0:h:m:1$/);
+  expect(of('a', 'm').at(-1)).toMatch(/:undefined$/);
+  expect(of('h', 'm').at(-1)).toMatch(/:undefined$/);
+  const end = h.of('skill-end', 'r')[0]?.tick ?? Number.NaN;
+  expect(of('a', 'r')[0]).toBe('0:a:r:1');
+  const first = of('h', 'r')[0] ?? '';
+  expect(Number(first.split(':')[0])).toBeGreaterThan(end);
+  expect(first).toMatch(/:1$/);
+  expect(of('h', 'r').at(-1)).toMatch(/:undefined$/);
 });
 
 test('setExtraRange 的绝对格子算进攻击范围，换位置后照样在；不让 DEFAULT 触发；null 清掉', () => {

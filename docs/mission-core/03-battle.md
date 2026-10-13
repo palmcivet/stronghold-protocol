@@ -5,6 +5,10 @@ description: createBattle 创建一场战斗，step 按十个阶段槽推进，s
 
 # 战斗
 
+一场**战斗**由 `createBattle(spec, modules)` 创建。它按拍推进：`step` 走一拍，十个阶段槽按固定顺序执行。推进之后可以读快照、事件、结果与账本，也可以导出成纯数据再继续推进。
+
+下例推进 300 拍，再从导出的数据恢复同一场战斗：
+
 ```ts
 import {
   type BattleSpec,
@@ -48,21 +52,26 @@ export function replay(spec: BattleSpec, modules: readonly MissionModule[]) {
 
 ## 玩家输入
 
-`BattleInput` 有三种，都带 `unitId`：
+`BattleInput` 有四种，都带 `unitId`。开场就在场上的单位写在规格里，局中的玩家操作都是输入。
 
+- `{ type: "deploy", tile, facing? }`
 - `{ type: "retreat" }`
 - `{ type: "redeploy", tile? }`
 - `{ type: "cast", skillId }`
 
 `step(inputs)` 在这一拍的第一个阶段槽之前按提交顺序执行输入。接受的送出 `input`，拒绝的送出 `input-refused`（带 `reason`），世界不变。世界里不记输入，`export()` 只导出当前状态；回放要的输入日志由调用方保存，按拍重新提交。输入只对友方单位生效，否则是 `not-ally`；单位不存在或已移除是 `unknown-unit`；形状不对是 `bad-input`。
 
+- `deploy`：把还没上过场的后备单位放到 `tile`。上过场的是 `not-reserve`。坐标不是整数或朝向不对是 `bad-order`。格子出界或部署策略的 `canStand` 不让站是 `tile-blocked`。费用是单位的 `cost`，不够是 `no-cost`。生效时写下坐标与朝向（缺省用规格的朝向），送出 `deploy`。
 - `retreat`：撤下在场的单位，与内容命令 `retreatUnit` 同一段实现，见 [模块](./04-module.md#命令和查询)。在场才行（`not-fielded`）。
 - `redeploy`：等待再部署的单位（`not-waiting`）计时走完（`not-ready`）、`tile`（缺省是等待时的坐标）站得住（`tile-blocked`）、费用够（`no-cost`）时这一拍回来。费用是单位的 `cost`，等待是再部署计时，输入里不能改；改规则走内容命令 `redeployUnit`。
 - `cast`：等于 `castSkill`，放不出是 `cannot-cast`。
 
-部署干员等其余玩家操作还没有做成输入。
-
-`runSteps` 连续调用 `step`，然后返回 `result`。`createFrameClock()` 按帧累积秒数。`advance(battle, frameSeconds, speed?)` 把 `frameSeconds × speed` 换成拍，`speed` 缺省 1。每走完一拍就把这一拍的事件放进单独的一组。不满一拍的余数留到下一次。一帧最多补 `FRAME_CATCHUP`（150）拍。
+- `runSteps` 连续调用 `step`，然后返回 `result`。
+- `createFrameClock()` 按帧累积秒数。
+- `advance(battle, frameSeconds, speed?)` 把 `frameSeconds × speed` 换成拍，`speed` 缺省 1。
+- 每走完一拍就把这一拍的事件放进单独的一组。
+- 不满一拍的余数留到下一次。
+- 一帧最多补 `FRAME_CATCHUP`（150）拍。
 
 创建战斗时，如果 `deployStrategy` 是 `null`，已经在场的单位会立即产生一次 `deploy` 事件；调用方应在第一次 `step` 前读取或丢弃这批初始事件。使用部署策略时，开场部署在战斗阶段槽中执行。
 
@@ -105,7 +114,19 @@ export function replay(spec: BattleSpec, modules: readonly MissionModule[]) {
 
 字段见 [API 参考](./15-api.md#快照)。
 
-单位按 `id` 排序。属性抄单位上存放的数字，再叠正在生效的技能修饰。当前生命不叠技能修饰。状态带来的属性修饰在战斗读取属性时现算，不写进这份快照。`maxHp` 是生效的最大生命，即基础值叠上效果修饰之后的值，计入状态；读快照不会结算当前生命的缩放。`height` 是单位所在地块的高度，不在地块上时是 0。`tags` 是单位持有的标签 id，不分来源（规格、状态、技能与模块授予的合在一起），按 id 排序；路线隐藏额外有 `hidden`；不含蕴含得到的标签。元素槽按标识抄当前值。`blocking` 和 `blockedBy` 抄阻挡组件里已经写好的阻挡关系。`skills` 按单位的技能顺序给出技力、花费、层数和是否持续；弹药技能持续且单位在场时 `ammo` 是向上取整的剩余弹药与弹匣，其余时候是 `null`。`shield` 是护盾池与状态护盾的合计。倒下时 `redeploy` 是再部署计时已过的秒数与要等的秒数，没倒下时是 `null`。`unbalanceUntil` 是失衡结束的拍（不含），没有失衡时是 `null`，见 [费用、阻挡与投射物](./12-field.md#失衡)。
+- 单位按 `id` 排序。
+- 属性抄单位上存放的数字，再叠正在生效的技能修饰。
+- 当前生命不叠技能修饰。
+- 状态带来的属性修饰在战斗读取属性时现算，不写进这份快照。
+- `maxHp` 是生效的最大生命，即基础值叠上效果修饰之后的值，计入状态；读快照不会结算当前生命的缩放。
+- `height` 是单位所在地块的高度，不在地块上时是 0。
+- `tags` 是单位持有的标签 id，不分来源（规格、状态、技能与模块授予的合在一起），按 id 排序；路线隐藏额外有 `hidden`；不含蕴含得到的标签。
+- 元素槽按标识抄当前值。
+- `blocking` 和 `blockedBy` 抄阻挡组件里已经写好的阻挡关系。
+- `skills` 按单位的技能顺序给出技力、花费、层数和是否持续；弹药技能持续且单位在场时 `ammo` 是向上取整的剩余弹药与弹匣，其余时候是 `null`。
+- `shield` 是护盾池与状态护盾的合计。
+- 倒下时 `redeploy` 是再部署计时已过的秒数与要等的秒数，没倒下时是 `null`。
+- `unbalanceUntil` 是失衡结束的拍（不含），没有失衡时是 `null`，见 [费用、阻挡与投射物](./12-field.md#失衡)。
 
 `components` 是带 `view` 的组件给画面的显示值，键是组件 id（见 [世界](./05-world.md#组件)）。它只给画面，不计入状态：黄金摘要先去掉它再算。快照不调用选择器。
 
@@ -151,11 +172,12 @@ declare module "arknights-mission-core" {
 - `removed`：单位离场且不再回来：装置被摧毁、敌人漏出、`removeUnit`。从下一次快照起不再出现，账本仍记着它
 - `attack`（可拦截）：普攻出手之前（包括 `forceAttack`）。`cancel` 改成真时这一下不打出去；`noAmmo` 改成真时这一下不用掉弹药
 - `palsy-interrupt`（可拦截）：麻痹打断敌人普攻、用掉一层之前。`stacks` 是用掉之前的层数；`keep` 改成真时这一层留着。订阅者里敌人倒下时这次普攻同样结束
-- `attack-hit`：攻击出手。`data.unitId` 是攻击者；这一下不用掉弹药时带 `noAmmo: true`
-- `hit`：`dealDamage` 进入步骤之前，`hit` 阶段的伤害修饰改写之后。数据是改写后的数额、种类与 `cancel`
+- `attack-hit`：攻击出手。`data.unitId` 是攻击者；这一下不用掉弹药时带 `noAmmo: true`。出手时有生效的主动技能（非被动）时带 `skillSlot`，是它在单位技能列表里的下标，从 0 数起
+- `hit`：`dealDamage` 进入步骤之前，`hit` 阶段的伤害修饰改写之后。数据是改写后的数额、种类与 `cancel`。来自普攻时带出手那一刻的 `skillSlot`，投射物晚到也不变
 - `element-hit`：元素进槽之前，`element-hit` 阶段的伤害修饰改写之后
 - `fatal`（可拦截）：这一下会把生命扣到 0。`data.prevented = true` 时生命留在 1 和最大生命里较小的那个
-- `damaged`：生命已经写下。`amount` 是这一下的数额，`applied` 是实际扣掉的生命（结算前减结算后，不含溢出），`hp` 是结算后的生命。不触发受击回复的一击带 `noSp: true`
+- `damaged`：生命已经写下。`amount` 是这一下的数额，`applied` 是实际扣掉的生命（结算前减结算后，不含溢出），`hp` 是结算后的生命。不触发受击回复的一击带 `noSp: true`；官方红字带 `red: true`，判定见 [伤害](./06-damage.md)
+- `dodged`：一击被闪避。`kind` 是这一击的种类；这一击没闪开时会是红字的带 `miss: true`，官方此时显示 MISS
 - `loss`：`loseHp` 扣了生命
 - `heal`：治疗写下生命或护盾
 - `displace`：坐标被改了。`duration` 是位移秒数（推和拉是这次失衡的秒数，画面按它滑动；直接 `displace` 是 0），`keepFacing` 为真时画面保持原朝向：推和拉缺省保持，`keepFacing: false` 或直接 `displace` 不保持
@@ -172,6 +194,42 @@ declare module "arknights-mission-core" {
 - `cue`：画面线索
 
 无来源的命中和伤害里，`sourceId` 是空字符串，`creditId` 仍是调用时给的来源。
+
+各事件的数据类型（字段见 [API 参考](./15-api.md#事件数据)）：
+
+| 事件 | 数据 |
+| --- | --- |
+| `attack` | `Intercept<AttackEvent>` |
+| `attack-hit` | `AttackHitEvent` |
+| `hit` | `HitEvent` |
+| `element-hit` | `ElementHitEvent` |
+| `fatal` | `Intercept<FatalEvent>` |
+| `palsy-interrupt` | `Intercept<PalsyInterruptEvent>` |
+| `damaged` | `DamagedEvent` |
+| `dodged` | `DodgedEvent` |
+| `loss` | `LossEvent` |
+| `heal` | `HealEvent` |
+| `downed` | `DownedEvent` |
+| `removed` | `UnitEvent` |
+| `deploy` | `UnitEvent` |
+| `retreat` | `UnitEvent` |
+| `input` | `InputEvent` |
+| `input-refused` | `InputRefusedEvent` |
+| `spawn` | `UnitEvent` |
+| `displace` | `DisplaceEvent` |
+| `blocked` | `BlockEvent` |
+| `unblocked` | `BlockEvent` |
+| `cost` | `CostEvent` |
+| `leak` | `UnitEvent` |
+| `projectile` | `ProjectileEvent` |
+| `skill-start` | `SkillEvent` |
+| `skill-end` | `SkillEvent` |
+| `ammo-used` | `AmmoUsedEvent` |
+| `status` | `StatusEvent` |
+| `element-burst` | `ElementBurstEvent` |
+| `terrain-enter` | `TerrainEvent` |
+| `terrain-leave` | `TerrainEvent` |
+| `cue` | `CueEvent` |
 
 ## 结果
 
@@ -194,4 +252,8 @@ declare module "arknights-mission-core" {
 
 ## 导出与导入
 
-`export()` 返回 `WorldArchive`：拍数、随机流状态、单位记录、组件表与资源，只有普通对象、数组与原始值，和世界不共享对象。用同样的规格与模块调用 `createBattle(spec, modules, archive)`，先照常建好，再把世界换成导出时的状态，待取走的事件清空；接着推进与不中断推进的事件、快照、结果和账本一致。快照的 `components` 视图、待取走的事件与订阅者不导出。导出时值不是纯数据会报出路径。组件与资源的编码见 [世界](./05-world.md#导出与导入)。
+- `export()` 返回 `WorldArchive`：拍数、随机流状态、单位记录、组件表与资源，只有普通对象、数组与原始值，和世界不共享对象。
+- 用同样的规格与模块调用 `createBattle(spec, modules, archive)`，先照常建好，再把世界换成导出时的状态，待取走的事件清空；接着推进与不中断推进的事件、快照、结果和账本一致。
+- 快照的 `components` 视图、待取走的事件与订阅者不导出。
+- 导出时值不是纯数据会报出路径。
+- 组件与资源的编码见 [世界](./05-world.md#导出与导入)。

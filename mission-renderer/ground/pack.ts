@@ -66,7 +66,9 @@ export type TerrainResourcePort = Pick<
 type TerrainLoadKind = Extract<MissionAssetKind, 'image' | 'model' | 'json'>;
 
 export interface TerrainPack {
-  readonly images: Partial<Record<MissionGroundImageSlot, Texture>>;
+  readonly images: { readonly diffuse: Texture } & Partial<
+    Record<MissionGroundImageSlot, Texture>
+  >;
   readonly meshes: Partial<Record<TerrainMeshSlot, TerrainProp>>;
   readonly gates: Partial<Record<TerrainGateSlot, TerrainProp>>;
   readonly uv: TerrainUvTable;
@@ -178,7 +180,8 @@ export async function loadTerrainPack(
     releaseHeld();
     return null;
   }
-  const images: Partial<Record<MissionGroundImageSlot, Texture>> = { diffuse };
+  const images: TerrainPack['images'] &
+    Partial<Record<MissionGroundImageSlot, Texture>> = { diffuse };
   await Promise.all(
     MISSION_GROUND_IMAGE_SLOTS.filter((slot) => slot !== 'diffuse').map(
       async (slot) => {

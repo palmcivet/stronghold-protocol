@@ -207,6 +207,30 @@ export function charmFor(ctx: ContentContext, unitId: string, tag: TagKey) {
 
 `CORE_TAGS` 列出全部核心标签。
 
+### 官方等级标签
+
+`officialRankModule`（id `official-rank`）注册明日方舟的单位等级标签。它是可选的内置模块，规格的 `modules` 写上它才生效。
+
+```ts
+import { BOSS, createBattle, officialRankModule } from "arknights-mission-core"
+import type { BattleSpec } from "arknights-mission-core"
+
+declare const spec: BattleSpec
+const battle = createBattle(
+  { ...spec, modules: [...spec.modules, officialRankModule.id] },
+  [officialRankModule],
+)
+console.log(battle.snapshot().units.filter((unit) => unit.tags.includes(BOSS.id)))
+```
+
+| 键 | id | 含义 |
+| --- | --- | --- |
+| `BOSS` | `boss` | 首领 |
+| `ELITE` | `elite` | 精英 |
+
+- 两个标签只是标记，不改战斗规则
+- 画面按它们给头顶条加边框
+
 ## 导出与导入
 
 `exportWorld` 把世界写成纯数据：拍数、随机流状态（`random.state()`，导入时 `random.restore`）、按入场顺序的单位记录、组件表和资源。组件与资源有 `codec` 时先 `encode`，再检查只剩普通对象、数组、字符串、布尔、`null` 与数字，否则报出路径；结果深拷贝，和世界不共享对象。`importWorld` 反过来写回，规格、注册、订阅与 transient 资源不变，待取走的事件清空。系统与订阅者每次运行时经 `ensure` 取资源，不留导入前的旧值。

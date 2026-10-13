@@ -1,7 +1,7 @@
 import type { AssetKey } from 'arknights-assets-catalog';
 import type { BattleEvent, UnitSnapshot } from 'arknights-mission-core';
 import { describe, expect, it } from 'vitest';
-import { audioCueFor, effectCueFor } from '#audio/index.js';
+import { audioCueFor, createSkillCueHold, effectCueFor } from '#audio/index.js';
 import { createMissionCueBindings } from '#effect/binding.js';
 
 const asset: AssetKey = 'audio:sfx/battle/b_hit';
@@ -108,5 +108,69 @@ describe('cue kind sounds', () => {
       audioCueFor(event('cue', { kind: 'quiet' }), { bindings }),
     ).toBeNull();
     expect(audioCueFor(event('cue', { kind: 'storm' }))).toBeNull();
+  });
+});
+
+describe('skill slot', () => {
+  it('carries the skill slot of attack-hit and hit, and leaves it out otherwise', () => {
+    expect(
+      audioCueFor(event('attack-hit', { unitId: 'a', skillSlot: 2 })),
+    ).toEqual({
+      type: 'hit',
+      eventType: 'attack-hit',
+      unitId: 'a',
+      skillSlot: 2,
+    });
+    expect(
+      audioCueFor(event('hit', { targetId: 'e', skillSlot: 0 }))?.skillSlot,
+    ).toBe(0);
+    expect(
+      audioCueFor(event('attack-hit', { unitId: 'a' })),
+    ).not.toHaveProperty('skillSlot');
+  });
+});
+
+describe('early skill cue', () => {
+  const skill = (unitId: string) =>
+    audioCueFor(event('skill-start', { unitId }));
+
+  it('holds a cast of an unknown unit and plays it once when the unit appears', () => {
+    const hold = createSkillCueHold();
+    const cast = skill('late');
+    expect(cast?.type).toBe('skill');
+    if (!cast) {
+      return;
+    }
+    expect(hold.pass(cast, () => false)).toBeNull();
+    expect(hold.release(() => false)).toEqual([]);
+    expect(hold.release((id) => id === 'late')).toEqual([cast]);
+    expect(hold.release(() => true)).toEqual([]);
+    expect(hold.pass(cast, () => true)).toBe(cast);
+  });
+
+  it('passes other cues, keeps one cast per unit, stays bounded and drops holds on clear', () => {
+    const hold = createSkillCueHold(2);
+    const hit = audioCueFor(event('hit', { targetId: 'x' }));
+    if (!hit) {
+      throw new Error('no hit cue');
+    }
+    expect(hold.pass(hit, () => false)).toBe(hit);
+    for (const id of ['a', 'a', 'b', 'c']) {
+      const cue = skill(id);
+      if (cue) {
+        hold.pass(cue, () => false);
+      }
+    }
+    expect(hold.size).toBe(2);
+    expect(hold.release(() => true).map((cue) => cue.unitId)).toEqual([
+      'b',
+      'c',
+    ]);
+    const cue = skill('d');
+    if (cue) {
+      hold.pass(cue, () => false);
+    }
+    hold.clear();
+    expect(hold.release(() => true)).toEqual([]);
   });
 });

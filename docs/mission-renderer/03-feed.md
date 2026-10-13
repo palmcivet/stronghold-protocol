@@ -30,13 +30,14 @@ export function onFrame(
 
 ## 参数
 
-舞台只传入 `speed` 和 `delay`；直接用 `createMissionFeed` 时还可以给 `keep`。
+舞台只传入 `speed` 和 `delay`；直接用 `createMissionFeed` 时还可以给 `keep` 与 `maxExtrapolate`。
 
 | 参数 | 缺省 | 范围 | 含义 |
 | --- | --- | --- | --- |
 | `speed` | 2 | 0.05 到 20 | 每真实秒的游戏秒数 |
 | `delay` | 0.034 | 不小于 0 | 落后最新帧的真实秒数 |
 | `keep` | 2.5 | 不小于 0.5 | 时钟之后保留的真实秒数 |
+| `maxExtrapolate` | 0.12 | 不小于 0 | 时钟能跑过最新帧的真实秒数（`MISSION_FEED_EXTRAPOLATE`） |
 
 ## 渲染时钟
 
@@ -45,7 +46,7 @@ export function onFrame(
 - 第一帧到达时，时钟设为 `最新帧时间 − delay × speed`
 - `advance(deltaSeconds)` 先把 `deltaSeconds` 限制在 0 到 0.25 秒，再推进 `dt × speed`
 - 推进后，时钟与目标（`最新帧时间 − delay × speed`）的偏差大于 `0.75 × speed` 时直接对齐；否则按 `min(1, dt × 3)` 的比例逐步修正
-- 时钟始终限制在缓冲的第一帧与最后一帧之间
+- 时钟不早于缓冲的第一帧，不晚于最后一帧之后 `maxExtrapolate × speed` 游戏秒
 - 同一时间的快照替换原有的一帧
 - 新快照的 tick 小于最新一帧时视为模拟重启：清空帧、事件和时钟
 
@@ -54,9 +55,18 @@ export function onFrame(
 `sample()` 取时钟两侧的两帧 `a`（较早）和 `b`（较晚），按 `alpha = (时钟 − a) / (b − a)` 插值：
 
 - 两帧都有的单位，位置线性插值；位置有变化的进入 `moving`
+- 出手后站定的单位（`a` 的 `components['attack:stand']`）：站定在 `a` 与 `b` 之间结束时，结束之前停在 `a` 的位置，之后在剩下的区间里插值
+  - 站定在 `b` 之后才结束的，或 `cutAt` 落在两帧之间的（站定被打断），按整段区间插值
+  - 外推的速度也按剩下的区间算；剩下的区间为零时不外推
 - 只在 `b` 中的单位原样返回
 - 只在 `a` 中的单位在 `alpha < 1` 时仍保留，用 `a` 的状态，刚离场的单位不会在一帧内消失
 - 返回的 `snapshot` 是 `b`，标签（`tags`）和属性（`attributes`）都取自它
+
+时钟跑过最新帧时，单位沿最近两帧之间的速度外推，外推长度就是时钟超出最新帧的部分，所以最多 `maxExtrapolate` 真实秒，之后停住：
+
+- 最新帧里倒下、被阻挡（`blockedBy` 不为 `null`）、带 `stun`、`freeze` 或 `sleep` 标签、或出手后站定（`components['attack:stand']` 的 `until` 不为 `null`）的单位不外推
+- 两帧之间移动超过 2.5 格的算跳跃，不外推
+- 只在最新帧里出现的单位不外推
 
 舞台把 `sample().units` 写入 `view.units`，`moving` 交给演员决定是否播移动动画。
 

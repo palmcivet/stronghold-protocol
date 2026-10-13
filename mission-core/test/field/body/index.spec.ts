@@ -10,6 +10,7 @@ import {
   type MissionModule,
 } from 'arknights-mission-core';
 import { expect, test } from 'vitest';
+import { bodyTileReach } from '#field/body/index.js';
 import { ally, spec } from '#test/fixture.js';
 
 const span = { x0: 0, y0: 0, x1: 12, y1: 12 };
@@ -106,4 +107,19 @@ test('范围里的一格能命中跨格身体，邻格打不中点单位', () =>
   expect(seen).toEqual(['huge']);
   expect(hugeRect).toMatchObject({ kind: 'rect', w: 4.95, h: 1 });
   expect(pointRect).toEqual({ kind: 'tile', x: 1.5, y: 0.5, w: 1, h: 1 });
+});
+
+test('点单位恰在两格正中时属于偶数格：站位、占格、格距与按格筛选一致', () => {
+  const half = { x: 10.5, y: 3.5, hitArea: null };
+  const wide = { x0: 0, y0: 0, x1: 20, y1: 12 };
+  expect(bodyKeys(half, wide)).toEqual(['10,4']);
+  expect(bodyOnTile(half, 10, 4)).toBe(true);
+  expect(bodyOnTile(half, 11, 4)).toBe(false);
+  expect(bodyOnTile(half, 10, 3)).toBe(false);
+  expect(bodyTileReach(half, 10, 4, wide)).toBe(0);
+  expect(bodyTileReach(half, 12, 4, wide)).toBe(2);
+  expect(bodyKeys({ x: 11.5, y: 2.5, hitArea: null }, wide)).toEqual(['12,2']);
+  const row = { x: 10.5, y: 3, hitArea: null };
+  expect(bodyInKeys(row, ['10,3'], wide)).toBe(true);
+  expect(bodyInKeys(row, ['11,3'], wide)).toBe(false);
 });

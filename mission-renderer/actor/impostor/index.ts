@@ -59,14 +59,28 @@ export interface MissionImpostorAtlasOptions {
   readonly pageSize?: { readonly main: number; readonly clip: number };
   /** Most pages of each sort. Defaults to 3 main and 2 clip pages. */
   readonly maxPages?: { readonly main: number; readonly clip: number };
-  /** Side of the square cells a page is cut into, in pixels; a slot takes one cell. Defaults to 256. */
-  readonly cell?: number;
+  /** Grid that slot sides are rounded up to, in pixels. Defaults to 16. */
+  readonly grid?: number;
+}
+
+/** A row of slots of one height, filled from the left. */
+interface Shelf {
+  readonly y: number;
+  readonly height: number;
+  /** Left edge of the unused rest of the shelf. */
+  x: number;
+  /** Freed slots of the shelf, reused before the rest. */
+  readonly free: { readonly x: number; readonly width: number }[];
+  live: number;
 }
 
 interface Page {
   readonly target: WebGLRenderTarget;
   readonly clip: boolean;
-  readonly free: number[];
+  readonly size: number;
+  readonly shelves: Shelf[];
+  /** Top of the unused rest of the page. */
+  nextY: number;
   readonly queue: {
     readonly slot: MissionImpostorSlot;
     readonly object: Object3D;
@@ -74,19 +88,24 @@ interface Page {
   }[];
 }
 
-/** An atlas cutting each page into equal cells, one per slot; pages are added on demand up to the limit. */
+/** A freed slot or shelf is reused for a request at most this much smaller. */
+const REUSE_SLACK = 1.5;
+
+/**
+ * An atlas packing slots onto shelves: rows of one height, filled from the left. A freed slot is reused by a request
+ * of a fitting size; a shelf whose last slot is freed is emptied, and empty shelves at the top of a page are given back,
+ * so a page whose slots are all freed starts over. Pages are added on demand up to the limit; skeletons with clipping
+ * attachments get slots on separate, smaller clip pages.
+ */
 export function createMissionImpostorAtlas(
   options: MissionImpostorAtlasOptions,
 ): MissionImpostorAtlas {
   const pageSize = options.pageSize ?? { main: 2048, clip: 1024 };
   const maxPages = options.maxPages ?? { main: 3, clip: 2 };
-  const cell = options.cell ?? 256;
+  const grid = options.grid ?? 16;
   const pages: Page[] = [];
+  const shelfOf = new Map<MissionImpostorSlot, Shelf>();
   const scene = new Scene();
-  let used = 0;
-
-  const cellsOf = (clip: boolean): number =>
-    Math.floor((clip ? pageSize.clip : pageSize.main) / cell) ** 2;
 
   const pageOf = (slot: MissionImpostorSlot): Page => {
     const page = pages[slot.page];
@@ -104,58 +123,116 @@ export function createMissionImpostorAtlas(
       return null;
     }
     const size = clip ? pageSize.clip : pageSize.main;
-    const free = Array.from(
-      { length: cellsOf(clip) },
-      (_, index) => cellsOf(clip) - 1 - index,
-    );
     const page: Page = {
       target: new WebGLRenderTarget(size, size),
       clip,
-      free,
+      size,
+      shelves: [],
+      nextY: 0,
       queue: [],
     };
     pages.push(page);
     return page;
   };
 
+  const slotOf = (
+    page: Page,
+    shelf: Shelf,
+    x: number,
+    width: number,
+  ): MissionImpostorSlot => {
+    shelf.live += 1;
+    const slot: MissionImpostorSlot = {
+      page: pages.indexOf(page),
+      clip: page.clip,
+      x,
+      y: shelf.y,
+      width,
+      height: shelf.height,
+    };
+    shelfOf.set(slot, shelf);
+    return slot;
+  };
+
+  const allocIn = (
+    page: Page,
+    width: number,
+    height: number,
+  ): MissionImpostorSlot | null => {
+    for (const shelf of page.shelves) {
+      if (shelf.height < height || shelf.height > height * REUSE_SLACK) {
+        continue;
+      }
+      const index = shelf.free.findIndex(
+        (gap) => gap.width >= width && gap.width <= width * REUSE_SLACK,
+      );
+      const gap = index >= 0 ? shelf.free.splice(index, 1)[0] : undefined;
+      if (gap) {
+        return slotOf(page, shelf, gap.x, gap.width);
+      }
+      if (shelf.x + width <= page.size) {
+        const x = shelf.x;
+        shelf.x += width;
+        return slotOf(page, shelf, x, width);
+      }
+    }
+    if (page.nextY + height > page.size) {
+      return null;
+    }
+    const shelf: Shelf = { y: page.nextY, height, x: width, free: [], live: 0 };
+    page.nextY += height;
+    page.shelves.push(shelf);
+    return slotOf(page, shelf, 0, width);
+  };
+
   return {
     alloc(width, height, clip) {
-      if (width > cell || height > cell || width <= 0 || height <= 0) {
+      if (!(width > 0) || !(height > 0)) {
         return null;
       }
-      const page =
-        pages.find(
-          (candidate) => candidate.clip === clip && candidate.free.length > 0,
-        ) ?? newPage(clip);
-      const index = page?.free.pop();
-      if (!page || index === undefined) {
+      const w = Math.ceil(width / grid) * grid;
+      const h = Math.ceil(height / grid) * grid;
+      const size = clip ? pageSize.clip : pageSize.main;
+      if (w > size || h > size) {
         return null;
       }
-      const columns = Math.floor(page.target.width / cell);
-      used += 1;
-      return {
-        page: pages.indexOf(page),
-        clip,
-        x: (index % columns) * cell,
-        y: Math.floor(index / columns) * cell,
-        width,
-        height,
-      };
+      for (const page of pages) {
+        if (page.clip !== clip) {
+          continue;
+        }
+        const slot = allocIn(page, w, h);
+        if (slot) {
+          return slot;
+        }
+      }
+      const page = newPage(clip);
+      return page ? allocIn(page, w, h) : null;
     },
     free(slot) {
-      const page = pageOf(slot);
-      const columns = Math.floor(page.target.width / cell);
-      const index = (slot.y / cell) * columns + slot.x / cell;
-      if (page.free.includes(index)) {
+      const shelf = shelfOf.get(slot);
+      if (!shelf) {
         return;
       }
-      page.free.push(index);
+      shelfOf.delete(slot);
+      const page = pageOf(slot);
       page.queue.splice(
         0,
         page.queue.length,
         ...page.queue.filter((draw) => draw.slot !== slot),
       );
-      used -= 1;
+      shelf.live -= 1;
+      if (shelf.live > 0) {
+        shelf.free.push({ x: slot.x, width: slot.width });
+        return;
+      }
+      shelf.x = 0;
+      shelf.free.length = 0;
+      while (page.shelves.length > 0 && page.shelves.at(-1)?.live === 0) {
+        const top = page.shelves.pop();
+        if (top) {
+          page.nextY = top.y;
+        }
+      }
     },
     draw(slot, object, camera) {
       pageOf(slot).queue.push({ slot, object, camera });
@@ -184,13 +261,13 @@ export function createMissionImpostorAtlas(
       renderer.setRenderTarget(previous);
     },
     texture: (slot) => pageOf(slot).target.texture,
-    stats: () => ({ pages: pages.length, slots: used }),
+    stats: () => ({ pages: pages.length, slots: shelfOf.size }),
     clear() {
       for (const page of pages) {
         page.target.dispose();
       }
       pages.length = 0;
-      used = 0;
+      shelfOf.clear();
     },
   };
 }

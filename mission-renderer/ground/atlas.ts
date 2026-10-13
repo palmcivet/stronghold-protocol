@@ -179,18 +179,25 @@ export function surfaceUV(
   const right = (x + w - insetX) / source.w;
   const top = 1 - (y + insetY) / source.h;
   const bottom = 1 - (y + h - insetY) / source.h;
-  let corners: [number, number][] = [
+  let corners: [
+    [number, number],
+    [number, number],
+    [number, number],
+    [number, number],
+  ] = [
     [left, bottom],
     [right, bottom],
     [right, top],
     [left, top],
   ];
   if (surfaceRecord.flipX) {
-    corners = [corners[1]!, corners[0]!, corners[3]!, corners[2]!];
+    const [a, b, c, d] = corners;
+    corners = [b, a, d, c];
   }
   const turns = (((Math.round(surfaceRecord.rot) / 90) % 4) + 4) % 4;
   for (let turn = 0; turn < turns; turn += 1) {
-    corners = [corners[1]!, corners[2]!, corners[3]!, corners[0]!];
+    const [a, b, c, d] = corners;
+    corners = [b, c, d, a];
   }
   return corners.flat();
 }

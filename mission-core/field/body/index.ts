@@ -1,6 +1,7 @@
 import type { HitArea } from '#contract/spec.js';
 import { SPATIAL_EPSILON } from '#kernel/math/epsilon.js';
 import { hypot } from '#kernel/math/hypot.js';
+import { roundHalfEven } from '#kernel/math/round.js';
 
 export interface BodyUnit {
   readonly x: number;
@@ -23,7 +24,8 @@ export interface BoardSpan {
   readonly y1: number;
 }
 
-type KeyCollection = { has(key: string): boolean } | readonly string[];
+/** 格子键的集合：带 `has` 的集合，或键的数组。 */
+export type KeyCollection = { has(key: string): boolean } | readonly string[];
 
 export function tileKey(x: number, y: number): string {
   return `${x},${y}`;
@@ -71,8 +73,8 @@ function insideSpan(span: BoardSpan, x: number, y: number): boolean {
 }
 
 function positionKey(unit: BodyUnit, span: BoardSpan): string | null {
-  const x = Math.round(unit.x);
-  const y = Math.round(unit.y);
+  const x = roundHalfEven(unit.x);
+  const y = roundHalfEven(unit.y);
   if (!insideSpan(span, x, y)) {
     return null;
   }
@@ -103,7 +105,7 @@ export function bodyKeys(unit: BodyUnit, span: BoardSpan): readonly string[] {
 export function bodyOnTile(unit: BodyUnit, x: number, y: number): boolean {
   const rect = bodyRect(unit);
   if (!rect) {
-    return Math.round(unit.y) === y && Math.round(unit.x) === x;
+    return roundHalfEven(unit.y) === y && roundHalfEven(unit.x) === x;
   }
   return (
     x + 0.5 > rect.x0 + SPATIAL_EPSILON &&
@@ -171,8 +173,8 @@ export function bodyTileReach(
 ): number {
   if (!normHitArea(unit.hitArea)) {
     return Math.max(
-      Math.abs(Math.round(unit.y) - y),
-      Math.abs(Math.round(unit.x) - x),
+      Math.abs(roundHalfEven(unit.y) - y),
+      Math.abs(roundHalfEven(unit.x) - x),
     );
   }
   let best = Infinity;

@@ -73,6 +73,10 @@ export interface SkillInstance extends SkillRuntime {
   readonly heal: boolean;
   readonly triggerAllies: boolean;
   readonly triggerHpAtMost: number;
+  /** 规格的 allyTargets；没写是 null，按缺省规则判断。 */
+  readonly allyTargets: boolean | null;
+  readonly triggerEnemies: boolean;
+  readonly castWithoutEnemy: boolean;
   readonly triggerRange: readonly { x: number; y: number }[];
   readonly mods: readonly SkillModifier[];
   readonly skillFlags: readonly string[];
@@ -81,6 +85,8 @@ export interface SkillInstance extends SkillRuntime {
   sp: number;
   charges: number;
   opReadyAt: number;
+  /** 没有自己攻击的立即技能：每拍判定的释放要等到这个时刻（上一次释放之后一个攻击间隔）。 */
+  nextCastAt: number;
   pending: boolean;
   activations: number;
   effectsApplied: boolean;
@@ -159,6 +165,11 @@ function createSkill(spec: UnitSpec['skills'][number]): SkillInstance {
     maxCharges: Math.max(1, Math.floor(spec.charges ?? 1)),
     heal: spec.heal === true,
     triggerAllies: spec.triggerAllies === true,
+    allyTargets: spec.allyTargets ?? null,
+    triggerEnemies: spec.triggerEnemies === true,
+    castWithoutEnemy:
+      spec.castWithoutEnemy ??
+      (spec.triggerAllies === true && spec.trigger === 'DEFAULT'),
     triggerHpAtMost: limit !== undefined && limit > 0 ? limit : 1,
     triggerRange: (spec.triggerRange ?? []).map((cell) => ({
       x: cell.x,
@@ -175,6 +186,7 @@ function createSkill(spec: UnitSpec['skills'][number]): SkillInstance {
     sp: 0,
     charges: 0,
     opReadyAt: Number.NEGATIVE_INFINITY,
+    nextCastAt: Number.NEGATIVE_INFINITY,
     pending: false,
     activations: 0,
     effectsApplied: false,
@@ -255,6 +267,14 @@ export const ENGINE = defineResource<Engine>(
 
 export function engineOf(ctx: ContentContext): Engine {
   return ctx.resource(ENGINE).ensure();
+}
+
+/** 正在生效的主动技能（非被动）在技能列表里的下标；没有时是 undefined。 */
+export function activeSkillSlot(unit: UnitState): number | undefined {
+  const index = unit.skills.findIndex(
+    (skill) => skill.active && skill.body !== 'passive',
+  );
+  return index < 0 ? undefined : index;
 }
 
 export function requireUnit(world: BattleWorld, unitId: string): UnitState {

@@ -272,3 +272,135 @@ describe('内容命令', () => {
     expect(bare.notes).toEqual([null, 'no-redeploy']);
   });
 });
+
+describe('部署输入', () => {
+  /** 开场只放 a；b、c 在后备里，各 cost 4，起始费用 5。第 3 格站不住。 */
+  function reserve() {
+    const module: MissionModule = {
+      id: 'reserve',
+      install(ctx) {
+        ctx.registerDeployStrategy({
+          id: 'reserve',
+          opening: () => ['a'],
+          downedTile: () => ({ x: 0, y: 0 }),
+          canStand: (_unitId, tile) => tile.x !== 3,
+        });
+      },
+    };
+    const make = (
+      archive?: ReturnType<ReturnType<typeof createBattle>['export']>,
+    ) =>
+      createBattle(
+        spec({
+          modules: ['reserve'],
+          deployStrategy: 'reserve',
+          cost: {
+            ally: { initial: 5, regen: 0, cap: 99 },
+            enemy: { initial: 0, regen: 0, cap: 0 },
+          },
+          tiles: lane,
+          units: [
+            ally('a', { attackRange: [] }),
+            ally('b', {
+              attackRange: [],
+              attributes: { hp: 100, atk: 0, cost: 4 },
+            }),
+            ally('c', {
+              attackRange: [],
+              attributes: { hp: 100, atk: 0, cost: 4 },
+            }),
+          ],
+        }),
+        [module],
+        archive,
+      );
+    return make;
+  }
+
+  test('deploy 把后备单位放到格子上：写坐标与朝向，送出 deploy 与 input', () => {
+    const battle = reserve()();
+    battle.step();
+    battle.drainEvents();
+    battle.step([
+      { type: 'deploy', unitId: 'b', tile: { x: 2, y: 0 }, facing: 'LEFT' },
+    ]);
+    const events = battle.drainEvents();
+    expect(
+      events
+        .filter((event) => event.type === 'input' || event.type === 'deploy')
+        .map((event) => event.type),
+    ).toEqual(['deploy', 'input']);
+    expect(events.find((event) => event.type === 'deploy')?.data).toMatchObject(
+      { unitId: 'b' },
+    );
+    const b = battle.snapshot().units.find((unit) => unit.id === 'b');
+    expect(b).toMatchObject({ x: 2, y: 0, facing: 'LEFT' });
+  });
+
+  test('deploy 的拒绝：上过场、站不住、费用不够、形状不对', () => {
+    const reasons = (input: BattleInput, retreated = false): unknown[] => {
+      const battle = reserve()();
+      battle.step();
+      battle.drainEvents();
+      if (retreated) {
+        battle.step([{ type: 'deploy', unitId: 'b', tile: { x: 2, y: 0 } }]);
+        battle.drainEvents();
+        battle.step([{ type: 'retreat', unitId: 'b' }]);
+        battle.drainEvents();
+      }
+      battle.step([input]);
+      return battle
+        .drainEvents()
+        .filter((event) => event.type === 'input-refused')
+        .map((event) => field(event, 'reason'));
+    };
+    expect(
+      reasons({ type: 'deploy', unitId: 'a', tile: { x: 1, y: 0 } }),
+    ).toEqual(['not-reserve']);
+    expect(
+      reasons({ type: 'deploy', unitId: 'b', tile: { x: 3, y: 0 } }),
+    ).toEqual(['tile-blocked']);
+    expect(
+      reasons({ type: 'deploy', unitId: 'b', tile: { x: 9, y: 0 } }),
+    ).toEqual(['tile-blocked']);
+    expect(
+      reasons({ type: 'deploy', unitId: 'b', tile: { x: 0.5, y: 0 } }),
+    ).toEqual(['bad-order']);
+    expect(
+      reasons({ type: 'deploy', unitId: 'b', tile: { x: 1, y: 0 } }, true),
+    ).toEqual(['not-reserve']);
+  });
+
+  test('费用不够时拒绝，单位留在后备', () => {
+    const battle = reserve()();
+    battle.step([
+      { type: 'deploy', unitId: 'b', tile: { x: 1, y: 0 } },
+      { type: 'deploy', unitId: 'c', tile: { x: 2, y: 0 } },
+    ]);
+    const events = battle.drainEvents();
+    expect(
+      events
+        .filter((event) => event.type === 'input-refused')
+        .map((event) => field(event, 'reason')),
+    ).toEqual(['no-cost']);
+    expect(
+      events
+        .filter((event) => event.type === 'deploy')
+        .map((event) => field(event, 'unitId')),
+    ).toEqual(['a', 'b']);
+  });
+
+  test('导出导入后继续推进，部署过的单位不能再部署', () => {
+    const make = reserve();
+    const battle = make();
+    battle.step([{ type: 'deploy', unitId: 'b', tile: { x: 2, y: 0 } }]);
+    battle.drainEvents();
+    const resumed = make(battle.export());
+    resumed.step([{ type: 'deploy', unitId: 'b', tile: { x: 1, y: 0 } }]);
+    battle.step([{ type: 'deploy', unitId: 'b', tile: { x: 1, y: 0 } }]);
+    expect(resumed.drainEvents()).toEqual(battle.drainEvents());
+    expect(JSON.stringify(resumed.export())).toBe(
+      JSON.stringify(battle.export()),
+    );
+  });
+});

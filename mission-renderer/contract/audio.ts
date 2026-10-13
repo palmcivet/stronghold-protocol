@@ -23,5 +23,7 @@ export interface MissionAudioCue {
   readonly kind?: MissionCueKind;
   readonly unitId?: string;
   readonly targetId?: string;
+  /** Index of the active skill in the unit's skill list, from 0, carried by `attack-hit` and `hit`. */
+  readonly skillSlot?: number;
   readonly asset?: AssetKey;
 }

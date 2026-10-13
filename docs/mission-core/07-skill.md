@@ -5,7 +5,11 @@ description: 技力、充能和触发在 skill-point 上走，技能体在 skill
 
 # 技能
 
-友方带技能且已在场时，开始两份计时器。`skill-body` 推进正在持续的技能体。`skill-point` 回复技力，并按触发决定是否释放。特性计数的 id 是 `trait`，挂在友方槽。`startTimer` 之后每次推进把 `count` 加一。
+**技能**由两份计时器驱动：`skill-point` 回复技力并决定何时释放，`skill-body` 推进正在持续的技能体。它们和攻击计时分开。
+
+- 友方带技能且已在场时，开始两份计时器。
+- 特性计数的 id 是 `trait`，挂在友方槽。
+- `startTimer` 之后每次推进把 `count` 加一。
 
 一次推进只改自己那一份状态。攻击前摇被取消时，技力计时器的相位不动。
 
@@ -52,9 +56,29 @@ description: 技力、充能和触发在 skill-point 上走，技能体在 skill
 
 `SP_FULL`、`SEARCH`、`CUSTOM_RANGE`、`SKILL_RANGE`、`ACTIVE_RANGE`、`GDGLOW_SKILL_2` 每个技力拍都问。
 
-内容可以用 `setTriggerArea(unitId, key, area)` 登记技能触发区域：`area` 是绝对格子，或 `{ unitId }`（那名单位当前的攻击范围），`null` 撤下。区域里有敌人（飞行的也算）时，这名单位的非治疗技能，只要触发不是上面这些每拍问的，也不是 `TAKE_DAMAGE`、`NEVER`，就在这个技力拍按 `DEFAULT` 释放，攻击者也不等攻击。`DEFAULT` 等这一拍的攻击会命中再问；单位带 `no-attack` 时不等攻击。`TAKE_DAMAGE` 在 `damaged` 时问。
+- 内容可以用 `setTriggerArea(unitId, key, area)` 登记技能触发区域：`area` 是绝对格子，或 `{ unitId }`（那名单位当前的攻击范围），`null` 撤下。
+- 区域里有敌人（飞行的也算）时，这名单位的非治疗技能，只要触发不是上面这些每拍问的，也不是 `TAKE_DAMAGE`、`NEVER`，就在这个技力拍按 `DEFAULT` 释放，攻击者也不等攻击。
+- 第四个参数 `cadence` 缺省为 `'tick'`。
+- 传 `'attack'` 时，这块区域不在每拍判定。
+- 这时区域只在下一次普攻之前和 `DEFAULT` 一起判定。
+- 带 `no-attack` 的单位每拍判定它。
+- 立即生效、本身不是攻击的技能，在每拍判定里释放后，下一次每拍判定至少隔一个攻击间隔；普攻之前的判定不受这条限制。
+- `DEFAULT` 等这一拍的攻击会命中再问；单位带 `no-attack` 时不等攻击。
+- `TAKE_DAMAGE` 在 `damaged` 时问。
 
-治疗技能的 `triggerHpAtMost` 缺省是 1，也就是不满血即可。未知触发标识拒绝创建。
+治疗技能的 `triggerHpAtMost` 缺省是 1，也就是不满血即可。
+
+技能的主人治不了的友方不算受伤友方。带 `no-ally-heal` 的友方不算。带 `no-heal` 的友方也不算，除非主人的 `attackShape.healThrough` 选中它。只带 `isolated` 的友方仍算受伤友方。
+
+带 `ally-target` 的友方在上面的敌人条件里算作敌人，前提是这个技能能开在它身上。治疗技能和被动技能不能。`allyTargets` 写了就照它。没写时，单位会攻击，且技能是持续技能或带 `hit` 钩子（下一次攻击），才能。
+
+- 带 `triggerAllies` 的 `DEFAULT` 技能在普攻之前只看友方条件，不要求范围里有敌人。
+- `castWithoutEnemy` 缺省为真（带 `triggerAllies` 且触发为 `DEFAULT` 时）。
+- 为真时，普攻没有目标也会问这个技能：友方条件满足就释放，替换这一下普攻。
+- 带 `hit` 钩子的技能把友方条件选中的友方作为这一下的目标，这一下不结算伤害，钩子在它的 `attack-hit` 上执行。
+- 写 `false` 的技能要等到有敌人的那一下普攻。
+
+治疗技能带 `triggerEnemies` 时，基础条件里范围内有敌人也满足。既打敌人又治疗友方的技能用它。未知触发标识拒绝创建。
 
 登记一个新触发：
 

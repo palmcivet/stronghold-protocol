@@ -10,12 +10,21 @@ export type AttackEvent = {
   cancel: boolean;
   /** 改成 true 时这一下不用掉弹药、不送 ammo-used，照样算一次攻击。缺省没有。 */
   noAmmo?: boolean;
+  /** 出手时正在生效的主动技能的下标（见 attack-hit）。 */
+  readonly skillSlot?: number;
+  /** 这一下没有普通目标，目标由登记的普攻替代给出：不结算伤害，只算一次攻击。 */
+  readonly substitute?: true;
 };
 
 /** 一次普攻打了出去。noAmmo 为真时这一下不用掉弹药。 */
 export type AttackHitEvent = {
   readonly unitId: string;
   readonly noAmmo?: true;
+  /** 这一下的目标由普攻替代给出，没有结算伤害。只在这时带 targetIds。 */
+  readonly substitute?: true;
+  readonly targetIds?: readonly string[];
+  /** 出手时正在生效的主动技能在单位技能列表里的下标，从 0 数起。没有生效的主动技能时没有这个字段。 */
+  readonly skillSlot?: number;
 };
 
 /** 一次伤害进入减伤之前，hit 阶段的伤害修饰都已执行。数值的修改走伤害修饰。 */
@@ -30,6 +39,10 @@ export type HitEvent = {
   readonly cancel: boolean;
   readonly sourceless: boolean;
   readonly element?: string;
+  /** 来自普攻时，出手那一刻正在生效的主动技能的下标（见 attack-hit）。投射物到达时仍是出手时的值。 */
+  readonly skillSlot?: number;
+  /** 普攻带附加段时，本体与附加段共用的 id。 */
+  readonly attackId?: string;
 };
 
 /** 元素损伤进槽之前，element-hit 阶段的伤害修饰都已执行。字段与 hit 相同，另带倍率。 */
@@ -68,6 +81,18 @@ export type DamagedEvent = {
   readonly attack?: true;
   /** 这一击不触发受击回复。 */
   readonly noSp?: true;
+  /** 官方红字：见 `DamageInfo.red`。 */
+  readonly red?: true;
+  /** 普攻带附加段时，本体与附加段共用的 id。 */
+  readonly attackId?: string;
+};
+
+/** 闪避掉的一击。`miss` 表示这一击没闪开时会是红字，官方此时显示 MISS。 */
+export type DodgedEvent = {
+  readonly sourceId: string;
+  readonly targetId: string;
+  readonly kind: string;
+  readonly miss?: true;
 };
 
 /** 流失：不经伤害步骤的扣血。 */
@@ -202,6 +227,7 @@ interface CoreBattleEventMap {
   fatal: Intercept<FatalEvent>;
   'palsy-interrupt': Intercept<PalsyInterruptEvent>;
   damaged: DamagedEvent;
+  dodged: DodgedEvent;
   loss: LossEvent;
   heal: HealEvent;
   downed: DownedEvent;
@@ -262,6 +288,7 @@ export const CORE_EVENT_TYPES = coreEventTypes([
   'fatal',
   'palsy-interrupt',
   'damaged',
+  'dodged',
   'loss',
   'heal',
   'downed',

@@ -18,6 +18,8 @@ import {
 } from '#kernel/schedule/index.js';
 import { createTagCatalog } from '#kernel/world/tag.js';
 import {
+  type AttackSegmentDefinition,
+  type AttackSubstituteDefinition,
   type AttributeDefinition,
   type BattleRegistry,
   type ConditionDefinition,
@@ -60,6 +62,10 @@ export function createRegistry(): BattleRegistry {
   const shifts = createTable<ShiftDefinition>('shift');
   const terrains = createTable<TerrainDefinition>('terrain');
   const zones = createOrderedTable<ZoneDefinition>('zone');
+  const substitutes =
+    createOrderedTable<AttackSubstituteDefinition>('attack-substitute');
+  const segments =
+    createOrderedTable<AttackSegmentDefinition>('attack-segment');
   const steps = createOrderedTable<DamageStepDefinition>('damage-step', {
     compare: byPriority,
   });
@@ -157,6 +163,10 @@ export function createRegistry(): BattleRegistry {
     registerZone: (definition) => zones.register(definition),
     requireZone: (id) => zones.require(id),
     zones: () => zones.ordered(),
+    registerAttackSubstitute: (definition) => substitutes.register(definition),
+    attackSubstitutes: () => substitutes.ordered(),
+    registerAttackSegment: (definition) => segments.register(definition),
+    attackSegments: () => segments.ordered(),
     registerSystem(system) {
       requireSlot(system.slot);
       systems.register(system);

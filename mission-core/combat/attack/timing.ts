@@ -360,7 +360,11 @@ function attackCooling(unit: UnitState): boolean {
   return number(timer, 'cooldown') > READY_EPSILON;
 }
 
-function attackInterval(unit: UnitState, registry: BattleRegistry): number {
+/** 攻击间隔（秒）：基础攻击间隔乘间隔加成，除以攻速。攻速不大于 0 时是 0。 */
+export function attackInterval(
+  unit: UnitState,
+  registry: BattleRegistry,
+): number {
   const aspd = clamp(
     attributeOf(unit, registry, 'aspd', 100),
     ASPD_MIN,

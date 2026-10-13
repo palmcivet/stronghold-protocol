@@ -2,12 +2,16 @@ import { TICK } from 'arknights-mission-core';
 import { describe, expect, it } from 'vitest';
 import { createMissionStage } from '#runtime/stage/index.js';
 import { recordDuel } from '#test/actor/fixture.js';
+import { defined } from '#test/defined.js';
 
 describe('engine effect kinds', () => {
   it('rings a unit as it is deployed', () => {
     const stage = createMissionStage(null);
     const [first] = recordDuel(0, 1000);
-    stage.dispatch({ type: 'push-snapshot', snapshot: first!.snapshot });
+    stage.dispatch({
+      type: 'push-snapshot',
+      snapshot: defined(first).snapshot,
+    });
     stage.dispatch({
       type: 'push-event',
       event: { tick: 0, type: 'deploy', data: { unitId: 'g' } },

@@ -5,15 +5,29 @@ description: select 和 unitsInRange 接受一个选择器 id，或按顺序叠�
 
 # 选择器
 
+**选择器**按 id 注册，负责从单位里筛选与排序。一次查询可以给一个 id，也可以给按顺序叠起来的一组 id。
+
+入口有三个：
+
 - `select(selectorId, unitIds)`：筛选并排序给出的名单，没有查询者
 - `unitsInRange(unitId, selectorId)`：以这个单位为查询者，先收集范围内的单位
 - `hitRect(unitId)`：受击范围
 
 参数是一个字符串或 `readonly string[]`。单个字符串和只含它的数组相同。`"all"` 不用拆开。未知 id 抛出 `UnknownRegistrationError`，`registry` 是 `selector`。
 
-按给出的顺序走。`kind` 不是 `sort` 的做筛选，不是 `filter` 的留到后面排序。只有筛选时保持原来的先后。有排序时按给出的顺序比较，第一个不是 0 的结果决定谁在前。写在前面的排序键优先。
+- 按给出的顺序走。
+- `kind` 不是 `sort` 的做筛选，不是 `filter` 的留到后面排序。
+- 只有筛选、没有排序时，保持原来的先后。
+- 有排序时按给出的顺序比较，第一个不是 0 的结果决定谁在前。
+- 写在前面的排序键优先。
 
-`select` 只处理调用方给出的名单。`unitsInRange` 先收集攻击范围内的单位，再加上 `blocking` 里的单位、`blockedBy` 指向查询者的单位，以及挡住查询者的单位。没有攻击范围的敌人因此只打挡住它的单位。查询期间用来源记住这个单位。攻击范围按朝向 `RIGHT` 填写，查询时转到单位朝向，越出棋盘的格子不算。属性 `rangeExtend` 与 `rangeExtendBase` 之和大于 0 时，先在面向 `RIGHT` 的每一行、最远那一列后再加这么多格（向下取整，最多 32），然后再旋转。内容用 `setExtraRange(unitId, tiles)` 加进去的绝对格子（越出棋盘的丢掉）也算攻击范围，换位置、换范围之后都留着，`null` 清掉；它们不进技能触发的初始范围。
+- `select` 只处理调用方给出的名单。
+- `unitsInRange` 先收集攻击范围内的单位，再加上 `blocking` 里的单位、`blockedBy` 指向查询者的单位，以及挡住查询者的单位。
+- 没有攻击范围的敌人因此只打挡住它的单位。
+- 查询期间用来源记住这个单位。
+- 攻击范围按朝向 `RIGHT` 填写，查询时转到单位朝向，越出棋盘的格子不算。
+- 属性 `rangeExtend` 与 `rangeExtendBase` 之和大于 0 时，先在面向 `RIGHT` 的每一行、最远那一列后再加这么多格（向下取整，最多 32），然后再旋转。
+- 内容用 `setExtraRange(unitId, tiles)` 加进去的绝对格子（越出棋盘的丢掉）也算攻击范围，换位置、换范围之后都留着，`null` 清掉；它们不进技能触发的初始范围。
 
 `hitRect` 在没有大体型时返回所站的一格，`kind` 为 `tile`，宽高都是 1。有 `HitArea` 时 `kind` 为 `rect`。距离用站位或矩形边计算。
 

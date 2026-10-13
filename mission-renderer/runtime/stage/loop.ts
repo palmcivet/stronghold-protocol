@@ -5,6 +5,7 @@ export const MISSION_VIEW_SYSTEM_ORDER = [
   'position',
   'facing',
   'skeleton',
+  'impostor',
   'hud',
   'effect',
   'audio',

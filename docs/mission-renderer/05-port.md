@@ -60,6 +60,7 @@ export async function loadBoard(resolver: AssetResolver): Promise<void> {
 - 键不在任何层里，或种类不被该方法接受时，返回被拒绝的 Promise
 - 每个文件失败后按 `retryDelays` 依次等待再试；全部失败后把这一环记为失败，沿 `fallbackId` 解析下一环再加载；整条回退链都失败时拒绝
 - 同一个键在同一种类下只加载一次：第二次申请返回同一个 Promise，引用计数加 1；引用归零时从缓存删除，再申请会重新加载
+- 引用归零时，加载结果是 Three 的 `Texture` 就调用它的 `dispose`
 - 图片、模型、JSON 的缓存按种类分开
 - Spine 回退命中时，缓存里保存的是实际加载的键；释放请求的键时一并释放它
 

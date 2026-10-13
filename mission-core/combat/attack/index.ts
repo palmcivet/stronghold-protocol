@@ -8,6 +8,7 @@ import {
   returnSpeedOf,
 } from '#combat/attack/shape.js';
 import { standAfterStrike } from '#combat/attack/stand.js';
+import { offerSubstitute } from '#combat/attack/substitute.js';
 import {
   consumeAttackTiming,
   peekAttackTargetThisTick,
@@ -32,6 +33,7 @@ import type {
 import { CANNOT_ACT, TREMBLE } from '#port/tag.js';
 import { blockerOf } from '#unit/block/hold.js';
 import {
+  activeSkillSlot,
   type BattleWorld,
   requireUnit,
   type UnitState,
@@ -75,6 +77,7 @@ function attackTimer(
       timer.phase = 'idle';
       timer.elapsed = 0;
       timer.lead = 0;
+      delete timer.substitute;
     },
     view(timer) {
       return {
@@ -290,7 +293,39 @@ function readyToSwing(
   if (!reached(timing.wind, number(timer, 'cooldown'))) {
     return false;
   }
-  return hasTarget(state, registry, ctx, unit);
+  if (hasTarget(state, registry, ctx, unit)) {
+    delete timer.substitute;
+    return true;
+  }
+  // 没有目标：问登记的替代（例如替换这一下普攻、治疗半血友方的技能），它给出的单位作为这一下的目标
+  const substitute = offerSubstitute(registry, ctx, unit.id);
+  if (substitute.length === 0) {
+    delete timer.substitute;
+    return false;
+  }
+  timer.substitute = JSON.stringify(substitute);
+  return true;
+}
+
+/** 这一下由替代给出的目标，还在场的；没有替代时是空表。 */
+function substituteTargets(
+  state: BattleWorld,
+  timer: TimerState,
+): readonly string[] {
+  const raw = timer.substitute;
+  if (typeof raw !== 'string' || raw.length === 0) {
+    return [];
+  }
+  const ids = JSON.parse(raw) as readonly string[];
+  return ids.filter((id) => {
+    const target = state.units.get(id);
+    return (
+      target?.fielded &&
+      !target.downed &&
+      !target.removed &&
+      (target.attributes.hp ?? 0) > 0
+    );
+  });
 }
 
 function openSwing(
@@ -344,7 +379,10 @@ function strike(
     timer.cooldown = 0;
     return;
   }
-  const targets = attackTargetIds(state, registry, ctx, unit);
+  const found = attackTargetIds(state, registry, ctx, unit);
+  const replaced = found.length === 0;
+  const targets = replaced ? substituteTargets(state, timer) : found;
+  delete timer.substitute;
   if (targets.length === 0) {
     timer.phase = 'idle';
     timer.elapsed = 0;
@@ -363,10 +401,13 @@ function strike(
     }
     return;
   }
+  const slot = activeSkillSlot(unit);
   const notice: AttackEvent = {
     unitId: unit.id,
     targetIds: targets,
     cancel: false,
+    ...(slot !== undefined ? { skillSlot: slot } : {}),
+    ...(replaced ? { substitute: true as const } : {}),
   };
   ctx.intercept('attack', notice);
   if (notice.cancel === true) {
@@ -377,7 +418,18 @@ function strike(
     timer.rest = timing.rest;
     return;
   }
-  release(state, registry, ctx, unit, targets, notice.noAmmo === true);
+  if (replaced) {
+    consumeAttackTiming(unit);
+    ctx.emit('attack-hit', {
+      unitId: unit.id,
+      ...(notice.noAmmo === true ? { noAmmo: true as const } : {}),
+      ...(slot !== undefined ? { skillSlot: slot } : {}),
+      substitute: true,
+      targetIds: targets,
+    });
+  } else {
+    release(state, registry, ctx, unit, targets, notice.noAmmo === true);
+  }
   timer.phase = 'recovery';
   timer.elapsed = 0;
   timer.lead = 0;
@@ -396,19 +448,21 @@ function release(
   noAmmo: boolean,
 ): void {
   const swing = readAttackTiming(state, unit, registry);
+  const slot = activeSkillSlot(unit);
   const scale = Number.isFinite(swing.damageScale) ? swing.damageScale : 1;
   const amount = Math.max(0, attributeOf(unit, registry, 'atk') * scale);
   const hitCount = Number.isFinite(swing.hitCount)
     ? Math.max(0, Math.floor(swing.hitCount))
     : 1;
   for (const targetId of targets) {
-    deliver(state, registry, ctx, unit, targetId, amount, hitCount);
+    deliver(state, registry, ctx, unit, targetId, amount, hitCount, slot);
   }
   consumeAttackTiming(unit);
-  ctx.emit(
-    'attack-hit',
-    noAmmo ? { unitId: unit.id, noAmmo: true } : { unitId: unit.id },
-  );
+  ctx.emit('attack-hit', {
+    unitId: unit.id,
+    ...(noAmmo ? { noAmmo: true as const } : {}),
+    ...(slot !== undefined ? { skillSlot: slot } : {}),
+  });
 }
 
 /**
@@ -441,9 +495,14 @@ export function forceAttack(
   if (targets.length === 0) {
     return false;
   }
-  const notice: AttackEvent = noAmmo
-    ? { unitId, targetIds: targets, cancel: false, noAmmo: true }
-    : { unitId, targetIds: targets, cancel: false };
+  const slot = activeSkillSlot(unit);
+  const notice: AttackEvent = {
+    unitId,
+    targetIds: targets,
+    cancel: false,
+    ...(noAmmo ? { noAmmo: true } : {}),
+    ...(slot !== undefined ? { skillSlot: slot } : {}),
+  };
   ctx.intercept('attack', notice);
   if (notice.cancel === true) {
     return false;
@@ -572,8 +631,10 @@ function deliver(
   targetId: string,
   amount: number,
   hitCount: number,
+  skillSlot: number | undefined,
 ): void {
   const shape = attackProfileOf(state, attacker.id).shape;
+  const slot = skillSlot !== undefined ? { skillSlot } : {};
   if (shape?.projectile && shape.lockRange !== true) {
     const back = returnSpeedOf(shape.projectile);
     ctx.launchProjectile({
@@ -584,8 +645,10 @@ function deliver(
       speed: projectileKindSpeed(shape.projectile),
       retain: retainOnMiss(shape),
       ...(back !== undefined
-        ? { attack: { shape, hitCount, leg: 'out', returnSpeed: back } }
-        : { attack: { shape, hitCount } }),
+        ? {
+            attack: { shape, hitCount, leg: 'out', returnSpeed: back, ...slot },
+          }
+        : { attack: { shape, hitCount, ...slot } }),
     });
     return;
   }
@@ -598,6 +661,7 @@ function deliver(
     amount,
     hitCount,
     shape: shape ?? {},
+    ...slot,
   });
 }
 

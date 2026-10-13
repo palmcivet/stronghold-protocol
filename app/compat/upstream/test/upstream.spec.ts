@@ -1,9 +1,9 @@
 import { readFile } from 'node:fs/promises';
-import { type PackAsset, packManifestIssues } from 'arknights-assets-catalog';
 import {
   buildUpstreamManifest,
   type UpstreamIssue,
 } from '@alliance/compat-upstream';
+import { type PackAsset, packManifestIssues } from 'arknights-assets-catalog';
 import { describe, expect, it } from 'vitest';
 
 const BACKEND = 'http://127.0.0.1:3000/';

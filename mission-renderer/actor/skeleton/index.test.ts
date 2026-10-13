@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { meshUvs, parseMissionAtlas } from '#actor/skeleton/index.js';
+import { defined } from '#test/defined.js';
 
 describe('skeleton mesh', () => {
   it('maps mesh coordinates onto the packed region, rotated or not', () => {
@@ -22,12 +23,12 @@ describe('skeleton mesh', () => {
       ].join('\n'),
     );
     expect(
-      Array.from(meshUvs([0, 0, 1, 1], atlas.findRegion('a')!)).map(
+      Array.from(meshUvs([0, 0, 1, 1], defined(atlas.findRegion('a')))).map(
         (value) => Math.round(value * 100) / 100,
       ),
     ).toEqual([0.1, 0.2, 0.4, 0.6]);
     expect(
-      Array.from(meshUvs([0, 0, 1, 1], atlas.findRegion('b')!)).map(
+      Array.from(meshUvs([0, 0, 1, 1], defined(atlas.findRegion('b')))).map(
         (value) => Math.round(value * 100) / 100,
       ),
     ).toEqual([0, 0.2, 0.1, 0]);

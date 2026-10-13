@@ -1,11 +1,13 @@
 import { maxHpOf } from '#ability/effect/attribute.js';
+import { isTimedBody } from '#ability/skill/constants.js';
 import { attackProfileOf } from '#combat/attack/profile.js';
+import { healBlocked } from '#combat/damage/heal.js';
 import {
   absoluteRangeTiles,
   baseExtended,
   baseRange,
 } from '#combat/target/selector.js';
-import type { TriggerArea } from '#contract/input.js';
+import type { TriggerArea, TriggerCadence } from '#contract/input.js';
 import type { TileCoord } from '#contract/spec.js';
 import { bodyInKeys, tileKey } from '#field/body/index.js';
 import { rotateOffset } from '#field/direction/index.js';
@@ -20,7 +22,9 @@ import type {
   SkillTriggerDefinition,
 } from '#port/definition.js';
 import {
+  ALLY_TARGET,
   CAN_HIT_FLY,
+  NO_ATTACK,
   NO_RANGE_EXTEND,
   REVEAL,
   STEALTH,
@@ -47,8 +51,8 @@ export function registerBuiltinSkillTriggers(
   });
   openTrigger(registry, {
     id: 'SKILL_RANGE',
-    shouldCast: (unitId, skillId) =>
-      skillRange(state, registry, unitId, skillId),
+    shouldCast: (unitId, skillId, ctx) =>
+      skillRange(state, registry, unitId, skillId, ctx),
   });
   openTrigger(registry, {
     id: 'ACTIVE_RANGE',
@@ -66,8 +70,8 @@ export function registerBuiltinSkillTriggers(
   });
   openTrigger(registry, {
     id: 'CUSTOM_RANGE',
-    shouldCast: (unitId, skillId) =>
-      customRange(state, registry, unitId, skillId),
+    shouldCast: (unitId, skillId, ctx) =>
+      customRange(state, registry, unitId, skillId, ctx),
   });
   openTrigger(registry, {
     id: 'SEARCH',
@@ -76,8 +80,8 @@ export function registerBuiltinSkillTriggers(
   });
   openTrigger(registry, {
     id: 'GDGLOW_SKILL_2',
-    shouldCast: (unitId, skillId) =>
-      fieldTarget(state, registry, unitId, skillId),
+    shouldCast: (unitId, skillId, ctx) =>
+      fieldTarget(state, registry, unitId, skillId, ctx),
   });
   openTrigger(registry, {
     id: 'NEVER',
@@ -112,14 +116,27 @@ export function shouldCast(
 export function allyTriggerMet(
   state: BattleWorld,
   registry: BattleRegistry,
+  ctx: ContentContext,
   unitId: string,
   skillId: string,
 ): boolean {
+  return allyTriggerTarget(state, registry, ctx, unitId, skillId) !== null;
+}
+
+/** 友方条件选中的那名受伤友方（按单位顺序第一名），没有时是 null。 */
+export function allyTriggerTarget(
+  state: BattleWorld,
+  registry: BattleRegistry,
+  ctx: ContentContext,
+  unitId: string,
+  skillId: string,
+): string | null {
   const unit = requireUnit(state, unitId);
   const skill = skillOf(state, unitId, skillId);
-  return injuredIn(
+  return injuredTarget(
     state,
     registry,
+    ctx,
     unit,
     allyKeys(state, registry, unit, skill),
     skill.triggerHpAtMost,
@@ -133,7 +150,7 @@ function defaultCondition(
   registry: BattleRegistry,
   unitId: string,
   skillId: string,
-  ctx?: ContentContext,
+  ctx: ContentContext,
 ): boolean {
   const unit = requireUnit(state, unitId);
   return basicCondition(
@@ -153,16 +170,26 @@ function basicCondition(
   unit: UnitState,
   skill: SkillInstance,
   cells: readonly { readonly x: number; readonly y: number }[],
-  ctx?: ContentContext,
+  ctx: ContentContext,
 ): boolean {
   const keys = rotatedKeys(state, unit, cells);
   if (skill.heal) {
-    return injuredIn(state, registry, unit, keys, 1);
+    return (
+      injuredIn(state, registry, ctx, unit, keys, 1) ||
+      (skill.triggerEnemies && enemyIn(state, unit, keys, false, true, false))
+    );
   }
   const accept = attackFilter(state, registry, unit, ctx);
   return (
-    enemyIn(state, unit, keys, false, hitsFly(unit), accept) ||
-    holdsEnemy(state, unit, accept)
+    enemyIn(
+      state,
+      unit,
+      keys,
+      false,
+      hitsFly(unit),
+      opensOnAllyTarget(unit, skill),
+      accept,
+    ) || holdsEnemy(state, unit, accept)
   );
 }
 
@@ -215,14 +242,15 @@ function skillRange(
   registry: BattleRegistry,
   unitId: string,
   skillId: string,
+  ctx: ContentContext,
 ): boolean {
   const unit = requireUnit(state, unitId);
   const skill = skillOf(state, unitId, skillId);
   if (skill.triggerAllies) {
-    return allyTriggerMet(state, registry, unitId, skillId);
+    return allyTriggerMet(state, registry, ctx, unitId, skillId);
   }
   if (skill.triggerRange.length === 0) {
-    return defaultCondition(state, registry, unitId, skillId);
+    return defaultCondition(state, registry, unitId, skillId, ctx);
   }
   return enemyIn(
     state,
@@ -230,6 +258,7 @@ function skillRange(
     rotatedKeys(state, unit, skill.triggerRange),
     true,
     true,
+    opensOnAllyTarget(unit, skill),
   );
 }
 
@@ -238,11 +267,12 @@ function customRange(
   registry: BattleRegistry,
   unitId: string,
   skillId: string,
+  ctx: ContentContext,
 ): boolean {
   const unit = requireUnit(state, unitId);
   const skill = skillOf(state, unitId, skillId);
   if (skill.triggerRange.length === 0) {
-    return defaultCondition(state, registry, unitId, skillId);
+    return defaultCondition(state, registry, unitId, skillId, ctx);
   }
   return enemyIn(
     state,
@@ -250,6 +280,7 @@ function customRange(
     rotatedKeys(state, unit, skill.triggerRange),
     false,
     true,
+    opensOnAllyTarget(unit, skill),
   );
 }
 
@@ -258,13 +289,21 @@ function fieldTarget(
   registry: BattleRegistry,
   unitId: string,
   skillId: string,
+  ctx: ContentContext,
 ): boolean {
   const unit = requireUnit(state, unitId);
   const skill = skillOf(state, unitId, skillId);
   if (skill.heal) {
-    return injuredIn(state, registry, unit, null, 1);
+    return injuredIn(state, registry, ctx, unit, null, 1);
   }
-  return enemyIn(state, unit, null, false, true);
+  return enemyIn(
+    state,
+    unit,
+    null,
+    false,
+    true,
+    opensOnAllyTarget(unit, skill),
+  );
 }
 
 // MARK: query
@@ -321,16 +360,43 @@ function rotatedKeys(
   return keys;
 }
 
+/**
+ * 带 ally-target 的友方能不能开启这个技能。治疗、被动技能不能。规格写了 allyTargets 就照它；没写时，单位会攻击，
+ * 且技能靠攻击生效（持续技能，或下一次攻击）才能。
+ */
+export function opensOnAllyTarget(
+  unit: UnitState,
+  skill: SkillInstance,
+): boolean {
+  if (skill.heal || skill.body === 'passive') {
+    return false;
+  }
+  if (skill.allyTargets !== null) {
+    return skill.allyTargets;
+  }
+  if (hasTag(unit, NO_ATTACK)) {
+    return false;
+  }
+  return isTimedBody(skill.body) || skill.hooks.hit !== undefined;
+}
+
 function enemyIn(
   state: BattleWorld,
   attacker: UnitState,
   keys: ReadonlySet<string> | null,
   ignoreUntargetable: boolean,
   fly: boolean,
+  allyTarget: boolean,
   accept: ((id: string) => boolean) | null = null,
 ): boolean {
   for (const unit of state.units.values()) {
-    if (unit.side !== 'enemy' || unit.id === attacker.id || !alive(unit)) {
+    if (unit.id === attacker.id || !alive(unit)) {
+      continue;
+    }
+    const hostile =
+      unit.side === 'enemy' ||
+      (allyTarget && unit.side === attacker.side && hasTag(unit, ALLY_TARGET));
+    if (!hostile) {
       continue;
     }
     if (!ignoreUntargetable && !selectable(unit)) {
@@ -353,15 +419,31 @@ function enemyIn(
 function injuredIn(
   state: BattleWorld,
   registry: BattleRegistry,
+  ctx: ContentContext,
   owner: UnitState,
   keys: ReadonlySet<string> | null,
   hpAtMost: number,
 ): boolean {
+  return injuredTarget(state, registry, ctx, owner, keys, hpAtMost) !== null;
+}
+
+/** 范围里第一名受伤友方。治不了的友方（healBlocked：no-ally-heal，或 no-heal 且技能主人没有穿过）不算伤员。 */
+function injuredTarget(
+  state: BattleWorld,
+  registry: BattleRegistry,
+  ctx: ContentContext,
+  owner: UnitState,
+  keys: ReadonlySet<string> | null,
+  hpAtMost: number,
+): string | null {
   for (const unit of state.units.values()) {
     if (unit.id === owner.id || unit.side !== owner.side || !alive(unit)) {
       continue;
     }
     if (keys && !bodyInKeys(unit, keys, gridOf(state).rect)) {
+      continue;
+    }
+    if (healBlocked(state, registry, ctx, owner.id, unit)) {
       continue;
     }
     const max = maxHpOf(unit, registry);
@@ -370,10 +452,10 @@ function injuredIn(
       continue;
     }
     if (hp / max <= hpAtMost + HEALTH_EPSILON) {
-      return true;
+      return unit.id;
     }
   }
-  return false;
+  return null;
 }
 
 /** 自己挡着的、还活着且打得到的敌人。被阻挡的敌人总是阻挡者的目标，在不在范围里都算。 */
@@ -428,14 +510,22 @@ export const TRIGGER_AREAS = defineComponent<Record<string, TriggerArea>>(
   { create: () => ({}) },
 );
 
-/** 登记或撤下（null）一块触发区域。 */
+/** 只在下一次普攻时点判定的触发区域的键。没有这种区域的单位不记。 */
+export const ATTACK_TRIGGER_KEYS = defineComponent<Record<string, true>>(
+  'skill:attack-trigger-keys',
+  { create: () => ({}) },
+);
+
+/** 登记或撤下（null）一块触发区域。cadence 为 attack 时只在下一次普攻时点判定。 */
 export function setTriggerArea(
   state: BattleWorld,
   unitId: string,
   key: string,
   area: TriggerArea | null,
+  cadence: TriggerCadence = 'tick',
 ): void {
   const table = state.components.access(TRIGGER_AREAS);
+  markCadence(state, unitId, key, area !== null && cadence === 'attack');
   if (area === null) {
     const areas = table.get(unitId);
     if (!areas) {
@@ -452,18 +542,50 @@ export function setTriggerArea(
     : { unitId: (area as { unitId: string }).unitId };
 }
 
-/** 内容的触发区域里有敌人（飞行的也算）。治疗技能不看这一条。 */
+function markCadence(
+  state: BattleWorld,
+  unitId: string,
+  key: string,
+  attack: boolean,
+): void {
+  if (attack) {
+    state.components.access(ATTACK_TRIGGER_KEYS).ensure(unitId)[key] = true;
+    return;
+  }
+  const keys = state.components.access(ATTACK_TRIGGER_KEYS);
+  const marked = keys.get(unitId);
+  if (!marked || !(key in marked)) {
+    return;
+  }
+  delete marked[key];
+  if (Object.keys(marked).length === 0) {
+    keys.delete(unitId);
+  }
+}
+
+/**
+ * 内容的触发区域里有敌人（飞行的也算）。治疗技能不看这一条。
+ * withAttack 为假时跳过只在普攻时点判定的区域（每拍的判定用）；为真时都算（普攻之前与不攻击的单位用）。
+ */
 export function areaTriggerMet(
   state: BattleWorld,
   registry: BattleRegistry,
   unit: UnitState,
+  skill: SkillInstance,
+  withAttack: boolean,
 ): boolean {
   const areas = state.components.access(TRIGGER_AREAS).get(unit.id);
   if (!areas) {
     return false;
   }
   const grid = gridOf(state);
-  for (const area of Object.values(areas)) {
+  const attackOnly = withAttack
+    ? undefined
+    : state.components.access(ATTACK_TRIGGER_KEYS).get(unit.id);
+  for (const [key, area] of Object.entries(areas)) {
+    if (attackOnly && key in attackOnly) {
+      continue;
+    }
     let keys: ReadonlySet<string>;
     if (Array.isArray(area)) {
       keys = new Set(
@@ -478,7 +600,10 @@ export function areaTriggerMet(
       }
       keys = absoluteRangeTiles(grid, owner.id, state, registry);
     }
-    if (keys.size > 0 && enemyIn(state, unit, keys, false, true)) {
+    if (
+      keys.size > 0 &&
+      enemyIn(state, unit, keys, false, true, opensOnAllyTarget(unit, skill))
+    ) {
       return true;
     }
   }

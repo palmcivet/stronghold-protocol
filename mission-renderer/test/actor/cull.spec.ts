@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { type ActorFrame, createActorWorld } from '#actor/entity/index.js';
 import { createCullSystem } from '#runtime/cull/index.js';
 import { appearance, fakeSkeleton, recordDuel } from '#test/actor/fixture.js';
+import { defined } from '#test/defined.js';
 
 /** A camera looking straight down at column `x`, row 0, one tile either side. */
 function cameraAt(x: number): OrthographicCamera {
@@ -19,7 +20,7 @@ describe('cull', () => {
   const [first] = recordDuel(0, 1000);
   const frame: ActorFrame = {
     deltaSeconds: TICK,
-    units: first!.snapshot.units,
+    units: defined(first).snapshot.units,
     moving: new Set(),
     events: [],
   };
@@ -64,14 +65,16 @@ describe('cull', () => {
 
   it("hides actors outside the camera's view and stops their skeletons, then brings them back", async () => {
     const h = await staged();
-    const guard = h.world.actors.get('g')!;
+    const guard = defined(h.world.actors.get('g'));
     expect(guard.culled).toBe(false);
     h.aim(cameraAt(-10));
     await h.run();
     expect([guard.culled, guard.root.visible]).toEqual([true, false]);
-    const instance = h.skeleton.instances.find(
-      (candidate) => candidate === guard.skeleton.instance,
-    )!;
+    const instance = defined(
+      h.skeleton.instances.find(
+        (candidate) => candidate === guard.skeleton.instance,
+      ),
+    );
     const elapsed = instance.elapsed;
     await h.run();
     expect(instance.elapsed).toBe(elapsed);

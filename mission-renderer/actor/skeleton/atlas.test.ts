@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseMissionAtlas } from '#actor/skeleton/atlas.js';
+import { defined } from '#test/defined.js';
 
 const ATLAS = [
   'unit.png',
@@ -52,7 +53,7 @@ describe('skeleton atlas', () => {
   });
 
   it('gives the texture coordinates, offsets and original size of a region', () => {
-    const arm = parseMissionAtlas(ATLAS).findRegion('Arm')!;
+    const arm = defined(parseMissionAtlas(ATLAS).findRegion('Arm'));
     expect([arm.u, arm.v, arm.u2, arm.v2]).toEqual([0.25, 0.25, 0.375, 0.375]);
     expect([
       arm.width,
@@ -66,7 +67,7 @@ describe('skeleton atlas', () => {
   });
 
   it('swaps the packed extent of a rotated region', () => {
-    const leg = parseMissionAtlas(ATLAS).findRegion('Leg')!;
+    const leg = defined(parseMissionAtlas(ATLAS).findRegion('Leg'));
     expect(leg.rotate).toBe(true);
     expect(leg.degrees).toBe(90);
     expect([leg.u2, leg.v2]).toEqual([30 / 128, 10 / 64]);

@@ -57,6 +57,49 @@ export const TRACE_RULES: readonly TraceRule[] = [
     ],
   },
   {
+    id: 'assumed/hud-shake-amplitude',
+    package: 'mission-renderer',
+    rule: '首领头顶条受击抖动的幅度：每剩 1 秒抖 0.16 格，由 master 的 10 像素按 64 像素一格换算',
+    location: '`actor/hud/index.ts`（`MISSION_HUD_SHAKE`）',
+    source:
+      '参考实现 `public/js/render/units.js`（`_updateHud` 的 `Math.sin(t * 90) * this.shake * 10`，`sync` 里首领掉血时 `shake = 0.25`）',
+    basis:
+      '参考实现按屏幕像素抖动，随缩放不变；renderer 的头顶条在格空间里，像素到格的换算没有出处，64 像素一格是假定',
+    verified: '时长与角速度已按参考实现核对，幅度为假定',
+    next: [
+      'mission-renderer/test/actor/hud-sp.spec.ts::hit shake > shakes a boss bar for a quarter second after a health loss, and nobody else',
+    ],
+  },
+  {
+    id: 'assumed/mire-first-trigger',
+    package: 'mission-core',
+    rule: '沼泽在单位进入时先陷入一次，之后每个间隔再陷入一次',
+    location: '`field/terrain/official.ts`（`mire`）',
+    source:
+      'PRTS「沼泽控制」「FC-TR-1 潮湿泥土」「卫戍协议：盟约 下半/战场一览」；参考实现的沼泽地形',
+    basis:
+      'PRTS 只写「位于沼泽之中的单位每秒触发一次」（盟约下半为每 3 秒），没有写进入时是否先触发；参考实现标为假定',
+    verified:
+      '2026-10-13 查 PRTS：间隔、层数与上限与实现一致，第一次触发的时刻没有公开依据，保持参考实现',
+    next: [
+      'mission-core/test/field/terrain/official.spec.ts::沼泽 > 敌人进入时得一层，每秒再得一层：每层攻速 -5、移速 -5%，至多 10 层；离开时解除',
+    ],
+  },
+  {
+    id: 'assumed/displace-slide-fallback',
+    package: 'mission-renderer',
+    rule: '没有时长的推拉位移滑行 0.14·√D 现实秒，夹在 0.12–0.45 秒；带时长时按游戏秒除以倍速',
+    location: '`actor/entity/index.ts`（`MISSION_ACTOR_SLIDE`）',
+    source:
+      '参考实现 `public/js/render/units.js`（`DISPLACE_SLIDE`、`slideTo`）；`docs/research/13-knockback-official.md`',
+    basis:
+      '官方没有给出滑行时长；参考实现的回退公式是自定的，只用于不带时长的位移',
+    verified: '带时长时的匀减速滑行已按参考实现核对，回退公式为假定',
+    next: [
+      'mission-renderer/test/actor/behavior.spec.ts::push and pull slides > turns with the unit when the displace does not keep the facing, and falls back to 0.14·√D real seconds without a duration',
+    ],
+  },
+  {
     id: 'source/latest-deployed',
     package: 'mission-core',
     rule: '用部署策略时，敌人的「最后部署的目标」按部署先后：开场按名单（干员按列从左到右、同列从上到下，再召唤物）排仇恨序，开场时随干员放进来的召唤物排在名单之后；战斗中放进来的友方与再部署的友方排到最后',

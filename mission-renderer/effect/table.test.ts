@@ -26,6 +26,13 @@ describe('effect table', () => {
       'mission:hit-flash',
       'mission:heal-flash',
       'mission:deploy-ring',
+      'mission:damage-number',
+      'mission:hit-spark',
+      'mission:projectile',
+      'mission:death-dissolve',
+      'mission:shatter',
+      'mission:muzzle-flash',
+      'mission:element-burst',
     ]);
     table.register(kind('my-mod:snow/storm', 'b'));
     expect(table.has('my-mod:snow/storm')).toBe(true);

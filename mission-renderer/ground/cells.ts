@@ -1,5 +1,5 @@
 import type { TileSpec } from 'arknights-mission-core';
-import type { MissionMap } from '#contract/view.js';
+import type { MissionMap, MissionTileRect } from '#contract/view.js';
 import { RAISED_GLYPH_HEIGHT, type Vec3 } from '#ground/palette.js';
 import { TILE_HEIGHT } from '#ground/tile.js';
 
@@ -19,6 +19,8 @@ export interface TerrainCell {
   readonly height: number;
   readonly device: string | null;
   readonly objective: boolean;
+  /** A lane or pen hatch inside the map's enemy preview rectangle, drawn as glass. */
+  glass: boolean;
   drawn: boolean;
   surface: string;
   rot: number;
@@ -111,11 +113,23 @@ function highPlate(
   return { surface: 'plateS', rot: 0 };
 }
 
+function inside(rect: MissionTileRect | undefined, cell: TerrainCell): boolean {
+  return (
+    rect !== undefined &&
+    cell.x >= rect.x &&
+    cell.x < rect.x + rect.width &&
+    cell.y >= rect.y &&
+    cell.y < rect.y + rect.height
+  );
+}
+
 function styleCell(
   cell: TerrainCell,
   cells: ReadonlyMap<string, TerrainCell>,
+  preview: MissionTileRect | undefined,
 ): void {
-  const hash = hash2(cell.x, cell.y);
+  // row first, column second, as master hashes (r, c)
+  const hash = hash2(cell.y, cell.x);
   switch (cell.glyph) {
     case 'r':
       cell.rot = (hash % 4) * 90;
@@ -128,11 +142,13 @@ function styleCell(
     case 'f':
       cell.surface = 'hatch';
       cell.rot = (hash % 4) * 90;
+      cell.glass = inside(preview, cell);
       break;
     case 'p':
       cell.surface = 'hatch';
       cell.rot = (hash % 4) * 90;
       cell.tint = [0.9, 0.92, 0.95];
+      cell.glass = inside(preview, cell);
       break;
     case 'b':
       cell.rot = (hash % 4) * 90;
@@ -228,6 +244,7 @@ export function classifyCells(map: MissionMap): TerrainCells {
       height: heightClass ? TILE_HEIGHT[heightClass] : 0,
       device: styled.device ?? null,
       objective: Boolean(styled.objective),
+      glass: false,
       drawn: false,
       surface: 'concrete',
       rot: 0,
@@ -253,7 +270,7 @@ export function classifyCells(map: MissionMap): TerrainCells {
     }
   }
   for (const cell of cells.values()) {
-    styleCell(cell, cells);
+    styleCell(cell, cells, map.enemyPreview);
   }
   return cells;
 }

@@ -108,6 +108,18 @@ export interface SkillSpec {
   /** 再要求触发范围内有一名生命比例不超过 triggerHpAtMost 的受伤友方。 */
   readonly triggerAllies?: boolean;
   readonly triggerHpAtMost?: number;
+  /**
+   * 带 ally-target 的友方在敌人条件里算不算敌人。缺省：非治疗、非被动、单位会攻击，且技能靠攻击生效（持续技能或下一次攻击）时算。
+   * 治疗技能总是不算。
+   */
+  readonly allyTargets?: boolean;
+  /** 治疗技能的基础条件也接受范围内的敌人：既打敌人又治疗友方的技能用。非治疗技能不看它。 */
+  readonly triggerEnemies?: boolean;
+  /**
+   * 普攻没有目标时，这个技能可以替换这一下普攻、打向友方条件选中的友方。缺省：带 triggerAllies、触发为 DEFAULT 时可以。
+   * 写 false 的技能要等到有敌人的那一下普攻。
+   */
+  readonly castWithoutEnemy?: boolean;
   readonly activateOnDeploy?: boolean;
   readonly hooks?: SkillHooks;
 }

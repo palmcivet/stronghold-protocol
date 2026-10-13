@@ -203,6 +203,52 @@ test('MANUAL 的自动释放遵守操作冷却，直接释放可以在冷却中�
   expect(free.read('auto').activations).toBe(1);
 });
 
+test('没有自己攻击的立即技能，每拍判定的释放至少隔一个攻击间隔', () => {
+  const pace = recorder('pace', ['fast']);
+  const battle = createBattle(
+    spec({
+      modules: ['pace'],
+      units: [
+        ally('fast', {
+          attributes: {
+            hp: 100,
+            atk: 10,
+            def: 0,
+            aspd: 100,
+            bat: 1,
+            spRecovery: 30,
+          },
+          skills: [
+            {
+              id: 's',
+              body: 'instant',
+              trigger: 'SP_FULL',
+              operation: 'AUTO',
+              spCost: 1,
+              initSp: 1,
+              duration: 0,
+              ammo: 0,
+              spType: 'time',
+            },
+          ],
+        }),
+      ],
+    }),
+    [pace.module],
+  );
+  const counts: number[] = [];
+  for (let step = 0; step < 61; step += 1) {
+    battle.step();
+    counts.push(pace.read('fast').activations);
+  }
+  // 攻击间隔 1 秒 = 30 拍：第 0、30、60 拍各放一次，技力早就满了也要等
+  expect(counts[0]).toBe(1);
+  expect(counts[29]).toBe(1);
+  expect(counts[30]).toBe(2);
+  expect(counts[59]).toBe(2);
+  expect(counts[60]).toBe(3);
+});
+
 test('duration 结束时修饰撤下，持续期间不回复技力', () => {
   const watch = recorder('watch', ['a']);
   const open: MissionModule = {

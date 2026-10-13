@@ -84,10 +84,10 @@ function pickHeals(
   unit: UnitState,
 ): readonly string[] {
   const shape = attackProfileOf(state, unit.id).shape;
+  // master 的治疗选人（injuredAlliesInKeys）不看孤立，只看禁疗；孤立只挡治疗链（chainHealNext）
   const query = [
     unit.side,
     'untargetable',
-    'isolated',
     'range',
     'hp-ratio',
     'spawn',

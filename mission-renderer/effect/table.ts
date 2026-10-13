@@ -6,6 +6,7 @@ import type {
   MissionCueKey,
   MissionEffectKindId,
 } from '#contract/cue.js';
+import type { MissionTileRect } from '#contract/view.js';
 import { MISSION_EFFECT_KINDS } from '#effect/builtin.js';
 import { createSealedRegistry } from '#runtime/registry/index.js';
 
@@ -15,6 +16,10 @@ export interface MissionEffectContext {
   readonly layer: Group;
   readonly actors: ReadonlyMap<string, MissionActor>;
   readonly units: readonly UnitSnapshot[];
+  /** Game seconds per real second. */
+  readonly speed: number;
+  /** The playing field in tiles: the camera's rectangle, or the whole map without one; null without a map. */
+  readonly field: MissionTileRect | null;
 }
 
 /**

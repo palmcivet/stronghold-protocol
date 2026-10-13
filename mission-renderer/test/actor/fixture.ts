@@ -144,6 +144,7 @@ export function fakeSkeleton() {
         typeof role === 'string' ? [role] : [],
       ),
       durations: {},
+      clipping: false,
     }),
     create(data: MissionSkeletonData) {
       const listeners = new Set<(event: MissionSkeletonEvent) => void>();
@@ -153,9 +154,9 @@ export function fakeSkeleton() {
         calls: [],
         elapsed: 0,
         disposed: false,
-        play: (track, animation, loop) =>
+        play: (track, animation, loop, start = 0) =>
           void instance.calls.push(
-            `play ${track} ${animation}${loop ? ' loop' : ''}`,
+            `play ${track} ${animation}${loop ? ' loop' : ''}${start > 0 ? ` @${start.toFixed(2)}` : ''}`,
           ),
         queue: (track, animation, loop) =>
           void instance.calls.push(

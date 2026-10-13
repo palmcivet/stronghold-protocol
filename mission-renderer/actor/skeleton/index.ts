@@ -187,6 +187,11 @@ export function createMissionSkeletonRuntime(
         pages,
         animations: spine.animations.map((animation) => animation.name),
         durations,
+        clipping: spine.skins.some((skin) =>
+          skin
+            .getAttachments()
+            .some((entry) => entry.attachment instanceof ClippingAttachment),
+        ),
       };
       return loaded;
     },
@@ -339,8 +344,11 @@ export function createMissionSkeletonRuntime(
       return {
         data,
         object3d,
-        play(track, animation, loop) {
-          state.setAnimation(track, animation, loop);
+        play(track, animation, loop, start = 0) {
+          const entry = state.setAnimation(track, animation, loop);
+          if (start > 0) {
+            entry.trackTime = start;
+          }
         },
         queue(track, animation, loop, delay = 0) {
           state.addAnimation(track, animation, loop, delay);

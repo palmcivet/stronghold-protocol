@@ -29,6 +29,9 @@ function hit(
         fromY?: number;
         toX?: number;
         toY?: number;
+        centerX?: number;
+        centerY?: number;
+        pullerId?: string;
         sourceX?: number;
         sourceY?: number;
       },
@@ -120,6 +123,49 @@ test('拉力在受力等级不小于 0 时拉到急停圈', () => {
   const moved = battle.snapshot().units.find((unit) => unit.id === 'e');
   expect(moved?.x).toBeGreaterThan(0.5);
   expect(moved?.x).toBeLessThan(1);
+});
+
+function pulled(input: {
+  toX?: number;
+  toY?: number;
+  centerX?: number;
+  centerY?: number;
+  pullerId?: string;
+}) {
+  const battle = createBattle(
+    spec({
+      modules: ['hit'],
+      tiles: lane,
+      units: [
+        ally('p', { x: 1, facing: 'RIGHT' }),
+        ally('e', {
+          side: 'enemy',
+          x: 4,
+          attributes: { hp: 10, massLevel: 1, moveSpeed: 0 },
+        }),
+      ],
+    }),
+    [
+      hit((ctx) => {
+        ctx.shift(SHIFT_PULL, 'e', { force: 1, ...input });
+      }),
+    ],
+  );
+  battle.step();
+  return battle.snapshot().units.find((unit) => unit.id === 'e');
+}
+
+test('拉到单位面前时终点在它前方半格，急停围绕它', () => {
+  const front = pulled({ pullerId: 'p' });
+  const explicit = pulled({ toX: 1.5, toY: 0, centerX: 1, centerY: 0 });
+  expect(front?.x).toBe(explicit?.x);
+  expect(front?.y).toBe(explicit?.y);
+  expect(front?.x).toBeGreaterThan(1.5);
+  expect(front?.x).toBeLessThan(2);
+});
+
+test('拉向不存在的单位不发生位移', () => {
+  expect(pulled({ pullerId: 'nobody' })?.x).toBe(4);
 });
 
 test('恐惧沿扇形走，倒地时先落到计划终点', () => {

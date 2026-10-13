@@ -23,6 +23,7 @@ describe('view loop', () => {
       'position',
       'facing',
       'skeleton',
+      'impostor',
       'hud',
       'effect',
       'audio',

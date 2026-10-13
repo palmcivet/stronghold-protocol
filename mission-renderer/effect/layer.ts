@@ -2,7 +2,11 @@ import { Group } from 'three';
 import type { ActorFrame, MissionActorWorld } from '#actor/entity/index.js';
 import { createObjectPool, type ObjectPool } from '#actor/entity/pool.js';
 import type { MissionEffectKindId } from '#contract/cue.js';
-import { type MissionCueBindings, sealMissionCues } from '#effect/binding.js';
+import {
+  effectsOf,
+  type MissionCueBindings,
+  sealMissionCues,
+} from '#effect/binding.js';
 import { cueFor } from '#effect/cue.js';
 import type {
   MissionEffectContext,
@@ -56,6 +60,8 @@ export function createEffectLayer(
     layer,
     actors: world.actors,
     units: [],
+    speed: 1,
+    field: null,
   };
 
   const poolOf = (
@@ -84,7 +90,13 @@ export function createEffectLayer(
     system: {
       id: 'effect',
       run(frame) {
-        context = { layer, actors: world.actors, units: frame.units };
+        context = {
+          layer,
+          actors: world.actors,
+          units: frame.units,
+          speed: frame.speed ?? 1,
+          field: frame.field ?? null,
+        };
         const next: Playing[] = [];
         for (const entry of playing) {
           if (entry.kind.update(entry.instance, frame.deltaSeconds, context)) {
@@ -103,17 +115,17 @@ export function createEffectLayer(
             }
             continue;
           }
-          const kind = binding.effect
-            ? options.table.get(binding.effect)
-            : undefined;
-          if (!kind) {
-            continue;
-          }
-          const entry = { kind, instance: poolOf(kind).acquire(kind.id) };
-          if (kind.start(entry.instance, cue, context)) {
-            next.push(entry);
-          } else {
-            finish(entry);
+          for (const id of effectsOf(binding)) {
+            const kind = options.table.get(id);
+            if (!kind) {
+              continue;
+            }
+            const entry = { kind, instance: poolOf(kind).acquire(kind.id) };
+            if (kind.start(entry.instance, cue, context)) {
+              next.push(entry);
+            } else {
+              finish(entry);
+            }
           }
         }
         playing = next;
