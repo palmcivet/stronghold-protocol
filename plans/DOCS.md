@@ -19,12 +19,12 @@
 - [ ] 状态
 - 问题：代码与数据里有一批以字符串写的路径或包名，没有任何检查：
   - `case-map/mapping.json` 的两条 `reason` 写文档路径（`docs/mission-core`、`docs/mission-core/06-damage.md`），违背「代码不依赖文档」。
-  - `mapping.json` 的 `owner`（`app/server/content`、`app/server` 等）是自由文本，不核对包或目录是否存在。
+  - `mapping.json` 的 `owner`（`alliance/server/content`、`alliance/server` 等）是自由文本，不核对包或目录是否存在。
   - `trace/rules.ts` 的 `location`（包内文件与符号）、`source`（上游文件）只是文字。
-  - `docs/alliance/compat/trace.data.ts` 以 `../../../app/compat/upstream/trace/rules.ts` 导入 compat，`watch` 是同样的字符串。导入受 tsc 检查，`watch` 不受。
+  - `docs/alliance/compat/trace.data.ts` 以 `../../../alliance/compat/upstream/trace/rules.ts` 导入 compat，`watch` 是同样的字符串。导入受 tsc 检查，`watch` 不受。
 - 影响：目标改名或移动后引用静默失效，只能靠 grep 发现。
 - 方案：
-  - A. 去掉文档路径，改成文字或文档侧声明的 topic；`owner` 改为工作区包名（可加 `area`），用 `@alliance/shared/workspace` 的包列表校验；`location` 改为 `{ file, symbol }`，在 compat 的测试里核对文件与符号存在。
+  - A. 去掉文档路径，改成文字或文档侧声明的 topic；`owner` 改为工作区包名（可加 `area`），用 `@wsde/shared/workspace` 的包列表校验；`location` 改为 `{ file, symbol }`，在 compat 的测试里核对文件与符号存在。
   - B. 保留字符串，加检查：`location` 的文件存在、`owner` 是工作区包、`docs/` 开头的路径报错。
   - trace 数据：compat 导出 `./trace`，docs 依赖 `@alliance/compat-upstream`，`watch` 由 `import.meta.resolve` 求出。
 - 建议：先删掉两条文档路径并做 B 的检查，再逐步改成 A 的结构化字段。
@@ -60,7 +60,7 @@
 
 - [ ] 状态
 - [ ] `docs/.vitepress/config.ts` 的 `sectionTitle` 用正则从 `index.md` 取 `title`，改用 frontmatter 解析器。
-- [ ] `app/contract/package.json` 的 `"./*.js"` 通配导出，改为显式列出。
+- [ ] `alliance/contract/package.json` 的 `"./*.js"` 通配导出，改为显式列出。
 - [ ] `case-map/check.ts` 自制 glob 转正则；规则按顺序先匹配者胜，重叠不报。文件部分可换 `picomatch`，并报告重叠的规则。
 - [ ] `case-map/cli.ts` 手写参数解析，可换 `node:util` 的 `parseArgs`；提交号比较两向前缀都接受，应只接受短号是长号的前缀。
 - [ ] `trace/rules.test.ts`、`case-map/mapping.test.ts` 用 `readFileSync(join(PACKAGE_ROOT, …))` 读 JSON，可改为 `import … with { type: 'json' }`，路径由 tsc 检查。
@@ -71,7 +71,7 @@
 - [ ] H1：`docs/alliance/index.md`（「盟约」）与 `docs/alliance/protocol/index.md`（「对局协议」）没有对应的单一包名，暂保留中文。
 - [ ] `docs/alliance/data/03-resource.md` 的 `loadResourceStore` 示例为 `check:skip`：`@alliance/client` 没有 `exports`，要检查就需为文档改导出。
 - [ ] `docs/mission-core/02`–`13` 的叙述，以及 `docs/mission-renderer/10-architecture.md` 的 systems 一列，未逐句对照源码核实。
-- [ ] `app/client/shell/main.ts` 只有一行占位，`docs/alliance/01-quick-start.md` 无法写到实际开一局。
+- [ ] `alliance/client/shell/main.ts` 只有一行占位，`docs/alliance/01-quick-start.md` 无法写到实际开一局。
 
 ## 7. 引擎文档待办
 
@@ -108,7 +108,7 @@
 
 ## 约定：工作区工具包与库的独立性
 
-- 工作区工具在根目录 `shared/`，包名 `@alliance/shared`，私有。导出 `./workspace`（`findUp`、`findWorkspaceRoot`、`listWorkspacePackages`）、`./references`（`danglingReferences`）与 `./vitest`（各包共用的 `moduleTest`）。
+- 工作区工具在根目录 `shared/`，包名 `@wsde/shared`，私有。导出 `./workspace`（`findUp`、`findWorkspaceRoot`、`listWorkspacePackages`）、`./references`（`danglingReferences`）与 `./vitest`（各包共用的 `moduleTest`）。
 - 包里是纯 JavaScript（`src/*.js`），类型在 `types/*.d.ts`，`check` 用 `checkJs` 按类型检查源码；不需要构建，没有自己的测试。vitest 与 VitePress 加载配置时把工作区包交给 Node 直接运行，所以不用 `--configLoader runner`，也不必预先构建。
 - 库（`mission-core`、`mission-renderer`、`assets-catalog`、`assets-extractor`）只在 `vitest.config.ts` 里用它（devDependency）；源码与测试不得导入，由各库 `biome.json` 的 `noRestrictedImports` 检查，`vitest.config.ts` 用 override 放开。
-- 应用包（`app/*`）与 docs 可以直接依赖它。
+- 应用包（`alliance/*`）与 docs 可以直接依赖它。

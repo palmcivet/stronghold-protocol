@@ -2,7 +2,7 @@
 
 ## 目标
 
-- 主包（`mission-core`、`mission-renderer`、`assets-catalog`、`assets-extractor`、`app/*`、`deployment`）不含 Spine 运行时代码，不依赖 `@pixi/*`、`@pixi-spine/*`。
+- 主包（`mission-core`、`mission-renderer`、`assets-catalog`、`assets-extractor`、`alliance/*`、`deployment`）不含 Spine 运行时代码，不依赖 `@pixi/*`、`@pixi-spine/*`。
 - Spine 后端作为客户端本地模组在 `examples/extensions/skeleton-spine/` 孵化，自带许可证声明，是 Spine 运行时代码在仓库中唯一的位置；是否提交由用户决定。日后可迁到独立仓库。
 
 ## 移出
@@ -23,7 +23,7 @@
 - `assets-catalog` 的 `spine` 种类、`SpineMeta`、`spineSource`、`isSpineSource`、`createSpineCache` 与 `spineDataWeight`：只是文件角色、元数据与缓存，不引用运行时。
 - atlas 解析统一到 `assets-catalog`：合并 `mission-renderer/actor/skeleton/atlas.ts` 与 `assets-extractor/spine/atlas.ts` 为一份（解析、页与区域、规范化），提取器与 Spine 后端都用它，两处旧文件删除。
 - `assets-extractor/spine/model.ts`：`SpineMeta` 组装是格式知识，改为在插件缺席时写缺省字段。
-- `app/data` 的动画角色表：侧车缺时长时按动画名归类，时长缺省。
+- `alliance/data` 的动画角色表：侧车缺时长时按动画名归类，时长缺省。
 
 待办：评估把仍带 Spine 形状的公开接口改成格式中立，只在影响后端接入时改：
 
@@ -33,7 +33,7 @@
 
 开发中发现、留待拆分时处理的：
 
-- `app/client` 开发服务器的依赖预构建经 `mission-renderer` 入口的再导出带上 `@pixi-spine/runtime-3.8`（约 0.9 MB），生产包经摇树不含 Pixi。拆分前不排除，入口再导出移走后自然消失。
+- `alliance/client` 开发服务器的依赖预构建经 `mission-renderer` 入口的再导出带上 `@pixi-spine/runtime-3.8`（约 0.9 MB），生产包经摇树不含 Pixi。拆分前不排除，入口再导出移走后自然消失。
 
 ## 端口重设计
 
@@ -61,7 +61,7 @@ examples/extensions/skeleton-spine/
 ```
 
 - `examples/extensions/*` 加入 `pnpm-workspace`，以便用工作区依赖引用主包的公开接口；反方向的依赖由上述扫描禁止。
-- `app/client` 开发期把它当本地模组加载，接线见 APP.md。
+- `alliance/client` 开发期把它当本地模组加载，接线见 APP.md。
 
 ## 验收
 

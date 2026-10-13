@@ -35,7 +35,7 @@
 - assets-catalog 理念不变
     - `/compiler` 只提供工具库
     - 只关注通用的数据。干员、敌人、语音等数据都来自官方，放到哪里都是统一的
-- app/data
+- alliance/data
     - `/compiler` 提取出该 app 所需的资源
     - `/` 运行时解析器、加载器
 - 部署时
