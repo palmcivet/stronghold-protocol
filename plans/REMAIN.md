@@ -74,6 +74,7 @@ master 出新版或出现其他第三方 fork 时，在 `app/compat/` 下增加�
 
 - golden 样例：在 master 侧按固定种子生成 `buildBattleSpec` 的输出，作为 `test/fixtures/` 的输入，断言映射后的 `BattleSpec` 字段完整。
 - 往返测试：`BattleResult` 样例转成 `perPlayer` 形状后，必须通过 `app/contract` 的边界检查。
+- 用例对照表的 `render/**`：现在是一条 `pending` 规则，覆盖 705 条 master 用例，改为逐条条目。只喂快照与事件的在 `mission-renderer/test` 改写，标 `rewritten` 或 `covered` 并写 `next` 引用；依赖 Pixi 显示对象的标 `not-migrated` 并写原因；属于休整棋盘等 app 范围的标 `moved`。完成时 `pnpm case-map` 通过且没有 `pending`。
 - 一致性对拍（质量指标，不作为连接条件）：在开发机上，用 master 的 sim 与 next 引擎对同一 spec 各跑一次，比较结果摘要，输出分歧清单。
 
 ## app/server 遗留（P1）

@@ -31,6 +31,10 @@
 - `MissionAssetKind` 的 `'spine'`、资源端口的 `spine()` 与 `SpineSource` 参数。
 - `assets-catalog` 中 `spineDataWeight` 是否改由后端提供权重函数。
 
+开发中发现、留待拆分时处理的：
+
+- `app/client` 开发服务器的依赖预构建经 `mission-renderer` 入口的再导出带上 `@pixi-spine/runtime-3.8`（约 0.9 MB），生产包经摇树不含 Pixi。拆分前不排除，入口再导出移走后自然消失。
+
 ## 端口重设计
 
 - 后端：`MissionSkeletonBackend { format, load(source), create(data), dispose(data) }`，`format` 是命名空间格式 id（如 `spine-3.8`）。
