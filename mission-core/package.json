@@ -7,7 +7,7 @@
   "sideEffects": false,
   "exports": {
     ".": {
-      "source": "./index.ts",
+      "@wsde/source": "./index.ts",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
@@ -15,43 +15,43 @@
   },
   "imports": {
     "#contract/*.js": {
-      "source": "./contract/*.ts",
+      "@wsde/source": "./contract/*.ts",
       "default": "./dist/contract/*.js"
     },
     "#port/*.js": {
-      "source": "./port/*.ts",
+      "@wsde/source": "./port/*.ts",
       "default": "./dist/port/*.js"
     },
     "#kernel/*.js": {
-      "source": "./kernel/*.ts",
+      "@wsde/source": "./kernel/*.ts",
       "default": "./dist/kernel/*.js"
     },
     "#battle/*.js": {
-      "source": "./battle/*.ts",
+      "@wsde/source": "./battle/*.ts",
       "default": "./dist/battle/*.js"
     },
     "#unit/*.js": {
-      "source": "./unit/*.ts",
+      "@wsde/source": "./unit/*.ts",
       "default": "./dist/unit/*.js"
     },
     "#combat/*.js": {
-      "source": "./combat/*.ts",
+      "@wsde/source": "./combat/*.ts",
       "default": "./dist/combat/*.js"
     },
     "#ability/*.js": {
-      "source": "./ability/*.ts",
+      "@wsde/source": "./ability/*.ts",
       "default": "./dist/ability/*.js"
     },
     "#field/*.js": {
-      "source": "./field/*.ts",
+      "@wsde/source": "./field/*.ts",
       "default": "./dist/field/*.js"
     },
     "#economy/*.js": {
-      "source": "./economy/*.ts",
+      "@wsde/source": "./economy/*.ts",
       "default": "./dist/economy/*.js"
     },
     "#ledger/*.js": {
-      "source": "./ledger/*.ts",
+      "@wsde/source": "./ledger/*.ts",
       "default": "./dist/ledger/*.js"
     },
     "#test/*.js": "./test/*.ts"
@@ -68,7 +68,7 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@alliance/shared": "workspace:*",
+    "@wsde/shared": "workspace:*",
     "@biomejs/biome": "catalog:",
     "@types/node": "catalog:",
     "fast-check": "^4.10.2",

@@ -1,0 +1,44 @@
+@layer components {
+  .stats {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--space-1) var(--space-3);
+  }
+
+  .stats dt {
+    color: var(--color-text-lo);
+  }
+
+  .stats dd {
+    margin: 0;
+    font-family: var(--font-number);
+  }
+
+  .list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .line {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  .active {
+    color: var(--color-accent-400);
+  }
+
+  .off {
+    color: var(--color-text-dim);
+    text-decoration: line-through;
+  }
+
+  .ticker {
+    max-height: 12rem;
+    overflow-y: auto;
+    font-size: 0.875rem;
+    color: var(--color-text-md);
+  }
+}

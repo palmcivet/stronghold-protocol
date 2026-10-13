@@ -1,0 +1,37 @@
+{
+  "name": "@alliance/server",
+  "version": "0.0.0",
+  "private": true,
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "sideEffects": false,
+  "imports": {
+    "#server/*.js": {
+      "@wsde/source": "./*.ts",
+      "default": "./dist/*.js"
+    }
+  },
+  "scripts": {
+    "build": "vite build",
+    "format": "biome check --write",
+    "lint": "biome lint",
+    "package": "cross-env PACKAGE=true vite build",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@alliance/contract": "workspace:*",
+    "@alliance/data": "workspace:*",
+    "arknights-mission-core": "workspace:*",
+    "ws": "^8.22.0"
+  },
+  "devDependencies": {
+    "@wsde/shared": "workspace:*",
+    "@biomejs/biome": "catalog:",
+    "@types/node": "catalog:",
+    "@types/ws": "^8.18.2",
+    "cross-env": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}

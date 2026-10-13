@@ -1,0 +1,94 @@
+@layer components {
+  .grid {
+    display: grid;
+    gap: 2px;
+    width: 100%;
+  }
+
+  .row {
+    display: contents;
+  }
+
+  .tile {
+    aspect-ratio: 1;
+    min-width: 0;
+    padding: var(--space-1);
+    border: 1px solid var(--color-line-1);
+    background: var(--color-bg-2);
+    font-size: 0.75rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+  }
+
+  .tile[aria-selected="true"] {
+    border-color: var(--color-accent-400);
+    background: var(--color-accent-a20);
+  }
+
+  .occupied {
+    background: var(--color-bg-4);
+  }
+
+  .stage {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: var(--color-bg-1);
+  }
+
+  .status {
+    color: var(--color-text-md);
+  }
+
+  .stream {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    background: var(--color-bg-1);
+  }
+
+  .unit {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transform: translate(-50%, -50%);
+    font-size: 0.7rem;
+    transition:
+      left 0.2s linear,
+      top 0.2s linear;
+  }
+
+  .ally {
+    color: var(--color-accent-400);
+  }
+
+  .enemy {
+    color: var(--color-text-md);
+  }
+
+  .fallen {
+    opacity: 0.4;
+    text-decoration: line-through;
+  }
+
+  .unitName {
+    white-space: nowrap;
+  }
+
+  .hp {
+    width: 3rem;
+    height: 0.4rem;
+  }
+
+  .log {
+    margin: 0;
+    padding-inline-start: var(--space-3);
+    font-size: 0.75rem;
+    color: var(--color-text-md);
+  }
+}

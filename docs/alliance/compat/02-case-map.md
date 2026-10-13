@@ -5,7 +5,7 @@ description: master 的每条测试用例在 next 里的去向，以及检查对
 
 # 用例对照表
 
-`app/compat/upstream/case-map/` 记录 master 的每条测试用例在 next 里的去向，并检查对照表与两边的用例清单一致。
+`alliance/compat/upstream/case-map/` 记录 master 的每条测试用例在 next 里的去向，并检查对照表与两边的用例清单一致。
 
 ## 文件
 
@@ -25,7 +25,7 @@ description: master 的每条测试用例在 next 里的去向，以及检查对
 | --- | --- | --- |
 | `covered` | `next`（至少一条） | next 有等价用例 |
 | `rewritten` | `next`、`reason` | 按新接口改写，断言有变化 |
-| `moved` | `owner` | 归别的包，例如 `app/server/content` |
+| `moved` | `owner` | 归别的包，例如 `alliance/server/content` |
 | `not-migrated` | `reason` | 不迁移 |
 | `pending` | `step` | 等待计划的某一步 |
 
@@ -47,7 +47,7 @@ next 的用例在每个有 Vitest 配置的工作区子包里运行 `vitest list
 
 ## 运行
 
-在 `app/compat/upstream` 内：
+在 `alliance/compat/upstream` 内：
 
 ```sh
 pnpm build && pnpm case-map
@@ -55,12 +55,12 @@ pnpm build && pnpm case-map
 
 | 参数 | 含义 |
 | --- | --- |
-| `--repo <dir>` | master 检出目录，缺省为 `app/compat/upstream/repo/` |
+| `--repo <dir>` | master 检出目录，缺省为 `alliance/compat/upstream/repo/` |
 | `--commit <sha>` | master 目录不是 git 检出时指定提交号；缺省用 `git rev-parse` 读取 |
 | `--write-inventory` | 把这次枚举结果与提交号写入 `inventory.json` |
 | `--concurrency <n>` | 同时导入的文件数，缺省为 CPU 数 |
 
-master 检出目录缺省为 `app/compat/upstream/repo/`，已列入该包的 `.gitignore`。目录必须已经安装依赖：没有 `node_modules` 时命令报错退出，提示先在该目录运行 `npm ci`，或用 `--repo` 指定别的检出目录。命令不修改 master 目录。`npm ci` 的 postinstall 会生成 `public/vendor/*`，部分测试文件导入时需要它们。
+master 检出目录缺省为 `alliance/compat/upstream/repo/`，已列入该包的 `.gitignore`。目录必须已经安装依赖：没有 `node_modules` 时命令报错退出，提示先在该目录运行 `npm ci`，或用 `--repo` 指定别的检出目录。命令不修改 master 目录。`npm ci` 的 postinstall 会生成 `public/vendor/*`，部分测试文件导入时需要它们。
 
 报告给出用例总数、逐条与规则各标记了多少、各状态的数量、每条规则命中的数量，并列出：
 

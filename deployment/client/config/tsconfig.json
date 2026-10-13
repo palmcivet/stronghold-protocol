@@ -1,7 +1,7 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "customConditions": ["source"],
+    "customConditions": ["@wsde/source"],
     "outDir": "dist",
     "rootDir": ".",
     "tsBuildInfoFile": "dist/.tsbuildinfo"
@@ -14,5 +14,5 @@
     "**/*.test.ts",
     "vitest.config.ts"
   ],
-  "references": [{ "path": "../../../app/data" }]
+  "references": [{ "path": "../../../alliance/data" }]
 }

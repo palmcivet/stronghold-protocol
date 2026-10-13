@@ -7,11 +7,11 @@ product of the transform scales from the prefab root down to the GameObject that
 (Graphic / FaceSwitcher / Spine). That product is 0.27 for most prefabs (the standard the remake's UNIT.modelScale
 stands for) and differs for the rest (威龙 0.16, 妖怪 0.20, 青铜镜 0.6 ...).
 
-This script prints the product of every prefab named by the mode packet app/product/season/act2autochess/enemies.json (`spine` = enemy_database prefabKey) that is
-not the standard, grouped by value.
+This script prints the product of every prefab named by the season's enemies packet (`spine` = enemy_database prefabKey)
+that is not the standard, grouped by value, as `[scale, [prefab, ...]]` rows ready to paste into a scale table.
 
 Usage:
-  enemy_scales.py [--game <AB root>] [--json]
+  enemy_scales.py --enemies <enemies.json> [--game <AB root>] [--json]
 Needs UnityPy + lz4 (requirements.txt beside this file); --json prints {prefab: product} for every prefab found.
 """
 import argparse
@@ -21,29 +21,17 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from extract import CANDIDATES, ROOT  # noqa: E402
+from extract import CANDIDATES  # noqa: E402
 
 STANDARD = 0.27
 
 
-def app_packet(catalog: Path) -> Path:
-    """stronghold-app package, walked from the catalog root. Season JSON lives there."""
-    directory = catalog.resolve()
-    for _ in range(8):
-        for candidate in (directory / "app", directory):
-            manifest = candidate / "package.json"
-            if not manifest.is_file():
-                continue
-            try:
-                name = json.loads(manifest.read_text("utf8")).get("name")
-            except (OSError, json.JSONDecodeError):
-                name = None
-            if name == "stronghold-app":
-                return candidate
-        if directory.parent == directory:
-            break
-        directory = directory.parent
-    raise SystemExit("enemy_scales: stronghold-app package not found")
+def season_enemies(enemies_path: Path) -> dict:
+    """The season's enemies packet ({id: {spine, ...}}), read from the path the caller passes in."""
+    path = Path(enemies_path)
+    if not path.is_file():
+        raise SystemExit(f'enemy_scales: missing {path} (compile the season packet first)')
+    return json.loads(path.read_text('utf8'))
 
 
 def group_table(scales, standard=STANDARD):
@@ -98,6 +86,7 @@ def renderer_scale(root_go, by_id):
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--game', help='AB root of the local client (default: the known install locations)')
+    ap.add_argument('--enemies', required=True, help="path of the season's compiled enemies packet (enemies.json)")
     ap.add_argument('--json', action='store_true', help='print {prefab: product} instead of the table')
     args = ap.parse_args()
     ab_root = Path(args.game) if args.game else next((p for p in CANDIDATES if p.exists()), None)
@@ -105,10 +94,7 @@ def main():
         sys.exit('enemy_scales: no local client found (pass --game <AB root>)')
     import aklz4  # noqa: F401  (registers the LZ4AK decoder)
     import UnityPy
-    enemies_path = app_packet(ROOT) / 'product' / 'season' / 'act2autochess' / 'enemies.json'
-    if not enemies_path.is_file():
-        sys.exit(f'enemy_scales: missing {enemies_path} (compile the season packet in stronghold-app first)')
-    enemies = json.loads(enemies_path.read_text('utf8'))
+    enemies = season_enemies(Path(args.enemies))
     wanted = {e.get('spine') or k for k, e in enemies.items()}
     scales = {}
     for f in sorted((ab_root / 'battle').glob('enm_pfb*.ab')):

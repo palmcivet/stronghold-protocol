@@ -51,7 +51,7 @@ docs examples: 81 program(s) type-check (alliance 1, assets-catalog 27, ...)
 ## 模块解析
 
 - 只允许裸模块名：工作区包、它们的 peer 依赖（如 `three`，连同 `@types`）以及 Node 内置模块。
-- 工作区包通过软链接放进临时目录的 `node_modules`，`customConditions: ["source"]` 让它们解析到源码，不需要先构建包。
+- 工作区包通过软链接放进临时目录的 `node_modules`，`customConditions: ["@wsde/source"]` 让它们解析到源码，不需要先构建包。
 - 只能解析包的公开导出：深路径被 `exports` 拒绝，`#...` 导入在示例自己的包里解析而失败，包没导出的类型无法命名。
 - tsconfig 继承仓库根的 `tsconfig.base.json`，`lib` 为 `es2024`、`dom`、`dom.iterable`，`types` 为 `node`。
 

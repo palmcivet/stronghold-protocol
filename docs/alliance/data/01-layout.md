@@ -1,6 +1,6 @@
 ---
 title: 目录
-description: 卫戍协议这一季的数据放在 app/data，编译和读取在一起。
+description: 卫戍协议这一季的数据放在 alliance/data，编译和读取在一起。
 ---
 
 # 目录
@@ -11,10 +11,10 @@ description: 卫戍协议这一季的数据放在 app/data，编译和读取在�
 
 构建器自行处理这些逻辑：读官方活动表，把干员收成这一季的棋子，把敌人收成这一季的敌人记录，写出羁绊、波次、地图和难度；推导基础与赛季的资源需求，派生动画角色表与棋盘 tiles，写出两份资源清单。它决定要哪些资源键，再交给提取器去取字节。整条资源流水线见 [资源从哪里来](./03-resource.md)。
 
-赛季数据在 `app/data`。产物在 `app/data/product/season/<id>/`。
+赛季数据在 `alliance/data`。产物在 `alliance/data/product/season/<id>/`。
 
 ```text
-app/data/
+alliance/data/
   compiler/
     gamedata.ts           提取缓存中 gamedata 表的路径与读取（@alliance/data/gamedata）
     packet/               官方表收成这一季的 JSON
@@ -46,13 +46,13 @@ app/data/
 
 | 路径 | 内容 |
 | --- | --- |
-| `app/data/compiler/input/season/<id>/tuning.json` | 这一季手写的结算等配置 |
-| `app/data/compiler/input/research/` | 模式要读的研究表 |
-| `app/data/compiler/input/base/absent.json` | 没有上游来源的键及原因，需求中写成可选 |
-| `app/data/product/season/<id>/` | 这一季的 JSON 数据包 |
-| `app/data/product/base/manifest.json` | 基础资源包清单，键到文件，以及领域 id 到键的 `refs` |
-| `app/data/product/base/fonts.css` | 基础包的字体声明 |
-| `app/data/product/season/<id>/manifest.json` | 赛季资源包清单，含动画角色表 |
+| `alliance/data/compiler/input/season/<id>/tuning.json` | 这一季手写的结算等配置 |
+| `alliance/data/compiler/input/research/` | 模式要读的研究表 |
+| `alliance/data/compiler/input/base/absent.json` | 没有上游来源的键及原因，需求中写成可选 |
+| `alliance/data/product/season/<id>/` | 这一季的 JSON 数据包 |
+| `alliance/data/product/base/manifest.json` | 基础资源包清单，键到文件，以及领域 id 到键的 `refs` |
+| `alliance/data/product/base/fonts.css` | 基础包的字体声明 |
+| `alliance/data/product/season/<id>/manifest.json` | 赛季资源包清单，含动画角色表 |
 
 赛季目录里的 packet 文件名在 `schema/packet-file.ts` 的 `PACKET_FILES`，例如 `chess.json`、`enemies.json`、`waves.json`、`config.json`、`tuning.json`。它们描述卫戍协议这一季的用法。`packetAddress` 把赛季 id 和文件名收成 `/data/seasons/<id>/<file>`，`runtime/packet` 按这个地址读取。
 

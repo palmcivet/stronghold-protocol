@@ -11,7 +11,7 @@ const renderer = data.filter((row) => row.package === 'mission-renderer')
 
 # 追溯标记
 
-代码、注释、测试名与报错只写当前代码在做什么。规则或数值需要指向外部出处时，出处、依据与核对状态集中记在 `app/compat/upstream/trace/rules.ts`，本页由它渲染（`trace.data.ts`）。引擎包的源码与测试不写追溯标记，也不引用这份数据或本页。
+代码、注释、测试名与报错只写当前代码在做什么。规则或数值需要指向外部出处时，出处、依据与核对状态集中记在 `alliance/compat/upstream/trace/rules.ts`，本页由它渲染（`trace.data.ts`）。引擎包的源码与测试不写追溯标记，也不引用这份数据或本页。
 
 | 种类 | 含义 |
 |---|---|
@@ -22,13 +22,13 @@ const renderer = data.filter((row) => row.package === 'mission-renderer')
 
 ## 检查
 
-`app/compat/upstream/trace/rules.test.ts` 检查：
+`alliance/compat/upstream/trace/rules.test.ts` 检查：
 
 - 数据符合 schema，id 形如 `assumed/…` 或 `source/…` 且不重复；`next` 为空时必须有 `gap`。
 - `next` 里的用例都属于记录所在的包，并且都能用 case-map 的枚举（`vitest list`）找到。
 - `upstreamCases` 都在 `case-map/inventory.json` 里。
 
-在 `app/compat/upstream` 内运行：
+在 `alliance/compat/upstream` 内运行：
 
 ```sh
 pnpm test

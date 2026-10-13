@@ -3,7 +3,7 @@
   "compilerOptions": {
     "lib": ["es2024", "dom"],
     "types": [],
-    "customConditions": ["source"],
+    "customConditions": ["@wsde/source"],
     "outDir": "dist",
     "rootDir": ".",
     "tsBuildInfoFile": "dist/.tsbuildinfo"

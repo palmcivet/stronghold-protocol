@@ -7,7 +7,7 @@
   "sideEffects": false,
   "exports": {
     ".": {
-      "source": "./index.ts",
+      "@wsde/source": "./index.ts",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
@@ -15,23 +15,23 @@
   },
   "imports": {
     "#address/*.js": {
-      "source": "./address/*.ts",
+      "@wsde/source": "./address/*.ts",
       "default": "./dist/address/*.js"
     },
     "#cache/*.js": {
-      "source": "./cache/*.ts",
+      "@wsde/source": "./cache/*.ts",
       "default": "./dist/cache/*.js"
     },
     "#key/*.js": {
-      "source": "./key/*.ts",
+      "@wsde/source": "./key/*.ts",
       "default": "./dist/key/*.js"
     },
     "#resolver/*.js": {
-      "source": "./resolver/*.ts",
+      "@wsde/source": "./resolver/*.ts",
       "default": "./dist/resolver/*.js"
     },
     "#schema/*.js": {
-      "source": "./schema/*.ts",
+      "@wsde/source": "./schema/*.ts",
       "default": "./dist/schema/*.js"
     }
   },
@@ -46,7 +46,7 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@alliance/shared": "workspace:*",
+    "@wsde/shared": "workspace:*",
     "@biomejs/biome": "catalog:",
     "@types/node": "catalog:",
     "rimraf": "catalog:",

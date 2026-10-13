@@ -1,4 +1,4 @@
-import { TRACE_RULES } from '../../../app/compat/upstream/trace/rules.ts';
+import { TRACE_RULES } from '../../../alliance/compat/upstream/trace/rules.ts';
 
 export interface TraceRow {
   readonly id: string;
@@ -27,7 +27,7 @@ declare const data: readonly TraceRow[];
 export { data };
 
 export default {
-  watch: ['../../../app/compat/upstream/trace/rules.ts'],
+  watch: ['../../../alliance/compat/upstream/trace/rules.ts'],
   load(): readonly TraceRow[] {
     return TRACE_RULES.map((entry) => ({
       id: entry.id,

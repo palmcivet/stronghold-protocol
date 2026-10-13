@@ -1,0 +1,56 @@
+{
+  "name": "@alliance/compat-upstream",
+  "version": "0.0.0",
+  "private": true,
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "@wsde/source": "./index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "imports": {
+    "#data/*.js": {
+      "@wsde/source": "./data/*.ts",
+      "default": "./dist/data/*.js"
+    },
+    "#case-map/*.js": {
+      "@wsde/source": "./case-map/*.ts",
+      "default": "./dist/case-map/*.js"
+    },
+    "#trace/*.js": {
+      "@wsde/source": "./trace/*.ts",
+      "default": "./dist/trace/*.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "case-map": "node dist/case-map/cli.js",
+    "check": "pnpm check:src && pnpm check:test",
+    "check:src": "tsc --noEmit --incremental false --composite false",
+    "check:test": "tsc -p tsconfig.test.json",
+    "clean": "rimraf dist dist-test tsconfig.test.tsbuildinfo",
+    "format": "biome check --write",
+    "lint": "biome lint",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@alliance/contract": "workspace:*",
+    "@alliance/data": "workspace:*",
+    "@wsde/shared": "workspace:*",
+    "arknights-assets-catalog": "workspace:*",
+    "valibot": "^1.5.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "catalog:",
+    "@types/node": "catalog:",
+    "rimraf": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}

@@ -1,5 +1,5 @@
 {
-  "name": "@alliance/shared",
+  "name": "@wsde/shared",
   "version": "0.0.0",
   "private": true,
   "description": "Workspace tooling shared by the packages: workspace root and package listing, reference checks, the shared vitest config. Plain JavaScript with declaration files, so nothing needs a build.",

@@ -7,7 +7,7 @@ description: 对局进程对外的线路接口。浏览器和外壳通过这些�
 
 对局进程对浏览器和外壳提供两项操作：`GET /healthz`，以及路径 `/ws` 上的 WebSocket。页面、赛季 JSON 和媒体由站点提供，不在这份契约里。
 
-线路上的事实来自当前实现：`app/server/entry/index.ts` 的健康检查与升级，`app/server/connection/session.ts` 的会话，`@alliance/contract` 的 `message.ts`（`C2S`、`S2C`、`validateC2S`）的消息校验，`app/server/room/index.ts` 的房间，`app/server/match/` 的对局与作战帧。消息名和字段以各页为准。
+线路上的事实来自当前实现：`alliance/server/entry/index.ts` 的健康检查与升级，`alliance/server/connection/session.ts` 的会话，`@alliance/contract` 的 `message.ts`（`C2S`、`S2C`、`validateC2S`）的消息校验，`alliance/server/room/index.ts` 的房间，`alliance/server/match/` 的对局与作战帧。消息名和字段以各页为准。
 
 ## 帧
 

@@ -1,6 +1,6 @@
 packages:
-  - "app/*"
-  - "app/compat/*"
+  - "alliance/*"
+  - "alliance/compat/*"
   - "assets-catalog"
   - "assets-extractor"
   - "deployment"

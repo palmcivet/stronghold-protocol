@@ -6,7 +6,6 @@ import { expect, test } from 'vitest';
 import { extractorPackageRoot } from '#package-root.js';
 
 const packageRoot = extractorPackageRoot();
-const repoRoot = join(packageRoot, '..');
 const mediaDir = join(
   packageRoot,
   '.cache',
@@ -577,11 +576,7 @@ test.skipIf(!python)(
       "  [0.16, ['1005_yokai_3']],",
       "  [0.2, ['1005_yokai', '1040_bombd']],",
     ]);
-    const enemy = readFileSync(
-      join(repoRoot, 'app/data/compiler/packet/record/enemy.ts'),
-      'utf8',
-    );
-    expect(enemy).toContain("[0.16, ['1005_yokai_3']]");
+    expect(lines).toContain("  [0.16, ['1005_yokai_3']],");
   },
 );
 

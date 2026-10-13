@@ -18,7 +18,7 @@ description: 从 master 后端的 assets.json 读出资源，哪些地址能映�
 
 ## 地址映射
 
-每条映射规则写在 `app/compat/upstream/data/asset/rules.ts`。下面按资源类别列出概要，每条写作「master 地址 → 资源键」，下一行是领域引用（`refs` 里的路径）；没有领域引用的规则注明「无」。
+每条映射规则写在 `alliance/compat/upstream/data/asset/rules.ts`。下面按资源类别列出概要，每条写作「master 地址 → 资源键」，下一行是领域引用（`refs` 里的路径）；没有领域引用的规则注明「无」。
 
 占位符：`<id>` 是条目 id，`<file>` 是文件名，`<name>` 是名字，`<path>` 是路径，`<pose>` 是 `front` 或 `back`，`<variant>` 是变体名，`<prof>` 是职业，`<char>` 是角色，`<slot>` 是槽位，`<unit>` 是单位，`<dir>` 是目录，`<family>`、`<weight>` 是字体族与字重。
 

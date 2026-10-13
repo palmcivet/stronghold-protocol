@@ -1,0 +1,149 @@
+{
+  "ui": {
+    "click": "audio:sfx/ui/g_ui_btn_h",
+    "back": "audio:sfx/ui/g_ui_btn_u",
+    "confirm": "audio:sfx/ui/g_ui_confirm_h",
+    "buy": "audio:sfx/autochess/b_char_tokenset",
+    "sell": "audio:sfx/autochess/act1autochess_b_ui_getmoney",
+    "income": "audio:sfx/autochess/act1autochess_b_ui_getmoney",
+    "freeze": "audio:sfx/autochess/act1autochess_b_ui_shop_lock",
+    "levelup": "audio:sfx/autochess/act1autochess_b_ui_shop_upgrade",
+    "merge": "audio:sfx/autochess/act1autochess_b_ui_characterupgrade",
+    "equip": "audio:sfx/autochess/act1autochess_b_ui_equip",
+    "itemMerge": "audio:sfx/autochess/act1autochess_b_ui_equipupgrade",
+    "artPlace": "audio:sfx/autochess/act1autochess_a_bat_usmgbf",
+    "ready": "audio:sfx/autochess/act1autochess_g_ui_player_ready",
+    "timer": "audio:sfx/autochess/act1autochess_g_ui_countdown",
+    "draft": "audio:sfx/autochess/act1autochess_g_ui_strategy",
+    "yourTurn": "audio:sfx/autochess/act1autochess_g_ui_yourturn",
+    "yourTurnCircle": "audio:sfx/autochess/act1autochess_b_ui_yourturn_circle",
+    "target": "audio:sfx/autochess/act1autochess_b_ui_target",
+    "broadcast": "audio:sfx/autochess/act1autochess_b_ui_broadcasthint",
+    "danger": "audio:sfx/autochess/act1autochess_b_ui_harmful",
+    "emote": "audio:sfx/autochess/g_ui_emojidialogue",
+    "roundStart": "audio:sfx/autochess/act1autochess_b_ui_roundstart",
+    "rest": "audio:sfx/autochess/act1autochess_b_ui_rest",
+    "battleStart": "audio:sfx/autochess/act1autochess_b_ui_battlestart",
+    "battleStartBoss": "audio:sfx/autochess/act1autochess_b_ui_battlestart_boss",
+    "bossRoundTeam": "audio:sfx/autochess/act1autochess_b_ui_bossround_team",
+    "bossRoundSingle": "audio:sfx/autochess/act1autochess_b_ui_bossround_single",
+    "bossRoundSecret": "audio:sfx/autochess/act1autochess_b_ui_bossround_secret",
+    "killBoss": "audio:sfx/autochess/act1autochess_b_ui_killboss",
+    "killBossAll": "audio:sfx/autochess/act1autochess_b_ui_killboss_all",
+    "killBossNormal": "audio:sfx/autochess/act1autochess_b_ui_killboss_normal",
+    "defenceStart": "audio:sfx/autochess/act1autochess_b_ui_defence_start",
+    "defenceUnite": "audio:sfx/autochess/act1autochess_b_ui_defence_unite",
+    "battleOverReduce": "audio:sfx/autochess/act1autochess_b_ui_battleover_reduce",
+    "battleOverNoReduce": "audio:sfx/autochess/act1autochess_b_ui_battleover_noreduce",
+    "battleOverNormal": "audio:sfx/autochess/act1autochess_b_ui_battleover_normal",
+    "goFirst": "audio:sfx/autochess/act1autochess_g_ui_gofirst",
+    "disconnect": "audio:sfx/autochess/act1autochess_g_ui_disconnect",
+    "settlementSucceed": "audio:sfx/autochess/act1autochess_g_ui_settlement_succeed",
+    "settlementFail": "audio:sfx/autochess/act1autochess_g_ui_settlement_fail",
+    "settlementTeam": "audio:sfx/autochess/act1autochess_g_ui_settlement_team",
+    "settlementBossSign": "audio:sfx/autochess/act1autochess_g_ui_settlement_bosssign",
+    "goodEvaluation": "audio:sfx/autochess/act1autochess_g_ui_goodevaluation",
+    "load": "audio:sfx/autochess/act1autochess_g_ui_load",
+    "start": "audio:sfx/autochess/act1autochess_g_ui_start",
+    "matchSucceed": "audio:sfx/autochess/act1autochess_g_ui_match_succeed",
+    "matchFail": "audio:sfx/autochess/act1autochess_g_ui_match_fail",
+    "matchCancel": "audio:sfx/autochess/act1autochess_g_ui_match_cancel",
+    "joinRoom": "audio:sfx/autochess/act1autochess_g_ui_player_joinroom",
+    "tab": "audio:sfx/ui/g_ui_tabswitch",
+    "pick": "audio:sfx/ui/g_ui_pick",
+    "drop": "audio:sfx/ui/g_ui_unpick",
+    "error": "audio:sfx/ui/g_ui_scwarning",
+    "refresh": "audio:sfx/ui/g_ui_rtargetrefresh"
+  },
+  "bond": {
+    "levelUp": "audio:sfx/autochess/act1autochess_b_ui_buffup"
+  },
+  "battle": {
+    "deploy": "audio:sfx/battle/b_char_set",
+    "tokenDeploy": "audio:sfx/autochess/b_char_tokenset",
+    "charDie": "audio:sfx/battle/b_char_dead",
+    "enemyDie": "audio:sfx/battle/b_enemy_dead_n",
+    "enemyDieHeavy": "audio:sfx/battle/b_enemy_dead_h",
+    "enemyHit": "audio:sfx/battle/e_imp_general_w",
+    "heal": "audio:sfx/battle/p_imp_heal_n",
+    "win": "audio:sfx/battle/b_ui_win",
+    "lose": "audio:sfx/battle/b_ui_lose",
+    "killCoin": "audio:sfx/autochess/e_skill_gldcndd",
+    "leak": "audio:sfx/battle/b_ui_alarmenter"
+  },
+  "bgm": {
+    "lobby": {
+      "loop": "audio:bgm/m_sys_act1autochess_loop",
+      "intro": "audio:bgm/m_sys_act1autochess_intro"
+    },
+    "prep": {
+      "loop": "audio:bgm/m_bat_act1autochess_loop"
+    },
+    "combat": {
+      "loop": "audio:bgm/m_bat_act1autochess_loop"
+    },
+    "boss": {
+      "loop": "audio:bgm/m_bat_rglk1phantomcastle_loop",
+      "intro": "audio:bgm/m_bat_rglk1phantomcastle_intro"
+    },
+    "unite": {
+      "loop": "audio:bgm/m_bat_corrosion_loop",
+      "intro": "audio:bgm/m_bat_corrosion_intro"
+    }
+  },
+  "combat": [
+    {
+      "rounds": {
+        "from": 1,
+        "to": 7
+      },
+      "loop": "audio:bgm/m_bat_kazimierz2_2_loop"
+    },
+    {
+      "rounds": {
+        "from": 8
+      },
+      "loop": "audio:bgm/m_bat_kazimierz2_1_loop",
+      "intro": "audio:bgm/m_bat_kazimierz2_1_intro"
+    }
+  ],
+  "bossBgm": {
+    "boss_1": {
+      "loop": "audio:bgm/m_bat_ancestor_loop"
+    },
+    "boss_2": {
+      "loop": "audio:bgm/m_bat_ancestor_loop"
+    },
+    "boss_3": {
+      "loop": "audio:bgm/m_bat_ancestor_loop"
+    },
+    "boss_4": {
+      "loop": "audio:bgm/m_bat_abyssalhunters_loop",
+      "intro": "audio:bgm/m_bat_abyssalhunters_intro"
+    },
+    "boss_5": {
+      "loop": "audio:bgm/m_bat_rglk1phantomcastle_loop",
+      "intro": "audio:bgm/m_bat_rglk1phantomcastle_intro"
+    },
+    "boss_6": {
+      "loop": "audio:bgm/m_bat_vtlionk_loop",
+      "intro": "audio:bgm/m_bat_vtlionk_intro"
+    },
+    "boss_7": {
+      "loop": "audio:bgm/m_bat_rouge3boss1_loop",
+      "intro": "audio:bgm/m_bat_rouge3boss1_intro"
+    },
+    "boss_8": {
+      "loop": "audio:bgm/m_bat_prtsstage1_loop",
+      "intro": "audio:bgm/m_bat_prtsstage1_intro"
+    },
+    "boss_9": {
+      "loop": "audio:bgm/m_bat_prtsstage1_loop",
+      "intro": "audio:bgm/m_bat_prtsstage1_intro"
+    },
+    "boss_10": {
+      "loop": "audio:bgm/m_bat_prtsstage1_loop",
+      "intro": "audio:bgm/m_bat_prtsstage1_intro"
+    }
+  }
+}

@@ -5,7 +5,7 @@ description: 客户端连接 master 后端时怎样读取它的资源表，以�
 
 # @alliance/compat-upstream
 
-`app/compat/upstream` 是 next 与 master 之间的兼容层，包名 `@alliance/compat-upstream`。它做三件事：
+`alliance/compat/upstream` 是 next 与 master 之间的兼容层，包名 `@alliance/compat-upstream`。它做三件事：
 
 - 客户端连接 master 后端时，把后端的 `data/assets.json` 转成一份 `upstream` 包清单。`arknights-assets-catalog` 仍只看资源键，不认识 master 的地址格式
 - 记录 master 的每条测试用例在 next 里的去向，并检查对照表与两边的用例清单一致

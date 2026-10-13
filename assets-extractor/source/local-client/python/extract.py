@@ -135,7 +135,7 @@ DERIVED = [
 # The board textures every player downloads when a match shows the 3D board (public/js/render/board3d/load.js
 # PACK_IMAGES; D / common_D / BG also feed the 2D board art, render/boardArt.js): (output subdir, name, mode). A WebP
 # copy is written next to the PNG and the manifest lists the copy instead (≈ 6.7 MB → 2.0 MB per cold start); the PNG
-# stays for app/data/compiler/media/derive/board/atlas.ts and setup's check. 'lossy' = colour maps at quality 95 with the alpha lossless
+# stays as the lossless source for consumers that build board atlases from it, and for setup's check. 'lossy' = colour maps at quality 95 with the alpha lossless
 # and the RGB under transparent texels kept (`exact`: the board material is opaque and samples it); 'lossless' =
 # normal and data maps, whose channels hold independent values that lossy WebP's chroma subsampling would mix (a
 # normal map ends up tens of degrees off). A Pillow without WebP support keeps the PNG.

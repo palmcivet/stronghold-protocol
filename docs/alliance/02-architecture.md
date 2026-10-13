@@ -1,6 +1,6 @@
 ---
 title: 架构
-description: app/ 下的各个包、它们的依赖，以及数据从构建期到对局的流向。
+description: alliance/ 下的各个包、它们的依赖，以及数据从构建期到对局的流向。
 ---
 
 # 架构
@@ -9,11 +9,11 @@ description: app/ 下的各个包、它们的依赖，以及数据从构建期�
 
 | 目录 | 包 | 职责 |
 | --- | --- | --- |
-| `app/contract` | `@alliance/contract` | 客户端与服务端共用的消息与版本 |
-| `app/data` | `@alliance/data` | 赛季数据包与资源包的构建器，以及读取 |
-| `app/server` | `@alliance/server` | 对局进程：HTTP、WebSocket、房间与对局 |
-| `app/client` | `@alliance/client` | 浏览器客户端与开发服务器 |
-| `app/compat/upstream` | `@alliance/compat-upstream` | 连接 master 后端的兼容层 |
+| `alliance/contract` | `@alliance/contract` | 客户端与服务端共用的消息与版本 |
+| `alliance/data` | `@alliance/data` | 赛季数据包与资源包的构建器，以及读取 |
+| `alliance/server` | `@alliance/server` | 对局进程：HTTP、WebSocket、房间与对局 |
+| `alliance/client` | `@alliance/client` | 浏览器客户端与开发服务器 |
+| `alliance/compat/upstream` | `@alliance/compat-upstream` | 连接 master 后端的兼容层 |
 
 ## 依赖
 

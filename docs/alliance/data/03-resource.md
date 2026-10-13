@@ -5,7 +5,7 @@ description: 卫戍协议的图片、Spine、音频与字体如何从社区仓�
 
 # 资源从哪里来
 
-卫戍协议不自带官方美术与音频。构建时，`app/data` 先算出这一季要用的资源键，交给 [arknights-assets-extractor](../../assets-extractor/index.md) 从社区仓库取回文件，再写出基础包与赛季包两份清单。运行时，客户端用 [arknights-assets-catalog](../../assets-catalog/index.md) 把清单叠成覆盖层，按键加载。
+卫戍协议不自带官方美术与音频。构建时，`alliance/data` 先算出这一季要用的资源键，交给 [arknights-assets-extractor](../../assets-extractor/index.md) 从社区仓库取回文件，再写出基础包与赛季包两份清单。运行时，客户端用 [arknights-assets-catalog](../../assets-catalog/index.md) 把清单叠成覆盖层，按键加载。
 
 服务端只读取赛季数据包，不读取任何资源清单或媒体文件。
 
@@ -27,8 +27,8 @@ flowchart LR
 ```
 
 - `assets-catalog` 没有运行时依赖，浏览器与 Node 都能用。
-- `assets-extractor` 只被 `app/data` 的构建脚本使用，不进入客户端与服务端的构建产物。
-- 明日方舟语义（干员、敌人、语音槽位、赛季）只在 `app/data`；两个资源库只认识键。
+- `assets-extractor` 只被 `alliance/data` 的构建脚本使用，不进入客户端与服务端的构建产物。
+- 明日方舟语义（干员、敌人、语音槽位、赛季）只在 `alliance/data`；两个资源库只认识键。
 
 ## 上游来源
 
@@ -103,10 +103,10 @@ flowchart TD
 
 ## 命令
 
-在 `app/data/` 内执行，先 `pnpm build`：
+在 `alliance/data/` 内执行，先 `pnpm build`：
 
 ```bash
-cd app/data
+cd alliance/data
 pnpm build
 pnpm compile:needs --season act2autochess
 pnpm extract:media
@@ -163,7 +163,7 @@ pnpm compile:packs --season act2autochess
 ## 目录
 
 ```text
-app/data/
+alliance/data/
   compiler/input/
     base/pack.json                      基础包修订号
     season/<id>/pack.json               赛季包版本
@@ -183,7 +183,7 @@ app/data/
     season/<id>/*.json                  数据包：chess、enemies、waves、config、tuning…
 ```
 
-提取缓存（`app/data/.cache/assets/`）：
+提取缓存（`alliance/data/.cache/assets/`）：
 
 ```text
 repos/<owner>/<repo>@<branch>/          浅克隆工作区，只检出命中的目录
@@ -267,17 +267,17 @@ console.log(packFileRoot(season)) // "../../../../files/"
 - id、版本与内容哈希必须能作单个路径段，否则抛 `arknights-assets-catalog` 的 `AssetAddressError`。
 - 本地清单缺失时，客户端与开发服务器都用 `emptyLocalManifest()` 代替，覆盖层的层数因此不变。
 
-开发服务器（`app/client/vite-plugins.ts` 的 `devResourcesPlugin`）按同一布局提供文件：
+开发服务器（`alliance/client/vite-plugins.ts` 的 `devResourcesPlugin`）按同一布局提供文件：
 
-- `/res/files/<address>`：先找 `app/data/.cache/derived/`，再找 `app/data/.cache/assets/files/`
-- `/res/packs/base/<任意>/<file>`：`app/data/product/base/<file>`
-- `/res/packs/season/<id>/<任意>/<file>`：`app/data/product/season/<id>/<file>`
-- `/res/local/manifest.json`：`app/client/local/manifest.json`；缺失时返回空的本地清单
-- `/data/seasons/<id>/<file>`：`app/data/product/season/<id>/<file>`（数据包）
+- `/res/files/<address>`：先找 `alliance/data/.cache/derived/`，再找 `alliance/data/.cache/assets/files/`
+- `/res/packs/base/<任意>/<file>`：`alliance/data/product/base/<file>`
+- `/res/packs/season/<id>/<任意>/<file>`：`alliance/data/product/season/<id>/<file>`
+- `/res/local/manifest.json`：`alliance/client/local/manifest.json`；缺失时返回空的本地清单
+- `/data/seasons/<id>/<file>`：`alliance/data/product/season/<id>/<file>`（数据包）
 
 ## 客户端加载
 
-`app/client/resource/store.ts` 的 `loadResourceStore` 加载清单并建立解析器：
+`alliance/client/resource/store.ts` 的 `loadResourceStore` 加载清单并建立解析器：
 
 <!-- check:skip -->
 ```ts

@@ -55,9 +55,15 @@
   "audio:sfx/battle/b_char_set": "assets/dyn/audio/sound_beta_2/battle/b_char/b_char_set.mp3",
   "audio:sfx/battle/b_enemy_dead_h": "assets/dyn/audio/sound_beta_2/battle/b_enemy/b_enemy_dead_h.mp3",
   "audio:sfx/battle/b_enemy_dead_n": "assets/dyn/audio/sound_beta_2/battle/b_enemy/b_enemy_dead_n.mp3",
+  "audio:sfx/battle/b_ui_alarmenter": "assets/dyn/audio/sound_beta_2/battle/b_ui/b_ui_alarmenter.mp3",
   "audio:sfx/battle/b_ui_lose": "assets/dyn/audio/sound_beta_2/battle/b_ui/b_ui_lose.mp3",
   "audio:sfx/battle/b_ui_win": "assets/dyn/audio/sound_beta_2/battle/b_ui/b_ui_win.mp3",
   "audio:sfx/ui/g_ui_btn_h": "assets/dyn/audio/sound_beta_2/general/g_ui/g_ui_btn_h.mp3",
   "audio:sfx/ui/g_ui_btn_u": "assets/dyn/audio/sound_beta_2/general/g_ui/g_ui_btn_u.mp3",
-  "audio:sfx/ui/g_ui_confirm_h": "assets/dyn/audio/sound_beta_2/general/g_ui/g_ui_confirm_h.mp3"
+  "audio:sfx/ui/g_ui_confirm_h": "assets/dyn/audio/sound_beta_2/general/g_ui/g_ui_confirm_h.mp3",
+  "audio:sfx/ui/g_ui_pick": "assets/dyn/audio/sound_beta_2/general/g_ui/g_ui_pick.mp3",
+  "audio:sfx/ui/g_ui_rtargetrefresh": "assets/dyn/audio/sound_beta_2/general/g_ui/g_ui_rtargetrefresh.mp3",
+  "audio:sfx/ui/g_ui_scwarning": "assets/dyn/audio/sound_beta_2/general/g_ui/g_ui_scwarning.mp3",
+  "audio:sfx/ui/g_ui_tabswitch": "assets/dyn/audio/sound_beta_2/general/g_ui/g_ui_tabswitch.mp3",
+  "audio:sfx/ui/g_ui_unpick": "assets/dyn/audio/sound_beta_2/general/g_ui/g_ui_unpick.mp3"
 }

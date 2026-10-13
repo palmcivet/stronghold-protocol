@@ -7,7 +7,7 @@
   "sideEffects": false,
   "exports": {
     ".": {
-      "source": "./index.ts",
+      "@wsde/source": "./index.ts",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
@@ -15,39 +15,39 @@
   },
   "imports": {
     "#catalog/*.js": {
-      "source": "./catalog/*.ts",
+      "@wsde/source": "./catalog/*.ts",
       "default": "./dist/catalog/*.js"
     },
     "#download/*.js": {
-      "source": "./download/*.ts",
+      "@wsde/source": "./download/*.ts",
       "default": "./dist/download/*.js"
     },
     "#font/*.js": {
-      "source": "./font/*.ts",
+      "@wsde/source": "./font/*.ts",
       "default": "./dist/font/*.js"
     },
     "#port/*.js": {
-      "source": "./port/*.ts",
+      "@wsde/source": "./port/*.ts",
       "default": "./dist/port/*.js"
     },
     "#script/*.js": {
-      "source": "./script/*.ts",
+      "@wsde/source": "./script/*.ts",
       "default": "./dist/script/*.js"
     },
     "#source/*.js": {
-      "source": "./source/*.ts",
+      "@wsde/source": "./source/*.ts",
       "default": "./dist/source/*.js"
     },
     "#spine/*.js": {
-      "source": "./spine/*.ts",
+      "@wsde/source": "./spine/*.ts",
       "default": "./dist/spine/*.js"
     },
     "#package-root.js": {
-      "source": "./package-root.ts",
+      "@wsde/source": "./package-root.ts",
       "default": "./dist/package-root.js"
     },
     "#workspace.js": {
-      "source": "./workspace.ts",
+      "@wsde/source": "./workspace.ts",
       "default": "./dist/workspace.js"
     }
   },
@@ -68,7 +68,7 @@
     "arknights-assets-catalog": "workspace:*"
   },
   "devDependencies": {
-    "@alliance/shared": "workspace:*",
+    "@wsde/shared": "workspace:*",
     "@biomejs/biome": "catalog:",
     "@types/node": "catalog:",
     "rimraf": "catalog:",

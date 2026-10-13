@@ -21,7 +21,7 @@ import {
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { listWorkspacePackages } from '@alliance/shared/workspace';
+import { listWorkspacePackages } from '@wsde/shared/workspace';
 import type { MarkdownRenderer, SiteConfig } from 'vitepress';
 
 /** Fence languages that hold checked code; both mean TypeScript. */
@@ -233,7 +233,7 @@ function prepare(workDir: string): void {
       noEmit: true,
       lib: ['es2024', 'dom', 'dom.iterable'],
       types: ['node'],
-      customConditions: ['source'],
+      customConditions: ['@wsde/source'],
     },
     include: ['src/**/*.ts'],
   };

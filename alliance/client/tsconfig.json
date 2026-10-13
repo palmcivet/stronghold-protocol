@@ -1,0 +1,33 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["es2024", "dom", "dom.iterable"],
+    "types": ["node", "vite/client"],
+    "customConditions": ["@wsde/source"],
+    "outDir": "dist",
+    "rootDir": ".",
+    "tsBuildInfoFile": "dist/.tsbuildinfo",
+    "jsx": "react-jsx"
+  },
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": [
+    "dist",
+    "dist-test",
+    "dist-web",
+    "node_modules",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "vite.config.ts",
+    "vitest.config.ts",
+    "**/*.test.tsx",
+    "**/*.spec.tsx"
+  ],
+  "references": [
+    { "path": "../contract" },
+    { "path": "../data" },
+    { "path": "../compat/upstream" },
+    { "path": "../../assets-catalog" },
+    { "path": "../../mission-core" },
+    { "path": "../../mission-renderer" }
+  ]
+}

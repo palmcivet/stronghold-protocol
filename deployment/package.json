@@ -8,14 +8,14 @@
   "exports": {
     "./static-policy": {
       "types": "./client/config/dist/static-policy.d.ts",
-      "source": "./client/config/static-policy.ts",
+      "@wsde/source": "./client/config/static-policy.ts",
       "import": "./client/config/dist/static-policy.js",
       "default": "./client/config/dist/static-policy.js"
     }
   },
   "imports": {
     "#static-policy.js": {
-      "source": "./client/config/static-policy.ts",
+      "@wsde/source": "./client/config/static-policy.ts",
       "default": "./client/config/dist/static-policy.js"
     }
   },
@@ -33,7 +33,7 @@
     "@alliance/data": "workspace:*"
   },
   "devDependencies": {
-    "@alliance/shared": "workspace:*",
+    "@wsde/shared": "workspace:*",
     "@biomejs/biome": "catalog:",
     "@types/node": "catalog:",
     "rimraf": "catalog:",

@@ -18,10 +18,10 @@ pnpm build
 
 ## 编译数据包
 
-对局进程读取 `app/data/product/season/act2autochess/` 下的数据包，开发服务器还要读资源包。这些文件不在仓库里，要先编译：
+对局进程读取 `alliance/data/product/season/act2autochess/` 下的数据包，开发服务器还要读资源包。这些文件不在仓库里，要先编译：
 
 ```sh
-cd app/data
+cd alliance/data
 pnpm compile:needs --season act2autochess
 pnpm extract:media
 pnpm compile:needs --season act2autochess
@@ -38,7 +38,7 @@ pnpm compile:packs --season act2autochess
 ## 启动对局进程
 
 ```sh
-cd app/server
+cd alliance/server
 pnpm build
 pnpm start
 ```
@@ -56,7 +56,7 @@ curl http://127.0.0.1:3000/healthz
 ## 开发服务器
 
 ```sh
-cd app/client
+cd alliance/client
 pnpm dev
 ```
 
@@ -64,5 +64,5 @@ Vite 开发服务器监听 `5173`，按发布布局提供 `/res/` 下的资源�
 
 ## 下一步
 
-- 想了解 `app/` 下各包的分工：读 [架构](./02-architecture.md)
+- 想了解 `alliance/` 下各包的分工：读 [架构](./02-architecture.md)
 - 想写一个连接对局进程的客户端：读 [对局协议](./protocol/index.md)

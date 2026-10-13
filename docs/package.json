@@ -10,7 +10,7 @@
     "preview": "vitepress preview ."
   },
   "devDependencies": {
-    "@alliance/shared": "workspace:*",
+    "@wsde/shared": "workspace:*",
     "@biomejs/biome": "catalog:",
     "@types/node": "catalog:",
     "markdown-it-replace-link": "1.2.2",

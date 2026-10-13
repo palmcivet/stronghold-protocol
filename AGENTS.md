@@ -10,6 +10,7 @@
 
 - Three + React
 - Node 22
+- TypeScript 7
 - PNPM 10 + Vite + Vitest
 
 ## 格式与工具

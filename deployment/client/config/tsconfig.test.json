@@ -2,7 +2,7 @@
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
     "types": ["node"],
-    "customConditions": ["source"],
+    "customConditions": ["@wsde/source"],
     "rootDir": ".",
     "composite": false,
     "incremental": false,

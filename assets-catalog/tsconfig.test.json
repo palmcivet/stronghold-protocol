@@ -10,7 +10,7 @@
     "declarationMap": false,
     "sourceMap": false,
     "noEmit": true,
-    "customConditions": ["source"]
+    "customConditions": ["@wsde/source"]
   },
   "include": ["**/*.test.ts", "**/*.spec.ts", "test/**/*.ts"],
   "exclude": ["dist", "dist-test", "node_modules"]

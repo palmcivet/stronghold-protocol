@@ -5,7 +5,7 @@ description: 卫戍协议的构建器从官方数据与提取出的资源，写�
 
 # 编译
 
-所有命令在 `app/data/` 里执行，先 `pnpm build`，再跑读取 `dist/` 的脚本。缓存默认在 `app/data/.cache/`。
+所有命令在 `alliance/data/` 里执行，先 `pnpm build`，再跑读取 `dist/` 的脚本。缓存默认在 `alliance/data/.cache/`。
 
 ## 命令
 

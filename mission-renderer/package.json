@@ -8,42 +8,42 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "source": "./index.ts",
+      "@wsde/source": "./index.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     }
   },
   "imports": {
     "#contract/*.js": {
-      "source": "./contract/*.ts",
+      "@wsde/source": "./contract/*.ts",
       "default": "./dist/contract/*.js"
     },
     "#port/*.js": {
-      "source": "./port/*.ts",
+      "@wsde/source": "./port/*.ts",
       "default": "./dist/port/*.js"
     },
     "#runtime/*.js": {
-      "source": "./runtime/*.ts",
+      "@wsde/source": "./runtime/*.ts",
       "default": "./dist/runtime/*.js"
     },
     "#ground/*.js": {
-      "source": "./ground/*.ts",
+      "@wsde/source": "./ground/*.ts",
       "default": "./dist/ground/*.js"
     },
     "#actor/*.js": {
-      "source": "./actor/*.ts",
+      "@wsde/source": "./actor/*.ts",
       "default": "./dist/actor/*.js"
     },
     "#pointer/*.js": {
-      "source": "./pointer/*.ts",
+      "@wsde/source": "./pointer/*.ts",
       "default": "./dist/pointer/*.js"
     },
     "#audio/*.js": {
-      "source": "./audio/*.ts",
+      "@wsde/source": "./audio/*.ts",
       "default": "./dist/audio/*.js"
     },
     "#effect/*.js": {
-      "source": "./effect/*.ts",
+      "@wsde/source": "./effect/*.ts",
       "default": "./dist/effect/*.js"
     },
     "#test/*.js": "./test/*.ts"
@@ -71,7 +71,7 @@
     "arknights-mission-core": "workspace:*"
   },
   "devDependencies": {
-    "@alliance/shared": "workspace:*",
+    "@wsde/shared": "workspace:*",
     "@biomejs/biome": "catalog:",
     "@types/node": "catalog:",
     "@types/three": "^0.186.0",
