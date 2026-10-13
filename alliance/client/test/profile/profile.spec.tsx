@@ -1,11 +1,10 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { playCue, setCueSink } from '../../infra/audio/feedback.js';
 import { DEFAULT_AUDIO, settingsStore } from '../../infra/store/settings.js';
-import { AudioSettings } from '../../shell/settings.js';
-import { FeedbackProvider } from '../../ui/feedback.js';
+import { renderPart } from '../support/part.js';
 
 afterEach(() => {
   cleanup();
@@ -16,11 +15,7 @@ describe('audio settings', () => {
   it('sets the volume of a channel and mutes it, keeping the others', () => {
     const cues: string[] = [];
     const unset = setCueSink((role) => cues.push(role));
-    render(
-      <FeedbackProvider play={playCue}>
-        <AudioSettings />
-      </FeedbackProvider>,
-    );
+    renderPart('core:profile.audio', { play: playCue });
     const music = screen.getByRole('slider', { name: '音乐' });
     fireEvent.change(music, { target: { value: '25' } });
     fireEvent.click(screen.getByRole('button', { name: '音效 静音' }));

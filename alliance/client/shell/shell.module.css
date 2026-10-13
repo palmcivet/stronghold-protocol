@@ -1,57 +1,88 @@
 @layer components {
   .app {
+    position: relative;
+    isolation: isolate;
     display: flex;
     flex-direction: column;
     min-height: 100vh;
   }
 
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: var(--layer-backdrop);
+    pointer-events: none;
+  }
+
+  .backdropArt {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(
+        ellipse at 20% 0%,
+        var(--color-accent-a10),
+        transparent 60%
+      ),
+      radial-gradient(
+        ellipse at 100% 100%,
+        rgb(232 90 26 / 0.06),
+        transparent 50%
+      ),
+      var(--color-bg-0);
+  }
+
+  .barLayer {
+    position: sticky;
+    top: 0;
+    z-index: var(--layer-banner);
+  }
+
+  .app[data-bare] .barLayer {
+    position: fixed;
+    top: var(--size-hud-bar);
+    inset-inline: 0;
+    pointer-events: none;
+  }
+
+  .app[data-bare] .bannerSlot {
+    pointer-events: auto;
+  }
+
   .bar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: var(--space-3);
+    min-height: var(--size-hud-bar);
     padding: var(--space-2) var(--space-4);
-    border-bottom: 1px solid var(--color-line-1);
-    background: var(--color-bg-1);
+    border-bottom: var(--stroke-thin) solid var(--color-line-1);
+    background: var(--color-bg-glass);
+    backdrop-filter: blur(6px);
   }
 
   .brand {
     font-family: var(--font-display);
-    font-size: 1rem;
-  }
-
-  .tag {
-    padding: 0 var(--space-2);
-    border: 1px solid var(--color-amber);
-    color: var(--color-amber);
-    font-size: 0.75rem;
+    font-size: var(--font-size-md);
   }
 
   .nav {
     display: flex;
+    align-items: center;
     gap: var(--space-3);
     margin-inline-start: auto;
   }
 
-  .bindings {
-    display: grid;
-    gap: var(--space-2);
-    padding: 0;
-    list-style: none;
+  .navLink {
+    color: var(--color-text-md);
+    text-decoration: none;
   }
 
-  .binding {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-  }
-
-  .page {
-    display: contents;
+  .navLink[aria-current="page"] {
+    color: var(--color-accent-400);
   }
 
   .main {
+    position: relative;
+    z-index: var(--layer-screen);
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -59,10 +90,15 @@
     gap: var(--space-4);
   }
 
+  .app[data-bare] .main {
+    padding: 0;
+  }
+
+  .page {
+    display: contents;
+  }
+
   .banner {
-    position: sticky;
-    top: 0;
-    z-index: var(--layer-connection);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -72,33 +108,21 @@
     color: var(--color-text-hi);
   }
 
-  .toasts {
-    position: fixed;
-    right: var(--space-4);
-    bottom: var(--space-4);
-    z-index: var(--layer-toast);
-    display: flex;
-    flex-direction: column;
+  .bindings {
+    display: grid;
     gap: var(--space-2);
   }
 
-  .toast {
-    padding: var(--space-2) var(--space-4);
-    border-left: 3px solid var(--color-danger);
-    background: var(--color-bg-glass);
-  }
-
-  .settings {
+  .binding {
     display: flex;
-    gap: var(--space-2);
     align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
   }
 
   .channels {
     display: grid;
     gap: var(--space-2);
-    padding: 0;
-    list-style: none;
   }
 
   .channel {
@@ -106,23 +130,5 @@
     grid-template-columns: 1fr auto;
     gap: var(--space-2);
     align-items: end;
-  }
-
-  .modal {
-    position: fixed;
-    inset: 0;
-    display: grid;
-    place-items: center;
-    background: rgb(0 0 0 / 0.5);
-  }
-
-  .dialog {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-    padding: var(--space-4);
-    border: 1px solid var(--color-line-1);
-    background: var(--color-bg-2);
-    outline: none;
   }
 }

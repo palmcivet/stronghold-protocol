@@ -43,6 +43,7 @@ export function canonicalEntry(entry: RawEntry): RawEntry {
       hash: file.hash,
     })),
     dependsOn: [...new Set(entry.dependsOn)].sort(),
+    ...(entry.label === undefined ? {} : { label: entry.label }),
     source: {
       id: entry.source.id,
       path: entry.source.path,

@@ -31,6 +31,7 @@ describe('settings', () => {
       name: 'Amiya',
       avatar: '',
       quality: 'standard',
+      textSize: 'sm',
       keys: { ...DEFAULT_KEYS, freeze: 'KeyQ' },
       audio: {
         ...DEFAULT_AUDIO,

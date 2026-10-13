@@ -47,6 +47,8 @@ export interface PackAsset {
   readonly preloadGroup: string | null;
   /** Colour space of an image or texture; `srgb` when absent. */
   readonly colorSpace?: AssetColorSpace;
+  /** Variant of an image, such as `elite0`, `elite2` or `skin` for a portrait or avatar; absent when the image has none. */
+  readonly label?: string;
 }
 
 export interface PackFile extends AssetFile {

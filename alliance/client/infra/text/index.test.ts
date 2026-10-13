@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   dataName,
   errorText,
@@ -22,6 +22,26 @@ describe('t', () => {
     setLanguage('en');
     expect(t('core:lobby.create')).toBe('Create room');
     expect(t('core:room.host')).toBe('房主');
+  });
+
+  it('warns once in development about an English key it lacks', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    setLanguage('en');
+    t('core:vote.agree');
+    t('core:vote.agree');
+    expect(
+      warn.mock.calls.filter((call) =>
+        String(call[0]).includes('core:vote.agree'),
+      ),
+    ).toHaveLength(1);
+    setLanguage('zh-Hans');
+    t('core:vote.refuse');
+    expect(
+      warn.mock.calls.some((call) =>
+        String(call[0]).includes('core:vote.refuse'),
+      ),
+    ).toBe(false);
+    warn.mockRestore();
   });
 
   it('reads data text', () => {

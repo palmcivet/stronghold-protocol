@@ -66,35 +66,25 @@ export function LeaveAction() {
   );
 }
 
-/** Built-in contributions of `core:room.actions`. */
-export function roomActionDefaults() {
-  return [
-    {
-      into: 'core:room.actions',
-      id: 'core:room.addBot',
-      order: 10,
-      when: { seat: 'host' as const, coop: true },
-      component: AddBotAction,
-    },
-    {
-      into: 'core:room.actions',
-      id: 'core:room.ready',
-      order: 20,
-      when: { seat: 'player' as const, coop: true },
-      component: ReadyAction,
-    },
-    {
-      into: 'core:room.actions',
-      id: 'core:room.start',
-      order: 40,
-      when: { seat: 'host' as const },
-      component: StartAction,
-    },
-    {
-      into: 'core:room.actions',
-      id: 'core:room.leave',
-      order: 60,
-      component: LeaveAction,
-    },
-  ];
-}
+/** Built-in contributions of `core:room.actions`, defined as parts and inserted in this order. */
+export const ROOM_ACTIONS = [
+  {
+    id: 'core:room.addBot',
+    order: 10,
+    when: { seat: 'host' as const, coop: true },
+    component: AddBotAction,
+  },
+  {
+    id: 'core:room.ready',
+    order: 20,
+    when: { seat: 'player' as const, coop: true },
+    component: ReadyAction,
+  },
+  {
+    id: 'core:room.start',
+    order: 40,
+    when: { seat: 'host' as const },
+    component: StartAction,
+  },
+  { id: 'core:room.leave', order: 60, component: LeaveAction },
+] as const;

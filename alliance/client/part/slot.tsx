@@ -9,6 +9,7 @@ import { presenceStore } from '../infra/store/presence.js';
 import { roomStore } from '../infra/store/room.js';
 import { sessionStore } from '../infra/store/session.js';
 import { PartSlot } from './boundary.js';
+import { definePart, hasPart, Part } from './registry.js';
 
 /**
  * A declarative condition on the session, room or public match view. An insert without a `when` always shows.
@@ -33,7 +34,8 @@ export interface PartInsert {
   /** Lower comes first; ties keep registration order. */
   readonly order: number;
   readonly when?: InsertWhen;
-  readonly component: ComponentType;
+  /** Defines the part under `id` when the id is not defined yet. */
+  readonly component?: ComponentType;
 }
 
 interface Entry extends PartInsert {
@@ -52,6 +54,10 @@ function notify(): void {
 
 /** Adds a part to a container. Returns a function that removes it. */
 export function insertPart(insert: PartInsert): () => void {
+  const undefine =
+    insert.component && !hasPart(insert.id)
+      ? definePart(insert.id, insert.component)
+      : null;
   seq += 1;
   const entry: Entry = { ...insert, seq };
   entries.push(entry);
@@ -62,6 +68,7 @@ export function insertPart(insert: PartInsert): () => void {
       entries.splice(index, 1);
       notify();
     }
+    undefine?.();
   };
 }
 
@@ -122,9 +129,44 @@ function matches(when: InsertWhen | undefined): boolean {
   return true;
 }
 
+/** The parts of a container in render order: its defaults and inserts, filtered by `when` and sorted by `order`. */
+export function useSlotParts(
+  id: string,
+  defaults: readonly PartInsert[] = [],
+): readonly PartInsert[] {
+  const registered = useSyncExternalStore(subscribe, snapshot, snapshot);
+  // re-read stores so when predicates update with the session
+  useStore(sessionStore, (state) => state.backend);
+  useStore(sessionStore, (state) => state.playerId);
+  useStore(roomStore, (state) => state.room);
+  useStore(matchStore, (state) => state.public?.phase);
+  useStore(presenceStore, (state) => state.presence);
+  return [
+    ...defaults
+      .filter((part) => part.into === id)
+      .map((part, index) => ({ ...part, seq: -defaults.length + index })),
+    ...registered.filter((part) => part.into === id),
+  ]
+    .filter((part) => matches(part.when))
+    .sort((left, right) => left.order - right.order || left.seq - right.seq);
+}
+
+/** One child of a container: the registered part, or the insert's own component. */
+export function SlotChild({ part }: { readonly part: PartInsert }) {
+  if (hasPart(part.id)) {
+    return <Part id={part.id} />;
+  }
+  const Child = part.component;
+  return Child ? (
+    <PartSlot part={part.id}>
+      <Child />
+    </PartSlot>
+  ) : null;
+}
+
 /**
- * A layout container: its registered inserts, filtered by `when` and sorted by `order`, plus any default children
- * the host put in the tree (those keep their own order relative to the inserts via `defaults`).
+ * A layout container: its registered inserts, filtered by `when` and sorted by `order`, plus the built-in parts
+ * the host lists in `defaults` (same shape as an insert). Defaults come before inserts of equal order.
  */
 export function Slot({
   id,
@@ -136,35 +178,13 @@ export function Slot({
   readonly defaults?: readonly PartInsert[];
   readonly children?: ReactNode;
 }) {
-  const registered = useSyncExternalStore(subscribe, snapshot, snapshot);
-  // re-read stores so when predicates update with the session
-  useStore(sessionStore, (state) => state.backend);
-  useStore(sessionStore, (state) => state.playerId);
-  useStore(roomStore, (state) => state.room);
-  useStore(matchStore, (state) => state.public?.phase);
-  useStore(presenceStore, (state) => state.presence);
-  const parts = [
-    ...defaults.filter((part) => part.into === id),
-    ...registered.filter((part) => part.into === id),
-  ]
-    .filter((part) => matches(part.when))
-    .sort(
-      (left, right) =>
-        left.order - right.order ||
-        ('seq' in left ? (left as Entry).seq : 0) -
-          ('seq' in right ? (right as Entry).seq : 0),
-    );
+  const parts = useSlotParts(id, defaults);
   return (
-    <>
+    <div data-slot={id} style={{ display: 'contents' }}>
       {children}
-      {parts.map((part) => {
-        const Child = part.component;
-        return (
-          <PartSlot key={part.id} part={part.id}>
-            <Child />
-          </PartSlot>
-        );
-      })}
-    </>
+      {parts.map((part) => (
+        <SlotChild key={part.id} part={part} />
+      ))}
+    </div>
   );
 }

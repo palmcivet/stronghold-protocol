@@ -23,6 +23,7 @@ import {
   type SourceAttempt,
   serializeReport,
 } from '#catalog/report.js';
+import { imageVariantLabel } from '#catalog/variant-label.js';
 import { asBuffer, formatOfPath, validate } from '#download/format.js';
 import { AssetLedger, type LedgerRecord } from '#download/ledger.js';
 import {
@@ -261,13 +262,17 @@ export async function extractAssets(
     const entryOf = (
       key: AssetKey,
       assetFiles: readonly AssetFile[],
-    ): RawEntry => ({
-      key,
-      kind: parseAssetKey(key).kind,
-      files: assetFiles,
-      dependsOn: key === item.key ? hit.dependsOn : [],
-      source: { id: source.id, path: hit.path, revision: hit.revision },
-    });
+    ): RawEntry => {
+      const label = imageVariantLabel(key);
+      return {
+        key,
+        kind: parseAssetKey(key).kind,
+        files: assetFiles,
+        dependsOn: key === item.key ? hit.dependsOn : [],
+        ...(label === undefined ? {} : { label }),
+        source: { id: source.id, path: hit.path, revision: hit.revision },
+      };
+    };
     const group = (
       rows: readonly { readonly key: AssetKey; readonly file: AssetFile }[],
     ): RawEntry[] => {

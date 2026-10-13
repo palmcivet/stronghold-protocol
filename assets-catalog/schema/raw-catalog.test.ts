@@ -95,6 +95,51 @@ test('record key, entry key and kind must agree', () => {
   ]);
 });
 
+test('an image may carry a variant label; when written it is a non-empty string', () => {
+  const avatar = CATALOG.entries['image:char/avatar/char_002_amiya'];
+  const spine = CATALOG.entries['spine:enemy/enemy_1007_slime'];
+  const withEntries = (entries: Record<string, unknown>) => ({
+    ...CATALOG,
+    entries,
+  });
+  expect(
+    rawCatalogIssues(
+      withEntries({ [avatar.key]: { ...avatar, label: 'elite0' } }),
+    ),
+  ).toEqual([]);
+  expect(rawCatalogIssues(withEntries({ [avatar.key]: avatar }))).toEqual([]);
+  expect(
+    rawCatalogIssues(
+      withEntries({
+        'image:char/avatar/a': {
+          ...avatar,
+          key: 'image:char/avatar/a',
+          label: '',
+        },
+        'image:char/avatar/b': {
+          ...avatar,
+          key: 'image:char/avatar/b',
+          label: 2,
+        },
+        [spine.key]: { ...spine, label: 'elite2' },
+      }),
+    ),
+  ).toEqual([
+    {
+      path: 'entries["image:char/avatar/a"].label',
+      message: 'expected a non-empty string',
+    },
+    {
+      path: 'entries["image:char/avatar/b"].label',
+      message: 'expected a non-empty string',
+    },
+    {
+      path: 'entries["spine:enemy/enemy_1007_slime"].label',
+      message: '"spine" assets take no label',
+    },
+  ]);
+});
+
 test('source, dependsOn and missing are checked', () => {
   const entry = CATALOG.entries['image:char/avatar/char_002_amiya'];
   expect(

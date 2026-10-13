@@ -17,6 +17,8 @@ export interface CatalogChess {
   readonly visible: boolean;
   /** Loadout choices of a base chess. Empty for an elite one. */
   readonly loadout: LoadoutOptions | null;
+  /** A base chess the player may mark as not owned; its stand-in takes the field (`room.ownership`). */
+  readonly droppable?: boolean;
 }
 
 export interface CatalogBand {
@@ -53,6 +55,19 @@ export interface CatalogWave {
   readonly enemyIds: readonly string[];
 }
 
+/** An enemy leader; `enemyId` is the enemy it fields, the owner of its portrait. */
+export interface CatalogBoss {
+  readonly id: string;
+  readonly enemyId: string | null;
+}
+
+/** A custom squad slot (`room.diy`): the tier it fills and the operators it may field. */
+export interface CatalogDiySlot {
+  readonly id: string;
+  readonly tier: number;
+  readonly candidates: readonly string[];
+}
+
 export interface CatalogMode {
   readonly id: string;
   readonly type: string;
@@ -67,6 +82,8 @@ export interface Catalog {
   readonly enemies: Readonly<Record<string, CatalogEnemy>>;
   readonly waves: Readonly<Record<string, CatalogWave>>;
   readonly modes: Readonly<Record<string, CatalogMode>>;
+  readonly bosses?: Readonly<Record<string, CatalogBoss>>;
+  readonly diySlots?: readonly CatalogDiySlot[];
 }
 
 /** Display text of a catalog, keyed by `data:` keys such as `data:chess.<id>.name`. */

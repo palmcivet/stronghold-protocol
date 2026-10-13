@@ -1,41 +1,42 @@
 import { NAME_MAX_LEN } from '@alliance/contract/match.js';
+import { useRouteContext } from '@tanstack/react-router';
 import { type FormEvent, useState } from 'react';
 import { Form } from 'react-aria-components';
-import type { AllianceApi } from '../infra/boot/api.js';
 import { settingsStore } from '../infra/store/settings.js';
 import { useText } from '../infra/text/index.js';
-import { cx } from '../infra/theme/class-name.js';
-import { Button, TextField } from '../ui/index.js';
-import styles from './screen.module.css';
+import { Button, Cluster, Panel, TextField } from '../ui/index.js';
 
-export function TitleScreen({ api }: { readonly api: AllianceApi }) {
+/** The code name the player enters with. */
+export function NameForm() {
   const t = useText();
+  const { runtime } = useRouteContext({ from: '__root__' });
   const [name, setName] = useState(() => settingsStore.getState().name);
   const valid = name.trim().length > 0 && name.trim().length <= NAME_MAX_LEN;
   const submit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
     if (valid) {
-      api.enter(name);
+      runtime.api.enter(name);
     }
   };
   return (
-    <div className={cx(styles.screen)}>
-      <h1 className={cx(styles.heading)}>{t('core:app.title')}</h1>
-      <Form onSubmit={submit} className={cx(styles.row)}>
-        <TextField
-          label={t('core:title.name')}
-          value={name}
-          onChange={setName}
-          maxLength={NAME_MAX_LEN}
-          isRequired
-          autoFocus
-          isInvalid={name.length > 0 && !valid}
-          errorMessage={t('core:title.nameInvalid')}
-        />
-        <Button type="submit" variant="primary" isDisabled={!valid}>
-          {t('core:title.start')}
-        </Button>
+    <Panel title={t('core:title.heading')}>
+      <Form onSubmit={submit}>
+        <Cluster align="end">
+          <TextField
+            label={t('core:title.name')}
+            value={name}
+            onChange={setName}
+            maxLength={NAME_MAX_LEN}
+            isRequired
+            autoFocus
+            isInvalid={name.length > 0 && !valid}
+            errorMessage={t('core:title.nameInvalid')}
+          />
+          <Button type="submit" variant="primary" isDisabled={!valid}>
+            {t('core:title.start')}
+          </Button>
+        </Cluster>
       </Form>
-    </div>
+    </Panel>
   );
 }

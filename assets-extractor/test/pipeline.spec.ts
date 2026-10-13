@@ -132,6 +132,12 @@ describe('a run over every git source kind', () => {
       path: 'avatar/char_002_amiya.png',
       revision: 'f'.repeat(40),
     });
+    expect(avatar?.label).toBe('elite0');
+    expect(
+      Object.values(catalog.entries).find(
+        (entry) => entry.key === 'image:item/mtl_sl_g2',
+      ),
+    ).not.toHaveProperty('label');
     expect(
       existsSync(join(layout.files, 'image/char/avatar/char_002_amiya.png')),
     ).toBe(true);

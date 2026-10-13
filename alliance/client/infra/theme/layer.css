@@ -46,6 +46,18 @@
     line-height: 1.5;
   }
 
+  :root[data-text="md"] {
+    font-size: 112.5%;
+  }
+
+  :root[data-text="lg"] {
+    font-size: 125%;
+  }
+
+  :root[data-text="xl"] {
+    font-size: 137.5%;
+  }
+
   body {
     min-height: 100vh;
   }
@@ -65,6 +77,10 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
+    :root {
+      --motion: 0;
+    }
+
     *,
     *::before,
     *::after {

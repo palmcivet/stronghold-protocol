@@ -8,27 +8,17 @@ import type {
   PublicMessage,
   ServerMessage,
 } from '@alliance/contract/server-message.js';
-import {
-  act,
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-} from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Intent, IntentBus } from '../../infra/intent/bus.js';
-import { IntentContext } from '../../infra/intent/context.js';
 import { applyFrame, resetMatch } from '../../infra/store/frame.js';
 import { matchStore } from '../../infra/store/match.js';
 import { presenceStore } from '../../infra/store/presence.js';
 import { roomStore } from '../../infra/store/room.js';
 import { t } from '../../infra/text/index.js';
-import { Emotes, emoteName } from '../../match/hud/emote.js';
-import { Shop } from '../../match/hud/shop.js';
-import { Ticker } from '../../match/hud/ticker.js';
+import { emoteName } from '../../match/hud/emote.js';
 import { cardName } from '../../match/piece-label.js';
-import { ResultScreen } from '../../match/settlement/result.js';
+import { renderPart } from '../support/part.js';
 
 const frames = JSON.parse(
   readFileSync(
@@ -60,10 +50,9 @@ function fakeBus() {
   return { bus, sent };
 }
 
-function withBus(bus: IntentBus, node: ReactNode) {
-  return render(
-    <IntentContext.Provider value={bus}>{node}</IntentContext.Provider>,
-  );
+/** The recorded public view in the preparation phase, so the shop is open. */
+function preparing(): PublicMessage {
+  return { ...firstOf('m.public'), phase: 'PREP' };
 }
 
 beforeEach(() => {
@@ -92,9 +81,10 @@ function stockedShop(): PrivateMessage {
 describe('shop', () => {
   it('buys the slot the player presses and offers nothing the funds cannot pay', () => {
     const own = stockedShop();
-    applyFrame(own, 0);
+    applyFrame(preparing(), 0);
+    applyFrame({ ...own, alive: true }, 0);
     const { bus, sent } = fakeBus();
-    withBus(bus, <Shop canAct />);
+    renderPart('core:match.shop', { bus });
 
     own.shop.slots.forEach((slot, position) => {
       if (!slot || slot.sold) {
@@ -123,9 +113,10 @@ describe('shop', () => {
   });
 
   it('keeps every action off while the player cannot act', () => {
+    applyFrame({ ...firstOf('m.public'), phase: 'COMBAT' }, 0);
     applyFrame(stockedShop(), 0);
     const { bus, sent } = fakeBus();
-    withBus(bus, <Shop canAct={false} />);
+    renderPart('core:match.shop', { bus });
     for (const button of screen.getAllByRole('button')) {
       fireEvent.click(button);
     }
@@ -135,10 +126,10 @@ describe('shop', () => {
 
 describe('emotes', () => {
   it('sends an official emote and waits out the cooldown', async () => {
-    const publicView: PublicMessage = firstOf('m.public');
-    applyFrame(publicView, 0);
+    applyFrame(firstOf('m.public'), 0);
+    applyFrame(stockedShop(), 0);
     const { bus, sent } = fakeBus();
-    withBus(bus, <Emotes canSend />);
+    renderPart('core:match.emote', { bus });
 
     const open = screen.getByRole('button', { name: t('core:emote.open') });
     fireEvent.click(open);
@@ -157,7 +148,7 @@ describe('emotes', () => {
     ).toBe(true);
   });
 
-  it('shows the emotes the players send by their names', () => {
+  it('shows the emote a player sends on their team row', () => {
     const publicView: PublicMessage = firstOf('m.public');
     applyFrame(publicView, Date.now());
     const player = publicView.players[0];
@@ -166,22 +157,21 @@ describe('emotes', () => {
       throw new Error('the recording has no player');
     }
     const { bus } = fakeBus();
-    withBus(bus, <Emotes canSend={false} />);
+    renderPart('core:match.team', { bus });
     act(() => {
       applyFrame(
         { t: 'm.emote', playerId: player.playerId, id: first.id },
         Date.now(),
       );
     });
-    expect(screen.getByRole('log').textContent).toContain(
-      t('core:emote.line', { name: player.name, emote: emoteName(first.id) }),
-    );
+    const row = screen.getByText(player.name).closest('li');
+    expect(row?.textContent).toContain(emoteName(first.id));
   });
 });
 
 describe('ticker', () => {
   it('reads out the broadcast lines', () => {
-    render(<Ticker />);
+    renderPart('core:match.ticker');
     act(() => {
       applyFrame(firstOf('m.ticker'), 0);
     });
@@ -216,7 +206,7 @@ describe('result', () => {
         0,
       );
     });
-    render(<ResultScreen />);
+    renderPart('core:result.layout');
     expect(screen.getByRole('status').textContent).toContain(
       t('core:result.cleared'),
     );

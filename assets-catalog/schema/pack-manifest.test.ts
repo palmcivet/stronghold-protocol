@@ -148,6 +148,49 @@ describe('pack manifest guard', () => {
     ]);
   });
 
+  test('an image may carry a variant label; other kinds and empty labels fail', () => {
+    const image = BASE.assets['image:char/avatar/char_002_amiya_2'];
+    const audio = {
+      kind: 'audio',
+      files: [
+        { role: 'main', name: null, format: 'mp3', bytes: 1, hash: HASH },
+      ],
+      dependsOn: [],
+      fallbackId: null,
+      preloadGroup: null,
+    };
+    const withAssets = (assets: Record<string, unknown>) => ({
+      ...BASE,
+      assets,
+      refs: undefined,
+    });
+    expect(
+      packManifestIssues(
+        withAssets({ 'image:char/avatar/x': { ...image, label: 'elite2' } }),
+      ),
+    ).toEqual([]);
+    expect(
+      packManifestIssues(withAssets({ 'image:char/avatar/x': image })),
+    ).toEqual([]);
+    expect(
+      packManifestIssues(
+        withAssets({
+          'image:char/avatar/x': { ...image, label: '' },
+          'audio:a': { ...audio, label: 'skin' },
+        }),
+      ),
+    ).toEqual([
+      {
+        path: 'assets["image:char/avatar/x"].label',
+        message: 'expected a non-empty string',
+      },
+      {
+        path: 'assets["audio:a"].label',
+        message: '"audio" assets take no label',
+      },
+    ]);
+  });
+
   test('header fields', () => {
     expect(
       packManifestIssues({

@@ -28,6 +28,8 @@ export interface RawEntry {
   readonly dependsOn: readonly AssetKey[];
   /** Colour space of an image or texture; `srgb` when absent. Normal, roughness and mask maps are `linear`. */
   readonly colorSpace?: AssetColorSpace;
+  /** Variant of an image, such as `elite0`, `elite2` or `skin` for a portrait or avatar; absent when the image has none. */
+  readonly label?: string;
   readonly source: RawSource;
 }
 
@@ -48,7 +50,7 @@ export interface MissingNeed {
   }[];
 }
 
-/** Checks `key`, `kind`, `files`, `dependsOn` and `colorSpace` shared by raw entries and pack assets. Returns the checked key. */
+/** Checks `key`, `kind`, `files`, `dependsOn`, `colorSpace` and `label` shared by raw entries and pack assets. Returns the checked key. */
 export function checkEntryHead(
   check: SchemaCheck,
   recordKey: string,
@@ -73,6 +75,13 @@ export function checkEntryHead(
     check.oneOf(entry.colorSpace, colorPath, ASSET_COLOR_SPACES);
     if (!COLOR_SPACE_KINDS.includes(kind)) {
       check.fail(colorPath, `"${kind}" assets have no colour space`);
+    }
+  }
+  if (entry.label !== undefined) {
+    const labelPath = fieldPath(path, 'label');
+    check.text(entry.label, labelPath);
+    if (kind !== 'image') {
+      check.fail(labelPath, `"${kind}" assets take no label`);
     }
   }
   return key;

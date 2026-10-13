@@ -1,7 +1,11 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { useText } from '../infra/text/index.js';
-import { Button, Panel } from '../ui/index.js';
+import { Button, ErrorPanel } from '../ui/index.js';
 import { BackToLobby } from './leave.js';
+import { hasPart, Part } from './registry.js';
+
+/** Part id of the error panel; a mod may replace it, the built-in one below stands in until it is defined. */
+export const ERROR_PART = 'core:shell.error';
 
 export interface PartBoundaryProps {
   /** Part id of what the boundary holds; a failure is reported under it. */
@@ -56,26 +60,63 @@ function PartRemount({ children }: { readonly children: ReactNode }) {
   return children;
 }
 
+/** The error panel of a failed page or part. */
+export function ErrorFallback({
+  retry,
+  scope,
+}: {
+  readonly retry: () => void;
+  readonly scope: 'page' | 'part';
+}) {
+  if (hasPart(ERROR_PART)) {
+    return <Part id={ERROR_PART} boundary="none" retry={retry} scope={scope} />;
+  }
+  return <DefaultError retry={retry} scope={scope} />;
+}
+
+/** The host's error panel: a retry, and on a page the way back to the lobby. */
+export function DefaultError({
+  retry,
+  scope,
+}: {
+  readonly retry: () => void;
+  readonly scope: 'page' | 'part';
+}) {
+  return scope === 'page' ? (
+    <PageError retry={retry} />
+  ) : (
+    <PartError retry={retry} />
+  );
+}
+
 function PageError({ retry }: { readonly retry: () => void }) {
   const t = useText();
   return (
-    <Panel title={t('core:error.page')}>
+    <ErrorPanel
+      announce={false}
+      title={t('core:error.page')}
+      actions={
+        <>
+          <Button variant="primary" onPress={retry}>
+            {t('core:error.retry')}
+          </Button>
+          <BackToLobby />
+        </>
+      }
+    >
       <p>{t('core:error.pageHint')}</p>
-      <Button variant="primary" onPress={retry}>
-        {t('core:error.retry')}
-      </Button>
-      <BackToLobby />
-    </Panel>
+    </ErrorPanel>
   );
 }
 
 function PartError({ retry }: { readonly retry: () => void }) {
   const t = useText();
   return (
-    <p>
-      {t('core:error.part')}{' '}
-      <Button onPress={retry}>{t('core:error.retry')}</Button>
-    </p>
+    <ErrorPanel
+      announce={false}
+      title={t('core:error.part')}
+      actions={<Button onPress={retry}>{t('core:error.retry')}</Button>}
+    />
   );
 }
 
@@ -88,7 +129,10 @@ export function PageBoundary({
   readonly children: ReactNode;
 }) {
   return (
-    <PartBoundary part={part} fallback={(retry) => <PageError retry={retry} />}>
+    <PartBoundary
+      part={part}
+      fallback={(retry) => <ErrorFallback retry={retry} scope="page" />}
+    >
       {children}
     </PartBoundary>
   );
@@ -103,7 +147,10 @@ export function PartSlot({
   readonly children: ReactNode;
 }) {
   return (
-    <PartBoundary part={part} fallback={(retry) => <PartError retry={retry} />}>
+    <PartBoundary
+      part={part}
+      fallback={(retry) => <ErrorFallback retry={retry} scope="part" />}
+    >
       {children}
     </PartBoundary>
   );

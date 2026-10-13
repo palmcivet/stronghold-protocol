@@ -8,6 +8,10 @@ export const QUALITIES = ['low', 'standard', 'high'] as const;
 export type Quality = (typeof QUALITIES)[number];
 
 /** Preparation actions a key can be bound to. */
+/** Steps of the interface text size; the field keeps its own scale. */
+export const TEXT_SIZES = ['sm', 'md', 'lg', 'xl'] as const;
+export type TextSize = (typeof TEXT_SIZES)[number];
+
 export const KEY_ACTIONS = ['refresh', 'levelUp', 'freeze'] as const;
 export type KeyAction = (typeof KEY_ACTIONS)[number];
 
@@ -53,6 +57,7 @@ const SettingsSchema = v.object({
   name: v.optional(v.pipe(v.string(), v.maxLength(12)), ''),
   avatar: v.optional(v.pipe(v.string(), v.maxLength(64)), ''),
   quality: v.optional(v.picklist(QUALITIES), 'standard'),
+  textSize: v.optional(v.picklist(TEXT_SIZES), 'sm'),
   keys: v.optional(
     v.object({
       refresh: v.optional(KeyCode, DEFAULT_KEYS.refresh),
@@ -83,6 +88,7 @@ export interface SettingsState {
   /** Chess id shown as the avatar; empty shows the initial of the name. */
   readonly avatar: string;
   readonly quality: Quality;
+  readonly textSize: TextSize;
   readonly keys: Readonly<Record<KeyAction, string>>;
   readonly audio: Readonly<Record<AudioChannel, ChannelSetting>>;
 }

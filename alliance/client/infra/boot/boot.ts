@@ -1,5 +1,4 @@
 import type { ServerMessage } from '@alliance/contract/server-message.js';
-import { registerLoadoutParts } from '../../loadout/contribute.js';
 import { createPlayback } from '../../match/playback/runner.js';
 import { createConnection, pageSocketUrl } from '../connection/socket.js';
 import { createIntentBus } from '../intent/bus.js';
@@ -9,10 +8,12 @@ import { dispatchPresence } from '../store/presence.js';
 import { sessionStore } from '../store/session.js';
 import { settingsStore } from '../store/settings.js';
 import { setLanguage } from '../text/index.js';
+import { applyTextSize } from '../theme/install.js';
 import { type AllianceApi, createApi } from './api.js';
 import { installAssets, loadCompatResources } from './assets.js';
 import { elementOutput, installAudio } from './audio.js';
 import { loadCompatCatalog } from './catalog.js';
+import { registerCoreParts } from './parts.js';
 import { followLeaves } from './presence.js';
 
 const TOKEN_KEY = 'alliance.token';
@@ -88,14 +89,18 @@ export function boot(location: Location = globalThis.location): Runtime {
 
   installAssets();
   setLanguage(settingsStore.getState().language);
+  applyTextSize(settingsStore.getState().textSize);
   settingsStore.subscribe((state, previous) => {
     if (state.language !== previous.language) {
       setLanguage(state.language);
     }
+    if (state.textSize !== previous.textSize) {
+      applyTextSize(state.textSize);
+    }
   });
 
   connection.connect();
-  registerLoadoutParts();
+  registerCoreParts();
   const api = createApi({ connection, intents });
   const remembered = settingsStore.getState().name;
   if (remembered) {

@@ -5,6 +5,7 @@ import { useIntent } from '../../infra/intent/context.js';
 import { useMatch } from '../../infra/store/hook.js';
 import { useText } from '../../infra/text/index.js';
 import { cx } from '../../infra/theme/class-name.js';
+import { equipItem } from '../equip.js';
 import { pieceLabel } from '../piece-label.js';
 import { findPiece, pieceAt, selectionStore } from '../selection.js';
 import styles from './field.module.css';
@@ -44,10 +45,7 @@ export function DomField({ canAct }: { readonly canAct: boolean }) {
       return;
     }
     if (holding.piece.kind === 'item' && occupant && occupant.kind !== 'item') {
-      await intents.dispatch({
-        type: 'g.equip',
-        fields: { itemUid: holding.piece.uid, targetUid: occupant.uid },
-      });
+      await equipItem(intents, holding.piece.uid, occupant);
     } else {
       await intents.dispatch({
         type: 'g.move',

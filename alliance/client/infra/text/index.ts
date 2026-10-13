@@ -43,13 +43,28 @@ export function setDataText(data: Readonly<Record<string, string>>): void {
   textStore.setState({ data });
 }
 
+const warned = new Set<string>();
+
+/** In development, names once each interface key the player's language lacks; the base language is shown instead. */
+function warnMissing(language: Language, key: string): void {
+  if (!import.meta.env.DEV || warned.has(`${language}:${key}`)) {
+    return;
+  }
+  warned.add(`${language}:${key}`);
+  console.warn(`[text] ${language} lacks ${key}; showing ${BASE_LANGUAGE}`);
+}
+
 /** Pattern of a key: the player's language, then the base language, then the source. */
 function patternOf(state: TextState, key: string): string | null {
   const translated = PACKS[state.language][key];
   if (translated !== undefined) {
     return translated;
   }
-  const source = SOURCES[key]?.source ?? state.data[key];
+  const entry = SOURCES[key];
+  if (entry !== undefined && state.language !== BASE_LANGUAGE) {
+    warnMissing(state.language, key);
+  }
+  const source = entry?.source ?? state.data[key];
   return source ?? null;
 }
 
@@ -90,6 +105,12 @@ export function useText(): typeof t {
 export function dataName(table: string, id: string): string {
   const key = `data:${table}.${id}.name` as const;
   return has(key) ? lookup(key) : id;
+}
+
+/** Name of a data record, or a placeholder when the data has none: for screens that must never show an id. */
+export function shownName(table: string, id: string): string {
+  const key = `data:${table}.${id}.name` as const;
+  return has(key) ? lookup(key) : t('core:data.unnamed');
 }
 
 // MARK: master messages

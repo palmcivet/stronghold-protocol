@@ -32,6 +32,7 @@ export {
 export {
   type MasterSettlementView,
   type MasterUniteResult,
+  resultOf,
   type Settlement,
   settlementOf,
 } from '#data/view/settlement.js';

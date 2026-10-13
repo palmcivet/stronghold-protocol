@@ -1,0 +1,49 @@
+@layer components {
+  .page {
+    display: contents;
+  }
+
+  .stephead {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: var(--space-3);
+    padding-block: var(--space-2);
+    border-bottom: var(--stroke-thin) solid var(--color-line-1);
+  }
+
+  .stepTitle {
+    font-family: var(--font-display);
+    font-size: var(--font-size-xl);
+    text-align: center;
+  }
+
+  .stepClock {
+    justify-self: end;
+  }
+
+  .step {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    width: 100%;
+    max-width: var(--size-page);
+    margin: 0 auto;
+    padding: var(--space-4);
+  }
+
+  .stepColumns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+    gap: var(--space-4);
+    align-items: start;
+  }
+
+  .stepFoot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-3);
+  }
+}

@@ -72,4 +72,57 @@ describe('buildUpstreamCatalog', () => {
     expect(catalog.chess).toEqual({});
     expect(catalog.bonds).toEqual({});
   });
+
+  it('generates boss, stage, faction, mode and operator text from the content, and the ownership and squad data', () => {
+    const { catalog, text } = buildUpstreamCatalog({
+      chess: {
+        normal: {
+          chessId: 'normal',
+          baseId: 'normal',
+          charId: 'char_a',
+          chessType: 'NORMAL',
+          backup: { charId: 'char_standin' },
+        },
+        preset: {
+          chessId: 'preset',
+          charId: 'char_b',
+          chessType: 'PRESET',
+          backup: { charId: 'char_c' },
+        },
+      },
+      config: { modes: { m1: { modeId: 'm1', name: '标准', desc: '说明' } } },
+      bosses: {
+        boss_7: { bossId: 'boss_7', enemyKey: 'enemy_9', name: '领袖' },
+      },
+      stages: { s1: { id: 's1', name: '战场#01' } },
+      factions: {
+        types: { DOT: { type: 'DOT', name: '特训敌人·持续', desc: 'd' } },
+      },
+      backups: {
+        diy: {
+          slots: { slot5: { tier: 5 }, slot6: { tier: 6 } },
+          prototypes: { '5': ['char_p5'], '6': ['char_p6'] },
+          ownedPool: ['char_own', 'char_p6'],
+          operators: { char_own: { name: '陈' } },
+        },
+      },
+    });
+    expect(catalog.chess.normal?.droppable).toBe(true);
+    expect(catalog.chess.preset?.droppable).toBe(false);
+    expect(catalog.bosses?.boss_7).toEqual({
+      id: 'boss_7',
+      enemyId: 'enemy_9',
+    });
+    expect(catalog.diySlots).toEqual([
+      { id: 'slot5', tier: 5, candidates: ['char_p5', 'char_own', 'char_p6'] },
+      { id: 'slot6', tier: 6, candidates: ['char_p6', 'char_own'] },
+    ]);
+    expect(text).toMatchObject({
+      'data:mode.m1.desc': '说明',
+      'data:boss.boss_7.name': '领袖',
+      'data:stage.s1.name': '战场#01',
+      'data:faction.DOT.name': '特训敌人·持续',
+      'data:operator.char_own.name': '陈',
+    });
+  });
 });

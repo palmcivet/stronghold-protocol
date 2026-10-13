@@ -106,6 +106,9 @@ interface Geometry {
   readonly PARTNER_COL_OFFSET: number;
 }
 
+/** Items an operator holds; a further equip replaces one the player picks (`g.equip` `replaceUid`). */
+export const ITEM_SLOTS: 2 = 2;
+
 export const GEO: Geometry = Object.freeze({
   ROWS: 19,
   COLS: 21,

@@ -156,6 +156,15 @@ export interface SpDraftView {
   readonly untimed?: boolean;
 }
 
+export interface RerollVote {
+  readonly id: number;
+  readonly proposerId: string;
+  /** Players asked to vote. */
+  readonly voters: readonly string[];
+  /** Players who agreed so far. */
+  readonly agreed: readonly string[];
+}
+
 export interface PublicView {
   readonly phase: Phase;
   readonly round: number;
@@ -167,6 +176,8 @@ export interface PublicView {
   readonly difficulty: string;
   readonly stageId: string | null;
   readonly setupRevision?: number;
+  /** An open vote to reroll the match setup during the briefing, null when none runs. */
+  readonly rerollVote?: RerollVote | null;
   readonly factions?: readonly string[];
   readonly disabledBonds?: readonly string[];
   readonly bannedChess?: readonly string[];
@@ -333,13 +344,34 @@ export interface LayerMessage {
   readonly add: number;
 }
 
+/** One piece of a result lineup. */
+export interface ResultLineupEntry {
+  readonly id: string;
+  readonly golden?: boolean;
+  readonly tier?: number;
+}
+
+/** A player's statistics on the result screen, by stat id (`dmgDealt`, `kills`, …). */
+export type ResultStats = Readonly<Record<string, number>>;
+
 export interface ResultRow {
   readonly playerId: string;
   readonly name: string;
   readonly seat?: number;
+  readonly isBot?: boolean;
+  readonly alive?: boolean;
   readonly victory?: boolean;
   readonly roundsPassed?: number;
   readonly lp?: number;
+  readonly bandId?: string | null;
+  readonly lineup?: readonly ResultLineupEntry[];
+  readonly stats?: ResultStats;
+  /** The remark the server gave the player, by name. */
+  readonly title?: {
+    readonly id?: string;
+    readonly name: string;
+    readonly text?: string;
+  } | null;
 }
 
 export interface ResultView {
@@ -353,6 +385,7 @@ export interface ResultView {
   readonly difficulty: string;
   readonly stageId?: string | null;
   readonly bossId?: string | null;
+  readonly hiddenBossId?: string | null;
   readonly seed?: number;
   readonly durationMs?: number;
   readonly players: readonly ResultRow[];

@@ -1,0 +1,60 @@
+@layer components {
+  .layout {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    width: 100%;
+    max-width: var(--size-page);
+    margin: 0 auto;
+    padding: var(--space-4);
+  }
+
+  .heading {
+    font-family: var(--font-display);
+    font-size: var(--font-size-xl);
+  }
+
+  .hero {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    border-left: var(--stroke-accent) solid var(--color-status-error);
+    background: var(--color-bg-1);
+  }
+
+  .hero[data-victory] {
+    border-left-color: var(--color-gold);
+  }
+
+  .verdict {
+    font-family: var(--font-display);
+    font-size: var(--font-size-2xl);
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(
+        auto-fill,
+        minmax(min(var(--size-card-wide), 100%), 1fr)
+      );
+    gap: var(--space-3);
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--space-1) var(--space-3);
+    margin: 0;
+    font-size: var(--font-size-sm);
+  }
+
+  .stat {
+    display: contents;
+  }
+
+  .stats dd {
+    margin: 0;
+    text-align: end;
+  }
+}

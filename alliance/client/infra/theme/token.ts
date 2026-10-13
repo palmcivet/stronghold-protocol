@@ -17,6 +17,15 @@ export interface DimensionValue {
   readonly unit: 'px' | 'rem';
 }
 
+export interface ShadowValue {
+  readonly color: ColorValue;
+  readonly offsetX: DimensionValue;
+  readonly offsetY: DimensionValue;
+  readonly blur: DimensionValue;
+  readonly spread: DimensionValue;
+  readonly inset?: boolean;
+}
+
 export type Token =
   | { readonly $type: 'color'; readonly $value: ColorValue }
   | { readonly $type: 'duration'; readonly $value: DurationValue }
@@ -26,7 +35,8 @@ export type Token =
       readonly $type: 'cubicBezier';
       readonly $value: readonly [number, number, number, number];
     }
-  | { readonly $type: 'number'; readonly $value: number };
+  | { readonly $type: 'number'; readonly $value: number }
+  | { readonly $type: 'shadow'; readonly $value: readonly ShadowValue[] };
 
 export interface TokenGroup {
   readonly [name: string]: Token | TokenGroup;
@@ -48,18 +58,68 @@ export function color(hex: string, alpha?: number): Token {
   return { $type: 'color', $value: value };
 }
 
+/** A dimension token. */
+export function dimension(value: number, unit: 'px' | 'rem' = 'rem'): Token {
+  return { $type: 'dimension', $value: { value, unit } };
+}
+
+/** A shadow token of one or more layers: `[x, y, blur, spread]` in px, a color and an optional inset. */
+export function shadow(
+  ...layers: readonly {
+    readonly at: readonly [number, number, number, number];
+    readonly color: Token;
+    readonly inset?: boolean;
+  }[]
+): Token {
+  const px = (value: number): DimensionValue => ({ value, unit: 'px' });
+  return {
+    $type: 'shadow',
+    $value: layers.map(({ at, color: tint, inset }) => {
+      if (tint.$type !== 'color') {
+        throw new TypeError('a shadow color must be a color token');
+      }
+      return {
+        color: tint.$value,
+        offsetX: px(at[0]),
+        offsetY: px(at[1]),
+        blur: px(at[2]),
+        spread: px(at[3]),
+        ...(inset ? { inset } : {}),
+      };
+    }),
+  };
+}
+
+function colorCss({ hex, alpha, components }: ColorValue): string {
+  if (alpha === undefined || alpha === 1) {
+    return hex;
+  }
+  const [red, green, blue] = components.map((part) => Math.round(part * 255));
+  return `rgb(${red} ${green} ${blue} / ${alpha})`;
+}
+
+const dimensionCss = ({ value, unit }: DimensionValue): string =>
+  `${value}${unit}`;
+
 function cssValue(token: Token): string {
   switch (token.$type) {
-    case 'color': {
-      const { hex, alpha, components } = token.$value;
-      if (alpha === undefined || alpha === 1) {
-        return hex;
-      }
-      const [red, green, blue] = components.map((part) =>
-        Math.round(part * 255),
-      );
-      return `rgb(${red} ${green} ${blue} / ${alpha})`;
-    }
+    case 'color':
+      return colorCss(token.$value);
+    case 'shadow':
+      return token.$value
+        .map((layer) =>
+          [
+            layer.inset ? 'inset' : null,
+            dimensionCss(layer.offsetX),
+            dimensionCss(layer.offsetY),
+            dimensionCss(layer.blur),
+            dimensionCss(layer.spread),
+            colorCss(layer.color),
+          ]
+            .filter((part) => part !== null)
+            .join(' '),
+        )
+        .join(', ');
     case 'duration':
     case 'dimension':
       return `${token.$value.value}${token.$value.unit}`;

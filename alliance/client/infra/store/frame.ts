@@ -2,6 +2,7 @@ import {
   type MasterFieldView,
   type MasterSettlementView,
   type MasterSnapView,
+  resultOf,
   settlementOf,
   streamEventsOf,
   streamFieldUnitsOf,
@@ -151,7 +152,7 @@ export function applyFrame(
       return;
     }
     case 'm.result': {
-      matchStore.setState({ result: payload(frame) });
+      matchStore.setState({ result: resultOf(frame) });
       return;
     }
     case 'm.emote': {

@@ -2,7 +2,9 @@ import type {
   Catalog,
   CatalogBand,
   CatalogBond,
+  CatalogBoss,
   CatalogChess,
+  CatalogDiySlot,
   CatalogEnemy,
   CatalogItem,
   CatalogMode,
@@ -25,6 +27,10 @@ export const UPSTREAM_CATALOG_TABLES = [
   'enemies',
   'waves',
   'config',
+  'bosses',
+  'stages',
+  'factions',
+  'backups',
 ] as const;
 
 export type UpstreamCatalogTable = (typeof UPSTREAM_CATALOG_TABLES)[number];
@@ -90,6 +96,21 @@ function loadoutOf(
   );
 }
 
+/** A NORMAL base chess with an official stand-in of another operator (master `shared/standIn.js` `isDroppableChess`). */
+function isDroppable(record: JsonRecord): boolean {
+  const backup = isJsonRecord(record.backup) ? record.backup : null;
+  const baseId = str(record.baseId);
+  return (
+    backup !== null &&
+    record.isGolden !== true &&
+    record.isDiy !== true &&
+    record.chessType === 'NORMAL' &&
+    (baseId === null || baseId === str(record.chessId)) &&
+    str(backup.charId) !== null &&
+    backup.charId !== record.charId
+  );
+}
+
 /** Maps the master data tables to the catalog view and its `data:` text. Records without an id are skipped. */
 export function buildUpstreamCatalog(
   input: UpstreamCatalogInput,
@@ -118,6 +139,7 @@ export function buildUpstreamCatalog(
       bondIds: bondIdsOf(record),
       visible: record.visible !== false && record.isHidden !== true,
       loadout: loadoutOf(record, chessRecords),
+      droppable: isDroppable(record),
     };
     put(`data:chess.${id}.name`, record.name);
   }
@@ -192,10 +214,58 @@ export function buildUpstreamCatalog(
       difficulty: str(record.difficulty) ?? 'NORMAL',
     };
     put(`data:mode.${id}.name`, record.name);
+    put(`data:mode.${id}.desc`, record.desc);
+  }
+
+  const bosses: Record<string, CatalogBoss> = {};
+  for (const [key, record] of records(input.bosses)) {
+    const id = str(record.bossId) ?? key;
+    bosses[id] = { id, enemyId: str(record.enemyKey) };
+    put(`data:boss.${id}.name`, record.name);
+  }
+
+  for (const [key, record] of records(input.stages)) {
+    put(`data:stage.${str(record.id) ?? key}.name`, record.name);
+  }
+
+  const factions = isJsonRecord(input.factions) ? input.factions : {};
+  for (const [key, record] of records(factions.types)) {
+    const id = str(record.type) ?? key;
+    put(`data:faction.${id}.name`, record.name);
+    put(`data:faction.${id}.desc`, record.desc);
+  }
+
+  const diySlots: CatalogDiySlot[] = [];
+  const backups = isJsonRecord(input.backups) ? input.backups : {};
+  const diy = isJsonRecord(backups.diy) ? backups.diy : {};
+  const prototypes = isJsonRecord(diy.prototypes) ? diy.prototypes : {};
+  const owned = strings(diy.ownedPool);
+  for (const [id, record] of records(diy.slots)) {
+    const tier = num(record.tier, 0);
+    diySlots.push({
+      id,
+      tier,
+      candidates: [
+        ...new Set([...strings(prototypes[String(tier)]), ...owned]),
+      ],
+    });
+  }
+  for (const [id, record] of records(diy.operators)) {
+    put(`data:operator.${id}.name`, record.name);
   }
 
   return {
-    catalog: { chess, bands, bonds, items, enemies, waves, modes },
+    catalog: {
+      chess,
+      bands,
+      bonds,
+      items,
+      enemies,
+      waves,
+      modes,
+      bosses,
+      diySlots,
+    },
     text,
   };
 }

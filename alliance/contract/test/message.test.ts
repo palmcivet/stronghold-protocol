@@ -26,14 +26,20 @@ const C2S_FIELDS: Readonly<Record<string, readonly string[]>> = {
   'room.leave': [],
   'room.ready': ['ready'],
   'room.setDifficulty': ['difficulty'],
+  'room.setAiPicksLast': ['on'],
   'room.addBot': [],
   'room.removeBot': ['seat'],
   'room.kick': ['seat', 'playerId'],
   'room.start': [],
+  'room.rerollSetup': ['setupRevision'],
+  'room.cancelReroll': ['voteId'],
   'room.loadout': ['entries'],
+  'room.ownership': ['notOwned'],
+  'room.diy': ['picks'],
   'room.spectate': ['code'],
   'room.removeSpectator': ['playerId'],
-  'g.infoReady': [],
+  'g.infoReady': ['setupRevision'],
+  'g.rerollVote': ['voteId', 'agree'],
   'g.band': ['bandId'],
   'g.bandSkip': [],
   'g.bandFocus': ['bandId'],
@@ -71,6 +77,7 @@ const C2S_FIELDS: Readonly<Record<string, readonly string[]>> = {
 
 const OPTIONAL: Readonly<Record<string, readonly string[]>> = {
   hello: ['token', 'version'],
+  'g.infoReady': ['setupRevision'],
   'g.bandFocus': ['bandId'],
   'g.move': ['dir'],
   'g.equip': ['replaceUid'],
@@ -788,4 +795,28 @@ test('fxForm reads only an fx tuple that names a unit form', () => {
   expect(fxForm(['fx', 'ember', 1, 2, { form: 'husk' }])).toBeUndefined();
   expect(fxForm(['dmg', 3, 100])).toBeUndefined();
   expect(fxForm(['fx', 'x', 0, 0, { id: 1, form: 4 }])).toBeNull();
+});
+
+test('ownership and custom squad payloads follow master limits', () => {
+  expect(validateC2S({ t: 'room.ownership', notOwned: ['char_1'] })).toBeNull();
+  expect(
+    validateC2S({ t: 'room.ownership', notOwned: 'char_1' }),
+  ).not.toBeNull();
+  expect(
+    validateC2S({
+      t: 'room.diy',
+      picks: {
+        t5a: { charId: 'char_2', skillIndex: 1, uniEquipId: null },
+        t6a: null,
+      },
+    }),
+  ).toBeNull();
+  expect(
+    validateC2S({ t: 'room.diy', picks: { t5a: { skillIndex: 1 } } }),
+  ).not.toBeNull();
+  expect(validateC2S({ t: 'g.rerollVote', voteId: 3, agree: true })).toBeNull();
+  expect(
+    validateC2S({ t: 'g.rerollVote', voteId: 0, agree: true }),
+  ).not.toBeNull();
+  expect(validateC2S({ t: 'room.setAiPicksLast', on: true })).toBeNull();
 });

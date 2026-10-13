@@ -191,6 +191,34 @@ const isLoadoutEntry: Check = (value) =>
 export const isLoadoutEntries: Check = (value) =>
   isMap(value, LOADOUT_LIMITS.entries, isId, isLoadoutEntry);
 
+export const OWNERSHIP_LIMITS: Readonly<{ notOwned: number }> = Object.freeze({
+  notOwned: 160,
+});
+/** `room.ownership.notOwned`: the base chess the player does not own, at most 160 ids. */
+export const isNotOwnedList: Check = (value) =>
+  isList(value, OWNERSHIP_LIMITS.notOwned, isId);
+
+export const DIY_LIMITS: Readonly<{ slots: number }> = Object.freeze({
+  slots: 8,
+});
+const isDiyPick: Check = (value) =>
+  value === null ||
+  (isPlain(value) &&
+    isId(value.charId) &&
+    nullable((item) => isInt(item, 0, LOADOUT_LIMITS.skillIndex))(
+      value.skillIndex,
+    ) &&
+    nullable(isId)(value.uniEquipId));
+/** `room.diy.picks`: slot id → `{ charId, skillIndex?, uniEquipId? }` or null, at most 8 slots. */
+export const isDiyPicks: Check = (value) =>
+  isMap(value, DIY_LIMITS.slots, isId, isDiyPick);
+
+export interface DiyPick {
+  readonly charId: string;
+  readonly skillIndex?: number | null;
+  readonly uniEquipId?: string | null;
+}
+
 export interface LoadoutSkill {
   readonly index?: number;
   readonly isDefault?: boolean;
@@ -598,6 +626,7 @@ export const C2S: Readonly<Record<string, MessageSpec>> = {
   'room.leave': {},
   'room.ready': { ready: isBool },
   'room.setDifficulty': { difficulty: isDifficulty },
+  'room.setAiPicksLast': { on: isBool },
   'room.addBot': {},
   'room.removeBot': { seat: (value) => isInt(value, 0, MAX_SEATS - 1) },
   'room.kick': {
@@ -605,10 +634,21 @@ export const C2S: Readonly<Record<string, MessageSpec>> = {
     playerId: isId,
   },
   'room.start': {},
+  'room.rerollSetup': { setupRevision: (value) => isInt(value, 0, 2 ** 31) },
+  'room.cancelReroll': { voteId: (value) => isInt(value, 1, 2 ** 31) },
   'room.loadout': { entries: isLoadoutEntries },
+  'room.ownership': { notOwned: isNotOwnedList },
+  'room.diy': { picks: isDiyPicks },
   'room.spectate': { code: isRoomCode },
   'room.removeSpectator': { playerId: isId },
-  'g.infoReady': {},
+  'g.infoReady': {
+    setupRevision: (value) => isInt(value, 0, 2 ** 31),
+    $optional: ['setupRevision'],
+  },
+  'g.rerollVote': {
+    voteId: (value) => isInt(value, 1, 2 ** 31),
+    agree: isBool,
+  },
   'g.band': { bandId: isId },
   'g.bandSkip': {},
   'g.bandFocus': { bandId: nullable(isId), $optional: ['bandId'] },

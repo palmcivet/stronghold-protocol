@@ -1,4 +1,4 @@
-import { color, type TokenGroup } from './token.js';
+import { color, dimension, shadow, type TokenGroup } from './token.js';
 
 const CJK = [
   'Noto Sans SC',
@@ -54,6 +54,28 @@ export const TOKENS: TokenGroup = {
       hard: color('#e73118'),
       abyss: color('#ff0024'),
     },
+    status: {
+      info: color('#9fd4ff'),
+      success: color('#4ed8af'),
+      warn: color('#f6a329'),
+      error: color('#e73118'),
+    },
+    bond: {
+      off: color('#5d6863'),
+      on: color('#4ed8af'),
+      max: color('#ffc600'),
+    },
+    rich: {
+      keyword: color('#00b0ff'),
+      positive: color('#0098dc'),
+      negative: color('#ff6237'),
+      value: color('#ffc600'),
+      name: color('#f2f2f2'),
+    },
+    surface: {
+      hud: color('#0c0f0e', 0.72),
+      scrim: color('#000000', 0.55),
+    },
     tier: {
       1: color('#a8a8a8'),
       2: color('#f2f2f2'),
@@ -74,6 +96,15 @@ export const TOKENS: TokenGroup = {
       $value: ['Novecento', 'Oxanium', 'Rajdhani', ...CJK, 'sans-serif'],
     },
   },
+  'font-size': {
+    xs: dimension(0.75),
+    sm: dimension(0.875),
+    md: dimension(1),
+    lg: dimension(1.25),
+    xl: dimension(1.5),
+    '2xl': dimension(2),
+    display: dimension(3),
+  },
   ease: {
     out: { $type: 'cubicBezier', $value: [0.2, 0.8, 0.2, 1] },
     'in-out': { $type: 'cubicBezier', $value: [0.6, 0, 0.3, 1] },
@@ -83,6 +114,8 @@ export const TOKENS: TokenGroup = {
     medium: { $type: 'duration', $value: { value: 200, unit: 'ms' } },
     slow: { $type: 'duration', $value: { value: 250, unit: 'ms' } },
   },
+  /** Factor applied to every duration; the reduced-motion layer sets it to 0. */
+  motion: { $type: 'number', $value: 1 },
   space: {
     1: { $type: 'dimension', $value: { value: 0.25, unit: 'rem' } },
     2: { $type: 'dimension', $value: { value: 0.5, unit: 'rem' } },
@@ -94,12 +127,45 @@ export const TOKENS: TokenGroup = {
   radius: {
     1: { $type: 'dimension', $value: { value: 2, unit: 'px' } },
     2: { $type: 'dimension', $value: { value: 4, unit: 'px' } },
+    3: dimension(8, 'px'),
+    round: dimension(999, 'px'),
+  },
+  shadow: {
+    panel: shadow({ at: [0, 4, 16, 0], color: color('#000000', 0.45) }),
+    float: shadow({ at: [0, 8, 32, 0], color: color('#000000', 0.6) }),
+    glow: shadow({ at: [0, 0, 12, 0], color: color('#4ed8af', 0.35) }),
+    danger: shadow({ at: [0, 0, 12, 0], color: color('#e73118', 0.45) }),
+  },
+  stroke: {
+    thin: dimension(1, 'px'),
+    thick: dimension(2, 'px'),
+    accent: dimension(3, 'px'),
+  },
+  size: {
+    'hud-bar': dimension(3),
+    card: dimension(10),
+    'card-wide': dimension(14),
+    avatar: dimension(2.5),
+    'avatar-lg': dimension(4),
+    thumb: dimension(3.5),
+    touch: dimension(2.75),
+    page: dimension(72),
+  },
+  /** Breakpoints for script and container queries; a media query cannot read a custom property. */
+  breakpoint: {
+    phone: dimension(40),
+    tablet: dimension(64),
+    desktop: dimension(80),
   },
   layer: {
+    backdrop: { $type: 'number', $value: 0 },
     screen: { $type: 'number', $value: 1 },
+    hud: { $type: 'number', $value: 10 },
     banner: { $type: 'number', $value: 40 },
+    overlay: { $type: 'number', $value: 60 },
     connection: { $type: 'number', $value: 75 },
     modal: { $type: 'number', $value: 80 },
     toast: { $type: 'number', $value: 90 },
+    tooltip: { $type: 'number', $value: 95 },
   },
 };

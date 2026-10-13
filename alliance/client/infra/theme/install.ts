@@ -14,3 +14,8 @@ export function installTheme(target: Document = document): void {
   style.textContent = tokenSheet(TOKENS, 'tokens');
   target.head.append(style);
 }
+
+/** Puts a text size step on the root; the base layer turns it into the root font size. */
+export function applyTextSize(size: string, target: Document = document): void {
+  target.documentElement.dataset['text'] = size;
+}
