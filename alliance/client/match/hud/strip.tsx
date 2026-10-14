@@ -1,26 +1,23 @@
 import type { BondView } from '@alliance/contract/server-message.js';
 import { useStore } from 'zustand';
-import {
-  useMatch,
-  useMatchCatalog,
-  useSession,
-} from '../../infra/store/hook.js';
-import { dataName, has, lookup, useText } from '../../infra/text/index.js';
-import { cx } from '../../infra/theme/class-name.js';
-import { ChessThumb } from '../../part/art.js';
+import { useMatch, useMatchCatalog, useSession } from '#infra/store/hook.js';
+import { dataName, has, lookup, useText } from '#infra/text/index.js';
+import { cx } from '#infra/theme/class-name.js';
+import { usePlayback } from '#match/playback-state.js';
+import { ChessThumb } from '#part/art.js';
 import {
   BondDisc,
   Button,
   Cluster,
   Dialog,
+  Icon,
   Modal,
   Muted,
   Num,
   RichText,
   Stack,
   Tooltip,
-} from '../../ui/index.js';
-import { usePlayback } from '../playback-state.js';
+} from '#ui/index.js';
 import styles from './hud.module.css';
 import { hudStore } from './state.js';
 
@@ -45,8 +42,11 @@ export function Ticker() {
   );
 }
 
-/** The bonds of the player on screen: the own ones, or the watched player's. */
-function useShownBonds(): readonly BondView[] {
+/** Bonds on screen and, when watching a teammate, that player's name. */
+function useShownBonds(): {
+  readonly bonds: readonly BondView[];
+  readonly owner: string | null;
+} {
   const playerId = useSession((state) => state.playerId);
   const watching = usePlayback((state) => state.battle?.fieldId ?? null);
   return useMatch((state) => {
@@ -56,7 +56,10 @@ function useShownBonds(): readonly BondView[] {
             player.fieldId === watching && player.playerId !== playerId,
         )
       : undefined;
-    return watched?.bonds ?? state.private?.bonds ?? NONE;
+    return {
+      bonds: watched?.bonds ?? state.private?.bonds ?? NONE,
+      owner: watched?.name ?? null,
+    };
   });
 }
 
@@ -68,39 +71,77 @@ function nextThreshold(bond: BondView): number {
   );
 }
 
-/** The bond strip; a bond opens its detail. */
+/** The bond strip; a bond opens its detail. Collapses like master's bonds-toggle. */
 export function Bonds() {
   const t = useText();
-  const bonds = useShownBonds();
-  if (!bonds.length) {
-    return null;
-  }
+  const { bonds, owner } = useShownBonds();
+  const collapsed = useStore(hudStore, (state) => state.bondsCollapsed);
+  const toggle = (): void => {
+    hudStore.setState((state) => ({
+      bondsCollapsed: !state.bondsCollapsed,
+      bond: state.bondsCollapsed ? state.bond : null,
+    }));
+  };
   return (
-    <Cluster gap={1} label={t('core:bonds.heading')}>
-      {bonds.map((bond) => {
-        const top = bond.thresholds?.at(-1);
-        const state = bond.off
-          ? 'off'
-          : !bond.active
-            ? 'off'
-            : top !== undefined && bond.count >= top
-              ? 'max'
-              : 'on';
-        return (
-          <Button
-            key={bond.bondId}
-            onPress={() => hudStore.setState({ bond: bond.bondId })}
-          >
-            <BondDisc
-              label={dataName('bond', bond.bondId)}
-              count={bond.count}
-              next={nextThreshold(bond)}
-              state={state}
-            />
-          </Button>
-        );
-      })}
-    </Cluster>
+    <div
+      className={cx(styles.bonds)}
+      data-other={owner ? '' : undefined}
+    >
+      <Button
+        aria-expanded={!collapsed}
+        aria-controls="match-bond-strip"
+        aria-label={
+          collapsed ? t('core:bonds.expand') : t('core:bonds.collapse')
+        }
+        onPress={toggle}
+      >
+        <Icon name={collapsed ? 'chevron-right' : 'chevron-left'} />
+      </Button>
+      <div
+        id="match-bond-strip"
+        className={cx(styles.bondList)}
+        hidden={collapsed}
+      >
+        {owner ? (
+          <span className={cx(styles.bondsOwner)} title={owner}>
+            <Icon name="eye" />
+            <span>{owner}</span>
+          </span>
+        ) : null}
+        {!bonds.length ? (
+          <span className={cx(styles.bondsEmpty)}>
+            <span className={cx(styles.microLabel)}>BONDS</span>
+            {t('core:bonds.empty')}
+          </span>
+        ) : (
+          <Cluster gap={1} label={t('core:bonds.heading')}>
+            {bonds.map((bond) => {
+              const top = bond.thresholds?.at(-1);
+              const state = bond.off
+                ? 'off'
+                : !bond.active
+                  ? 'off'
+                  : top !== undefined && bond.count >= top
+                    ? 'max'
+                    : 'on';
+              return (
+                <Button
+                  key={bond.bondId}
+                  onPress={() => hudStore.setState({ bond: bond.bondId })}
+                >
+                  <BondDisc
+                    label={dataName('bond', bond.bondId)}
+                    count={bond.count}
+                    next={nextThreshold(bond)}
+                    state={state}
+                  />
+                </Button>
+              );
+            })}
+          </Cluster>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -108,7 +149,7 @@ export function Bonds() {
 export function BondDetail() {
   const t = useText();
   const bondId = useStore(hudStore, (state) => state.bond);
-  const bonds = useShownBonds();
+  const { bonds } = useShownBonds();
   const board = useMatch((state) => state.private?.board ?? NONE);
   const catalog = useMatchCatalog();
   const bond = bonds.find((entry) => entry.bondId === bondId) ?? null;

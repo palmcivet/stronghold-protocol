@@ -4,13 +4,15 @@
     isolation: isolate;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    /* a game screen: the page itself never scrolls, inner panels do */
+    height: 100dvh;
+    overflow: hidden;
   }
 
   .backdrop {
     position: fixed;
     inset: 0;
-    z-index: var(--layer-backdrop);
+    z-index: var(--wsde-layer-backdrop);
     pointer-events: none;
   }
 
@@ -20,7 +22,7 @@
     background:
       radial-gradient(
         ellipse at 20% 0%,
-        var(--color-accent-a10),
+        var(--wsde-color-accent-a10),
         transparent 60%
       ),
       radial-gradient(
@@ -28,18 +30,18 @@
         rgb(232 90 26 / 0.06),
         transparent 50%
       ),
-      var(--color-bg-0);
+      var(--wsde-color-bg-0);
   }
 
   .barLayer {
     position: sticky;
     top: 0;
-    z-index: var(--layer-banner);
+    z-index: var(--wsde-layer-banner);
   }
 
   .app[data-bare] .barLayer {
     position: fixed;
-    top: var(--size-hud-bar);
+    top: var(--wsde-size-hud-bar);
     inset-inline: 0;
     pointer-events: none;
   }
@@ -48,46 +50,16 @@
     pointer-events: auto;
   }
 
-  .bar {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    min-height: var(--size-hud-bar);
-    padding: var(--space-2) var(--space-4);
-    border-bottom: var(--stroke-thin) solid var(--color-line-1);
-    background: var(--color-bg-glass);
-    backdrop-filter: blur(6px);
-  }
-
-  .brand {
-    font-family: var(--font-display);
-    font-size: var(--font-size-md);
-  }
-
-  .nav {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    margin-inline-start: auto;
-  }
-
-  .navLink {
-    color: var(--color-text-md);
-    text-decoration: none;
-  }
-
-  .navLink[aria-current="page"] {
-    color: var(--color-accent-400);
-  }
-
   .main {
     position: relative;
-    z-index: var(--layer-screen);
+    z-index: var(--wsde-layer-screen);
     flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
-    padding: var(--space-4);
-    gap: var(--space-4);
+    overflow: auto;
+    padding: var(--wsde-space-4);
+    gap: var(--wsde-space-4);
   }
 
   .app[data-bare] .main {
@@ -102,33 +74,33 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: var(--space-3);
-    padding: var(--space-2);
-    background: var(--color-orange);
-    color: var(--color-text-hi);
+    gap: var(--wsde-space-3);
+    padding: var(--wsde-space-2);
+    background: var(--wsde-color-orange);
+    color: var(--wsde-color-text-hi);
   }
 
   .bindings {
     display: grid;
-    gap: var(--space-2);
+    gap: var(--wsde-space-2);
   }
 
   .binding {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--space-3);
+    gap: var(--wsde-space-3);
   }
 
   .channels {
     display: grid;
-    gap: var(--space-2);
+    gap: var(--wsde-space-2);
   }
 
   .channel {
     display: grid;
     grid-template-columns: 1fr auto;
-    gap: var(--space-2);
+    gap: var(--wsde-space-2);
     align-items: end;
   }
 }

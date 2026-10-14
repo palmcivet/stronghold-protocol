@@ -7,10 +7,30 @@ const refs: Readonly<Record<string, string>> = {
   'chars/char_a/avatarElite': 'image:char/avatar/char_a_2',
   'chars/char_b/avatar': 'image:char/avatar/char_b',
 };
+const labels: Readonly<Record<string, string>> = {
+  'image:char/avatar/char_a': 'elite0',
+  'image:char/avatar/char_a_2': 'elite2',
+};
 const resources = {
   ref: (path: string | readonly string[]) =>
     refs[typeof path === 'string' ? path : path.join('/')] ?? null,
-  resolver: { has: (key: string) => key === 'image:ui/guide/autochess_home_1' },
+  refs: {
+    chars: {
+      char_a: {
+        avatar: 'image:char/avatar/char_a',
+        avatarElite: 'image:char/avatar/char_a_2',
+        portrait: 'image:char/portrait/char_a',
+      },
+      char_b: { avatar: 'image:char/avatar/char_b' },
+    },
+  },
+  resolver: {
+    has: (key: string) => key === 'image:ui/guide/autochess_home_1',
+    entry: (key: string) =>
+      key in labels || key.startsWith('image:')
+        ? { asset: labels[key] ? { label: labels[key] } : {} }
+        : null,
+  },
 } as unknown as ResourceStore;
 
 describe('art', () => {
@@ -24,11 +44,10 @@ describe('art', () => {
     expect(artKey(resources, 'image:ui/guide/missing')).toBeNull();
   });
 
-  it('lists the avatar variants the asset catalog has', () => {
+  it('lists the labelled images as avatar variants; unlabelled ones are none', () => {
     expect(avatarVariants(resources, ['char_a', 'char_b', 'char_c'])).toEqual([
-      { charId: 'char_a', field: 'avatar' },
-      { charId: 'char_a', field: 'avatarElite' },
-      { charId: 'char_b', field: 'avatar' },
+      { charId: 'char_a', key: 'image:char/avatar/char_a', label: 'elite0' },
+      { charId: 'char_a', key: 'image:char/avatar/char_a_2', label: 'elite2' },
     ]);
     expect(avatarVariants(null, ['char_a'])).toEqual([]);
   });

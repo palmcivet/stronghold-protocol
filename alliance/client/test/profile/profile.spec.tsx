@@ -2,9 +2,9 @@
 
 import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { playCue, setCueSink } from '../../infra/audio/feedback.js';
-import { DEFAULT_AUDIO, settingsStore } from '../../infra/store/settings.js';
-import { renderPart } from '../support/part.js';
+import { playCue, setCueSink } from '#infra/audio/feedback.js';
+import { DEFAULT_AUDIO, settingsStore } from '#infra/store/settings.js';
+import { renderPart } from '#test/support/part.js';
 
 afterEach(() => {
   cleanup();

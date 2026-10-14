@@ -1,28 +1,43 @@
 import { useRouteContext } from '@tanstack/react-router';
 import { useEffect } from 'react';
-import { boundIntent, isTyping } from '../infra/intent/keys.js';
-import { matchViewOf } from '../infra/router/match-view.js';
-import { PAGE } from '../infra/router/page.js';
-import { useMatch } from '../infra/store/hook.js';
-import { settingsStore } from '../infra/store/settings.js';
-import { cx } from '../infra/theme/class-name.js';
-import { definePart, Part } from '../part/registry.js';
-import { registerBriefingParts } from './briefing/parts.js';
+import { runKey } from '#infra/intent/keymap.js';
+import { matchViewOf } from '#infra/router/match-view.js';
+import { PAGE } from '#infra/router/page.js';
+import { useMatch } from '#infra/store/hook.js';
+import { cx } from '#infra/theme/class-name.js';
+import { registerBriefingParts } from '#match/briefing/parts.js';
+import { Combat } from '#match/hud/combat.js';
+import { Corner, PhaseBanner } from '#match/hud/corner.js';
+import { Detail } from '#match/hud/detail.js';
+import { EmoteWheel } from '#match/hud/emote.js';
+import { MatchLayout } from '#match/hud/layout.js';
+import {
+  Away,
+  Choice,
+  EquipReplace,
+  Pause,
+  Vote,
+} from '#match/hud/overlays.js';
+import { Reward, Shop, ShopCard, ShopTools } from '#match/hud/shop.js';
+import { BondDetail, Bonds, Effects, Ticker } from '#match/hud/strip.js';
+import { Team, TeamRow } from '#match/hud/team.js';
+import {
+  Clock,
+  Exit,
+  Intel,
+  Lens,
+  Lp,
+  Ready,
+  Round,
+  TopBar,
+} from '#match/hud/topbar.js';
+import { registerResultParts } from '#match/settlement/parts.js';
+import { registerStrategyParts } from '#match/strategy/parts.js';
+import { definePart, Part } from '#part/registry.js';
 import { Field } from './field-part.js';
-import { Combat } from './hud/combat.js';
-import { Detail } from './hud/detail.js';
-import { EmoteWheel } from './hud/emote.js';
-import { MatchLayout } from './hud/layout.js';
-import { Away, Choice, EquipReplace, Pause, Vote } from './hud/overlays.js';
-import { Reward, Shop, ShopCard, ShopTools } from './hud/shop.js';
-import { BondDetail, Bonds, Effects, Ticker } from './hud/strip.js';
-import { Team, TeamRow } from './hud/team.js';
-import { Clock, Exit, Intel, Lens, Lp, Round, TopBar } from './hud/topbar.js';
 import { MatchInfo } from './info.js';
 import styles from './match.module.css';
-import { registerResultParts } from './settlement/parts.js';
 import { StepHead } from './stephead.js';
-import { registerStrategyParts } from './strategy/parts.js';
 
 /** Layout part of each view of the match page. */
 const VIEW_LAYOUT = {
@@ -43,19 +58,7 @@ function MatchPage() {
       return;
     }
     const onKey = (event: KeyboardEvent): void => {
-      if (
-        event.repeat ||
-        event.ctrlKey ||
-        event.metaKey ||
-        isTyping(event.target)
-      ) {
-        return;
-      }
-      const intent = boundIntent(event.code, settingsStore.getState().keys);
-      if (intent) {
-        event.preventDefault();
-        void runtime.intents.dispatch(intent);
-      }
+      runKey(event, (intent) => runtime.intents.dispatch(intent));
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -77,6 +80,7 @@ const HUD_PARTS = [
   ['core:match.round', Round],
   ['core:match.lp', Lp],
   ['core:match.clock', Clock],
+  ['core:match.ready', Ready],
   ['core:match.lens', Lens],
   ['core:match.intel', Intel],
   ['core:match.ticker', Ticker],
@@ -94,12 +98,14 @@ const HUD_PARTS = [
   ['core:match.equip-replace', EquipReplace],
   ['core:match.combat', Combat],
   ['core:match.emote', EmoteWheel],
+  ['core:match.corner', Corner],
+  ['core:match.phase-banner', PhaseBanner],
   ['core:match.vote', Vote],
   ['core:match.pause', Pause],
   ['core:match.away', Away],
 ] as const;
 
-/** Parts that only allow `insert` around them (UI.md: not replaceable). */
+/** Parts that only allow `insert` around them (not replaceable). */
 const CLOSED: ReadonlySet<string> = new Set([
   'core:match.exit',
   'core:match.lens',

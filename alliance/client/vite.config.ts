@@ -46,7 +46,6 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      port: 5173,
       proxy,
       fs: {
         allow: [repoRoot],

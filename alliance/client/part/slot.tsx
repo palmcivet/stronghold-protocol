@@ -4,10 +4,10 @@ import {
   useSyncExternalStore,
 } from 'react';
 import { useStore } from 'zustand';
-import { matchStore } from '../infra/store/match.js';
-import { presenceStore } from '../infra/store/presence.js';
-import { roomStore } from '../infra/store/room.js';
-import { sessionStore } from '../infra/store/session.js';
+import { matchStore } from '#infra/store/match.js';
+import { presenceStore } from '#infra/store/presence.js';
+import { roomStore } from '#infra/store/room.js';
+import { sessionStore } from '#infra/store/session.js';
 import { PartSlot } from './boundary.js';
 import { definePart, hasPart, Part } from './registry.js';
 
@@ -24,6 +24,8 @@ export interface InsertWhen {
   readonly coop?: boolean;
   /** The public match phase equals this string. */
   readonly phase?: string;
+  /** The server holds the player in a room (or its match) when true, in none when false. */
+  readonly room?: boolean;
 }
 
 export interface PartInsert {
@@ -81,9 +83,15 @@ function snapshot(): readonly Entry[] {
   return entries;
 }
 
-function matches(when: InsertWhen | undefined): boolean {
+/** Whether a condition holds now. */
+export function matches(when: InsertWhen | undefined): boolean {
   if (!when) {
     return true;
+  }
+  if (when.room !== undefined) {
+    if ('code' in presenceStore.getState().presence !== when.room) {
+      return false;
+    }
   }
   if (when.capability !== undefined) {
     const capabilities = sessionStore.getState().backend?.capabilities as

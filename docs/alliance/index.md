@@ -18,6 +18,7 @@ description: 盟约是「卫戍协议：盟约」的应用：赛季数据与资�
 
 - [快速开始](./01-quick-start.md)：构建数据包，启动对局进程与开发服务器
 - [架构](./02-architecture.md)：`alliance/` 下的各个包与它们的依赖
+- [客户端](./client/index.md)：浏览器客户端的技术栈、分层、页面与部件
 - [卫戍协议数据](./data/index.md)：赛季数据包、基础包与赛季包的编译，资源的发布布局与客户端加载
 - [对局协议](./protocol/index.md)：对局进程的 HTTP 与 WebSocket 接口，房间、对局与作战消息
 - [连接 master 后端](./compat/index.md)：master 资源表的映射、用例对照表与追溯标记

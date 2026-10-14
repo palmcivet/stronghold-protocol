@@ -10,6 +10,7 @@ description: 客户端连接 master 后端时怎样读取它的资源表，以�
 - 客户端连接 master 后端时，把后端的 `data/assets.json` 转成一份 `upstream` 包清单。`arknights-assets-catalog` 仍只看资源键，不认识 master 的地址格式
 - 记录 master 的每条测试用例在 next 里的去向，并检查对照表与两边的用例清单一致
 - 记录引擎规则的出处与核对状态，以及锁住每条规则的 next 用例
+- 把 master 的战斗开局规格与关卡地图收成 `BattleSpec`（见 [战斗规格适配](./04-battle.md)）
 
 ## 图层顺序
 
@@ -26,8 +27,10 @@ description: 客户端连接 master 后端时怎样读取它的资源表，以�
 - [资源映射](./01-asset.md)：读取的文件、地址到键的映射、不映射的地址
 - [用例对照表](./02-case-map.md)：`case-map` 的文件、状态、枚举与命令
 - [追溯标记](./03-trace.md)：引擎规则的出处、依据与锁定用例
+- [战斗规格适配](./04-battle.md)：`b.start` → `BattleSpec`，地形、notes 与风机装置
 
 ## 下一步
 
 - 想知道某个 master 地址映射成哪个键：读 [资源映射](./01-asset.md)
 - 想同步 master 的新用例：读 [用例对照表](./02-case-map.md#运行)
+- 想看战斗规格怎样适配：读 [战斗规格适配](./04-battle.md)

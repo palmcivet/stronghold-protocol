@@ -1,7 +1,7 @@
 import { PHASE } from '@alliance/contract/match.js';
 import type { ServerMessage } from '@alliance/contract/server-message.js';
 import { createStore } from 'zustand/vanilla';
-import type { ConnectionStatus } from '../connection/socket.js';
+import type { ConnectionStatus } from '#infra/connection/socket.js';
 
 /** Where the server holds the player. The URL says which page the player looks at; this says where they are. */
 export type Presence =

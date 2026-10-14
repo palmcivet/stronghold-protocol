@@ -80,9 +80,21 @@ pnpm extract:media
 
 数据包只写领域 id 与显式默认值，不写资源地址或键。
 
-- 敌人的 `attackAnim` 是必填字段。当前所有敌人的值为 `null`：`mission-core` 在没有动画片段时停顿 0.35 秒，与此一致。
 - `chess.json`、`tokens.json` 不带 `assets` 字段。资源引用由资源包的 `refs` 提供，数据包只写领域 id。
 - gamedata 从提取缓存读取。
+
+### 技能触发与攻击字段
+
+编译期把上游杂项字段收成 `mission-core` / `BattleSpec` 只认的规范化形状：
+
+| 上游或中间字段 | 规范化结果 | 说明 |
+| --- | --- | --- |
+| `skillTriggerType`（未知值） | `DEFAULT`，并 `warn` | 已知集合见 `KNOWN_SKILL_TRIGGERS`；个别干员可用 `TRIGGER_DEVIATIONS` 改写 |
+| `rangeRadius` | `attackRange`（朝右的攻击格列表） | 近战半径视为 0 |
+| `attackAnim` | `attackClip` | 片段名；无片段时引擎停顿约 0.35 秒 |
+| 攻击中移动的能力文案 | 标签 `attack-moves`，并可保留布尔 `attackMoves` | 不站定攻击 |
+
+拼装 `BattleSpec`（`battleSpecOf` / `combat-def`）只读 `attackRange`、`attackClip` 与 `attack-moves` 等规范化字段。数据包仍可保留 `rangeRadius`、`attackAnim` 等旧键供对照，运行时不以它们为准。
 
 ## 资源包
 

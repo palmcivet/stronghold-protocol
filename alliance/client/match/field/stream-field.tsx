@@ -1,8 +1,8 @@
 import type { StreamUnit } from '@alliance/compat-upstream';
-import { useStream } from '../../infra/store/hook.js';
-import type { StreamLine } from '../../infra/store/stream.js';
-import { useText } from '../../infra/text/index.js';
-import { cx } from '../../infra/theme/class-name.js';
+import { useStream } from '#infra/store/hook.js';
+import type { StreamLine } from '#infra/store/stream.js';
+import { useText } from '#infra/text/index.js';
+import { cx } from '#infra/theme/class-name.js';
 import styles from './field.module.css';
 
 /** Extra room around the units, in field units, so none sits on the edge. */
@@ -29,8 +29,8 @@ function boundsOf(units: readonly StreamUnit[]): Bounds {
 }
 
 /**
- * The battle the server streams, drawn as stand-ins: each unit where the latest snapshot puts it, with its HP, the
- * fallen marked, and a log of the latest damage, heals, deaths and leaks.
+ * Stand-in stream field for unit tests: each unit where the latest snapshot puts it, with HP, fallen marks, and an
+ * event log. Match screens use {@link StageField}.
  */
 export function StreamField() {
   const t = useText();
@@ -45,6 +45,12 @@ export function StreamField() {
   const nameOf = (id: string): string => info[id]?.name ?? id;
   const bounds = boundsOf(snapshot.units);
   const lineText = ({ event }: StreamLine): string => {
+    if (event.kind === 'fx') {
+      return t('core:stream.label');
+    }
+    if (event.kind === 'skill') {
+      return t('core:stream.label');
+    }
     const name = nameOf(event.unitId);
     return event.kind === 'damage' || event.kind === 'heal'
       ? t(`core:stream.${event.kind}`, { name, amount: event.amount })

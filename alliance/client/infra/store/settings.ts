@@ -1,26 +1,14 @@
 import * as v from 'valibot';
 import { createStore } from 'zustand/vanilla';
-import { LANGUAGES, type Language } from '../text/index.js';
-
-const SETTINGS_KEY = 'alliance.settings';
+import { CORE_OWNER, defineItem } from '#infra/storage/index.js';
+import { LANGUAGES, type Language } from '#infra/text/index.js';
 
 export const QUALITIES = ['low', 'standard', 'high'] as const;
 export type Quality = (typeof QUALITIES)[number];
 
-/** Preparation actions a key can be bound to. */
 /** Steps of the interface text size; the field keeps its own scale. */
 export const TEXT_SIZES = ['sm', 'md', 'lg', 'xl'] as const;
 export type TextSize = (typeof TEXT_SIZES)[number];
-
-export const KEY_ACTIONS = ['refresh', 'levelUp', 'freeze'] as const;
-export type KeyAction = (typeof KEY_ACTIONS)[number];
-
-/** `KeyboardEvent.code` of each action. */
-export const DEFAULT_KEYS: Readonly<Record<KeyAction, string>> = {
-  refresh: 'KeyD',
-  levelUp: 'KeyF',
-  freeze: 'KeyE',
-};
 
 const KeyCode = v.pipe(v.string(), v.maxLength(32));
 
@@ -58,13 +46,13 @@ const SettingsSchema = v.object({
   avatar: v.optional(v.pipe(v.string(), v.maxLength(64)), ''),
   quality: v.optional(v.picklist(QUALITIES), 'standard'),
   textSize: v.optional(v.picklist(TEXT_SIZES), 'sm'),
-  keys: v.optional(
-    v.object({
-      refresh: v.optional(KeyCode, DEFAULT_KEYS.refresh),
-      levelUp: v.optional(KeyCode, DEFAULT_KEYS.levelUp),
-      freeze: v.optional(KeyCode, DEFAULT_KEYS.freeze),
-    }),
-    { ...DEFAULT_KEYS },
+  // the old `keys` table is turned into overrides by the version 1 migration below
+  keymap: v.optional(
+    v.record(
+      v.pipe(v.string(), v.maxLength(64)),
+      v.pipe(v.array(KeyCode), v.maxLength(4)),
+    ),
+    {},
   ),
   audio: v.optional(
     v.object({
@@ -85,43 +73,63 @@ export interface SettingsState {
   readonly language: Language;
   /** Code name remembered for the entry page. */
   readonly name: string;
-  /** Chess id shown as the avatar; empty shows the initial of the name. */
+  /** Asset key of the avatar image; empty shows the initial of the name. */
   readonly avatar: string;
   readonly quality: Quality;
   readonly textSize: TextSize;
-  readonly keys: Readonly<Record<KeyAction, string>>;
+  /** Keys the player changed, by action id (see `#infra/intent/keymap`). */
+  readonly keymap: Readonly<Record<string, readonly string[]>>;
   readonly audio: Readonly<Record<AudioChannel, ChannelSetting>>;
 }
 
-function storage(): Storage | null {
-  try {
-    return globalThis.localStorage ?? null;
-  } catch {
-    return null;
+/** The keys of the old table (`keys`, before the key map) and the defaults it shipped with. */
+const OLD_KEYS: Readonly<Record<string, readonly [string, string]>> = {
+  refresh: ['core:refresh', 'KeyD'],
+  levelUp: ['core:levelUp', 'KeyF'],
+  freeze: ['core:freeze', 'KeyE'],
+};
+
+/**
+ * Version 1 is the old `alliance.settings` with its full `keys` table. A key the player changed from the old
+ * default becomes an override; an old default is dropped, so the new defaults (R, D, F) apply.
+ */
+export function keysToKeymap(data: unknown): unknown {
+  if (typeof data !== 'object' || data === null) {
+    return data;
   }
+  const { keys, ...rest } = data as { keys?: unknown } & Record<
+    string,
+    unknown
+  >;
+  const keymap: Record<string, string[]> = {};
+  if (typeof keys === 'object' && keys !== null) {
+    for (const [action, code] of Object.entries(keys)) {
+      const old = OLD_KEYS[action];
+      if (old && typeof code === 'string' && code !== old[1]) {
+        keymap[old[0]] = [code];
+      }
+    }
+  }
+  return { ...rest, keymap };
 }
 
-/** Saved settings, with defaults for what is missing or invalid. */
+/** The settings item: on this device, owned by the core. */
+export const settingsItem = defineItem<SettingsState>({
+  scope: 'device',
+  owner: CORE_OWNER,
+  key: 'settings',
+  schema: SettingsSchema,
+  version: 2,
+  migrations: { 1: keysToKeymap },
+  fallback: () => v.parse(SettingsSchema, {}),
+});
+
+/** The saved settings, from the preloaded snapshot. */
 export function loadSettings(): SettingsState {
-  let raw: unknown = {};
-  try {
-    raw = JSON.parse(storage()?.getItem(SETTINGS_KEY) ?? '{}');
-  } catch {
-    raw = {};
-  }
-  const parsed = v.safeParse(SettingsSchema, raw);
-  return parsed.success ? parsed.output : v.parse(SettingsSchema, {});
+  return settingsItem.get();
 }
 
 export const settingsStore = createStore<SettingsState>(loadSettings);
-
-settingsStore.subscribe((state) => {
-  try {
-    storage()?.setItem(SETTINGS_KEY, JSON.stringify(state));
-  } catch {
-    // storage is full or blocked; the settings stay for this page
-  }
-});
 
 /** Gain of the music and the sound effects, 0 to 1, from the channel settings. */
 export function audioGains(

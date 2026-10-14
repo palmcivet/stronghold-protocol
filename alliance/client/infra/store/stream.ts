@@ -3,10 +3,11 @@ import type {
   StreamSnapshot,
   StreamUnitInfo,
 } from '@alliance/compat-upstream';
+import type { FieldRect } from '@alliance/contract/server-message.js';
 import { createStore } from 'zustand/vanilla';
 
 /** How many battle events the field keeps for its log. */
-export const STREAM_EVENT_LIMIT = 8;
+export const STREAM_EVENT_LIMIT = 64;
 
 export interface StreamLine {
   readonly seq: number;
@@ -17,6 +18,8 @@ export interface StreamLine {
 export interface StreamState {
   /** The field the stream is of, null before any field or snapshot. */
   readonly fieldId: string | null;
+  /** The stage rows and columns the field covers, null when the backend did not say. */
+  readonly rect: FieldRect | null;
   readonly info: Readonly<Record<string, StreamUnitInfo>>;
   /** The latest snapshot of the field, null before the first. */
   readonly snapshot: StreamSnapshot | null;
@@ -25,6 +28,7 @@ export interface StreamState {
 
 export const initialStream = (): StreamState => ({
   fieldId: null,
+  rect: null,
   info: {},
   snapshot: null,
   events: [],
@@ -38,10 +42,12 @@ let seq = 0;
 export function openStreamField(
   fieldId: string,
   units: readonly StreamUnitInfo[],
+  rect: FieldRect | null = null,
 ): void {
   streamStore.setState({
     ...initialStream(),
     fieldId,
+    rect,
     info: Object.fromEntries(units.map((unit) => [unit.id, unit])),
   });
 }

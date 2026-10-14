@@ -13,8 +13,8 @@
   },
   "exports": {
     "./*.js": {
-      "types": "./src/*.ts",
       "@wsde/source": "./src/*.ts",
+      "types": "./src/*.ts",
       "import": "./dist/*.js",
       "default": "./dist/*.js"
     }

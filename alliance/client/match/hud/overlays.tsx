@@ -1,9 +1,9 @@
 import { useStore } from 'zustand';
-import { useIntent } from '../../infra/intent/context.js';
-import { useMatch, useSession } from '../../infra/store/hook.js';
-import { dataName, useText } from '../../infra/text/index.js';
-import { Button, Cluster, Dialog, Modal, Overlay } from '../../ui/index.js';
-import { equipStore } from '../equip.js';
+import { useIntent } from '#infra/intent/context.js';
+import { useMatch, useSession } from '#infra/store/hook.js';
+import { dataName, useText } from '#infra/text/index.js';
+import { equipStore } from '#match/equip.js';
+import { Button, Cluster, Dialog, Modal, Overlay } from '#ui/index.js';
 import { Choices } from './choice.js';
 
 /** The pick-one offers, as a modal while one is open. */

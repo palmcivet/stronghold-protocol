@@ -1,9 +1,9 @@
 import type { CatalogChess } from '@alliance/contract/catalog.js';
 import type { ComponentProps } from 'react';
-import { type ArtSource, useArt } from '../infra/resource/art.js';
-import { useCatalog } from '../infra/store/hook.js';
-import { dataName } from '../infra/text/index.js';
-import { Avatar, UnitThumb } from '../ui/index.js';
+import { type ArtSource, useArt } from '#infra/resource/art.js';
+import { useCatalog } from '#infra/store/hook.js';
+import { dataName } from '#infra/text/index.js';
+import { Avatar, UnitThumb } from '#ui/index.js';
 
 type ThumbProps = Omit<ComponentProps<typeof UnitThumb>, 'name' | 'src'>;
 
@@ -18,13 +18,28 @@ export function chessArt(chess: CatalogChess | undefined): ArtSource | null {
 /** A chess thumbnail with its operator's avatar, and its name as the label. */
 export function ChessThumb({
   chessId,
+  charId,
+  label,
   ...props
-}: ThumbProps & { readonly chessId: string }) {
+}: ThumbProps & {
+  readonly chessId: string;
+  /** Draws and names this operator instead (a custom-squad slot). */
+  readonly charId?: string;
+  /** Replaces the name as the label. */
+  readonly label?: string;
+}) {
   const chess = useCatalog((state) => state.catalog.chess[chessId]);
-  const src = useArt(chessArt(chess));
+  const src = useArt(
+    charId
+      ? ['chars', charId, chess?.golden ? 'avatarElite' : 'avatar']
+      : chessArt(chess),
+  );
   return (
     <UnitThumb
-      name={dataName('chess', chessId)}
+      name={
+        label ??
+        (charId ? dataName('operator', charId) : dataName('chess', chessId))
+      }
       src={src}
       {...(chess && props.tier === undefined ? { tier: chess.tier } : {})}
       {...props}
@@ -60,7 +75,38 @@ export function PlayerAvatar({
   avatar,
   ...props
 }: ComponentProps<typeof Avatar> & { readonly avatar?: string | null }) {
-  const [charId, field] = (avatar ?? '').split(':');
-  const src = useArt(charId && field ? ['chars', charId, field] : null);
+  const src = useArt(avatar || null);
   return <Avatar {...props} src={src ?? props.src ?? null} />;
+}
+
+/** A strategy's icon, its name as the label. */
+export function BandIcon({
+  bandId,
+  ...props
+}: ThumbProps & { readonly bandId: string }) {
+  const src = useArt(['bands', bandId]);
+  return <UnitThumb name={dataName('band', bandId)} src={src} {...props} />;
+}
+
+/** A bond's icon, its name as the label. */
+export function BondIcon({
+  bondId,
+  ...props
+}: ThumbProps & { readonly bondId: string }) {
+  const src = useArt(['bonds', bondId]);
+  return <UnitThumb name={dataName('bond', bondId)} src={src} {...props} />;
+}
+
+/** A special-enemy type's badge. */
+export function FactionIcon({
+  factionId,
+  ...props
+}: ThumbProps & { readonly factionId: string }) {
+  const icon = useCatalog(
+    (state) => state.catalog.factions?.[factionId]?.icon ?? null,
+  );
+  const src = useArt(icon);
+  return (
+    <UnitThumb name={dataName('faction', factionId)} src={src} {...props} />
+  );
 }

@@ -1,6 +1,6 @@
 import { createStore } from 'zustand/vanilla';
-import type { Backend } from '../connection/backend.js';
-import type { ConnectionSnapshot } from '../connection/socket.js';
+import type { Backend } from '#infra/connection/backend.js';
+import type { ConnectionSnapshot } from '#infra/connection/socket.js';
 
 export interface SessionState {
   /** The player pressed start on the title screen in this tab. */

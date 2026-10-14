@@ -19,11 +19,15 @@ export {
   type MasterSnapView,
   type MasterUnitInfo,
   type MasterUnitTuple,
+  type StreamDamageKind,
   type StreamEvent,
+  type StreamFacing,
   type StreamSide,
   type StreamSnapshot,
   type StreamUnit,
   type StreamUnitInfo,
+  type StreamUnitKind,
+  fxCueNameOf,
   streamEventsOf,
   streamFieldUnitsOf,
   streamSnapshotOf,
@@ -36,3 +40,32 @@ export {
   type Settlement,
   settlementOf,
 } from '#data/view/settlement.js';
+export {
+  type StageDevice,
+  type StageMap,
+  type StageTile,
+  stageMapOf,
+} from '#data/view/stage-map.js';
+
+export {
+  allyCostOf,
+  battleProgressOf,
+  battleResultOf,
+  battleSpecOf,
+  playerIdsOfSpec,
+  skillScriptOf,
+  skillSpecOf,
+  type BattleResultContext,
+  type BattleSpecContext,
+  type UpstreamBattleProgress,
+} from '#battle/index.js';
+export {
+  attackRangeFromRadius,
+  combatDefsOf,
+  type AttackClip,
+  type CombatChessDef,
+  type CombatDefs,
+  type CombatEnemyDef,
+  type CombatSkillSource,
+  type CombatStats,
+} from '#data/view/combat-def.js';

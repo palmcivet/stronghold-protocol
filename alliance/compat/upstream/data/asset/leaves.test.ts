@@ -1,7 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { isSpineRecord, masterLeaves } from '#data/asset/leaves.js';
+import {
+  isSpineRecord,
+  masterLeaves,
+  unversioned,
+} from '#data/asset/leaves.js';
 
 describe('master leaves', () => {
+  it('drops the version segment of the served asset views', () => {
+    expect(unversioned('/assets/~398f32e2ff78d9e6/char/avatar/x.png')).toBe(
+      '/assets/char/avatar/x.png',
+    );
+    expect(unversioned('/fonts/~ab12/f.woff2')).toBe('/fonts/f.woff2');
+    expect(unversioned('/assets/char/~x/y.png')).toBe('/assets/char/~x/y.png');
+    const [leaf] = masterLeaves({
+      ui: { a: '/assets/~be8f/ui/modeIcon/a.png' },
+    });
+    expect(leaf?.value).toBe('/assets/ui/modeIcon/a.png');
+  });
+
   const root = {
     plain: '/assets/a.png',
     list: ['/assets/b.png', '/assets/c.png'],

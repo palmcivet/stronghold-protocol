@@ -1,11 +1,11 @@
-import { PAGE } from '../infra/router/page.js';
-import { useText } from '../infra/text/index.js';
-import { BackButton } from '../part/back.js';
-import { definePart, Part } from '../part/registry.js';
-import { insertPart } from '../part/slot.js';
-import { PartTabs } from '../part/tabs.js';
-import { Columns, Screen } from '../ui/index.js';
+import { useText } from '#infra/text/index.js';
+import { cx } from '#infra/theme/class-name.js';
+import { DIALOG } from '#part/dialog.js';
+import { definePart, Part } from '#part/registry.js';
+import { insertPart } from '#part/slot.js';
+import { PartTabs } from '#part/tabs.js';
 import { LoadoutDetail, LoadoutRoster } from './roster.js';
+import styles from './screen.module.css';
 import { CustomSquad, Ownership } from './squad.js';
 
 export const LOADOUT = {
@@ -16,14 +16,12 @@ export const LOADOUT = {
   diy: 'core:loadout.diy',
 } as const;
 
-/** The loadout page: the loadout, ownership and custom squad tabs. Local; it returns where the player came from. */
+/** The loadout dialog: the loadout, ownership and custom squad tabs. */
 function LoadoutLayout() {
   const t = useText();
   return (
-    <section data-part={PAGE.loadout}>
-      <Screen title={t('core:loadout.heading')} tools={<BackButton />}>
-        <PartTabs id={LOADOUT.tabs} label={t('core:loadout.heading')} />
-      </Screen>
+    <section data-part={DIALOG.loadout} className={cx(styles.dialog)}>
+      <PartTabs id={LOADOUT.tabs} label={t('core:loadout.heading')} />
     </section>
   );
 }
@@ -31,16 +29,20 @@ function LoadoutLayout() {
 /** The roster tab: the list beside the selected operator's detail part. */
 function RosterTab() {
   return (
-    <Columns min={20} gap={4}>
-      <LoadoutRoster />
-      <Part id={LOADOUT.detail} />
-    </Columns>
+    <div className={cx(styles.rosterTab)}>
+      <div className={cx(styles.pane)}>
+        <LoadoutRoster />
+      </div>
+      <div className={cx(styles.pane)}>
+        <Part id={LOADOUT.detail} />
+      </div>
+    </div>
   );
 }
 
 export function registerLoadoutPage(): readonly (() => void)[] {
   return [
-    definePart(PAGE.loadout, LoadoutLayout, { extensible: true }),
+    definePart(DIALOG.loadout, LoadoutLayout, { extensible: true }),
     definePart(LOADOUT.roster, RosterTab, {
       extensible: true,
       title: 'core:loadout.tab.roster',

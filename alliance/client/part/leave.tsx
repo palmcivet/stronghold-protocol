@@ -6,9 +6,9 @@ import {
   useContext,
 } from 'react';
 import { useStore } from 'zustand';
-import { presenceStore } from '../infra/store/presence.js';
-import { useText } from '../infra/text/index.js';
-import { Button } from '../ui/index.js';
+import { presenceStore } from '#infra/store/presence.js';
+import { useText } from '#infra/text/index.js';
+import { Button } from '#ui/index.js';
 
 /** A leave control that takes the label the caller wants on the open button. */
 export type LeaveControl = ComponentType<{ readonly label?: string }>;

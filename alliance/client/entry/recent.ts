@@ -1,26 +1,24 @@
+import * as v from 'valibot';
 import { createStore } from 'zustand/vanilla';
+import { CORE_OWNER, defineItem } from '#infra/storage/index.js';
 
-const KEY = 'alliance.recentRooms';
 const MAX = 5;
 
-function load(): readonly string[] {
-  try {
-    const raw: unknown = JSON.parse(
-      globalThis.localStorage?.getItem(KEY) ?? '[]',
-    );
-    return Array.isArray(raw)
-      ? raw
-          .filter((code): code is string => typeof code === 'string')
-          .slice(0, MAX)
-      : [];
-  } catch {
-    return [];
-  }
-}
+/** Rooms joined on the current server, the latest first; room codes belong to a server. */
+export const recentItem = defineItem<readonly string[]>({
+  scope: 'server',
+  owner: CORE_OWNER,
+  key: 'recentRooms',
+  schema: v.pipe(
+    v.array(v.string()),
+    v.transform((codes) => codes.slice(0, MAX)),
+  ),
+  version: 1,
+  fallback: () => [],
+});
 
-/** Rooms joined from this browser, the latest first. */
 export const recentStore = createStore<{ readonly codes: readonly string[] }>(
-  () => ({ codes: load() }),
+  () => ({ codes: recentItem.get() }),
 );
 
 export function rememberRoom(code: string): void {
@@ -29,9 +27,4 @@ export function rememberRoom(code: string): void {
     ...recentStore.getState().codes.filter((entry) => entry !== code),
   ].slice(0, MAX);
   recentStore.setState({ codes });
-  try {
-    globalThis.localStorage?.setItem(KEY, JSON.stringify(codes));
-  } catch {
-    // storage is optional
-  }
 }

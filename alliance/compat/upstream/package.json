@@ -25,6 +25,10 @@
     "#trace/*.js": {
       "@wsde/source": "./trace/*.ts",
       "default": "./dist/trace/*.js"
+    },
+    "#battle/*.js": {
+      "@wsde/source": "./battle/*.ts",
+      "default": "./dist/battle/*.js"
     }
   },
   "scripts": {
@@ -43,7 +47,8 @@
     "@alliance/data": "workspace:*",
     "@wsde/shared": "workspace:*",
     "arknights-assets-catalog": "workspace:*",
-    "valibot": "^1.5.0"
+    "valibot": "^1.5.0",
+    "arknights-mission-core": "workspace:*"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",

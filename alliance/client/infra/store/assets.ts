@@ -1,7 +1,7 @@
 import type { Catalog } from '@alliance/contract/catalog.js';
 import { missingCueKeys } from '@alliance/data/pack-app';
 import { createStore } from 'zustand/vanilla';
-import type { ResourceStore } from '../resource/store.js';
+import type { ResourceStore } from '#infra/resource/store.js';
 import { catalogStore } from './catalog.js';
 
 /** The assets a match plays with. Bound when the match starts and kept as is until it ends. */

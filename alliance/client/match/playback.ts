@@ -1,7 +1,7 @@
 import type { ServerMessage } from '@alliance/contract/server-message.js';
 import type { Battle } from 'arknights-mission-core';
 import type { MissionMap } from 'arknights-mission-renderer';
-import type { BattleStart } from './playback/bridge.js';
+import type { BattleStart } from '#match/playback/bridge.js';
 
 export interface LocalBattle {
   readonly start: BattleStart;

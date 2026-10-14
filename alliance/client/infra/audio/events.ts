@@ -4,9 +4,9 @@ import type {
   RoomView,
 } from '@alliance/contract/server-message.js';
 import type { CueRole } from '@alliance/data/pack-app';
-import type { ConnectionStatus } from '../connection/socket.js';
-import type { MatchState } from '../store/match.js';
-import type { Presence } from '../store/presence.js';
+import type { ConnectionStatus } from '#infra/connection/socket.js';
+import type { MatchState } from '#infra/store/match.js';
+import type { Presence } from '#infra/store/presence.js';
 
 /** Cue of an intent the server accepted. */
 const INTENT_CUES: Readonly<Record<string, CueRole>> = {

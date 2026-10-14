@@ -16,13 +16,13 @@ import {
   screen,
 } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { IntentBus } from '../../infra/intent/bus.js';
-import { IntentContext } from '../../infra/intent/context.js';
-import { presenceStore } from '../../infra/store/presence.js';
-import { setLanguage, t } from '../../infra/text/index.js';
-import { PageBoundary, PartSlot } from '../../part/boundary.js';
-import { LeaveProvider } from '../../part/leave.js';
-import { LeaveRoom } from '../../shell/leave.js';
+import type { IntentBus } from '#infra/intent/bus.js';
+import { IntentContext } from '#infra/intent/context.js';
+import { presenceStore } from '#infra/store/presence.js';
+import { setLanguage, t } from '#infra/text/index.js';
+import { PageBoundary, PartSlot } from '#part/boundary.js';
+import { LeaveProvider } from '#part/leave.js';
+import { LeaveRoom } from '#shell/leave.js';
 
 let broken = true;
 function Fragile({ label }: { readonly label: string }) {

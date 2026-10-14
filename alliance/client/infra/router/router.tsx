@@ -9,19 +9,22 @@ import {
   useRouterState,
 } from '@tanstack/react-router';
 import { useEffect } from 'react';
-import { PlaybackContext } from '../../match/playback/context.js';
-import { LeaveProvider } from '../../part/leave.js';
-import { Part } from '../../part/registry.js';
-import { LeaveRoom } from '../../shell/leave.js';
-import { ShellFrame } from '../../shell/parts.js';
-import { FeedbackProvider } from '../../ui/feedback.js';
-import { playCue } from '../audio/feedback.js';
-import type { Runtime } from '../boot/boot.js';
-import { loadPage } from '../boot/parts.js';
-import { placeOf, settledPresence } from '../boot/presence.js';
-import { ConnectionContext } from '../connection/context.js';
-import { IntentContext } from '../intent/context.js';
-import { presenceStore } from '../store/presence.js';
+import { useStore } from 'zustand';
+import { InviteConfirm } from '#entry/invite.js';
+import { playCue } from '#infra/audio/feedback.js';
+import type { Runtime } from '#infra/boot/boot.js';
+import { loadPage } from '#infra/boot/parts.js';
+import { placeOf, settledPresence } from '#infra/boot/presence.js';
+import { ConnectionContext } from '#infra/connection/context.js';
+import { IntentContext } from '#infra/intent/context.js';
+import { presenceStore } from '#infra/store/presence.js';
+import { PlaybackContext } from '#match/playback-runtime.js';
+import { LeaveProvider } from '#part/leave.js';
+import { Part } from '#part/registry.js';
+import { LeaveRoom } from '#shell/leave.js';
+import { ShellFrame } from '#shell/parts.js';
+import { FeedbackProvider } from '#ui/feedback.js';
+import './menu.js';
 import { PAGE, type PageId } from './page.js';
 
 export interface RouterContext {
@@ -84,12 +87,35 @@ const page = (id: PageId) =>
     return <Part id={id} boundary="page" />;
   };
 
+const RoomPage = page(PAGE.room);
+
+/** The room page once the server has the player in this room; before that, a shared link's confirm. */
+function RoomGate() {
+  const { id } = roomRoute.useParams();
+  const navigate = useNavigate();
+  const inRoom = useStore(
+    presenceStore,
+    ({ presence }) => 'code' in presence && presence.code === id,
+  );
+  return inRoom ? (
+    <RoomPage />
+  ) : (
+    <InviteConfirm
+      code={id}
+      onBack={() => void navigate({ to: '/', replace: true })}
+    />
+  );
+}
+
 const rootRoute = createRootRouteWithContext<RouterContext>()({
   component: Shell,
 });
 
 const entryRoute = createRoute({
   getParentRoute: () => rootRoute,
+  staticData: {
+    menu: { label: 'core:nav.entry', order: 10, when: { room: false } },
+  },
   path: '/',
   beforeLoad: async () => {
     const { presence } = presenceStore.getState();
@@ -105,31 +131,10 @@ const entryRoute = createRoute({
   component: page(PAGE.entry),
 });
 
-const profileRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/profile',
-  component: page(PAGE.profile),
-});
-
-// local pages: they leave the connection alone and are reached from any page
-const loadoutRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/loadout',
-  loader: () => loadPage(PAGE.loadout),
-  component: page(PAGE.loadout),
-});
-
-const guideRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/guide',
-  loader: () => loadPage(PAGE.guide),
-  component: page(PAGE.guide),
-});
-
 const roomRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/room/$id',
-  beforeLoad: async ({ params, context }) => {
+  beforeLoad: async ({ params }) => {
     const presence = await settledPresence();
     if (presence === null) {
       throw redirect({ to: '/' });
@@ -143,13 +148,9 @@ const roomRoute = createRoute({
       }
       return;
     }
-    // connected outside any room: a shared or reloaded link joins the room
-    const outcome = await context.runtime.api.joinRoom(params.id);
-    if (!outcome.ok) {
-      throw redirect({ to: '/' });
-    }
+    // connected outside any room: the page asks before seating (RoomGate)
   },
-  component: page(PAGE.room),
+  component: RoomGate,
 });
 
 const matchRoute = createRoute({
@@ -162,18 +163,12 @@ const matchRoute = createRoute({
       throw redirect({ to: '/room/$id', params });
     }
   },
-  loader: () => loadPage(PAGE.match),
+  loader: ({ context }) =>
+    Promise.all([loadPage(PAGE.match), context.runtime.playback.load()]),
   component: page(PAGE.match),
 });
 
-const routeTree = rootRoute.addChildren([
-  entryRoute,
-  profileRoute,
-  loadoutRoute,
-  guideRoute,
-  roomRoute,
-  matchRoute,
-]);
+const routeTree = rootRoute.addChildren([entryRoute, roomRoute, matchRoute]);
 
 /** The page router. Without a history it follows the browser's address. */
 export function createAppRouter(runtime: Runtime, history?: RouterHistory) {

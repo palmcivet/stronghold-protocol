@@ -1,6 +1,6 @@
 import { type Catalog, EMPTY_CATALOG } from '@alliance/contract/catalog.js';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { ResourceStore } from '../resource/store.js';
+import type { ResourceStore } from '#infra/resource/store.js';
 import {
   assetsStore,
   bindMatchAssets,

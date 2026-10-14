@@ -1,4 +1,5 @@
 import { createStore } from 'zustand/vanilla';
+import { DIALOG, openDialog } from './dialog.js';
 
 export interface ConfirmOptions {
   readonly title: string;
@@ -16,14 +17,11 @@ export interface ConfirmRequest extends ConfirmOptions {
 interface OverlayState {
   /** Pending confirmations, the first one showing. */
   readonly confirms: readonly ConfirmRequest[];
-  /** Whether the in-match settings overlay is open. */
-  readonly settings: boolean;
 }
 
 /** State of the shell's overlay layer that parts of any page can open. */
 export const overlayStore = createStore<OverlayState>(() => ({
   confirms: [],
-  settings: false,
 }));
 
 const answers = new Map<number, (ok: boolean) => void>();
@@ -48,6 +46,7 @@ export function answerConfirm(id: number, ok: boolean): void {
   answers.delete(id);
 }
 
-export function openSettings(open = true): void {
-  overlayStore.setState({ settings: open });
+/** The settings: the profile dialog, the same one in a match and outside. */
+export function openSettings(): void {
+  void openDialog(DIALOG.profile);
 }

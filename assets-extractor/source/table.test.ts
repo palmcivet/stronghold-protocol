@@ -42,6 +42,7 @@ test('every routed source exists and covers its routes', async () => {
     'fexli',
     'fonts',
     'gamedata',
+    'local-client',
     'voice',
     'yuanyan',
   ]);
@@ -62,7 +63,9 @@ test('every routed source exists and covers its routes', async () => {
   expect(
     sourcesFor(key('image:prof/caster'), byId).map((source) => source.id),
   ).toEqual(['arknights-assets']);
-  expect(sourcesFor(key('texture:map/x'), byId)).toEqual([]);
+  expect(sourcesFor(key('texture:map/x'), byId).map((s) => s.id)).toEqual([
+    'local-client',
+  ]);
 });
 
 test.each(['arknights-assets', 'voice'])(

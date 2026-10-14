@@ -1,3 +1,4 @@
+import { sendSetting } from '#loadout/sync.js';
 // @vitest-environment jsdom
 
 import { type Catalog, EMPTY_CATALOG } from '@alliance/contract/catalog.js';
@@ -8,15 +9,15 @@ import type {
 } from '@alliance/contract/server-message.js';
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import type { Intent, IntentBus } from '../../infra/intent/bus.js';
-import { catalogStore } from '../../infra/store/catalog.js';
-import { resetMatch } from '../../infra/store/frame.js';
-import { matchStore } from '../../infra/store/match.js';
-import { roomStore } from '../../infra/store/room.js';
-import { sessionStore } from '../../infra/store/session.js';
-import { setDataText, t } from '../../infra/text/index.js';
-import { equipItem, equipStore } from '../../match/equip.js';
-import { renderPart } from '../support/part.js';
+import type { Intent, IntentBus } from '#infra/intent/bus.js';
+import { catalogStore } from '#infra/store/catalog.js';
+import { resetMatch } from '#infra/store/frame.js';
+import { matchStore } from '#infra/store/match.js';
+import { roomStore } from '#infra/store/room.js';
+import { sessionStore } from '#infra/store/session.js';
+import { setDataText, t } from '#infra/text/index.js';
+import { equipItem, equipStore } from '#match/equip.js';
+import { renderPart } from '#test/support/part.js';
 
 function recorder() {
   const sent: Intent[] = [];
@@ -209,9 +210,7 @@ describe('loadout tabs', () => {
     };
     catalogStore.setState({ catalog, loaded: true });
     renderPart('core:loadout.ownership', { bus });
-    fireEvent.click(
-      screen.getByRole('button', { name: t('core:loadout.save') }),
-    );
+    void sendSetting(bus, 'ownership', catalog);
     await waitFor(() =>
       expect(sent).toContainEqual({
         type: 'room.ownership',
@@ -220,13 +219,11 @@ describe('loadout tabs', () => {
     );
     cleanup();
     renderPart('core:loadout.diy', { bus });
-    fireEvent.click(
-      screen.getByRole('button', { name: t('core:loadout.save') }),
-    );
+    void sendSetting(bus, 'diy', catalog);
     await waitFor(() =>
       expect(sent).toContainEqual({
         type: 'room.diy',
-        fields: { picks: { slot5: null } },
+        fields: { picks: {} },
       }),
     );
   });

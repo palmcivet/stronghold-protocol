@@ -1,13 +1,17 @@
 import { GEO } from '@alliance/contract/match.js';
-import { type KeyboardEvent, useRef, useState } from 'react';
+import {
+  type CSSProperties,
+  type KeyboardEvent,
+  useRef,
+  useState,
+} from 'react';
 import { useStore } from 'zustand';
-import { useIntent } from '../../infra/intent/context.js';
-import { useMatch } from '../../infra/store/hook.js';
-import { useText } from '../../infra/text/index.js';
-import { cx } from '../../infra/theme/class-name.js';
-import { equipItem } from '../equip.js';
-import { pieceLabel } from '../piece-label.js';
-import { findPiece, pieceAt, selectionStore } from '../selection.js';
+import { useMatch } from '#infra/store/hook.js';
+import { useText } from '#infra/text/index.js';
+import { cx } from '#infra/theme/class-name.js';
+import { useBoardActions } from '#match/field/board-actions.js';
+import { pieceLabel } from '#match/piece-label.js';
+import { pieceAt, selectionStore } from '#match/selection.js';
 import styles from './field.module.css';
 
 const { r0, r1, c0, c1 } = GEO.FIELD;
@@ -16,12 +20,12 @@ const ROWS = Array.from({ length: r1 - r0 + 1 }, (_, index) => r1 - index);
 const COLS = Array.from({ length: c1 - c0 + 1 }, (_, index) => c0 + index);
 
 /**
- * The deployable board as a grid the keyboard and screen readers can use. Arrow keys move the focus; Enter or Space
- * picks the piece on a tile, or puts the picked piece there.
+ * The deployable board as a grid the keyboard and screen readers can use, over the 3D stage: hidden until a tile of it
+ * takes the focus. Arrow keys move the focus; Enter or Space picks the piece on a tile, or puts the picked piece there.
  */
 export function DomField({ canAct }: { readonly canAct: boolean }) {
   const t = useText();
-  const intents = useIntent();
+  const actions = useBoardActions(canAct);
   const view = useMatch((state) => state.private);
   const selected = useStore(selectionStore, (state) => state.uid);
   const [focus, setFocus] = useState<readonly [number, number]>([
@@ -30,30 +34,8 @@ export function DomField({ canAct }: { readonly canAct: boolean }) {
   ]);
   const grid = useRef<HTMLTableElement>(null);
 
-  const activate = async (row: number, col: number): Promise<void> => {
-    if (!canAct) {
-      return;
-    }
-    const occupant = pieceAt(view, row, col);
-    const holding = findPiece(view, selected);
-    if (!holding) {
-      selectionStore.setState({ uid: occupant?.uid ?? null });
-      return;
-    }
-    if (occupant?.uid === holding.piece.uid) {
-      selectionStore.setState({ uid: null });
-      return;
-    }
-    if (holding.piece.kind === 'item' && occupant && occupant.kind !== 'item') {
-      await equipItem(intents, holding.piece.uid, occupant);
-    } else {
-      await intents.dispatch({
-        type: 'g.move',
-        fields: { uid: holding.piece.uid, to: { area: 'board', row, col } },
-      });
-    }
-    selectionStore.setState({ uid: null });
-  };
+  const activate = (row: number, col: number): Promise<void> =>
+    actions.tile(row, col);
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     const [row, col] = focus;
@@ -78,8 +60,14 @@ export function DomField({ canAct }: { readonly canAct: boolean }) {
     <table
       ref={grid}
       aria-label={t('core:field.label')}
-      className={cx(styles.grid)}
-      style={{ gridTemplateColumns: `repeat(${COLS.length}, 1fr)` }}
+      className={cx(styles.grid, styles.keyboard)}
+      style={
+        {
+          gridTemplateColumns: `repeat(${COLS.length}, 1fr)`,
+          '--cols': COLS.length,
+          '--rows': ROWS.length,
+        } as CSSProperties
+      }
       onKeyDown={onKeyDown}
     >
       <tbody className={cx(styles.row)}>

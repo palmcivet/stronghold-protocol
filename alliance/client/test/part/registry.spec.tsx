@@ -2,32 +2,33 @@
 
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { registerAllParts } from '../../infra/boot/parts.js';
+import { registerAllParts } from '#infra/boot/parts.js';
 import {
   definePart,
   listParts,
   Part,
   replacePart,
   wrapPart,
-} from '../../part/registry.js';
-import { parseRichText } from '../../ui/rich-text.js';
+} from '#part/registry.js';
+import { parseRichText } from '#ui/rich-text.js';
 
 afterEach(cleanup);
 
-/** Part ids named in plans/UI.md (regions and slots excluded: they are containers, not parts). */
+/** Part ids named in the UI inventory (regions and slots excluded: they are containers, not parts). */
 const UI_PARTS = [
   'core:shell.backdrop',
-  'core:shell.nav',
+  'core:menu.entry',
   'core:shell.banner',
   'core:shell.toast',
   'core:shell.tooltip',
   'core:shell.confirm',
-  'core:shell.settings',
+  'core:shell.dialog',
   'core:entry.hero',
   'core:entry.name',
   'core:entry.create',
   'core:entry.join',
   'core:entry.server',
+  'core:entry.resume',
   'core:room.header',
   'core:room.roster',
   'core:room.seat',
@@ -66,6 +67,8 @@ const UI_PARTS = [
   'core:match.away',
   'core:match.vote',
   'core:match.emote',
+  'core:match.corner',
+  'core:match.phase-banner',
   'core:match.info',
   'core:match.stephead',
   'core:result.hero',
@@ -75,12 +78,13 @@ const UI_PARTS = [
   'core:loadout.detail',
   'core:loadout.ownership',
   'core:loadout.diy',
-  'core:screen.loadout',
-  'core:screen.guide',
+  'core:dialog.profile',
+  'core:dialog.loadout',
+  'core:dialog.guide',
 ];
 
 describe('part registry', () => {
-  it('registers every part UI.md names', async () => {
+  it('registers every part the UI inventory names', async () => {
     await registerAllParts();
     const known = new Set(listParts());
     expect(UI_PARTS.filter((id) => !known.has(id))).toEqual([]);

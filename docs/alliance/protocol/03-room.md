@@ -38,6 +38,10 @@ description: 建房、入座、准备、观战，以及房间状态推送。
   - 字段：`difficulty`
   - 谁可以发：大厅中的房主
   - 失败：`NOT_HOST`。改难度会使其他真人变为未准备
+- `room.setAiPicksLast`
+  - 字段：`on`，布尔
+  - 谁可以发：开局前的合作房房主
+  - 作用：策略与机变草稿中真人座位排在 AI 之前。状态见 `room.state.aiPicksLast`
 - `room.addBot`
   - 谁可以发：大厅中的合作房房主
   - 失败：`NOT_HOST`、`ROOM_FULL`；独立模拟不能加
@@ -52,10 +56,22 @@ description: 建房、入座、准备、观战，以及房间状态推送。
 - `room.start`
   - 谁可以发：房主
   - 失败：其他真人未连接或未准备时 `NOT_READY`。房主自己的开始视为房主已准备。同一网络进行中的对局超限时 `RATE`
+- `room.rerollSetup`
+  - 字段：`setupRevision`
+  - 谁可以发：简报阶段的房主，发起重刷本局投票
+- `room.cancelReroll`
+  - 字段：`voteId`
+  - 谁可以发：取消进行中的重刷投票
 - `room.loadout`
-  - 字段：`entries`
-  - 谁可以发：会话。对局已过确认信息阶段时，本局配装不再更换
-  - 失败：见下文
+  - 字段：`entries`，可选 `ops`
+  - 谁可以发：会话。对局已过确认信息阶段时，本局调配不再更换
+  - 失败：见下文。形状在 `@alliance/contract`；next 侧持久化与开局取值「待新 server」
+- `room.ownership`
+  - 字段：`notOwned`（未持有的基础干员 id 列表，最多 160）
+  - 谁可以发：会话。对局中回复 `ROOM_STARTED`，已保存供下一局。形状在契约；next 分发「待新 server」
+- `room.diy`
+  - 字段：`picks`（自选格 → `{ charId, skillIndex?, uniEquipId? }` 或 `null`，最多 8 格）
+  - 谁可以发：同持有。形状在契约；next 分发「待新 server」
 - `room.spectate`
   - 字段：`code`
   - 谁可以发：合作房间，大厅或对局中
@@ -71,9 +87,11 @@ description: 建房、入座、准备、观战，以及房间状态推送。
 
 `entries` 是 `{ [baseChessId]: { skill?: 技能序号, module?: 模组 id | "none" } }`。最多 160 条。技能序号为 0–9 的整数。键是可见的基础干员 id，不能是精英 id。
 
-服务端按数据包检查：未知、隐藏或非法的技能、模组会使整份配装被拒绝（`BAD_MSG` 或 `BAD_TARGET`），不写入。与默认技能、默认模组相同的条目不保存。没有精英的干员不能带 `module`。保存下来的每条是 `{ skill, module }`，没有精英时 `module` 为 `null`。
+可选 `ops`（master 0.2.2）：`{ [charId]: { potential?, cultivate? } }`，至少给一项。缺省表示未设置（潜能 6、练度满）。
 
-配装记在会话上，创建或加入房间时带到座位，断线重连仍在。机器人没有配装，用数据包默认值。对局进行中，只有确认信息阶段接受更换；之后回复 `WRONG_PHASE`，已保存的配装留给下一局。
+服务端按数据包检查：未知、隐藏或非法的技能、模组会使整份调配被拒绝（`BAD_MSG` 或 `BAD_TARGET`），不写入。与默认技能、默认模组相同的条目不保存。没有精英的干员不能带 `module`。保存下来的每条是 `{ skill, module }`，没有精英时 `module` 为 `null`。
+
+调配记在会话上，创建或加入房间时带到座位，断线重连仍在。机器人没有调配，用数据包默认值。对局进行中，只有确认信息阶段接受更换；之后回复 `WRONG_PHASE`，已保存的调配留给下一局。
 
 ### 观战座位
 
@@ -94,6 +112,7 @@ description: 建房、入座、准备、观战，以及房间状态推送。
 - `inMatch`：是否有进行中的对局
 - `seats`：长度 4。空座为 `null`。有人时为 `{ seat, playerId, name, isBot, ready, connected }`
 - `spectators`：`{ playerId, name, connected }` 的列表
+- `aiPicksLast`：可选布尔。合作房「AI 队友最后选择」
 
 `connected` 对已离开的玩家为假。大厅里有人断线时座位先保持，60 秒内重连可以回来；超时后该会话下次恢复会收到 `room.closed`。对局中断线不腾座位。
 

@@ -3,7 +3,7 @@ import {
   ProgressBar as AriaProgressBar,
   Keyboard,
 } from 'react-aria-components';
-import { cx } from '../infra/theme/class-name.js';
+import { cx } from '#infra/theme/class-name.js';
 import { Icon, type IconName } from './icon.js';
 import styles from './widget.module.css';
 

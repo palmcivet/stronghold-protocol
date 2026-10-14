@@ -3,21 +3,29 @@ import type {
   PrivateView,
 } from '@alliance/contract/server-message.js';
 import { createStore } from 'zustand/vanilla';
+import { onMatchReset } from '#infra/store/frame.js';
 
 export interface SelectionState {
   /** Uid of the piece the player picked up. */
   readonly uid: number | null;
+  /** Enemy opened from the pen / intel drawer (mutually exclusive with uid). */
+  readonly enemyDetail: { readonly id: string; readonly count?: number } | null;
 }
 
 export const selectionStore = createStore<SelectionState>(() => ({
   uid: null,
+  enemyDetail: null,
 }));
+
+onMatchReset(() => selectionStore.setState({ uid: null, enemyDetail: null }));
 
 export type PieceArea = 'board' | 'hand' | 'temp';
 
 export interface LocatedPiece {
   readonly piece: PieceView;
   readonly area: PieceArea;
+  /** Hand / temp slot index; null on the board. */
+  readonly idx: number | null;
 }
 
 /** The piece with the uid and where it is, or null. */
@@ -30,14 +38,19 @@ export function findPiece(
   }
   const board = view.board.find((piece) => piece.uid === uid);
   if (board) {
-    return { piece: board, area: 'board' };
+    return { piece: board, area: 'board', idx: null };
   }
-  const hand = view.hand.find((piece) => piece?.uid === uid);
-  if (hand) {
-    return { piece: hand, area: 'hand' };
+  const handIdx = view.hand.findIndex((piece) => piece?.uid === uid);
+  if (handIdx >= 0) {
+    const hand = view.hand[handIdx];
+    return hand ? { piece: hand, area: 'hand', idx: handIdx } : null;
   }
-  const temp = view.temp.find((piece) => piece?.uid === uid);
-  return temp ? { piece: temp, area: 'temp' } : null;
+  const tempIdx = view.temp.findIndex((piece) => piece?.uid === uid);
+  if (tempIdx >= 0) {
+    const temp = view.temp[tempIdx];
+    return temp ? { piece: temp, area: 'temp', idx: tempIdx } : null;
+  }
+  return null;
 }
 
 /** First free bench slot, or null when the bench is full. */

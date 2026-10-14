@@ -17,15 +17,15 @@ import {
   screen,
 } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { followLeaves } from '../../infra/boot/presence.js';
-import type { Connection } from '../../infra/connection/socket.js';
-import type { IntentBus } from '../../infra/intent/bus.js';
-import { createIntentBus } from '../../infra/intent/bus.js';
-import { IntentContext } from '../../infra/intent/context.js';
-import { presenceStore } from '../../infra/store/presence.js';
-import { roomStore } from '../../infra/store/room.js';
-import { t } from '../../infra/text/index.js';
-import { LeaveRoom } from '../../shell/leave.js';
+import { followLeaves } from '#infra/boot/presence.js';
+import type { Connection } from '#infra/connection/socket.js';
+import type { IntentBus } from '#infra/intent/bus.js';
+import { createIntentBus } from '#infra/intent/bus.js';
+import { IntentContext } from '#infra/intent/context.js';
+import { presenceStore } from '#infra/store/presence.js';
+import { roomStore } from '#infra/store/room.js';
+import { t } from '#infra/text/index.js';
+import { LeaveRoom } from '#shell/leave.js';
 
 async function press(element: HTMLElement): Promise<void> {
   await act(async () => {

@@ -2,12 +2,12 @@
 
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { MASTER_CAPABILITIES } from '../../infra/connection/backend.js';
-import { roomStore } from '../../infra/store/room.js';
-import { sessionStore } from '../../infra/store/session.js';
-import { t } from '../../infra/text/index.js';
-import { registerLoadoutParts } from '../../loadout/contribute.js';
-import { insertPart, Slot } from '../../part/slot.js';
+import { MASTER_CAPABILITIES } from '#infra/connection/backend.js';
+import { roomStore } from '#infra/store/room.js';
+import { sessionStore } from '#infra/store/session.js';
+import { t } from '#infra/text/index.js';
+import { registerLoadoutParts } from '#loadout/contribute.js';
+import { insertPart, Slot } from '#part/slot.js';
 
 afterEach(() => {
   cleanup();

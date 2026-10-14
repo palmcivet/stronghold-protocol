@@ -4,13 +4,13 @@ import { type Catalog, EMPTY_CATALOG } from '@alliance/contract/catalog.js';
 import type { PublicView } from '@alliance/contract/server-message.js';
 import { cleanup, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import type { IntentBus } from '../../infra/intent/bus.js';
-import { catalogStore } from '../../infra/store/catalog.js';
-import { resetMatch } from '../../infra/store/frame.js';
-import { matchStore } from '../../infra/store/match.js';
-import { sessionStore } from '../../infra/store/session.js';
-import { t } from '../../infra/text/index.js';
-import { renderPart } from '../support/part.js';
+import type { IntentBus } from '#infra/intent/bus.js';
+import { catalogStore } from '#infra/store/catalog.js';
+import { resetMatch } from '#infra/store/frame.js';
+import { matchStore } from '#infra/store/match.js';
+import { sessionStore } from '#infra/store/session.js';
+import { t } from '#infra/text/index.js';
+import { renderPart } from '#test/support/part.js';
 
 const bus: IntentBus = {
   dispatch: async () => ({ ok: true, reply: { t: 'ok' } }),

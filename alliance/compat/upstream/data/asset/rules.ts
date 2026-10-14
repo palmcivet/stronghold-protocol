@@ -38,6 +38,8 @@ export interface MappedRule extends RuleBase {
   readonly key: (context: RuleContext) => string;
   /** `refs` path of the key, or null when the domain has no id for it. For a `texts` leaf the path holds the list of keys. */
   readonly ref: ((context: RuleContext) => readonly string[]) | null;
+  /** Variant label of an image (`elite0`, `elite2`, `skin`), as the extractor writes it. */
+  readonly label?: string;
   /** Writes the key of a `text` leaf as a list of one, where the `refs` shape holds lists. */
   readonly refList?: boolean;
   /** Path of the key in the cue table of `app.cues`, beside `ref`; null when the leaf has no role. */
@@ -162,6 +164,7 @@ export const ASSET_RULES: readonly AssetRule[] = [
     pattern: CHAR_AVATAR,
     key: (context) => `image:char/avatar/${captureOf(context.captures, 1)}`,
     ref: (context) => ['chars', paramOf(context, 0), 'avatar'],
+    label: 'elite0',
   },
   {
     action: 'map',
@@ -171,6 +174,7 @@ export const ASSET_RULES: readonly AssetRule[] = [
     pattern: /^\/assets\/char\/avatar\/([^/]+_2)\.png$/,
     key: (context) => `image:char/avatar/${captureOf(context.captures, 1)}`,
     ref: (context) => ['chars', paramOf(context, 0), 'avatarElite'],
+    label: 'elite2',
   },
   {
     action: 'map',

@@ -10,6 +10,8 @@ export interface BattleProgress {
   readonly gt: number;
   readonly killed: number;
   readonly total: number;
+  /** Ally deploy-cost pool for the combat HUD COST readout. */
+  readonly dp?: number;
   readonly done?: boolean;
 }
 

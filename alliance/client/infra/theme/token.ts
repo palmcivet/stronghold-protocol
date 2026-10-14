@@ -134,7 +134,7 @@ function cssValue(token: Token): string {
   }
 }
 
-/** Custom properties of a token tree: the path joined by `-`, such as `--color-bg-0`. */
+/** Custom properties of a token tree: the path joined by `-`, such as `--wsde-color-bg-0`. */
 export function tokenProperties(
   group: TokenGroup,
   prefix: readonly string[] = [],
@@ -146,7 +146,7 @@ export function tokenProperties(
     }
     const path = [...prefix, name];
     if (isToken(value)) {
-      out.push([`--${path.join('-')}`, cssValue(value)]);
+      out.push([`--wsde-${path.join('-')}`, cssValue(value)]);
     } else {
       out.push(...tokenProperties(value, path));
     }

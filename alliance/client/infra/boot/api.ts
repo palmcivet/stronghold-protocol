@@ -1,10 +1,10 @@
-import { playbackStore } from '../../match/playback-state.js';
-import type { Connection } from '../connection/socket.js';
-import type { Intent, IntentBus, IntentOutcome } from '../intent/bus.js';
-import { matchStore } from '../store/match.js';
-import { roomStore } from '../store/room.js';
-import { sessionStore } from '../store/session.js';
-import { settingsStore } from '../store/settings.js';
+import type { Connection } from '#infra/connection/socket.js';
+import type { Intent, IntentBus, IntentOutcome } from '#infra/intent/bus.js';
+import { matchStore } from '#infra/store/match.js';
+import { roomStore } from '#infra/store/room.js';
+import { sessionStore } from '#infra/store/session.js';
+import { settingsStore } from '#infra/store/settings.js';
+import { playbackStore } from '#match/playback-state.js';
 
 /** What the page exposes to page scripts, community shells and end-to-end tests. */
 export interface AllianceApi {

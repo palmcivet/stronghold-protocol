@@ -1,4 +1,4 @@
-import type { CORE } from './catalog/core.js';
+import type { CORE } from '#infra/text/catalog/core.js';
 
 export type CoreKey = keyof typeof CORE;
 /** Every key the host knows. `data:` and `server:` keys come from data and are not typed one by one. */

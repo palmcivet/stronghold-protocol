@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { useArt } from '../infra/resource/art.js';
-import { useText } from '../infra/text/index.js';
-import { cx } from '../infra/theme/class-name.js';
-import { Button, Cluster, Placeholder, Stack, Tabs } from '../ui/index.js';
+import { useArt } from '#infra/resource/art.js';
+import { useText } from '#infra/text/index.js';
+import { cx } from '#infra/theme/class-name.js';
+import { Button, Cluster, Placeholder, Stack, Tabs } from '#ui/index.js';
 import styles from './guide.module.css';
 
 /** Official tutorial pages in reading order, by chapter. The page key names its picture (`guide/<key>`). */

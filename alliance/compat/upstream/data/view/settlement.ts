@@ -1,4 +1,5 @@
 import type {
+  ResultBond,
   ResultLineupEntry,
   ResultRow,
   ResultStats,
@@ -73,9 +74,31 @@ function lineupOf(value: unknown): ResultLineupEntry[] | undefined {
         id: entry.id,
         golden: bool(entry.golden),
         tier: num(entry.tier),
+        diy:
+          isRecord(entry.diy) && typeof entry.diy.charId === 'string'
+            ? { charId: entry.diy.charId }
+            : undefined,
+        standInFor: str(entry.standInFor),
       }),
     ];
   });
+}
+
+function bondsOf(value: unknown): ResultBond[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+  return value.flatMap((entry) =>
+    isRecord(entry) && typeof entry.bondId === 'string'
+      ? [
+          defined<ResultBond>({
+            bondId: entry.bondId,
+            active: bool(entry.active),
+            layers: num(entry.layers),
+          }),
+        ]
+      : [],
+  );
 }
 
 function statsOf(value: unknown): ResultStats | undefined {
@@ -120,7 +143,11 @@ function rowOf(value: unknown): ResultRow[] {
       lp: num(value.lp),
       bandId: strOrNull(value.bandId),
       lineup: lineupOf(value.lineup),
+      bonds: bondsOf(value.bonds),
       stats: statsOf(value.stats),
+      trophies: num(value.trophies),
+      reward: num(value.reward),
+      left: bool(value.left),
       title: titleOf(value.title),
     }),
   ];

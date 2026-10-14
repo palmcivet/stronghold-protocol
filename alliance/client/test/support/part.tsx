@@ -1,9 +1,9 @@
 import { type RenderResult, render } from '@testing-library/react';
-import { registerAllParts } from '../../infra/boot/parts.js';
-import type { IntentBus } from '../../infra/intent/bus.js';
-import { IntentContext } from '../../infra/intent/context.js';
-import { Part } from '../../part/registry.js';
-import { FeedbackProvider, type PlayFeedback } from '../../ui/feedback.js';
+import { registerAllParts } from '#infra/boot/parts.js';
+import type { IntentBus } from '#infra/intent/bus.js';
+import { IntentContext } from '#infra/intent/context.js';
+import { Part } from '#part/registry.js';
+import { FeedbackProvider, type PlayFeedback } from '#ui/feedback.js';
 
 const quiet: PlayFeedback = () => {};
 

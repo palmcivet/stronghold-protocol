@@ -18,6 +18,7 @@ import { fontsSource } from '#source/fonts/adapter.js';
 import { gamedataSource } from '#source/gamedata/adapter.js';
 import { loadPathTable } from '#source/path-table.js';
 import { voiceSource } from '#source/voice/adapter.js';
+import { localClientSource } from '#source/local-client/adapter.js';
 import { yuanyanSource } from '#source/yuanyan/adapter.js';
 
 export interface SourceRoute {
@@ -54,7 +55,7 @@ export const SOURCE_TABLE: readonly SourceRoute[] = Object.freeze([
   { kind: 'image', namespace: 'band', sources: ['arknights-assets'] },
   { kind: 'image', namespace: 'bond', sources: ['arknights-assets'] },
   { kind: 'image', namespace: 'season', sources: ['arknights-assets'] },
-  { kind: 'texture', namespace: 'map', sources: [] },
+  { kind: 'texture', namespace: 'map', sources: ['local-client'] },
   { kind: 'texture', namespace: 'mesh', sources: [] },
   { kind: 'spine', namespace: 'char', sources: ['fexli'] },
   { kind: 'spine', namespace: 'skin', sources: ['fexli'] },
@@ -66,7 +67,7 @@ export const SOURCE_TABLE: readonly SourceRoute[] = Object.freeze([
   { kind: 'font', namespace: '', sources: ['fonts'] },
   { kind: 'model', namespace: 'mesh', sources: [] },
   { kind: 'json', namespace: 'gamedata', sources: ['gamedata'] },
-  { kind: 'json', namespace: 'material', sources: [] },
+  { kind: 'json', namespace: 'material', sources: ['local-client'] },
   { kind: 'json', namespace: 'prefab', sources: [] },
   { kind: 'json', namespace: 'anim-roles', sources: [] },
   { kind: 'json', namespace: 'board', sources: [] },
@@ -109,9 +110,10 @@ export function sourcesFor(
     );
 }
 
-/** The seven git sources, with their path tables loaded from the adapter directories. */
+/** Local-client cache (when present) plus the git sources, with path tables loaded from the adapter directories. */
 export async function createSources(files: BuildFiles): Promise<AssetSource[]> {
   return [
+    localClientSource(),
     yuanyanSource(),
     fexliSource(),
     arkModelsSource(),

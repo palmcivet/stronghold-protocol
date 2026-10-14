@@ -1,6 +1,5 @@
 import type { ServerMessage } from '@alliance/contract/server-message.js';
-import { playbackStore } from '../../match/playback-state.js';
-import { layerCue, trackFor } from '../audio/cue.js';
+import { layerCue, trackFor } from '#infra/audio/cue.js';
 import {
   connectionCue,
   countdownCue,
@@ -10,21 +9,22 @@ import {
   intentCue,
   presenceCue,
   roomCue,
-} from '../audio/events.js';
-import { setCueSink } from '../audio/feedback.js';
+} from '#infra/audio/events.js';
+import { setCueSink } from '#infra/audio/feedback.js';
 import {
   type AudioOutput,
   type AudioPacks,
   type AudioPlayer,
   createAudioPlayer,
-} from '../audio/player.js';
-import type { IntentBus } from '../intent/bus.js';
-import { assetsStore } from '../store/assets.js';
-import { matchStore, secondsLeft } from '../store/match.js';
-import { presenceStore } from '../store/presence.js';
-import { roomStore } from '../store/room.js';
-import { sessionStore } from '../store/session.js';
-import { audioGains, settingsStore } from '../store/settings.js';
+} from '#infra/audio/player.js';
+import type { IntentBus } from '#infra/intent/bus.js';
+import { assetsStore } from '#infra/store/assets.js';
+import { matchStore, secondsLeft } from '#infra/store/match.js';
+import { presenceStore } from '#infra/store/presence.js';
+import { roomStore } from '#infra/store/room.js';
+import { sessionStore } from '#infra/store/session.js';
+import { audioGains, settingsStore } from '#infra/store/settings.js';
+import { playbackStore } from '#match/playback-state.js';
 
 /** Plays through audio elements. A play the browser refuses before the first user gesture stays silent. */
 export function elementOutput(): AudioOutput {

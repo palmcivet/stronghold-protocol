@@ -1,108 +1,33 @@
-import { Link } from '@tanstack/react-router';
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 import { useStore } from 'zustand';
-import { useSession } from '../infra/store/hook.js';
-import { presenceStore } from '../infra/store/presence.js';
-import { useText } from '../infra/text/index.js';
-import { cx } from '../infra/theme/class-name.js';
-import { DefaultError } from '../part/boundary.js';
-import { answerConfirm, openSettings, overlayStore } from '../part/overlay.js';
-import { definePart, Part } from '../part/registry.js';
-import { type PartInsert, Slot } from '../part/slot.js';
-import { PartTabs } from '../part/tabs.js';
-import { Badge, Button, Dialog, Modal } from '../ui/index.js';
+import { lookup, useText } from '#infra/text/index.js';
+import { cx } from '#infra/theme/class-name.js';
+import { DefaultError } from '#part/boundary.js';
+import { BACK_KEYS, closeDialog, dialogStore } from '#part/dialog.js';
+import { answerConfirm, overlayStore } from '#part/overlay.js';
+import { definePart, Part } from '#part/registry.js';
+import { type PartInsert, Slot } from '#part/slot.js';
+import { Button, Dialog, Modal } from '#ui/index.js';
 import { ConnectionBanner } from './banner.js';
-import { LeaveRoom } from './leave.js';
+import { MENU_ENTRY, MenuEntry } from './menu.js';
 import styles from './shell.module.css';
 import { Toasts } from './toast.js';
 
 /** Ids of the shell's parts and containers. */
 export const SHELL = {
   backdrop: 'core:shell.backdrop',
-  nav: 'core:shell.nav',
   banner: 'core:shell.banner',
   overlay: 'core:shell.overlay',
   toast: 'core:shell.toast',
   tooltip: 'core:shell.tooltip',
   confirm: 'core:shell.confirm',
-  settings: 'core:shell.settings',
+  dialog: 'core:shell.dialog',
   error: 'core:shell.error',
 } as const;
 
 /** The season backdrop under every page. */
 function Backdrop() {
   return <div className={cx(styles.backdropArt)} aria-hidden="true" />;
-}
-
-function NavLink({
-  to,
-  children,
-}: {
-  readonly to: '/' | '/profile' | '/loadout' | '/guide';
-  readonly children: ReactNode;
-}) {
-  return (
-    <Link
-      to={to}
-      className={cx(styles.navLink)}
-      activeProps={{ 'aria-current': 'page' }}
-    >
-      {children}
-    </Link>
-  );
-}
-
-/** The lobby link, or the leave flow while the server holds the player in a room. */
-function NavLobby() {
-  const t = useText();
-  const inRoom = useStore(presenceStore, (state) => 'code' in state.presence);
-  return inRoom ? (
-    <LeaveRoom />
-  ) : (
-    <NavLink to="/">{t('core:nav.entry')}</NavLink>
-  );
-}
-
-function NavProfile() {
-  const t = useText();
-  return <NavLink to="/profile">{t('core:nav.profile')}</NavLink>;
-}
-
-function NavLoadout() {
-  const t = useText();
-  return <NavLink to="/loadout">{t('core:nav.loadout')}</NavLink>;
-}
-
-function NavGuide() {
-  const t = useText();
-  return <NavLink to="/guide">{t('core:nav.guide')}</NavLink>;
-}
-
-const NAV_DEFAULTS: readonly PartInsert[] = [
-  { into: SHELL.nav, id: 'core:shell.nav.lobby', order: 10 },
-  { into: SHELL.nav, id: 'core:shell.nav.profile', order: 20 },
-  {
-    into: SHELL.nav,
-    id: 'core:shell.nav.loadout',
-    order: 30,
-    when: { capability: 'loadout' },
-  },
-  { into: SHELL.nav, id: 'core:shell.nav.guide', order: 40 },
-];
-
-/** The shell bar: the title, the backend's mode and the navigation container. */
-function Nav() {
-  const t = useText();
-  const compat = useSession((state) => state.backend?.mode === 'compat');
-  return (
-    <header className={cx(styles.bar)}>
-      <span className={cx(styles.brand)}>{t('core:app.title')}</span>
-      {compat ? <Badge tone="warn">{t('core:connection.compat')}</Badge> : null}
-      <nav className={cx(styles.nav)} aria-label={t('core:nav.label')}>
-        <Slot id={SHELL.nav} defaults={NAV_DEFAULTS} />
-      </nav>
-    </header>
-  );
 }
 
 /** The shell's confirm and notice dialog, one request at a time. */
@@ -142,40 +67,78 @@ function Confirm() {
   );
 }
 
-/** The in-match settings overlay: the same `core:profile.*` tabs as the profile page. */
-function SettingsOverlay() {
+/**
+ * The dialog layer: the dialog showing, its content the part of its id. Escape (the modal) and the back keys close
+ * it (the browser back key and the mouse back button; a host's back button calls `closeDialog`); the address stays.
+ */
+function DialogHost() {
   const t = useText();
-  const open = useStore(overlayStore, (state) => state.settings);
+  const open = useStore(dialogStore, (state) =>
+    state.open
+      ? (state.dialogs.find((item) => item.id === state.open) ?? null)
+      : null,
+  );
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const onKey = (event: KeyboardEvent): void => {
+      if (BACK_KEYS.includes(event.key) && event.key !== 'Escape') {
+        event.preventDefault();
+        closeDialog();
+      }
+    };
+    const onPointer = (event: MouseEvent): void => {
+      // the mouse's back button
+      if (event.button === 3) {
+        event.preventDefault();
+        closeDialog();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('mouseup', onPointer);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('mouseup', onPointer);
+    };
+  }, [open]);
+  if (!open) {
+    return null;
+  }
   return (
-    <Modal isOpen={open} onOpenChange={openSettings}>
+    <Modal
+      isOpen
+      size={open.size ?? 'panel'}
+      onOpenChange={(next) => !next && closeDialog()}
+    >
       <Dialog
-        title={t('core:settings.heading')}
+        title={lookup(open.title)}
         closeLabel={t('core:common.close')}
-        onClose={() => openSettings(false)}
+        onClose={closeDialog}
       >
-        <PartTabs id="core:profile.tabs" label={t('core:settings.heading')} />
+        <Part id={open.id} boundary="page" />
       </Dialog>
     </Modal>
   );
 }
 
 const OVERLAY_DEFAULTS: readonly PartInsert[] = [
-  { into: SHELL.overlay, id: SHELL.settings, order: 10 },
+  { into: SHELL.overlay, id: SHELL.dialog, order: 10 },
   { into: SHELL.overlay, id: SHELL.confirm, order: 20 },
 ];
 
-/** Tooltips render in a portal from their triggers; this layer only fixes where they stack (`--layer-tooltip`). */
+/** Tooltips render in a portal from their triggers; this layer only fixes where they stack (`--wsde-layer-tooltip`). */
 function TooltipLayer() {
   return null;
 }
 
-/** The five layers of the shell, bottom to top: backdrop, page, bar, overlay, toast. */
+/** The layers of the shell, bottom to top: backdrop, banner, page, overlay, toast. */
 export function ShellFrame({
   children,
   bare = false,
 }: {
   readonly children: ReactNode;
-  /** The match page hides the nav and moves the banner under its top bar. */
+  /** The match page moves the banner under its top bar. */
   readonly bare?: boolean;
 }) {
   return (
@@ -184,7 +147,6 @@ export function ShellFrame({
         <Part id={SHELL.backdrop} />
       </div>
       <div className={cx(styles.barLayer)} data-layer="bar">
-        {bare ? null : <Part id={SHELL.nav} />}
         <div className={cx(styles.bannerSlot)}>
           <Part id={SHELL.banner} />
         </div>
@@ -207,16 +169,12 @@ export function ShellFrame({
 export function registerShellParts(): () => void {
   const stops = [
     definePart(SHELL.backdrop, Backdrop, { extensible: true }),
-    definePart(SHELL.nav, Nav, { extensible: true }),
-    definePart('core:shell.nav.lobby', NavLobby),
-    definePart('core:shell.nav.profile', NavProfile),
-    definePart('core:shell.nav.loadout', NavLoadout),
-    definePart('core:shell.nav.guide', NavGuide),
+    definePart(MENU_ENTRY, MenuEntry, { extensible: true }),
     definePart(SHELL.banner, ConnectionBanner, { extensible: true }),
     definePart(SHELL.toast, Toasts, { extensible: true }),
     definePart(SHELL.tooltip, TooltipLayer),
     definePart(SHELL.confirm, Confirm),
-    definePart(SHELL.settings, SettingsOverlay, { extensible: true }),
+    definePart(SHELL.dialog, DialogHost, { extensible: true }),
     definePart(SHELL.error, DefaultError),
   ];
   return () => {

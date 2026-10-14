@@ -16,7 +16,7 @@ export type PartWrapper = ComponentType<{
 }>;
 
 export interface PartOptions {
-  /** Opens `replace` and `wrap` on the id (ARCH.md `defineExtensible`). */
+  /** Opens `replace` and `wrap` on the id (`defineExtensible`). */
   readonly extensible?: boolean;
   /** Text key of the part's title, read by containers that label their children, such as tabs. */
   readonly title?: string;

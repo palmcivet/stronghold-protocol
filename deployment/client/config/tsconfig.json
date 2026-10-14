@@ -1,6 +1,7 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
+    "types": ["node"],
     "customConditions": ["@wsde/source"],
     "outDir": "dist",
     "rootDir": ".",

@@ -1,9 +1,9 @@
 import { EMOTE_CATALOG, EMOTE_COOLDOWN_MS } from '@alliance/contract/match.js';
 import { useEffect, useState } from 'react';
-import { useIntent } from '../../infra/intent/context.js';
-import { useMatch } from '../../infra/store/hook.js';
-import { lookup, useText } from '../../infra/text/index.js';
-import { ActionMenu } from '../../ui/index.js';
+import { useIntent } from '#infra/intent/context.js';
+import { useMatch } from '#infra/store/hook.js';
+import { lookup, useText } from '#infra/text/index.js';
+import { ActionMenu } from '#ui/index.js';
 
 /** Name of an official emote: its data text, or the official label. */
 export function emoteName(id: string): string {

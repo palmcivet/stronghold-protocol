@@ -81,6 +81,13 @@ export type MissionBoard = MissionStage & {
   readonly actors: MissionActorWorld;
   readonly hud: MissionHudLayer;
   readonly effects: MissionEffectLayer;
+  /**
+   * Hot-update the actors' skeleton runtime and resource port after the stage was created without them
+   * (late asset load). Appearances already dispatched will load models on the next bind.
+   */
+  readonly configureActors: (
+    next: Pick<MissionActorWorldOptions, 'skeleton' | 'resources'>,
+  ) => void;
 };
 
 export interface MissionStageOptions {
@@ -283,11 +290,13 @@ export function createMissionStage(
   };
 
   const pitch = options.terrain?.projection?.pitch;
-  const actors = createActorWorld({
+  // Stable bag so `configureActors` can hot-update skeleton/resources without rebuilding the stage.
+  const actorOptions: MissionActorWorldOptions = {
     ...options.actors,
     ...(pitch !== undefined ? { pitch } : {}),
     ...(terrain ? { surface: terrain.surfaceHeight } : {}),
-  });
+  };
+  const actors = createActorWorld(actorOptions);
   const renderer = terrain?.renderer ?? null;
   impostorAtlas =
     options.impostor && renderer
@@ -491,6 +500,9 @@ export function createMissionStage(
     actors,
     hud,
     effects,
+    configureActors(next) {
+      Object.assign(actorOptions, next);
+    },
     update(deltaSeconds) {
       loop.run({
         deltaSeconds,

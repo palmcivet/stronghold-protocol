@@ -1,6 +1,6 @@
 import { validateC2S } from '@alliance/contract/message.js';
-import type { Connection, Frame } from '../connection/socket.js';
-import { RequestError } from '../connection/socket.js';
+import type { Connection, Frame } from '#infra/connection/socket.js';
+import { RequestError } from '#infra/connection/socket.js';
 
 /** A `g.*` or `room.*` message the interface asks for. */
 export interface Intent {

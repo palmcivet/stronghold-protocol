@@ -1,5 +1,5 @@
-import { useText } from '../infra/text/index.js';
-import { Placeholder } from '../ui/index.js';
+import { useText } from '#infra/text/index.js';
+import { Placeholder } from '#ui/index.js';
 
 /** A stand-in for a part that is not built yet; it shows its id so the layout can be checked. */
 export function placeholderPart(id: string) {

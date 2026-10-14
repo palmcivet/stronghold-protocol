@@ -6,8 +6,8 @@ import {
   createFrameClock,
   type MissionModule,
 } from 'arknights-mission-core';
-import type { LocalBattle, Playback } from '../playback.js';
-import { playbackStore } from '../playback-state.js';
+import type { LocalBattle, Playback } from '#match/playback.js';
+import { playbackStore } from '#match/playback-state.js';
 import type { BattleBridge, BattleStart } from './bridge.js';
 
 /** Game seconds per real second, as the master backend runs its battles. */
@@ -58,11 +58,17 @@ export function createPlayback(options: PlaybackOptions): Playback {
         ? safePrepare(options.bridge, start)
         : null;
     if (prepared) {
-      local = {
-        start,
-        battle: build(prepared.spec, prepared.modules),
-        map: prepared.map,
-      };
+      try {
+        local = {
+          start,
+          battle: build(prepared.spec, prepared.modules),
+          map: prepared.map,
+        };
+      } catch (failure) {
+        // Unknown content tags / modules must not break the match frame listener.
+        console.warn('[playback] the battle cannot start here', failure);
+        local = null;
+      }
     }
     playbackStore.setState({
       battle: {
@@ -73,10 +79,14 @@ export function createPlayback(options: PlaybackOptions): Playback {
         mode: local ? 'local' : 'server',
         killed: 0,
         total: 0,
+        dp: null,
         done: start.done,
         endReason: null,
       },
     });
+    if (local) {
+      report();
+    }
     notify();
   }
 
@@ -89,7 +99,12 @@ export function createPlayback(options: PlaybackOptions): Playback {
     const current = playbackStore.getState().battle;
     if (current) {
       playbackStore.setState({
-        battle: { ...current, killed: progress.killed, total: progress.total },
+        battle: {
+          ...current,
+          killed: progress.killed,
+          total: progress.total,
+          dp: progress.dp ?? current.dp,
+        },
       });
     }
   }
@@ -153,7 +168,14 @@ export function createPlayback(options: PlaybackOptions): Playback {
       if (!local || reported) {
         return;
       }
-      clock.advance(local.battle, seconds, PLAYBACK_SPEED);
+      try {
+        clock.advance(local.battle, seconds, PLAYBACK_SPEED);
+      } catch (failure) {
+        console.warn('[playback] the local battle stopped', failure);
+        local = null;
+        notify();
+        return;
+      }
       sinceProgress += seconds;
       if (local.battle.result().finished) {
         finish();

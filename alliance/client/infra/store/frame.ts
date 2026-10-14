@@ -9,8 +9,8 @@ import {
   streamSnapshotOf,
 } from '@alliance/compat-upstream';
 import type { ServerMessage } from '@alliance/contract/server-message.js';
-import { backendOf } from '../connection/backend.js';
-import { translateWire } from '../text/index.js';
+import { backendOf } from '#infra/connection/backend.js';
+import { translateWire } from '#infra/text/index.js';
 import {
   EMOTE_LIMIT,
   initialMatch,
@@ -26,6 +26,11 @@ import {
   openStreamField,
   streamStore,
 } from './stream.js';
+import {
+  applyUnitStats,
+  initialUnitStats,
+  unitStatsStore,
+} from './unit-stats.js';
 
 /** The view a message carries, without its type and request id. */
 function payload<M extends { readonly t: string; readonly rid?: number }>(
@@ -64,6 +69,7 @@ export function resetMatch(): void {
     clockOffset: matchStore.getState().clockOffset,
   });
   streamStore.setState(initialStream());
+  unitStatsStore.setState(initialUnitStats());
   for (const listener of resetListeners) {
     listener();
   }
@@ -118,7 +124,7 @@ export function applyFrame(
       const view = payload(frame);
       matchStore.setState({
         public: view,
-        settlement: settlementOf(view as MasterSettlementView),
+        settlement: settlementOf(view as unknown as MasterSettlementView),
         ...(typeof view.serverNow === 'number'
           ? { clockOffset: view.serverNow - now }
           : {}),
@@ -133,6 +139,7 @@ export function applyFrame(
       openStreamField(
         frame.fieldId,
         streamFieldUnitsOf(frame as MasterFieldView),
+        frame.rect ?? null,
       );
       return;
     }
@@ -150,6 +157,10 @@ export function applyFrame(
     case 'b.ev': {
       applyStreamEvents(frame.fieldId, streamEventsOf(frame.ev));
       return;
+    }
+    case 'm.unitStats': {
+      applyUnitStats(frame);
+      break;
     }
     case 'm.result': {
       matchStore.setState({ result: resultOf(frame) });

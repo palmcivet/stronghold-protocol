@@ -7,7 +7,7 @@ description: WebSocket 上的身份、心跳、请求回复和关闭码。
 
 连接升级之后，第一条业务帧是 `hello`。`ping` 可以在 `hello` 之前发送。每条连接每秒约 40 帧；超出时该帧回复 `RATE`，不进入业务。一秒内因限流丢掉的帧超过 400，连接以 `1008` 关闭。
 
-`g.watch`、`room.loadout`、`room.spectate` 另计一个更小的额度：每秒 2 次，突发 6 次。这三帧的回复或随后推送体积大。超出时回复 `RATE`。
+`g.watch`、`room.loadout`、`room.ownership`、`room.diy`、`room.spectate` 另计一个更小的额度：每秒 2 次，突发 6 次。这些帧的回复或随后推送体积大。超出时回复 `RATE`。
 
 服务端约每 30 秒发一次 WebSocket ping。一个周期内没有 pong 的连接被断开。连接建立后 30 秒内没有 `hello`，以 `4002` 关闭。
 
@@ -19,7 +19,10 @@ description: WebSocket 上的身份、心跳、请求回复和关闭码。
 |---|---|
 | `name` | 非空字符串，去首尾空白后至少 1 个字符，最长 12。控制字符与双向控制符会被去掉 |
 | `token` | 可选。此前 `welcome` 发过的重连令牌，最长 64 |
-| `version` | 可选。有则必须等于协议版本 `1` |
+| `version` | 可选。有则必须等于线路协议版本 `1` |
+| `noReplace` | 可选布尔。为真时，该令牌不顶替已连接的会话（多标签协商里的共享候选） |
+| `claimAt` | 可选非负整数。本标签自己的令牌首次 `welcome` 的毫秒时间 |
+| `ext` | 可选对象。next 扩展握手（见下方「扩展握手」）；master 忽略未知字段 |
 
 没有 `token`，或令牌对不上仍可恢复的会话时，服务端新建会话。`playerId` 形如 `p_` 加随机十六进制，只在本进程内唯一。令牌是 128 位十六进制，只发给拥有者。
 
@@ -35,9 +38,16 @@ description: WebSocket 上的身份、心跳、请求回复和关闭码。
 | `token` | 重连令牌 |
 | `name` | 规范化后的昵称 |
 | `serverNow` | 服务端时钟，毫秒 |
-| `version` | 协议版本 |
+| `version` | 线路协议版本 `1` |
 | `resumed` | 这次 `hello` 是否用令牌恢复了已有会话 |
 | `rid` | 请求带了 `rid` 时原样返回 |
+| `ext` | 可选。next 扩展握手；master 不下发 |
+
+### 扩展握手 `ext`（next；待新 server）
+
+`hello.ext` 可带：`client`、`build`、`protocol`、`caps`、`localMods`（`{ id, version, hash? }[]`）。
+
+`welcome.ext` 可带：`protocol`、`seasonId`、`contentHash`、`dataHash`、`mods`（`{ id, version, hash?, sides?, scope?, url?, config? }[]`）、`roles`。没有 `welcome.ext` 时客户端进入兼容模式，只跑基础内容与本地外观模组。赛季包与资源清单地址尚未定字段。
 
 断线后的默认可恢复时间是 10 分钟。独立模拟的对局进行中断线时，该会话延长到数据包里的 `singleReconnectTime`（缺省 86400 秒）。合作对局的座位在窗口内继续用断开前的阵容。窗口结束，会话被清除，进行中的对局按离开处理。进程重启后内存中的房间和令牌都不再存在。
 

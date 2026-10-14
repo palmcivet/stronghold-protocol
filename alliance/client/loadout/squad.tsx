@@ -1,10 +1,16 @@
+import type { CatalogDiySlot } from '@alliance/contract/catalog.js';
 import type { DiyPick } from '@alliance/contract/message.js';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useStore } from 'zustand';
-import { useIntent } from '../infra/intent/context.js';
-import { useCatalog } from '../infra/store/hook.js';
-import { dataName, shownName, useText } from '../infra/text/index.js';
-import { ChessThumb } from '../part/art.js';
+import { useCatalog } from '#infra/store/hook.js';
+import {
+  dataName,
+  has,
+  lookup,
+  shownName,
+  useText,
+} from '#infra/text/index.js';
+import { ChessThumb } from '#part/art.js';
 import {
   Button,
   Cluster,
@@ -13,34 +19,92 @@ import {
   Muted,
   Select,
   Stack,
-} from '../ui/index.js';
+} from '#ui/index.js';
 import { loadoutStore } from './state.js';
+import { SyncStatus, TakesEffect } from './sync-status.js';
 
 const EMPTY = '';
 
-/** Saves through the intent bus and says whether the server took it. */
-function useSave() {
-  const intents = useIntent();
-  const [saved, setSaved] = useState<boolean | null>(null);
-  const save = async (
-    type: 'room.ownership' | 'room.diy',
-    fields: Readonly<Record<string, unknown>>,
-  ): Promise<void> => {
-    const outcome = await intents.dispatch({ type, fields });
-    setSaved(outcome.ok);
+/** The pick a newly chosen operator starts with, as master's `defaultPick`: a prototype's is locked (the server completes it), an owned one takes its last skill and first module. */
+export function defaultPick(slot: CatalogDiySlot, charId: string): DiyPick {
+  const choice = slot.choices?.[charId];
+  if (!choice || choice.locked) {
+    return { charId };
+  }
+  return {
+    charId,
+    skillIndex: choice.skills.at(-1) ?? 0,
+    uniEquipId: choice.modules[0] ?? null,
   };
-  return { saved, save, reset: () => setSaved(null) };
 }
 
-function SaveState({ saved }: { readonly saved: boolean | null }) {
+function setPick(slotId: string, pick: DiyPick | null): void {
+  loadoutStore.setState((state) => {
+    const next = { ...state.diy };
+    if (pick) {
+      next[slotId] = pick;
+    } else {
+      delete next[slotId];
+    }
+    return { diy: next };
+  });
+}
+
+const NO_MODULE = 'none';
+
+/** An owned pick's skill and module (master's protocol fields `skillIndex` and `uniEquipId`); a prototype's are locked. */
+function PickChoices({
+  slot,
+  pick,
+}: {
+  readonly slot: CatalogDiySlot;
+  readonly pick: DiyPick;
+}) {
   const t = useText();
-  if (saved === null) {
+  const choice = slot.choices?.[pick.charId];
+  if (!choice) {
     return null;
   }
+  if (choice.locked) {
+    return <Muted>{t('core:diy.locked')}</Muted>;
+  }
   return (
-    <span role="status">
-      {saved ? t('core:loadout.saved') : t('core:loadout.notSaved')}
-    </span>
+    <Cluster gap={2}>
+      {choice.skills.length > 0 ? (
+        <Select
+          label={t('core:loadout.skills')}
+          value={String(pick.skillIndex ?? choice.skills.at(-1) ?? 0)}
+          onChange={(value) =>
+            setPick(slot.id, { ...pick, skillIndex: Number(value) })
+          }
+          options={choice.skills.map((index) => ({
+            value: String(index),
+            label: t('core:loadout.skill', { index: index + 1 }),
+          }))}
+        />
+      ) : null}
+      {choice.modules.length > 0 ? (
+        <Select
+          label={t('core:loadout.module')}
+          value={pick.uniEquipId ?? NO_MODULE}
+          onChange={(value) =>
+            setPick(slot.id, {
+              ...pick,
+              uniEquipId: value === NO_MODULE ? null : value,
+            })
+          }
+          options={[
+            { value: NO_MODULE, label: t('core:loadout.moduleNone') },
+            ...choice.modules.map((id) => ({
+              value: id,
+              label: has(`data:module.${id}.name`)
+                ? lookup(`data:module.${id}.name`)
+                : id,
+            })),
+          ]}
+        />
+      ) : null}
+    </Cluster>
   );
 }
 
@@ -49,7 +113,6 @@ export function Ownership() {
   const t = useText();
   const catalog = useCatalog((state) => state.catalog);
   const notOwned = useStore(loadoutStore, (state) => state.notOwned);
-  const { saved, save, reset } = useSave();
   const tiers = useMemo(() => {
     const byTier = new Map<number, string[]>();
     for (const chess of Object.values(catalog.chess)) {
@@ -65,7 +128,6 @@ export function Ownership() {
   const all = tiers.flatMap(([, ids]) => ids);
   const owned = all.filter((id) => !notOwned.includes(id));
   const setOwned = (ids: readonly string[], group: readonly string[]): void => {
-    reset();
     loadoutStore.setState((state) => ({
       notOwned: [
         ...state.notOwned.filter((id) => !group.includes(id)),
@@ -100,19 +162,13 @@ export function Ownership() {
       <Cluster gap={2}>
         <Button
           onPress={() => {
-            reset();
             loadoutStore.setState({ notOwned: [] });
           }}
         >
           {t('core:ownership.ownAll')}
         </Button>
-        <Button
-          variant="primary"
-          onPress={() => void save('room.ownership', { notOwned })}
-        >
-          {t('core:loadout.save')}
-        </Button>
-        <SaveState saved={saved} />
+        <SyncStatus kind="ownership" />
+        <TakesEffect kind="ownership" />
       </Cluster>
     </Stack>
   );
@@ -123,53 +179,39 @@ export function CustomSquad() {
   const t = useText();
   const slots = useCatalog((state) => state.catalog.diySlots ?? []);
   const diy = useStore(loadoutStore, (state) => state.diy);
-  const { saved, save, reset } = useSave();
   if (slots.length === 0) {
     return <EmptyState title={t('core:diy.empty')} />;
   }
-  const picks: Record<string, DiyPick | null> = Object.fromEntries(
-    slots.map((slot) => {
-      const charId = diy[slot.id];
-      return [slot.id, charId ? { charId } : null];
-    }),
-  );
   return (
     <Stack gap={3}>
       <Muted>{t('core:diy.hint')}</Muted>
       {slots.map((slot, index) => (
-        <Select
-          key={slot.id}
-          label={t('core:diy.slot', { index: index + 1, tier: slot.tier })}
-          value={diy[slot.id] ?? EMPTY}
-          onChange={(value) => {
-            reset();
-            loadoutStore.setState((state) => {
-              const next = { ...state.diy };
-              if (value === EMPTY) {
-                delete next[slot.id];
-              } else {
-                next[slot.id] = value;
-              }
-              return { diy: next };
-            });
-          }}
-          options={[
-            { value: EMPTY, label: t('core:diy.none') },
-            ...slot.candidates.map((charId) => ({
-              value: charId,
-              label: shownName('operator', charId),
-            })),
-          ]}
-        />
+        <Stack key={slot.id} gap={1}>
+          <Select
+            label={t('core:diy.slot', { index: index + 1, tier: slot.tier })}
+            value={diy[slot.id]?.charId ?? EMPTY}
+            onChange={(value) =>
+              setPick(
+                slot.id,
+                value === EMPTY ? null : defaultPick(slot, value),
+              )
+            }
+            options={[
+              { value: EMPTY, label: t('core:diy.none') },
+              ...slot.candidates.map((charId) => ({
+                value: charId,
+                label: shownName('operator', charId),
+              })),
+            ]}
+          />
+          {diy[slot.id] ? (
+            <PickChoices slot={slot} pick={diy[slot.id] as DiyPick} />
+          ) : null}
+        </Stack>
       ))}
       <Cluster gap={2}>
-        <Button
-          variant="primary"
-          onPress={() => void save('room.diy', { picks })}
-        >
-          {t('core:loadout.save')}
-        </Button>
-        <SaveState saved={saved} />
+        <SyncStatus kind="diy" />
+        <TakesEffect kind="diy" />
       </Cluster>
     </Stack>
   );

@@ -4,7 +4,7 @@ import type {
   RoomView,
 } from '@alliance/contract/server-message.js';
 import { describe, expect, it } from 'vitest';
-import { initialMatch, type MatchState } from '../store/match.js';
+import { initialMatch, type MatchState } from '#infra/store/match.js';
 import {
   connectionCue,
   countdownCue,

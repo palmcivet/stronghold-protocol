@@ -5,12 +5,12 @@ import {
   ToggleButton as AriaToggleButton,
   type ToggleButtonProps as AriaToggleButtonProps,
 } from 'react-aria-components';
-import { cx } from '../infra/theme/class-name.js';
+import { cx } from '#infra/theme/class-name.js';
 import { useFeedback } from './feedback.js';
 import styles from './primitive.module.css';
 
 export interface ButtonProps extends Omit<AriaButtonProps, 'className'> {
-  readonly variant?: 'primary' | 'secondary';
+  readonly variant?: 'primary' | 'secondary' | 'amber';
   readonly children: ReactNode;
 }
 
@@ -21,7 +21,11 @@ export function Button({
   ...rest
 }: ButtonProps) {
   const play = useFeedback();
-  const className = cx(styles.button, variant === 'primary' && styles.primary);
+  const className = cx(
+    styles.button,
+    variant === 'primary' && styles.primary,
+    variant === 'amber' && styles.amber,
+  );
   return (
     <AriaButton
       {...rest}

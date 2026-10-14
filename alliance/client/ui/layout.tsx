@@ -1,8 +1,8 @@
 import type { CSSProperties, ElementType, ReactNode } from 'react';
-import { cx } from '../infra/theme/class-name.js';
+import { cx } from '#infra/theme/class-name.js';
 import styles from './layout.module.css';
 
-/** A step of the spacing scale (`--space-N`). */
+/** A step of the spacing scale (`--wsde-space-N`). */
 export type Space = 1 | 2 | 3 | 4 | 6 | 8;
 
 interface BoxProps {
@@ -16,7 +16,7 @@ interface BoxProps {
 
 const gapStyle = (gap: Space | undefined, extra: CSSProperties = {}) =>
   ({
-    ...(gap === undefined ? {} : { '--gap': `var(--space-${gap})` }),
+    ...(gap === undefined ? {} : { '--gap': `var(--wsde-space-${gap})` }),
     ...extra,
   }) as CSSProperties;
 

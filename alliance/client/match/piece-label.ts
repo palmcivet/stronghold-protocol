@@ -1,9 +1,11 @@
 import type { CatalogChess } from '@alliance/contract/catalog.js';
 import type { CardView, PieceView } from '@alliance/contract/server-message.js';
-import { dataName, t } from '../infra/text/index.js';
+import { dataName, t } from '#infra/text/index.js';
 
 /** Name of a piece or a shop card: an operator or an item. */
-export function cardName(card: Pick<CardView, 'kind' | 'id'>): string {
+export function cardName(
+  card: Pick<CardView, 'kind' | 'id'> | Pick<PieceView, 'kind' | 'id'>,
+): string {
   return card.kind === 'item'
     ? dataName('item', card.id)
     : dataName('chess', card.id);

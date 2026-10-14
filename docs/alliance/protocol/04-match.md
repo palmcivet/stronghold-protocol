@@ -16,7 +16,11 @@ description: 一局开始之后的意图，以及服务端推送的公开状态�
 朝向取 `UP`、`RIGHT`、`DOWN`、`LEFT`。缺省朝向为 `RIGHT`。棋盘行列在 19×21 的舞台格内，行 0 在下方。手牌下标 0–9。近战默认只能站地面。装备的模组带 `meleeOnHighGround` 时，这名棋子也可以站远程位。
 
 - `g.infoReady`
+  - 字段：可选 `setupRevision`
   - 作用：确认本局信息。仅 `INFO_CHECK`
+- `g.rerollVote`
+  - 字段：`voteId`，`agree`（布尔）
+  - 作用：对简报重刷投票表态
 - `g.band`
   - 字段：`bandId`
   - 作用：选择策略
@@ -53,7 +57,7 @@ description: 一局开始之后的意图，以及服务端推送的公开状态�
   - 字段：`idx`，0–5
   - 作用：领取当前奖励
 - `g.choice`
-  - 字段：`idx`，0–5
+  - 字段：`idx`，0–5；可选 `choiceId`（机变选项 id）
   - 作用：机变选牌
 - `g.ready`
   - 字段：`ready`，布尔
@@ -62,7 +66,7 @@ description: 一局开始之后的意图，以及服务端推送的公开状态�
   - 字段：`id`
   - 作用：36 个官方表情 id 之一。服务端另有约 1 秒的发送间隔
 - `g.watch`
-  - 字段：`fieldId`，最长 32
+  - 字段：`fieldId`（最长 32）；可选 `playerId`（联防 / 首领双人场地指定观看对象）
   - 作用：观看一块战场或休整中的一名玩家。回复后推送 `m.field`，作战中还会带上该战场的起始或快照。受更紧的频率限制
 - `g.autoplay`
   - 字段：`on`，布尔
@@ -93,13 +97,15 @@ description: 一局开始之后的意图，以及服务端推送的公开状态�
 - `combatMode`：`client`（默认，浏览器作战）或 `server`（进程环境 `SP_COMBAT=server`）
 - `paused`：独立模拟是否暂停
 - `players`：每名玩家的公开行，见下表
-- `fields`：当前战场。`{ fieldId, kind, players, live, progress? }`。`kind` 为 `normal`、`unite`、`boss`、`hidden`。`progress` 在作战中出现：`{ killed, total, done }`
+- `fields`：当前战场。`{ fieldId, kind, players, live, progress? }`。`kind` 为 `normal`、`unite`、`boss`、`hidden`。`progress` 在作战中出现：`{ killed, total, done, resolved? }`（`resolved` 为击杀胶囊分子，未知时为 `null`）
 - `teamLp`：首领战共享生命，有则出现
 - `bossHp`：`{ hp, max }`，有共享血池时出现
 - `overtimeAt`：最终攻势或隐秘核心开始扣生命的毫秒时钟
 - `draft`：策略选择进行中：`order`、`turn`、`picks`、`skipsLeft`、`turnDeadline`、`turnSeconds`、`untimed`
 - `sp`：机变进行中：`family`、`name`、`desc`、`eventId`、`cards`、`order`、`turn`、`picks`、`taken`、`untimed`
 - `unite`：联防进行中：`{ helpers, leakers }`，均为 `playerId` 列表
+- `uniteResult`：联防后的结算阶段出现：`{ through, helpers, leakers, losses }`（`losses` 为各玩家扣 LP）
+- `rerollVote`：简报重刷投票进行中时出现，否则为 `null` 或省略
 
 `players[]` 的一行：
 
@@ -130,7 +136,13 @@ description: 一局开始之后的意图，以及服务端推送的公开状态�
 - `bonds`：比公开条多 `thresholds`、`countsHand`。排序为激活的在前，其次层数
 - `effects`：`{ id, name, desc, iconKind, iconId, counter?, counterText? }`。`iconKind` 为 `band`、`choice`、`team`、`item`、`garrison`
 - `nextEnemies`：`{ enemyKey, count, tag, start? }`。`start` 是首领在首领场地的出现格 `[row, col]`
-- `loadout`：本局生效的配装，`{ [baseChessId]: { skill, module } }`。未列出的干员用默认值
+- `loadout`：本局生效的调配，`{ [baseChessId]: { skill, module } }`。未列出的干员用默认值
+- `ops`：可选。干员潜能与培养；未列出的用默认满潜能
+- `diy` / `diyBanned`：本局自选编队结果与下架列表（有则出现）
+- `standIns`：可选。本局以替身上场的基础干员 id
+- `personalChoice`：个人机变选项，无则为 `null`
+- `prepMapChars`：可选。休整期已在棋盘上的关卡角色（如外勤医疗）
+- `bossMate`：可选。首领回合休整期，搭档半场棋盘视图
 - `stats`：`dmgDealt`、`kills`、`leaks`、`gold`、`refreshes`、`merges`
 
 商店槽：`{ kind: "chess"|"item", id, price, basePrice, sold, frozen }` 或 `null`。
@@ -145,7 +157,9 @@ description: 一局开始之后的意图，以及服务端推送的公开状态�
 
 休整期观看另一名玩家时：`fieldId` 为 `n:<playerId>`，`kind` 为 `normal`，`prep` 为真，`rect` 为普通战场矩形。`units` 含棋盘、手牌（行 7）和临时区（行 8，列 4–8）。`effects` 与 `nextEnemies` 属于被观看的玩家。观战座位拿到的这份与队友相同。
 
-单位条 `UnitInfo` 的字段：`id`、`kind`、`side`、`ownerId`、`defId`、`name`、`tier`、`golden`、`spine`、`avatar`、`x`、`y`、`facing`、`dir`、`maxHp`，以及可选的 `skillIndex`、`moduleId`、`items`、`form`。
+最终攻势 / 隐秘核心休整观战：`kind` 为 `boss`，带 `side`（`L` / `R`）；有搭档时另带 `mate: { playerId, side }`，`units` 含双方半场。
+
+单位条 `UnitInfo` 的字段：`id`、`kind`、`side`、`ownerId`、`defId`、`name`、`tier`、`golden`、`spine`、`avatar`、`x`、`y`、`facing`、`dir`、`maxHp`、`area`（`board` / `hand` / `temp`），以及可选的 `skillIndex`、`moduleId`、`items`、`form`、`standInFor`、`diy`、`potential`、`cultivate`。
 
 ## `m.unitStats`
 
@@ -159,7 +173,18 @@ description: 一局开始之后的意图，以及服务端推送的公开状态�
 
 `units[]` 的一条：`id`、`uid`、`defId`、`hp`、`alive`、`maxHp`、`atk`、`def`、`res`、`interval`、`blockCnt`、`moveSpeed`、`silenced`、`base`（同一组不含当前生命和沉默的基础值）。友方有攻击范围时多一个 `range`，元素为 `[dRow, dCol]`，朝向按向右记录。
 
+## `m.layer`
+
+休整期自己的盟约层数即时增长。短暂推送，全量重同步不回放。
+
+| 字段 | 含义 |
+|---|---|
+| `playerId` | 增长发生在谁身上 |
+| `bondId` | 盟约 id |
+| `add` | 增加的层数 |
+
 ## `m.toast` `m.ticker` `m.emote`
+
 
 | 消息 | 字段 | 发给谁 |
 |---|---|---|

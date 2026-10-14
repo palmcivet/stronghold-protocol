@@ -1,5 +1,5 @@
-import { lookup, useText } from '../infra/text/index.js';
-import { Tabs } from '../ui/index.js';
+import { lookup, useText } from '#infra/text/index.js';
+import { Tabs } from '#ui/index.js';
 import { partTitle } from './registry.js';
 import { type PartInsert, SlotChild, useSlotParts } from './slot.js';
 

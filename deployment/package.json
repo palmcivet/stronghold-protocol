@@ -7,8 +7,8 @@
   "sideEffects": false,
   "exports": {
     "./static-policy": {
-      "types": "./client/config/dist/static-policy.d.ts",
       "@wsde/source": "./client/config/static-policy.ts",
+      "types": "./client/config/dist/static-policy.d.ts",
       "import": "./client/config/dist/static-policy.js",
       "default": "./client/config/dist/static-policy.js"
     }

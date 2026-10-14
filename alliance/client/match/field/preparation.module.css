@@ -1,25 +1,52 @@
 @layer components {
   .slots {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
-    gap: var(--space-2);
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    gap: var(--wsde-space-1);
   }
 
   .slot {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: var(--space-1);
-    min-height: 4rem;
-    padding: var(--space-2);
-    border: 1px solid var(--color-line-2);
-    background: var(--color-bg-2);
+    gap: var(--wsde-space-1);
+    min-height: var(--wsde-size-touch);
+    padding: var(--wsde-space-1);
+    border: 1px dashed var(--wsde-color-line-2);
+    font-size: var(--wsde-font-size-xs);
+    overflow: hidden;
+    background: var(--wsde-color-bg-2);
     text-align: start;
   }
 
   .actions {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-2);
+    gap: var(--wsde-space-2);
+  }
+
+  .itemMarks {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .itemMark {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    width: var(--wsde-size-touch);
+    height: var(--wsde-size-touch);
+    display: grid;
+    place-items: center;
+  }
+
+  .itemMark[data-equipped] {
+    width: calc(var(--wsde-size-touch) * 0.55);
+    height: calc(var(--wsde-size-touch) * 0.55);
   }
 }

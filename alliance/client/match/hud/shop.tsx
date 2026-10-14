@@ -1,17 +1,19 @@
 import type { ShopSlot } from '@alliance/contract/server-message.js';
+import { useMemo, useRef } from 'react';
 import { useStore } from 'zustand';
-import { useIntent } from '../../infra/intent/context.js';
-import { useMatch, useMatchCatalog } from '../../infra/store/hook.js';
-import { settingsStore } from '../../infra/store/settings.js';
-import { dataName, useText } from '../../infra/text/index.js';
-import { cx } from '../../infra/theme/class-name.js';
-import { PieceThumb } from '../../part/art.js';
-import { Part } from '../../part/registry.js';
+import { useIntent } from '#infra/intent/context.js';
+import { useMatch, useMatchCatalog } from '#infra/store/hook.js';
+import { dataName, has, lookup, useText } from '#infra/text/index.js';
+import { cx } from '#infra/theme/class-name.js';
+import { createShopCardDrag } from '#match/hud/shop-drag.js';
+import { cardName } from '#match/piece-label.js';
+import { PieceThumb } from '#part/art.js';
+import { BoundHotkey } from '#part/hotkey.js';
+import { Part } from '#part/registry.js';
 import {
   Badge,
   Button,
   Cluster,
-  Hotkey,
   Icon,
   Num,
   PriceHex,
@@ -19,8 +21,7 @@ import {
   TierChip,
   ToggleButton,
   Tooltip,
-} from '../../ui/index.js';
-import { cardName } from '../piece-label.js';
+} from '#ui/index.js';
 import styles from './hud.module.css';
 import { hudStore } from './state.js';
 
@@ -61,6 +62,21 @@ export function ShopCard({
   });
   const frozen = useMatch((state) => state.private?.shop.frozen ?? false);
   const catalog = useMatchCatalog();
+  const live = useRef({ canAct, funds, intents, position, slot });
+  live.current = { canAct, funds, intents, position, slot };
+  const drag = useMemo(() => {
+    if (!slot || slot.sold) {
+      return null;
+    }
+    return createShopCardDrag({
+      intents,
+      canAct: () => live.current.canAct,
+      affordable: () =>
+        (live.current.slot?.price ?? Infinity) <= live.current.funds,
+      slot: position,
+      card: slot,
+    });
+  }, [intents, position, slot]);
   if (!slot || slot.sold) {
     return (
       <li
@@ -85,14 +101,24 @@ export function ShopCard({
     </Stack>
   );
   return (
-    <li className={cx(styles.shopCard)} data-frozen={frozen || undefined}>
+    <li
+      className={cx(styles.shopCard)}
+      data-frozen={frozen || undefined}
+      onPointerDownCapture={drag?.onPointerDown}
+      onPointerMoveCapture={drag?.onPointerMove}
+      onPointerUpCapture={drag?.onPointerUp}
+      onPointerCancelCapture={drag?.onPointerCancel}
+    >
       <Tooltip tip={tip}>
         <Button
           isDisabled={!canAct || !affordable}
           aria-label={t('core:shop.buy', { name, price: slot.price })}
+          excludeFromTabOrder={false}
           onPress={() =>
             void intents.dispatch({ type: 'g.buy', fields: { slot: position } })
           }
+          // Pointer buy/drag is owned by the <li>; keep onPress for keyboard.
+          style={{ pointerEvents: 'none' }}
         >
           <span className={cx(styles.shopFace)}>
             <span className={cx(styles.shopHead)}>
@@ -110,6 +136,16 @@ export function ShopCard({
                 {chess.bondIds.map((id) => dataName('bond', id)).join(' · ')}
               </span>
             ) : null}
+            {has(`data:chess.${slot.id}.subProfession`) ? (
+              <span className={cx(styles.shopSub)}>
+                {lookup(`data:chess.${slot.id}.subProfession`)}
+              </span>
+            ) : null}
+            {slot.kind === 'item' && has(`data:item.${slot.id}.desc`) ? (
+              <span className={cx(styles.shopSub)}>
+                {lookup(`data:item.${slot.id}.desc`)}
+              </span>
+            ) : null}
             {slot.kind === 'chess' && owned > 0 ? (
               <Badge tone="accent">
                 {t('core:shop.merge', { count: owned, need: 3 })}
@@ -125,88 +161,171 @@ export function ShopCard({
   );
 }
 
-/** Places left, freeze, refresh and level up, with their keys. */
+/** The level card: LEVEL, the level, the upgrade price; a press levels the shop up. */
+function LevelCard() {
+  const t = useText();
+  const intents = useIntent();
+  const canAct = useCanAct();
+  const view = useMatch((state) => state.private);
+  if (!view) {
+    return null;
+  }
+  const { shop, funds } = view;
+  const max = shop.level >= shop.maxLevel;
+  return (
+    <li className={cx(styles.shopCard, styles.levelCard)}>
+      <Button
+        isDisabled={!canAct || max || funds < shop.upgradePrice}
+        aria-label={
+          max
+            ? t('core:shop.maxLevel')
+            : t('core:shop.levelUp', { price: shop.upgradePrice })
+        }
+        onPress={() => void intents.dispatch({ type: 'g.levelUp' })}
+      >
+        <span className={cx(styles.shopFace)}>
+          <span className={cx(styles.shopHead)}>
+            <span />
+            {max ? null : (
+              <PriceHex
+                price={shop.upgradePrice}
+                affordable={funds >= shop.upgradePrice}
+              />
+            )}
+          </span>
+          <span className={cx(styles.levelMicro)}>LEVEL</span>
+          <Num>{shop.level}</Num>
+          <strong>
+            {max ? t('core:shop.maxLevel') : t('core:shop.upgrade')}
+          </strong>
+          <BoundHotkey id="core:levelUp" />
+        </span>
+      </Button>
+    </li>
+  );
+}
+
+/** The funds card at the end of the row, with the collapse. */
+function FundsCard() {
+  const t = useText();
+  const funds = useMatch((state) => state.private?.funds ?? 0);
+  return (
+    <li className={cx(styles.shopCard, styles.fundsCard)}>
+      <span className={cx(styles.fundsValue)}>
+        <Num>{funds}</Num>
+      </span>
+      <span>{t('core:shop.funds')}</span>
+      <Button onPress={() => hudStore.setState({ shopCollapsed: true })}>
+        <Icon name="close" />
+        {t('core:shop.collapse')}
+      </Button>
+    </li>
+  );
+}
+
+/** Above the cards: places left, freeze and refresh, with their keys. */
 export function ShopTools() {
   const t = useText();
   const intents = useIntent();
   const canAct = useCanAct();
-  const keys = useStore(settingsStore, (state) => state.keys);
   const view = useMatch((state) => state.private);
   if (!view) {
     return null;
   }
   const { shop, funds } = view;
   const refreshPrice = shop.freeRefreshes > 0 ? 0 : shop.refreshPrice;
+  const remaining = Math.max(0, view.deployCap - view.deployCount);
   return (
-    <Stack gap={2}>
-      <Cluster gap={2}>
-        <Badge>
-          {t('core:match.deploy', {
-            count: view.deployCount,
-            cap: view.deployCap,
-          })}
-        </Badge>
-        <span>
-          {t('core:match.funds')} <Num>{funds}</Num>
-        </span>
-      </Cluster>
-      <Cluster gap={2}>
-        <Button
-          isDisabled={
-            !canAct || shop.level >= shop.maxLevel || funds < shop.upgradePrice
-          }
-          onPress={() => void intents.dispatch({ type: 'g.levelUp' })}
-        >
-          {t('core:shop.levelUp', { price: shop.upgradePrice })}{' '}
-          <Hotkey code={keys.levelUp} />
-        </Button>
-        <Button
-          isDisabled={!canAct || funds < refreshPrice}
-          onPress={() => void intents.dispatch({ type: 'g.refresh' })}
-        >
-          {t('core:shop.refresh', { price: refreshPrice })}{' '}
-          <Hotkey code={keys.refresh} />
-        </Button>
-        <ToggleButton
-          isDisabled={!canAct}
-          isSelected={shop.frozen}
-          onChange={() => void intents.dispatch({ type: 'g.freeze' })}
-        >
-          {shop.frozen ? t('core:shop.unfreeze') : t('core:shop.freeze')}{' '}
-          <Hotkey code={keys.freeze} />
-        </ToggleButton>
-      </Cluster>
-    </Stack>
+    <div className={cx(styles.shopTools)}>
+      <span
+        className={cx(styles.remain)}
+        data-none={remaining === 0 || undefined}
+      >
+        {t('core:shop.remaining')}
+        <Num>{remaining}</Num>
+      </span>
+      <ToggleButton
+        isDisabled={!canAct}
+        isSelected={shop.frozen}
+        onChange={() => void intents.dispatch({ type: 'g.freeze' })}
+      >
+        <Icon name="freeze" />
+        {shop.frozen ? t('core:shop.unfreeze') : t('core:shop.freeze')}{' '}
+        <BoundHotkey id="core:freeze" />
+      </ToggleButton>
+      <Button
+        isDisabled={!canAct || funds < refreshPrice}
+        onPress={() => void intents.dispatch({ type: 'g.refresh' })}
+      >
+        <Icon name="refresh" />
+        {t('core:shop.refresh', { price: refreshPrice })}{' '}
+        <BoundHotkey id="core:refresh" />
+      </Button>
+    </div>
   );
 }
 
-/** The shop bar: its level, the cards and the tools. */
+/** The shop bar, as master's: the tools above; the level card, the cards and the funds card. Collapsible. */
 export function Shop() {
   const t = useText();
   const shop = useMatch((state) => state.private?.shop ?? null);
+  const funds = useMatch((state) => state.private?.funds ?? 0);
+  const collapsed = useStore(hudStore, (state) => state.shopCollapsed);
   if (!shop) {
     return null;
   }
+  if (collapsed) {
+    return (
+      <div className={cx(styles.shopTab)}>
+        <span className={cx(styles.shopTabFunds)}>
+          <Num>{funds}</Num>
+          <span>{t('core:shop.funds')}</span>
+        </span>
+        <Button onPress={() => hudStore.setState({ shopCollapsed: false })}>
+          <Icon name="chevron-left" />
+          {t('core:shop.expand')}
+        </Button>
+      </div>
+    );
+  }
+  // master's row: level, chess offers, item offers (dashed), funds
+  const chess = shop.slots
+    .map((slot, position) => ({ slot, position }))
+    .filter(({ slot }) => slot?.kind !== 'item');
+  const items = shop.slots
+    .map((slot, position) => ({ slot, position }))
+    .filter(({ slot }) => slot !== null && slot.kind === 'item');
   return (
     <section className={cx(styles.shop)} aria-label={t('core:shop.heading')}>
-      <Stack gap={1}>
-        <strong>{t('core:shop.heading')}</strong>
-        <Badge tone="accent">
-          {t('core:match.shopLevel', { level: shop.level })}
-        </Badge>
-      </Stack>
-      <ul className={cx(styles.shopCards)}>
-        {shop.slots.map((slot, position) => (
-          <Part
-            // biome-ignore lint/suspicious/noArrayIndexKey: a shop slot is its position
-            key={position}
-            id="core:match.shop-card"
-            slot={slot}
-            position={position}
-          />
-        ))}
-      </ul>
       <Part id="core:match.shop-tools" />
+      <div className={cx(styles.shopRow)}>
+        <ul className={cx(styles.shopCards)}>
+          <LevelCard />
+          {chess.map(({ slot, position }) => (
+            <Part
+              key={position}
+              id="core:match.shop-card"
+              slot={slot}
+              position={position}
+            />
+          ))}
+        </ul>
+        {items.length ? (
+          <ul className={cx(styles.shopItems)}>
+            {items.map(({ slot, position }) => (
+              <Part
+                key={position}
+                id="core:match.shop-card"
+                slot={slot}
+                position={position}
+              />
+            ))}
+          </ul>
+        ) : null}
+        <ul className={cx(styles.shopCards, styles.shopFunds)}>
+          <FundsCard />
+        </ul>
+      </div>
     </section>
   );
 }

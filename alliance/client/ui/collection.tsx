@@ -20,7 +20,7 @@ import {
   TabList,
   TabPanel,
 } from 'react-aria-components';
-import { cx } from '../infra/theme/class-name.js';
+import { cx } from '#infra/theme/class-name.js';
 import { useFeedback } from './feedback.js';
 import { Icon } from './icon.js';
 import styles from './widget.module.css';
@@ -130,18 +130,21 @@ export function GridList({
   onAction,
   selected,
   onSelect,
+  layout = 'grid',
 }: {
   readonly label: string;
   readonly items: readonly CollectionItem[];
   readonly onAction?: (id: string) => void;
   readonly selected?: string | null;
   readonly onSelect?: (id: string) => void;
+  /** `stack` lays the items out one per row, as a ladder. */
+  readonly layout?: 'grid' | 'stack';
 }) {
   return (
     <AriaGridList
       aria-label={label}
-      layout="grid"
-      className={cx(styles.gridList)}
+      layout={layout}
+      className={cx(styles.gridList, layout === 'stack' && styles.stackList)}
       disabledKeys={items
         .filter((item) => item.disabled)
         .map((item) => item.id)}

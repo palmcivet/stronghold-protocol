@@ -40,9 +40,9 @@
 @layer base {
   :root {
     color-scheme: dark;
-    background: var(--color-bg-0);
-    color: var(--color-text-hi);
-    font-family: var(--font-body);
+    background: var(--wsde-color-bg-0);
+    color: var(--wsde-color-text-hi);
+    font-family: var(--wsde-font-body);
     line-height: 1.5;
   }
 
@@ -58,16 +58,22 @@
     font-size: 137.5%;
   }
 
+  :root,
   body {
-    min-height: 100vh;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    margin: 0;
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-accent-400);
+    outline: 2px solid var(--wsde-color-accent-400);
     outline-offset: 2px;
   }
 
-  .visually-hidden {
+  .wsde-visually-hidden {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -78,7 +84,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     :root {
-      --motion: 0;
+      --wsde-motion: 0;
     }
 
     *,

@@ -1,7 +1,7 @@
-import { useText } from '../../infra/text/index.js';
-import { cx } from '../../infra/theme/class-name.js';
-import { Meter } from '../../ui/index.js';
-import { usePlayback } from '../playback-state.js';
+import { useText } from '#infra/text/index.js';
+import { cx } from '#infra/theme/class-name.js';
+import { usePlayback } from '#match/playback-state.js';
+import { Meter } from '#ui/index.js';
 import styles from './field.module.css';
 
 /** What the field shows of a battle it does not draw. */

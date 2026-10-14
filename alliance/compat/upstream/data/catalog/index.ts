@@ -4,10 +4,13 @@ import type {
   CatalogBond,
   CatalogBoss,
   CatalogChess,
+  CatalogDiyChoice,
   CatalogDiySlot,
   CatalogEnemy,
+  CatalogFaction,
   CatalogItem,
   CatalogMode,
+  CatalogSkill,
   CatalogText,
   CatalogWave,
 } from '@alliance/contract/catalog.js';
@@ -31,6 +34,7 @@ export const UPSTREAM_CATALOG_TABLES = [
   'stages',
   'factions',
   'backups',
+  'garrisons',
 ] as const;
 
 export type UpstreamCatalogTable = (typeof UPSTREAM_CATALOG_TABLES)[number];
@@ -96,6 +100,30 @@ function loadoutOf(
   );
 }
 
+/** A chess record's skills (`skills[]`, else the default `skill`), by index. */
+function skillRecords(
+  record: JsonRecord,
+): { readonly index: number; readonly record: JsonRecord }[] {
+  const list = Array.isArray(record.skills)
+    ? record.skills
+    : isJsonRecord(record.skill)
+      ? [record.skill]
+      : [];
+  return list.flatMap((skill) =>
+    isJsonRecord(skill) && Number.isInteger(skill.index)
+      ? [{ index: skill.index as number, record: skill }]
+      : [],
+  );
+}
+
+function skillsOf(record: JsonRecord): CatalogSkill[] {
+  return skillRecords(record).map(({ index, record: skill }) => ({
+    index,
+    spType: str(skill.spType),
+    spCost: typeof skill.spCost === 'number' ? skill.spCost : null,
+  }));
+}
+
 /** A NORMAL base chess with an official stand-in of another operator (master `shared/standIn.js` `isDroppableChess`). */
 function isDroppable(record: JsonRecord): boolean {
   const backup = isJsonRecord(record.backup) ? record.backup : null;
@@ -112,6 +140,15 @@ function isDroppable(record: JsonRecord): boolean {
 }
 
 /** Maps the master data tables to the catalog view and its `data:` text. Records without an id are skipped. */
+/** Master's `DIY_EXCLUDED_MODULE_TYPE`: modules of other game modes (集成战略, 生息演算) a custom pick never carries. */
+const DIY_EXCLUDED_MODULE_TYPE = /^(?:ISW|SO|RA)-/;
+
+/** Master's `statusKey`: the form key of a training status, `phase/level/skillLevel/equipLevel`. */
+function statusKey(status: unknown): string {
+  const s = isJsonRecord(status) ? status : {};
+  return `${s.phase ?? 0}/${s.level ?? 1}/${s.skillLevel ?? 1}/${s.equipLevel ?? 0}`;
+}
+
 export function buildUpstreamCatalog(
   input: UpstreamCatalogInput,
 ): UpstreamCatalog {
@@ -140,8 +177,38 @@ export function buildUpstreamCatalog(
       visible: record.visible !== false && record.isHidden !== true,
       loadout: loadoutOf(record, chessRecords),
       droppable: isDroppable(record),
+      ...(skillsOf(record).length ? { skills: skillsOf(record) } : {}),
+      ...(strings(record.garrisonIds).length
+        ? { garrisonIds: strings(record.garrisonIds) }
+        : {}),
     };
+    for (const skill of skillRecords(record)) {
+      put(`data:chess.${id}.skill.${skill.index}.name`, skill.record.name);
+      put(`data:chess.${id}.skill.${skill.index}.desc`, skill.record.desc);
+    }
+    const modules = Array.isArray(record.modules) ? record.modules : [];
+    for (const module of modules.filter(isJsonRecord)) {
+      const moduleId = str(module.uniEquipId);
+      if (moduleId) {
+        put(`data:module.${moduleId}.name`, module.name);
+        put(`data:module.${moduleId}.type`, module.typeName);
+        const trait = isJsonRecord(module.traitOverride)
+          ? module.traitOverride
+          : {};
+        put(`data:module.${moduleId}.desc`, trait.moduleDesc);
+      }
+    }
     put(`data:chess.${id}.name`, record.name);
+    put(`data:chess.${id}.appellation`, record.appellation);
+    put(`data:chess.${id}.subProfession`, record.subProfessionName);
+    const trait = isJsonRecord(record.trait) ? record.trait : null;
+    put(`data:chess.${id}.trait`, trait?.desc ?? trait?.descRaw);
+  }
+
+  for (const [key, record] of records(input.garrisons)) {
+    const id = str(record.garrisonId) ?? key;
+    put(`data:garrison.${id}.desc`, record.desc ?? record.descRaw);
+    put(`data:garrison.${id}.eventType`, record.eventTypeDesc);
   }
 
   const bands: Record<string, CatalogBand> = {};
@@ -152,6 +219,9 @@ export function buildUpstreamCatalog(
       sortId: num(record.sortId, 99),
       modeTypes: strings(record.modeTypeList),
       totalHp: num(record.totalHp),
+      ...(Array.isArray(record.bondIds)
+        ? { bondIds: strings(record.bondIds) }
+        : {}),
     };
     put(`data:band.${id}.name`, record.name);
     put(`data:band.${id}.effect`, record.effectName);
@@ -161,7 +231,18 @@ export function buildUpstreamCatalog(
   const bonds: Record<string, CatalogBond> = {};
   for (const [key, record] of records(input.bonds)) {
     const id = str(record.bondId) ?? key;
-    bonds[id] = { id, thresholds: numbers(record.thresholds) };
+    bonds[id] = {
+      id,
+      thresholds: numbers(record.thresholds),
+      ...(typeof record.isCore === 'boolean' ? { core: record.isCore } : {}),
+      ...(typeof record.bondOrder === 'number'
+        ? { order: num(record.bondOrder) * 1000 + num(record.identifier) }
+        : {}),
+      ...(Array.isArray(record.visibleMembers)
+        ? { members: strings(record.visibleMembers) }
+        : {}),
+      ...(record.noStack === true ? { noStack: true } : {}),
+    };
     put(`data:bond.${id}.name`, record.name);
     put(`data:bond.${id}.desc`, record.desc);
   }
@@ -174,6 +255,12 @@ export function buildUpstreamCatalog(
     put(`data:item.${id}.desc`, record.desc);
   }
 
+  function scaleOf(value: unknown, fallback: number): number {
+    return typeof value === 'number' && Number.isFinite(value) && value > 0
+      ? value
+      : fallback;
+  }
+
   const enemies: Record<string, CatalogEnemy> = {};
   for (const [key, record] of records(input.enemies)) {
     const id = str(record.key) ?? key;
@@ -181,6 +268,8 @@ export function buildUpstreamCatalog(
       id,
       rank: str(record.rank),
       fly: record.isFlyEnemy === true,
+      modelScale: scaleOf(record.modelScale, 1),
+      modelScaleY: scaleOf(record.modelScaleY, 1),
     };
     put(`data:enemy.${id}.name`, record.name);
   }
@@ -208,29 +297,88 @@ export function buildUpstreamCatalog(
   const config = isJsonRecord(input.config) ? input.config : {};
   for (const [key, record] of records(config.modes)) {
     const id = str(record.modeId) ?? key;
+    const code = str(record.code);
+    const iconId = str(record.iconId);
     modes[id] = {
       id,
       type: str(record.type) ?? 'SINGLE',
       difficulty: str(record.difficulty) ?? 'NORMAL',
+      ...(code ? { code } : {}),
+      ...(Number.isInteger(record.lastRound)
+        ? { lastRound: record.lastRound as number }
+        : {}),
+      ...(Number.isInteger(record.hiddenRound)
+        ? { hiddenRound: record.hiddenRound as number }
+        : {}),
+      ...(iconId ? { icon: `image:ui/modeIcon/${iconId}` } : {}),
+      ...(Number.isInteger(record.bossRound)
+        ? { bossRound: record.bossRound as number }
+        : {}),
+      ...(Array.isArray(record.stages)
+        ? { stages: strings(record.stages).length }
+        : {}),
+      ...(Array.isArray(record.inactiveBondIds)
+        ? { inactiveBonds: strings(record.inactiveBondIds) }
+        : {}),
     };
     put(`data:mode.${id}.name`, record.name);
     put(`data:mode.${id}.desc`, record.desc);
+    const effects = strings(record.effectDescList)
+      .map((effect) => effect.replace(/^[·•・･\s]+/u, ''))
+      .filter(Boolean);
+    if (effects.length) {
+      put(`data:mode.${id}.effects`, effects.join('\n'));
+    }
+  }
+
+  const draftConfig = isJsonRecord(config.bandDraft) ? config.bandDraft : {};
+  const timeoutBandId = str(draftConfig.timeoutBandId);
+
+  const tips: string[] = [];
+  for (const [index, record] of (Array.isArray(config.tips)
+    ? config.tips
+    : []
+  ).entries()) {
+    const tip =
+      typeof record === 'string'
+        ? record
+        : isJsonRecord(record)
+          ? str(record.tip)
+          : null;
+    if (tip) {
+      tips.push(String(index));
+      put(`data:tip.${index}`, tip);
+    }
   }
 
   const bosses: Record<string, CatalogBoss> = {};
   for (const [key, record] of records(input.bosses)) {
     const id = str(record.bossId) ?? key;
-    bosses[id] = { id, enemyId: str(record.enemyKey) };
+    const abilities = strings(record.abilities).filter(Boolean);
+    bosses[id] = {
+      id,
+      enemyId: str(record.enemyKey),
+      ...(abilities.length ? { abilities: abilities.length } : {}),
+    };
     put(`data:boss.${id}.name`, record.name);
+    if (abilities.length) {
+      put(`data:boss.${id}.abilities`, abilities.join('\n'));
+    }
   }
 
   for (const [key, record] of records(input.stages)) {
     put(`data:stage.${str(record.id) ?? key}.name`, record.name);
   }
 
-  const factions = isJsonRecord(input.factions) ? input.factions : {};
-  for (const [key, record] of records(factions.types)) {
+  const factionTable = isJsonRecord(input.factions) ? input.factions : {};
+  const factions: Record<string, CatalogFaction> = {};
+  for (const [key, record] of records(factionTable.types)) {
     const id = str(record.type) ?? key;
+    const icon = str(record.icon);
+    factions[id] = {
+      id,
+      ...(icon ? { icon: `image:ui/enemyTypeIcon/${icon}` } : {}),
+    };
     put(`data:faction.${id}.name`, record.name);
     put(`data:faction.${id}.desc`, record.desc);
   }
@@ -240,15 +388,54 @@ export function buildUpstreamCatalog(
   const diy = isJsonRecord(backups.diy) ? backups.diy : {};
   const prototypes = isJsonRecord(diy.prototypes) ? diy.prototypes : {};
   const owned = strings(diy.ownedPool);
+  const units = isJsonRecord(backups.units) ? backups.units : {};
+  const lockedTable = isJsonRecord(diy.locked) ? diy.locked : {};
   for (const [id, record] of records(diy.slots)) {
     const tier = num(record.tier, 0);
-    diySlots.push({
-      id,
-      tier,
-      candidates: [
-        ...new Set([...strings(prototypes[String(tier)]), ...owned]),
-      ],
-    });
+    const candidates = [
+      ...new Set([...strings(prototypes[String(tier)]), ...owned]),
+    ];
+    const normalKey = statusKey(chessRecords[id]?.status);
+    const goldenId = str(record.goldenId);
+    const eliteKey = statusKey(
+      goldenId ? chessRecords[goldenId]?.status : undefined,
+    );
+    const lockedOfTier = isJsonRecord(lockedTable[String(tier)])
+      ? lockedTable[String(tier)]
+      : {};
+    const choices: Record<string, CatalogDiyChoice> = {};
+    for (const charId of candidates) {
+      const unit = units[charId];
+      const forms =
+        isJsonRecord(unit) && isJsonRecord(unit.forms) ? unit.forms : {};
+      const normal = isJsonRecord(forms[normalKey]) ? forms[normalKey] : {};
+      const elite = isJsonRecord(forms[eliteKey]) ? forms[eliteKey] : {};
+      const lock = isJsonRecord(lockedOfTier)
+        ? lockedOfTier[charId]
+        : undefined;
+      choices[charId] = {
+        skills: (Array.isArray(normal.skills) ? normal.skills : [])
+          .map((skill) => (isJsonRecord(skill) ? skill.index : undefined))
+          .filter((index): index is number => Number.isInteger(index)),
+        modules: (Array.isArray(elite.modules) ? elite.modules : [])
+          .filter(isJsonRecord)
+          .filter(
+            (module) =>
+              !DIY_EXCLUDED_MODULE_TYPE.test(String(module.typeName ?? '')),
+          )
+          .map((module) => str(module.uniEquipId))
+          .filter((module): module is string => module !== null),
+        ...(isJsonRecord(lock) && Number.isInteger(lock.skillIndex)
+          ? {
+              locked: {
+                skillIndex: lock.skillIndex as number,
+                uniEquipId: str(lock.uniEquipId) ?? null,
+              },
+            }
+          : {}),
+      };
+    }
+    diySlots.push({ id, tier, candidates, choices });
   }
   for (const [id, record] of records(diy.operators)) {
     put(`data:operator.${id}.name`, record.name);
@@ -264,7 +451,11 @@ export function buildUpstreamCatalog(
       waves,
       modes,
       bosses,
+      factions,
       diySlots,
+      diyOwned: owned,
+      tips,
+      ...(timeoutBandId ? { timeoutBandId } : {}),
     },
     text,
   };

@@ -1,8 +1,8 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { cx } from '../../infra/theme/class-name.js';
+import { cx } from '#infra/theme/class-name.js';
 import styles from './game.module.css';
 
-/** An operator's or item's tier, colored by `--color-tier-N`. */
+/** An operator's or item's tier, colored by `--wsde-color-tier-N`. */
 export function TierChip({
   tier,
   label,
@@ -14,7 +14,7 @@ export function TierChip({
     <span
       role="img"
       className={cx(styles.tier)}
-      style={{ '--tier': `var(--color-tier-${tier})` } as CSSProperties}
+      style={{ '--tier': `var(--wsde-color-tier-${tier})` } as CSSProperties}
       aria-label={label}
     >
       {tier}
@@ -153,7 +153,7 @@ export function PhaseCapsule({
   );
 }
 
-/** A difficulty's tag, colored by `--color-difficulty-<id>`. */
+/** A difficulty's tag, colored by `--wsde-color-difficulty-<id>`. */
 export function DifficultyTag({
   id,
   label,
@@ -166,7 +166,7 @@ export function DifficultyTag({
       className={cx(styles.difficulty)}
       style={
         {
-          '--difficulty': `var(--color-difficulty-${id}, var(--color-amber))`,
+          '--difficulty': `var(--wsde-color-difficulty-${id}, var(--wsde-color-amber))`,
         } as CSSProperties
       }
     >
@@ -197,7 +197,7 @@ export function UnitThumb({
       style={
         tier === undefined
           ? undefined
-          : ({ '--tier': `var(--color-tier-${tier})` } as CSSProperties)
+          : ({ '--tier': `var(--wsde-color-tier-${tier})` } as CSSProperties)
       }
       role="img"
       aria-label={name}

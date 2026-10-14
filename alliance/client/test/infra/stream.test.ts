@@ -1,13 +1,13 @@
 import { readFileSync } from 'node:fs';
 import type { ServerMessage } from '@alliance/contract/server-message.js';
 import { describe, expect, it } from 'vitest';
-import { placeOf } from '../../infra/boot/presence.js';
-import { matchViewOf } from '../../infra/router/match-view.js';
-import { applyFrame } from '../../infra/store/frame.js';
-import { matchStore } from '../../infra/store/match.js';
-import { type Presence, presenceReducer } from '../../infra/store/presence.js';
-import { roomStore } from '../../infra/store/room.js';
-import { sessionStore } from '../../infra/store/session.js';
+import { placeOf } from '#infra/boot/presence.js';
+import { matchViewOf } from '#infra/router/match-view.js';
+import { applyFrame } from '#infra/store/frame.js';
+import { matchStore } from '#infra/store/match.js';
+import { type Presence, presenceReducer } from '#infra/store/presence.js';
+import { roomStore } from '#infra/store/room.js';
+import { sessionStore } from '#infra/store/session.js';
 
 /** Server frames of a solo match against master, trimmed to its first and last rounds. */
 const frames = JSON.parse(

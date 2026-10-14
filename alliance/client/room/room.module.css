@@ -1,37 +1,53 @@
 @layer components {
+  /* Master's room: a head bar, the seats (and the solo briefing) in the middle, the room bar at the bottom. */
   .layout {
+    container: room / inline-size;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 1fr auto auto;
     grid-template-areas:
       "head"
       "main"
       "side"
       "actions"
       "below";
-    gap: var(--space-4);
+    gap: var(--wsde-space-4);
     width: 100%;
-    max-width: var(--size-page);
+    max-width: var(--wsde-size-page);
+    min-height: calc(100dvh - 2 * var(--wsde-space-4));
     margin: 0 auto;
   }
 
   @media (width >= 64rem) {
-    .layout {
-      grid-template-columns: minmax(0, 2fr) minmax(16rem, 1fr);
+    .layout[data-mode="coop"] {
+      grid-template-columns: minmax(0, 1fr) minmax(14rem, 18rem);
+      grid-template-rows: auto 1fr auto auto;
       grid-template-areas:
         "head head"
         "main side"
         "actions actions"
         "below below";
-      align-items: start;
     }
   }
 
-  .headRegion {
-    grid-area: head;
+  .layout[data-mode="solo"] .sideRegion:empty {
+    display: none;
   }
 
   .mainRegion {
     grid-area: main;
+    display: grid;
+    align-content: center;
+    gap: var(--wsde-space-4);
+  }
+
+  /* Solo: the seat and the briefing side by side, as master. */
+  @container room (width >= 40rem) {
+    [data-mode="solo"] .mainRegion {
+      grid-template-columns: minmax(12rem, 16rem) minmax(0, 32rem);
+      justify-content: center;
+      align-items: stretch;
+    }
   }
 
   .sideRegion {
@@ -42,12 +58,15 @@
     grid-area: actions;
     position: sticky;
     bottom: 0;
+    z-index: 1;
     flex-direction: row;
     flex-wrap: wrap;
-    justify-content: flex-end;
-    padding: var(--space-3);
-    border-top: var(--stroke-thin) solid var(--color-line-1);
-    background: var(--color-bg-glass);
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--wsde-space-4);
+    padding: var(--wsde-space-3);
+    border-top: var(--wsde-stroke-thin) solid var(--wsde-color-line-1);
+    background: var(--wsde-color-bg-glass);
   }
 
   .belowRegion {
@@ -59,45 +78,139 @@
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: var(--space-4);
+    gap: var(--wsde-space-4);
+  }
+
+  .headRegion {
+    grid-area: head;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: var(--wsde-space-3);
+  }
+
+  .headRegion > :first-child {
+    flex: 1;
+  }
+
+  .title {
+    display: flex;
+    align-items: center;
+    gap: var(--wsde-space-3);
+    font-family: var(--wsde-font-display);
+    font-size: var(--wsde-font-size-xl);
+  }
+
+  .invite {
+    display: grid;
+    gap: var(--wsde-space-1);
+    padding: var(--wsde-space-2) var(--wsde-space-3);
+    border: var(--wsde-stroke-thin) solid var(--wsde-color-line-2);
+    background: var(--wsde-color-bg-2);
   }
 
   .code {
-    font-family: var(--font-number);
-    font-size: var(--font-size-2xl);
-    letter-spacing: 0.2em;
+    font-family: var(--wsde-font-number);
+    font-size: var(--wsde-font-size-2xl);
+    letter-spacing: 0.3em;
+    color: var(--wsde-color-accent-400);
+    user-select: all;
   }
 
   .roster {
     display: grid;
-    gap: var(--space-2);
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+    gap: var(--wsde-space-3);
+  }
+
+  [data-mode="solo"] .roster {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .seat {
-    display: grid;
-    grid-template-columns: auto auto 1fr auto;
-    align-items: center;
-    gap: var(--space-3);
-    padding: var(--space-2) var(--space-3);
-    border: var(--stroke-thin) solid var(--color-line-1);
-    border-radius: var(--radius-1);
-    background: var(--color-bg-2);
+    display: flex;
+    flex-direction: column;
+    gap: var(--wsde-space-2);
+    min-height: 18rem;
+    padding: var(--wsde-space-3);
+    border: var(--wsde-stroke-thin) solid var(--wsde-color-line-2);
+    background: var(--wsde-color-bg-2);
+  }
+
+  .seat[data-me] {
+    border-color: var(--wsde-color-accent-500);
   }
 
   .seat[data-empty] {
-    grid-template-columns: auto 1fr;
     border-style: dashed;
     background: transparent;
   }
 
-  .seatIndex {
-    font-family: var(--font-number);
-    color: var(--color-text-dim);
+  .seatNo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--wsde-font-number);
+    color: var(--wsde-color-text-md);
+  }
+
+  .seatArt {
+    position: relative;
+    display: grid;
+    flex: 1;
+    place-items: center;
+    gap: var(--wsde-space-2);
+    background: repeating-linear-gradient(
+      -45deg,
+      rgb(255 255 255 / 0.02) 0 2px,
+      transparent 2px 12px
+    );
+  }
+
+  .seatState {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--wsde-space-1);
+    color: var(--wsde-color-text-md);
+  }
+
+  .seat[data-state="ready"] .seatState {
+    color: var(--wsde-color-accent-400);
+  }
+
+  .seat[data-state="offline"] .seatState {
+    color: var(--wsde-color-warn, var(--wsde-color-amber));
+  }
+
+  .brief {
+    display: grid;
+    gap: var(--wsde-space-1);
+    padding-inline-start: var(--wsde-space-4);
+  }
+
+  .actionButtons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--wsde-space-2);
+    margin-inline-start: auto;
   }
 
   .spectator {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: var(--wsde-space-2);
+  }
+}
+
+@layer components {
+  /* A phone on its side: the bar follows the page instead of covering the seat, and the seat is shorter. */
+  @media (height < 30rem) {
+    .actionsRegion {
+      position: static;
+    }
+
+    .seat {
+      min-height: 12rem;
+    }
   }
 }

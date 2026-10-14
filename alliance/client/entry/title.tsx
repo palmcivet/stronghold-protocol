@@ -2,9 +2,9 @@ import { NAME_MAX_LEN } from '@alliance/contract/match.js';
 import { useRouteContext } from '@tanstack/react-router';
 import { type FormEvent, useState } from 'react';
 import { Form } from 'react-aria-components';
-import { settingsStore } from '../infra/store/settings.js';
-import { useText } from '../infra/text/index.js';
-import { Button, Cluster, Panel, TextField } from '../ui/index.js';
+import { settingsStore } from '#infra/store/settings.js';
+import { useText } from '#infra/text/index.js';
+import { Button, Panel, Stack, TextField } from '#ui/index.js';
 
 /** The code name the player enters with. */
 export function NameForm() {
@@ -21,7 +21,7 @@ export function NameForm() {
   return (
     <Panel title={t('core:title.heading')}>
       <Form onSubmit={submit}>
-        <Cluster align="end">
+        <Stack gap={3}>
           <TextField
             label={t('core:title.name')}
             value={name}
@@ -35,7 +35,7 @@ export function NameForm() {
           <Button type="submit" variant="primary" isDisabled={!valid}>
             {t('core:title.start')}
           </Button>
-        </Cluster>
+        </Stack>
       </Form>
     </Panel>
   );

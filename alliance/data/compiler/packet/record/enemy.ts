@@ -530,6 +530,28 @@ function enemyAttrPower(
  */
 export const DEFAULT_ATTACK_ANIM: null = null;
 
+/** Circle of facing-RIGHT attack cells from a range radius (mission-core UnitSpec.attackRange). */
+export function attackRangeFromRadius(
+  radius: number,
+): readonly (readonly [number, number])[] {
+  if (!(radius > 0)) {
+    return [[1, 0]];
+  }
+  const cells: [number, number][] = [];
+  const r = Math.ceil(radius);
+  for (let y = -r; y <= r; y += 1) {
+    for (let x = -r; x <= r; x += 1) {
+      if (x === 0 && y === 0) {
+        continue;
+      }
+      if (x * x + y * y <= radius * radius + 0.01) {
+        cells.push([x, y]);
+      }
+    }
+  }
+  return cells.length > 0 ? cells : [[1, 0]];
+}
+
 const BAND_SWAP_LPR: number = 1;
 
 function bandSwapEnemyKeys(act: any): Set<string> {
@@ -701,6 +723,13 @@ export function buildEnemies(ctx: SeasonContext): Record<string, any> {
     const prefab = mv(merged.prefabKey) || key;
     const hitArea = HIT_AREAS[prefab] || null;
     const modelScale = MODEL_SCALE_BY_PREFAB.get(prefab) ?? null;
+    const movesWhileAttacking = abilities.some((ability: any) =>
+      ability.text.includes('不停止移动'),
+    );
+    const enemyTags: string[] = [...(mv(merged.enemyTags) || [])];
+    if (movesWhileAttacking && !enemyTags.includes('attack-moves')) {
+      enemyTags.push('attack-moves');
+    }
     out[key] = {
       key,
       name,
@@ -725,7 +754,7 @@ export function buildEnemies(ctx: SeasonContext): Record<string, any> {
           }
         : {}),
       notCountInTotal: !!mv(merged.notCountInTotal, false),
-      tags: mv(merged.enemyTags) || [],
+      tags: enemyTags,
       be,
       beFactor,
       attrPower: enemyAttrPower(ctx, key, wantLevel),
@@ -743,9 +772,10 @@ export function buildEnemies(ctx: SeasonContext): Record<string, any> {
       ...(STATIC_BODIES.has(key) ? { staticBody: true } : {}),
       ...(modelScale != null && modelScale !== 1 ? { modelScale } : {}),
       attackAnim: DEFAULT_ATTACK_ANIM,
-      ...(abilities.some((ability: any) => ability.text.includes('不停止移动'))
-        ? { attackMoves: true }
-        : {}),
+      ...(movesWhileAttacking ? { attackMoves: true } : {}),
+      // Normalized for mission-core UnitSpec; BattleSpec consumes these.
+      attackRange: attackRangeFromRadius(stats.rangeRadius),
+      attackClip: DEFAULT_ATTACK_ANIM,
     };
   }
   for (const key of STATIC_BODIES) {

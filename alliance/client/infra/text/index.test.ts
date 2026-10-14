@@ -21,24 +21,24 @@ describe('t', () => {
   it('uses the language pack and falls back to the source', () => {
     setLanguage('en');
     expect(t('core:lobby.create')).toBe('Create room');
-    expect(t('core:room.host')).toBe('房主');
+    expect(t('core:bonds.heading')).toBe('盟约');
   });
 
   it('warns once in development about an English key it lacks', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     setLanguage('en');
-    t('core:vote.agree');
-    t('core:vote.agree');
+    t('core:field.empty');
+    t('core:field.empty');
     expect(
       warn.mock.calls.filter((call) =>
-        String(call[0]).includes('core:vote.agree'),
+        String(call[0]).includes('core:field.empty'),
       ),
     ).toHaveLength(1);
     setLanguage('zh-Hans');
-    t('core:vote.refuse');
+    t('core:field.label');
     expect(
       warn.mock.calls.some((call) =>
-        String(call[0]).includes('core:vote.refuse'),
+        String(call[0]).includes('core:field.label'),
       ),
     ).toBe(false);
     warn.mockRestore();

@@ -33,6 +33,19 @@ const TRIGGER_RENAME: Readonly<Record<string, string>> = {
   ALWAYS: 'SP_FULL',
   CUSTOM_RANGE_SEARCH_ENEMY: 'CUSTOM_RANGE',
 };
+
+/** Built-in mission-core trigger ids after rename; unknown raw types become DEFAULT. */
+export const KNOWN_SKILL_TRIGGERS: ReadonlySet<string> = new Set([
+  'DEFAULT',
+  'SKILL_RANGE',
+  'ACTIVE_RANGE',
+  'TAKE_DAMAGE',
+  'SP_FULL',
+  'CUSTOM_RANGE',
+  'SEARCH',
+  'GDGLOW_SKILL_2',
+  'NEVER',
+]);
 const ATTACK_RANGE_CHANGE: RegExp =
   /攻击(?:范围|距离)(?:与溅射范围)?(?:扩大|改变|缩小|缩短|加长|增加|\+)/;
 
@@ -224,7 +237,13 @@ export function resolveTrigger(
   if (deviation) {
     return { rule: deviation, rawRule, customRangeGrid: null };
   }
-  const rule = TRIGGER_RENAME[rawRule] || rawRule;
+  let rule = TRIGGER_RENAME[rawRule] || rawRule;
+  if (!KNOWN_SKILL_TRIGGERS.has(rule)) {
+    ctx.notes.warn(
+      `skill ${skill.skillId}: unknown skillTriggerType ${rawRule}, using DEFAULT`,
+    );
+    rule = 'DEFAULT';
+  }
   let customRangeGrid = null;
   if (rawRule === 'CUSTOM_RANGE_SEARCH_ENEMY') {
     const rangeId = ctx.ac.skillRangeDict?.[skill.skillId];

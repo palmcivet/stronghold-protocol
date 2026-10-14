@@ -1,5 +1,5 @@
 import { type ReactNode, useId } from 'react';
-import { cx } from '../infra/theme/class-name.js';
+import { cx } from '#infra/theme/class-name.js';
 import styles from './primitive.module.css';
 
 export interface PanelProps {

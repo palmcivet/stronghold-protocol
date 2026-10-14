@@ -21,13 +21,5 @@
     "vitest.config.ts",
     "**/*.test.tsx",
     "**/*.spec.tsx"
-  ],
-  "references": [
-    { "path": "../contract" },
-    { "path": "../data" },
-    { "path": "../compat/upstream" },
-    { "path": "../../assets-catalog" },
-    { "path": "../../mission-core" },
-    { "path": "../../mission-renderer" }
   ]
 }

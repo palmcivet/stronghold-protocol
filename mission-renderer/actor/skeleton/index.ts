@@ -1,4 +1,4 @@
-import type { TextureRegion } from '@pixi-spine/base';
+import { settings, type TextureRegion } from '@pixi-spine/base';
 import {
   AnimationState,
   AnimationStateData,
@@ -150,6 +150,14 @@ function blendOf(slot: Slot): SkeletonBlendMode {
 }
 
 /** The default skeleton runtime: Spine 3.8 skeletons and animations drawn as Three meshes. */
+/**
+ * The skeleton scaleY that keeps world y up on the board. pixi-spine flips world y for Pixi's y-down screen while its
+ * global `yDown` setting is on, so a skeleton cancels that flip with -1.
+ */
+export function boardScaleY(): number {
+  return settings.yDown ? -1 : 1;
+}
+
 export function createMissionSkeletonRuntime(
   options: MissionSkeletonRuntimeOptions = {},
 ): MissionSkeletonRuntime {
@@ -201,6 +209,7 @@ export function createMissionSkeletonRuntime(
       const meshUvTable =
         uvCache.get(spine) ?? new Map<MeshAttachment, Float32Array>();
       const skeleton = new Skeleton(spine);
+      skeleton.scaleY = boardScaleY();
       skeleton.setToSetupPose();
       const state = new AnimationState(new AnimationStateData(spine));
       const object3d = new Group();

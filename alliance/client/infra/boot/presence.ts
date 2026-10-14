@@ -1,11 +1,11 @@
-import type { IntentBus } from '../intent/bus.js';
-import { leaveRoom } from '../store/frame.js';
+import type { IntentBus } from '#infra/intent/bus.js';
+import { leaveRoom } from '#infra/store/frame.js';
 import {
   dispatchPresence,
   type Presence,
   presenceStore,
-} from '../store/presence.js';
-import { sessionStore } from '../store/session.js';
+} from '#infra/store/presence.js';
+import { sessionStore } from '#infra/store/session.js';
 
 /** How long a resumed session may take to report its room after `welcome`. */
 export const ROOM_GRACE_MS = 1500;

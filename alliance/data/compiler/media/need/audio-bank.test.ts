@@ -2,7 +2,11 @@ import { expect, test } from 'vitest';
 import {
   assetToPath,
   indexAudio,
+  pickModeAttacks,
+  pickModeHits,
   pickUnitSfx,
+  skillModeLetter,
+  SLOT_MODE_LETTER,
 } from '#compiler/media/need/audio-bank.js';
 
 test('asset paths and unit sfx role picking', () => {
@@ -109,4 +113,24 @@ test('operators keep normal-mode sounds and their own projectile banks', () => {
       projectile: { born: ['p/b.mp3'] },
     }),
   ).toEqual({ attack: ['p/b.mp3'] });
+});
+
+test('pickModeAttacks / pickModeHits group skill-mode banks by letter', () => {
+  const banks = new Map<string, readonly string[]>([
+    ['ON_ABILITY_START.attack.1', ['p/p_atk_x_d1.mp3']],
+    ['ON_ABILITY_ON.attack.4', ['p/p_atk_x_h.mp3']],
+    ['ON_ABILITY_START.attack.7', ['p/p_atk_x_s.mp3']],
+    ['ON_ABILITY_HIT.attack.7', ['p/p_imp_x_s.mp3']],
+    ['ON_ABILITY_START.attack', ['p/p_atk_x_n.mp3']],
+  ]);
+  expect(pickModeAttacks(banks)).toEqual({
+    d: ['p/p_atk_x_d1.mp3'],
+    h: ['p/p_atk_x_h.mp3'],
+    s: ['p/p_atk_x_s.mp3'],
+  });
+  expect(pickModeHits(banks)).toEqual({
+    s: ['p/p_imp_x_s.mp3'],
+  });
+  expect(skillModeLetter('p/p_atk_x_s.mp3')).toBe('s');
+  expect(SLOT_MODE_LETTER[2]).toBe('s');
 });

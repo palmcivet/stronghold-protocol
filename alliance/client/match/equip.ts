@@ -1,8 +1,8 @@
 import { ITEM_SLOTS } from '@alliance/contract/match.js';
 import type { PieceView } from '@alliance/contract/server-message.js';
 import { createStore } from 'zustand/vanilla';
-import type { IntentBus } from '../infra/intent/bus.js';
-import { onMatchReset } from '../infra/store/frame.js';
+import type { IntentBus } from '#infra/intent/bus.js';
+import { onMatchReset } from '#infra/store/frame.js';
 
 /** An equip onto an operator whose slots are full: which item to replace. */
 export interface EquipRequest {

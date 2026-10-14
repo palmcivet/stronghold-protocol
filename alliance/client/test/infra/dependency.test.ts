@@ -59,29 +59,82 @@ const RULES: IForbiddenRuleType[] = [
   },
 ];
 
+async function cruiseClient(forbidden: IForbiddenRuleType[]) {
+  const result = await cruise(['.'], {
+    baseDir: clientRoot,
+    parser: 'swc',
+    exclude: { path: '(^|/)(node_modules|dist|dist-web|dist-test)/' },
+    doNotFollow: { path: 'node_modules' },
+    tsPreCompilationDeps: true,
+    enhancedResolveOptions: {
+      extensions: ['.ts', '.tsx', '.js', '.json'],
+      // `#infra/x.js` resolves through package.json `imports`; dependency-cruiser maps the .js to the .ts or .tsx source
+      conditionNames: ['@wsde/source', 'import', 'default'],
+    },
+    ruleSet: { forbidden },
+    validate: true,
+  });
+  const output = result.output;
+  if (typeof output === 'string') {
+    throw new Error(output);
+  }
+  return output;
+}
+
 describe('dependency direction', () => {
   it('keeps every import of the client in its layer', async () => {
-    const result = await cruise(['.'], {
-      baseDir: clientRoot,
-      parser: 'swc',
-      exclude: { path: '(^|/)(node_modules|dist|dist-web|dist-test)/' },
-      doNotFollow: { path: 'node_modules' },
-      tsPreCompilationDeps: true,
-      enhancedResolveOptions: {
-        extensions: ['.ts', '.tsx', '.js', '.json'],
-      },
-      ruleSet: { forbidden: RULES },
-      validate: true,
-    });
-    const output = result.output;
-    if (typeof output === 'string') {
-      throw new Error(output);
-    }
+    const output = await cruiseClient(RULES);
     const violations = output.summary.violations.map(
       (violation) =>
         `${violation.rule.name}: ${violation.from} → ${violation.to}`,
     );
     expect(output.summary.totalCruised).toBeGreaterThan(100);
     expect(violations).toEqual([]);
+  });
+
+  it('resolves every alias import to a client file', async () => {
+    const output = await cruiseClient([]);
+    const aliased = output.modules.flatMap((module) =>
+      module.dependencies.filter((dependency) =>
+        dependency.module.startsWith('#'),
+      ),
+    );
+    expect(aliased.length).toBeGreaterThan(400);
+    expect(
+      aliased
+        .filter(
+          (dependency) =>
+            dependency.couldNotResolve || dependency.resolved.startsWith('#'),
+        )
+        .map((dependency) => dependency.module),
+    ).toEqual([]);
+  });
+
+  it('imports another directory only through an alias', async () => {
+    const output = await cruiseClient([]);
+    const directory = (path: string): string =>
+      path.slice(0, path.lastIndexOf('/') + 1);
+    const crossing = output.modules.flatMap((module) =>
+      module.dependencies
+        .filter(
+          (dependency) =>
+            dependency.module.startsWith('.') &&
+            directory(dependency.resolved) !== directory(module.source),
+        )
+        .map((dependency) => `${module.source} → ${dependency.module}`),
+    );
+    expect(crossing).toEqual([]);
+  });
+
+  it('still catches a violation reached through an alias', async () => {
+    const output = await cruiseClient([
+      {
+        name: 'probe',
+        severity: 'error',
+        from: { path: '^ui/' },
+        to: { path: '^infra/theme/' },
+      },
+    ]);
+    expect(output.summary.violations.length).toBeGreaterThan(0);
   });
 });

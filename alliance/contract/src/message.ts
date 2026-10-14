@@ -176,8 +176,38 @@ export function isBattleResult(value: unknown): boolean {
   );
 }
 
-export const LOADOUT_LIMITS: Readonly<{ entries: number; skillIndex: number }> =
-  Object.freeze({ entries: 160, skillIndex: 9 });
+export const LOADOUT_LIMITS: Readonly<{
+  entries: number;
+  skillIndex: number;
+  ops: number;
+}> = Object.freeze({ entries: 160, skillIndex: 9, ops: 256 });
+
+/** Potential (潜能) bounds; master builds every record at full potential, the default. */
+export const POTENTIAL_MIN = 1;
+export const POTENTIAL_MAX = 6;
+export const POTENTIAL_DEFAULT = 6;
+/** Cultivation (练度) tiers 0–3: 未精英化, 精英1, 精英2, 精英2 Lv.60; the default is the last. */
+export const CULTIVATE_MAX = 3;
+export const CULTIVATE_DEFAULT = 3;
+
+export const isPotential = (value: unknown): value is number =>
+  isInt(value, POTENTIAL_MIN, POTENTIAL_MAX);
+export const isCultivate = (value: unknown): value is number =>
+  isInt(value, 0, CULTIVATE_MAX);
+
+/** One `room.loadout.ops` entry: `{ potential?, cultivate? }`, at least one of them. */
+const isOpsEntry: Check = (value) =>
+  isPlain(value) &&
+  Object.keys(value).length > 0 &&
+  Object.keys(value).every(
+    (key) => key === 'potential' || key === 'cultivate',
+  ) &&
+  optional(isPotential)(value.potential) &&
+  optional(isCultivate)(value.cultivate);
+
+/** Structural check of `room.loadout.ops` (master 0.2.2): charId to potential and cultivation. */
+export const isLoadoutOps: Check = (value) =>
+  isMap(value, LOADOUT_LIMITS.ops, isId, isOpsEntry);
 /** The elite "no module" choice. */
 export const MODULE_NONE: 'none' = 'none';
 
@@ -609,13 +639,40 @@ const isHelloName = (value: unknown): boolean =>
   value.length <= NAME_MAX_LEN &&
   value.trim().length > 0;
 
+/** Local mod id the client reports on the extension handshake. */
+export interface HelloLocalMod {
+  readonly id: string;
+  readonly version: string;
+  readonly hash?: string;
+}
+
+/**
+ * `hello.ext` of the next extension handshake (ARCH). Absent when talking to a master backend, which ignores unknown
+ * fields. `caps` and `localMods` are free-form until the season-pack URL fields land.
+ */
+export interface HelloExt {
+  readonly client?: string;
+  readonly build?: string;
+  readonly protocol?: number;
+  readonly caps?: Readonly<Record<string, unknown>>;
+  readonly localMods?: readonly HelloLocalMod[];
+}
+
+const isHelloExt = (value: unknown): boolean =>
+  value != null && typeof value === 'object' && !Array.isArray(value);
+
 /** Client → server field checks. `room.create` is only `mode` and `difficulty`. */
 export const C2S: Readonly<Record<string, MessageSpec>> = {
   hello: {
     name: isHelloName,
     token: (value) => value == null || isStr(value, 64),
     version: (value) => value == null || isInt(value, 0, 1e6),
-    $optional: ['token', 'version'],
+    // master's tab claim: a shared token never replaces a connected session; an own one carries its first welcome
+    noReplace: (value) => typeof value === 'boolean',
+    claimAt: (value) => isInt(value, 0, Number.MAX_SAFE_INTEGER),
+    // next extension handshake (ARCH): season / content hashes and local mods; absent on master backends
+    ext: isHelloExt,
+    $optional: ['token', 'version', 'noReplace', 'claimAt', 'ext'],
   },
   ping: { c: (value) => typeof value === 'number' && Number.isFinite(value) },
   'room.create': {
@@ -636,7 +693,11 @@ export const C2S: Readonly<Record<string, MessageSpec>> = {
   'room.start': {},
   'room.rerollSetup': { setupRevision: (value) => isInt(value, 0, 2 ** 31) },
   'room.cancelReroll': { voteId: (value) => isInt(value, 1, 2 ** 31) },
-  'room.loadout': { entries: isLoadoutEntries },
+  'room.loadout': {
+    entries: isLoadoutEntries,
+    ops: isLoadoutOps,
+    $optional: ['ops'],
+  },
   'room.ownership': { notOwned: isNotOwnedList },
   'room.diy': { picks: isDiyPicks },
   'room.spectate': { code: isRoomCode },
@@ -673,10 +734,19 @@ export const C2S: Readonly<Record<string, MessageSpec>> = {
   },
   'g.destroy': { uid: isUid },
   'g.reward': { idx: (value) => isInt(value, 0, 5) },
-  'g.choice': { idx: (value) => isInt(value, 0, 5) },
+  'g.choice': {
+    idx: (value) => isInt(value, 0, 5),
+    choiceId: isId,
+    $optional: ['choiceId'],
+  },
   'g.ready': { ready: isBool },
   'g.emote': { id: isEmote },
-  'g.watch': { fieldId: (value) => isStr(value, 32) },
+  'g.watch': {
+    fieldId: (value) => isStr(value, 32),
+    // which player of a 联防 / boss pair field the viewer tapped (Match.watchPref; optional)
+    playerId: isId,
+    $optional: ['playerId'],
+  },
   'g.autoplay': { on: isBool },
   'g.pause': { on: isBool },
   'g.unitStats': {
@@ -689,6 +759,8 @@ export const C2S: Readonly<Record<string, MessageSpec>> = {
     gt: (value) => isNum(value, 0, 1e5),
     killed: (value) => isInt(value, 0, 1e5),
     total: (value) => isInt(value, 0, 1e5),
+    // HUD capsule numerator: own scheduled enemies knocked out or leaked
+    resolved: (value) => isInt(value, 0, 1e5),
     leaks: (value) => isNum(value, 0, 1e6),
     bossDmg: (value) => isNum(value, 0, BIG),
     by: (value) =>
@@ -696,7 +768,18 @@ export const C2S: Readonly<Record<string, MessageSpec>> = {
     done: isBool,
     left: (value) =>
       isMap(value, RESULT_LIMITS.players, isId, (item) => isInt(item, 0, 1e5)),
-    $optional: ['leaks', 'bossDmg', 'by', 'done', 'left'],
+    // boss / hidden field: LP each player's goal charged (0.2.2); leaks − sum = the leader's own drain
+    leaksBy: (value) =>
+      isMap(value, RESULT_LIMITS.players, isId, (item) => isNum(item, 0, 1e6)),
+    $optional: [
+      'resolved',
+      'leaks',
+      'bossDmg',
+      'by',
+      'done',
+      'left',
+      'leaksBy',
+    ],
   },
   'b.result': { battleId: isId, result: isBattleResult },
 };

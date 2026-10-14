@@ -1,16 +1,53 @@
 @layer components {
+  /* the field layer: the 3D stage fills it, the HUD floats over it (master's field view) */
   .fieldPart {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: var(--space-3);
-    width: 100%;
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
   }
 
+  /* the keyboard grid over the stage: out of sight until one of its tiles takes the focus */
   .grid {
     display: grid;
     gap: 2px;
-    width: 100%;
+  }
+
+  .keyboard {
+    position: absolute;
+    left: 50%;
+    bottom: 40%;
+    z-index: 1;
+    width: min(32rem, 60%);
+    transform: translateX(-50%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .keyboard:focus-within {
+    opacity: 0.9;
+    pointer-events: auto;
+  }
+
+  /* the battle's status and the piece menu, top centre under the HUD's strips */
+  .float {
+    position: absolute;
+    top: calc(
+      var(--wsde-size-hud-bar) +
+      var(--wsde-size-touch) +
+      var(--wsde-space-4)
+    );
+    left: 50%;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--wsde-space-2);
+    max-width: min(28rem, 60%);
+    transform: translateX(-50%);
+  }
+
+  .float:empty {
+    display: none;
   }
 
   .row {
@@ -20,9 +57,9 @@
   .tile {
     aspect-ratio: 1;
     min-width: 0;
-    padding: var(--space-1);
-    border: 1px solid var(--color-line-1);
-    background: var(--color-bg-2);
+    padding: var(--wsde-space-1);
+    border: 1px solid var(--wsde-color-line-1);
+    background: var(--wsde-color-bg-2);
     font-size: 0.75rem;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -30,23 +67,27 @@
   }
 
   .tile[aria-selected="true"] {
-    border-color: var(--color-accent-400);
-    background: var(--color-accent-a20);
+    border-color: var(--wsde-color-accent-400);
+    background: var(--wsde-color-accent-a20);
   }
 
   .occupied {
-    background: var(--color-bg-4);
+    background: var(--wsde-color-bg-4);
   }
 
   .stage {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    background: var(--color-bg-1);
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    /* Match mission-renderer clear (0x0c1114): letterbox beside the board-sized canvas reads as ground, not a HUD column. */
+    background: #0c1114;
+    touch-action: none;
   }
 
   .status {
-    color: var(--color-text-md);
+    padding: var(--wsde-space-1) var(--wsde-space-3);
+    background: var(--wsde-color-surface-hud);
+    color: var(--wsde-color-text-md);
   }
 
   .stream {
@@ -56,7 +97,7 @@
     margin: 0;
     padding: 0;
     list-style: none;
-    background: var(--color-bg-1);
+    background: var(--wsde-color-bg-1);
   }
 
   .unit {
@@ -72,11 +113,11 @@
   }
 
   .ally {
-    color: var(--color-accent-400);
+    color: var(--wsde-color-accent-400);
   }
 
   .enemy {
-    color: var(--color-text-md);
+    color: var(--wsde-color-text-md);
   }
 
   .fallen {
@@ -95,8 +136,8 @@
 
   .log {
     margin: 0;
-    padding-inline-start: var(--space-3);
+    padding-inline-start: var(--wsde-space-3);
     font-size: 0.75rem;
-    color: var(--color-text-md);
+    color: var(--wsde-color-text-md);
   }
 }

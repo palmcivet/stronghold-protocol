@@ -2,7 +2,7 @@
   .stage {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--wsde-space-2);
     margin: 0;
     aspect-ratio: 16 / 9;
     max-height: 60vh;
@@ -16,27 +16,27 @@
   }
 
   .caption {
-    font-size: var(--font-size-lg);
+    font-size: var(--wsde-font-size-lg);
   }
 
   .dots {
     display: flex;
-    gap: var(--space-1);
+    gap: var(--wsde-space-1);
     margin: 0;
     padding: 0;
     list-style: none;
   }
 
   .dot {
-    width: var(--space-3);
-    height: var(--space-3);
-    border: var(--stroke-thin) solid var(--color-line-3);
-    border-radius: var(--radius-round);
+    width: var(--wsde-space-3);
+    height: var(--wsde-space-3);
+    border: var(--wsde-stroke-thin) solid var(--wsde-color-line-3);
+    border-radius: var(--wsde-radius-round);
     background: transparent;
     cursor: pointer;
   }
 
   .dot[aria-current="page"] {
-    background: var(--color-accent-500);
+    background: var(--wsde-color-accent-500);
   }
 }

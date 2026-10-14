@@ -1,6 +1,11 @@
 import { createStore, useStore } from 'zustand';
-import { type CatalogEntry, CORE, PHASES, SERVER } from './catalog/core.js';
-import { EN } from './catalog/en.js';
+import {
+  type CatalogEntry,
+  CORE,
+  PHASES,
+  SERVER,
+} from '#infra/text/catalog/core.js';
+import { EN } from '#infra/text/catalog/en.js';
 import { formatMessage, type MessageParams } from './format.js';
 import type { TextKey, TextParams } from './key.js';
 

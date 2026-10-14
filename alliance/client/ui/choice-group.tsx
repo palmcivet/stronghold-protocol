@@ -4,7 +4,7 @@ import {
   RadioGroup,
   type RadioGroupProps,
 } from 'react-aria-components';
-import { cx } from '../infra/theme/class-name.js';
+import { cx } from '#infra/theme/class-name.js';
 import styles from './primitive.module.css';
 
 export interface ChoiceOption {

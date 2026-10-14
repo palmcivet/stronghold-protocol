@@ -1,33 +1,34 @@
 import { APP_VERSION, NAME_MAX_LEN } from '@alliance/contract/match.js';
 import { useEffect, useMemo, useState } from 'react';
 import { useStore } from 'zustand';
-import { avatarVariants } from '../infra/resource/art.js';
-import { PAGE } from '../infra/router/page.js';
-import { assetsStore } from '../infra/store/assets.js';
-import { useCatalog, useSession, useSettings } from '../infra/store/hook.js';
+import { keymapStore } from '#infra/intent/keymap.js';
+import { avatarVariants } from '#infra/resource/art.js';
+import { assetsStore } from '#infra/store/assets.js';
+import { useCatalog, useSession, useSettings } from '#infra/store/hook.js';
 import {
   AUDIO_CHANNELS,
-  KEY_ACTIONS,
-  type KeyAction,
   QUALITIES,
   type Quality,
   setChannel,
   settingsStore,
   TEXT_SIZES,
   type TextSize,
-} from '../infra/store/settings.js';
+} from '#infra/store/settings.js';
 import {
   dataName,
+  has,
   LANGUAGES,
   type Language,
+  lookup,
   shownName,
   useText,
-} from '../infra/text/index.js';
-import { cx } from '../infra/theme/class-name.js';
-import { PlayerAvatar } from '../part/art.js';
-import { definePart } from '../part/registry.js';
-import { insertPart } from '../part/slot.js';
-import { PartTabs } from '../part/tabs.js';
+} from '#infra/text/index.js';
+import { cx } from '#infra/theme/class-name.js';
+import { PlayerAvatar } from '#part/art.js';
+import { DIALOG } from '#part/dialog.js';
+import { definePart } from '#part/registry.js';
+import { insertPart } from '#part/slot.js';
+import { PartTabs } from '#part/tabs.js';
 import {
   Button,
   ChoiceGroup,
@@ -35,12 +36,11 @@ import {
   Hotkey,
   Item,
   Muted,
-  Screen,
   Slider,
   Stack,
   TextField,
   ToggleButton,
-} from '../ui/index.js';
+} from '#ui/index.js';
 import styles from './profile.module.css';
 
 export const PROFILE = {
@@ -59,6 +59,12 @@ const LANGUAGE_NAMES: Readonly<Record<Language, string>> = {
   'zh-Hans': '简体中文',
   en: 'English',
 };
+
+/** The text of an avatar variant label; a label the catalog has no text for is shown as another look. */
+export function variantLabel(label: string, name: string): string {
+  const key = `core:profile.avatar.variant.${label}`;
+  return lookup(has(key) ? key : 'core:profile.avatar.variant.other', { name });
+}
 
 function Identity() {
   const t = useText();
@@ -102,11 +108,9 @@ function Identity() {
         onChange={(value) => settingsStore.setState({ avatar: value })}
         options={[
           { value: '', label: t('core:profile.avatar.initial') },
-          ...variants.map(({ charId, field }) => ({
-            value: `${charId}:${field}`,
-            label: t(`core:profile.avatar.variant.${field}`, {
-              name: operatorName(charId),
-            }),
+          ...variants.map(({ charId, key, label }) => ({
+            value: key,
+            label: variantLabel(label, operatorName(charId)),
           })),
         ]}
       />
@@ -133,16 +137,20 @@ function LanguageSetting() {
   );
 }
 
-/** Waits for the next key and binds it to the action. */
-function KeyBinding({
-  action,
-  code,
+/** Waits for the next key and binds it to the action; the table lives in `#infra/intent/keymap`. */
+function KeyBindingRow({
+  id,
+  label,
+  defaults,
 }: {
-  readonly action: KeyAction;
-  readonly code: string;
+  readonly id: string;
+  readonly label: `${string}:${string}`;
+  readonly defaults: readonly string[];
 }) {
   const t = useText();
   const [waiting, setWaiting] = useState(false);
+  const changed = useSettings((state) => state.keymap[id]);
+  const code = (changed ?? defaults)[0] ?? null;
   useEffect(() => {
     if (!waiting) {
       return;
@@ -151,18 +159,24 @@ function KeyBinding({
       event.preventDefault();
       setWaiting(false);
       if (event.code !== 'Escape') {
-        const keys = settingsStore.getState().keys;
-        settingsStore.setState({ keys: { ...keys, [action]: event.code } });
+        const { keymap } = settingsStore.getState();
+        settingsStore.setState({ keymap: { ...keymap, [id]: [event.code] } });
       }
     };
     window.addEventListener('keydown', onKey, { once: true });
     return () => window.removeEventListener('keydown', onKey);
-  }, [waiting, action]);
+  }, [waiting, id]);
   return (
     <Item>
-      <span>{t(`core:profile.key.${action}`)}</span>
+      <span>{lookup(label)}</span>
       <Button onPress={() => setWaiting(true)} aria-live="polite">
-        {waiting ? t('core:profile.key.waiting') : <Hotkey code={code} />}
+        {waiting ? (
+          t('core:profile.key.waiting')
+        ) : code ? (
+          <Hotkey code={code} />
+        ) : (
+          '—'
+        )}
       </Button>
     </Item>
   );
@@ -170,12 +184,17 @@ function KeyBinding({
 
 function Keys() {
   const t = useText();
-  const keys = useSettings((state) => state.keys);
+  const actions = useStore(keymapStore, (state) => state.bindings);
   return (
     <Stack>
       <Stack as="ul" gap={2}>
-        {KEY_ACTIONS.map((action) => (
-          <KeyBinding key={action} action={action} code={keys[action]} />
+        {actions.map((action) => (
+          <KeyBindingRow
+            key={action.id}
+            id={action.id}
+            label={action.label}
+            defaults={action.keys}
+          />
         ))}
       </Stack>
       <Muted>{t('core:profile.key.hint')}</Muted>
@@ -316,19 +335,17 @@ function Feedback() {
   );
 }
 
-/** The profile page: one tab per settings part, the same set the in-match settings overlay shows. */
+/** The profile dialog, also the in-match settings: one tab per settings part. */
 function ProfileLayout() {
   const t = useText();
   return (
-    <section data-part={PAGE.profile} className={cx(styles.page)}>
-      <Screen title={t('core:nav.profile')}>
-        <PartTabs
-          id={PROFILE.tabs}
-          label={t('core:nav.profile')}
-          orientation="vertical"
-        />
-        <Muted>{t('core:profile.local')}</Muted>
-      </Screen>
+    <section data-part={DIALOG.profile} className={cx(styles.page)}>
+      <PartTabs
+        id={PROFILE.tabs}
+        label={t('core:nav.profile')}
+        orientation="vertical"
+      />
+      <Muted>{t('core:profile.local')}</Muted>
     </section>
   );
 }
@@ -345,7 +362,7 @@ const TABS = [
 
 export function registerProfileParts(): readonly (() => void)[] {
   return [
-    definePart(PAGE.profile, ProfileLayout, { extensible: true }),
+    definePart(DIALOG.profile, ProfileLayout, { extensible: true }),
     ...TABS.flatMap(([id, component, tab], index) => [
       definePart(id, component, {
         extensible: true,

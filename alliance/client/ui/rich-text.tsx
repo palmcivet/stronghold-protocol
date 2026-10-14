@@ -1,5 +1,5 @@
 import { Fragment, type ReactNode } from 'react';
-import { cx } from '../infra/theme/class-name.js';
+import { cx } from '#infra/theme/class-name.js';
 import styles from './widget.module.css';
 
 /** A run of an official description: plain text, or text under a style tag. */

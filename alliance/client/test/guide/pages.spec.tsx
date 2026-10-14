@@ -2,9 +2,9 @@
 
 import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import type { IntentBus } from '../../infra/intent/bus.js';
-import { t } from '../../infra/text/index.js';
-import { renderPart } from '../support/part.js';
+import type { IntentBus } from '#infra/intent/bus.js';
+import { t } from '#infra/text/index.js';
+import { renderPart } from '#test/support/part.js';
 
 afterEach(cleanup);
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useStore } from 'zustand';
-import { assetsStore } from '../store/assets.js';
+import { assetsStore } from '#infra/store/assets.js';
 import type { ResourceStore } from './store.js';
 
 type Key = NonNullable<ReturnType<ResourceStore['ref']>>;
@@ -70,16 +70,33 @@ export function useArt(source: ArtSource | null): string | null {
   return url;
 }
 
-/** The avatar ref fields of an operator in the asset catalog, plain then elite. They name the variant a player picks. */
-export const AVATAR_FIELDS = ['avatar', 'avatarElite'] as const;
-export type AvatarField = (typeof AVATAR_FIELDS)[number];
-
 export interface AvatarVariant {
   readonly charId: string;
-  readonly field: AvatarField;
+  /** Asset key of the image; it is the value a player picks. */
+  readonly key: Key;
+  /** The variant label of the asset catalog entry, such as `elite0`, `elite2` or `skin`. */
+  readonly label: string;
 }
 
-/** The avatar variants the asset catalog has for the operators, in their order. */
+/** Image keys an operator's `refs` record points at, in record order. */
+function charKeys(resources: ResourceStore, charId: string): readonly Key[] {
+  const record = resources.refs.chars?.[charId];
+  if (!record || typeof record !== 'object' || Array.isArray(record)) {
+    return [];
+  }
+  return [
+    ...new Set(
+      Object.values(record).filter(
+        (value): value is Key => typeof value === 'string',
+      ),
+    ),
+  ];
+}
+
+/**
+ * The avatar variants of the operators: their images whose asset catalog entry carries a `label`. An operator whose
+ * images have no label has no variants.
+ */
 export function avatarVariants(
   resources: ResourceStore | null,
   charIds: readonly string[],
@@ -88,8 +105,9 @@ export function avatarVariants(
     return [];
   }
   return charIds.flatMap((charId) =>
-    AVATAR_FIELDS.filter(
-      (field) => resources.ref(['chars', charId, field]) !== null,
-    ).map((field) => ({ charId, field })),
+    charKeys(resources, charId).flatMap((key) => {
+      const label = resources.resolver.entry(key)?.asset.label;
+      return label ? [{ charId, key, label }] : [];
+    }),
   );
 }

@@ -277,7 +277,7 @@ console.log(packFileRoot(season)) // "../../../../files/"
 
 ## 客户端加载
 
-`alliance/client/resource/store.ts` 的 `loadResourceStore` 加载清单并建立解析器：
+`alliance/client/infra/resource/store.ts` 的 `loadResourceStore` 加载清单并建立解析器：
 
 <!-- check:skip -->
 ```ts

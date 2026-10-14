@@ -18,8 +18,8 @@ description: 对局进程的 HTTP 面。健康检查，以及把连接升级为 
 | 字段 | 含义 |
 |---|---|
 | `ok` | `true` |
-| `version` | 协议版本，当前为 `1` |
-| `app` | 发行版本字符串，与包版本相同 |
+| `version` | 线路协议版本，整数 `1` |
+| `app` | 应用版本字符串（取值见本目录首页对照版本表） |
 | `uptimeSec` | 进程已运行的秒数 |
 | `build` | 与当前客户端成对的 12 位标识。进程启动时读入给定值；没有给定时为 `null` |
 | `sockets` | 当前 WebSocket 数 |
@@ -32,9 +32,11 @@ description: 对局进程的 HTTP 面。健康检查，以及把连接升级为 
 
 `build` 与打进页面的那一份相同。页面由站点发出，进程不扫描页面、脚本和样式。编排用它判断浏览器是否还拿着旧页面。
 
+查询 `?traffic=1`（或 `traffic` / `traffic=true`）时，响应可附带 `traffic`：自启动以来的 HTTP 与 WebSocket 流量计数。master 只对本机和局域网的访问展示该块。
+
 ## `GET /ws`
 
-HTTP 升级为 WebSocket。`maxPayload` 为 64 KiB，不启用按消息压缩。路径不是 `/ws` 时，升级被拒绝为 `404`。
+HTTP 升级为 WebSocket。`maxPayload` 为 64 KiB。master 对约 1 KB 及以上的文本帧启用 `permessage-deflate`（可用环境关闭）。路径不是 `/ws` 时，升级被拒绝为 `404`。
 
 准入在升级之前完成：
 

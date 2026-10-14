@@ -19,7 +19,7 @@ import {
 } from '#contract/message.js';
 
 const C2S_FIELDS: Readonly<Record<string, readonly string[]>> = {
-  hello: ['name', 'token', 'version'],
+  hello: ['name', 'token', 'version', 'noReplace', 'claimAt', 'ext'],
   ping: ['c'],
   'room.create': ['mode', 'difficulty'],
   'room.join': ['code'],
@@ -33,7 +33,7 @@ const C2S_FIELDS: Readonly<Record<string, readonly string[]>> = {
   'room.start': [],
   'room.rerollSetup': ['setupRevision'],
   'room.cancelReroll': ['voteId'],
-  'room.loadout': ['entries'],
+  'room.loadout': ['entries', 'ops'],
   'room.ownership': ['notOwned'],
   'room.diy': ['picks'],
   'room.spectate': ['code'],
@@ -53,10 +53,10 @@ const C2S_FIELDS: Readonly<Record<string, readonly string[]>> = {
   'g.art': ['itemUid', 'row', 'col', 'dir'],
   'g.destroy': ['uid'],
   'g.reward': ['idx'],
-  'g.choice': ['idx'],
+  'g.choice': ['idx', 'choiceId'],
   'g.ready': ['ready'],
   'g.emote': ['id'],
-  'g.watch': ['fieldId'],
+  'g.watch': ['fieldId', 'playerId'],
   'g.autoplay': ['on'],
   'g.pause': ['on'],
   'g.unitStats': ['seq'],
@@ -66,24 +66,37 @@ const C2S_FIELDS: Readonly<Record<string, readonly string[]>> = {
     'gt',
     'killed',
     'total',
+    'resolved',
     'leaks',
     'bossDmg',
     'by',
     'done',
     'left',
+    'leaksBy',
   ],
   'b.result': ['battleId', 'result'],
 };
 
 const OPTIONAL: Readonly<Record<string, readonly string[]>> = {
-  hello: ['token', 'version'],
+  hello: ['token', 'version', 'noReplace', 'claimAt', 'ext'],
   'g.infoReady': ['setupRevision'],
+  'room.loadout': ['ops'],
   'g.bandFocus': ['bandId'],
   'g.move': ['dir'],
   'g.equip': ['replaceUid'],
   'g.art': ['dir'],
+  'g.choice': ['choiceId'],
+  'g.watch': ['playerId'],
   'g.unitStats': ['seq'],
-  'b.progress': ['leaks', 'bossDmg', 'by', 'done', 'left'],
+  'b.progress': [
+    'resolved',
+    'leaks',
+    'bossDmg',
+    'by',
+    'done',
+    'left',
+    'leaksBy',
+  ],
 };
 
 test('every client message has the master fields, and unknown extras are ignored', () => {
@@ -178,6 +191,12 @@ test('lobby and match frames accept the master ranges and nothing outside them',
     validateC2S({ t: 'hello', name: 'x'.repeat(12), token: null, version: 1 }),
   ).toBeNull();
   expect(validateC2S({ t: 'hello', name: '   ' })).toBe('bad field name');
+  expect(
+    validateC2S({ t: 'hello', name: '博士', noReplace: true, claimAt: 5 }),
+  ).toBeNull();
+  expect(
+    validateC2S({ t: 'hello', name: '博士', noReplace: 1 }),
+  ).not.toBeNull();
   expect(validateC2S({ t: 'hello', name: 'x'.repeat(13) })).toBe(
     'bad field name',
   );
@@ -326,6 +345,15 @@ test('lobby and match frames accept the master ranges and nothing outside them',
   expect(validateC2S({ t: 'g.choice', idx: 6 })).toBe('bad field idx');
   expect(validateC2S({ t: 'g.ready', ready: false })).toBeNull();
   expect(validateC2S({ t: 'g.watch', fieldId: 'n:p_1' })).toBeNull();
+  expect(
+    validateC2S({ t: 'g.watch', fieldId: 'n:p_1', playerId: 'p_0123456789' }),
+  ).toBeNull();
+  expect(validateC2S({ t: 'g.watch', fieldId: 'n:p_1', playerId: '' })).toBe(
+    'bad field playerId',
+  );
+  expect(
+    validateC2S({ t: 'g.choice', idx: 0, choiceId: 'choice_a' }),
+  ).toBeNull();
   expect(validateC2S({ t: 'g.watch', fieldId: 'x'.repeat(33) })).toBe(
     'bad field fieldId',
   );
@@ -567,7 +595,7 @@ const chess: Record<string, ChessRecord> = {
 const getChess = (id: string) => chess[id] ?? null;
 
 test('room.loadout structure is a map of base ids to skill or module', () => {
-  expect(LOADOUT_LIMITS).toEqual({ entries: 160, skillIndex: 9 });
+  expect(LOADOUT_LIMITS).toEqual({ entries: 160, skillIndex: 9, ops: 256 });
   expect(MODULE_NONE).toBe('none');
   const ok = (entries: unknown) =>
     validateC2S({ t: 'room.loadout', entries }) === null;
@@ -819,4 +847,50 @@ test('ownership and custom squad payloads follow master limits', () => {
     validateC2S({ t: 'g.rerollVote', voteId: 0, agree: true }),
   ).not.toBeNull();
   expect(validateC2S({ t: 'room.setAiPicksLast', on: true })).toBeNull();
+});
+
+test('room.loadout takes the potential and cultivation of master 0.2.2', () => {
+  const frame = (ops: unknown) => ({ t: 'room.loadout', entries: {}, ops });
+  expect(validateC2S({ t: 'room.loadout', entries: {} })).toBeNull();
+  expect(
+    validateC2S(frame({ char_1: { potential: 1, cultivate: 0 } })),
+  ).toBeNull();
+  expect(validateC2S(frame({ char_1: { potential: 7 } }))).not.toBeNull();
+  expect(validateC2S(frame({ char_1: { cultivate: 4 } }))).not.toBeNull();
+  expect(validateC2S(frame({ char_1: {} }))).not.toBeNull();
+  expect(validateC2S(frame({ char_1: { level: 1 } }))).not.toBeNull();
+});
+
+test('g.watch playerId, g.choice choiceId, and b.progress resolved/leaksBy match master 0.2.6', () => {
+  expect(
+    validateC2S({
+      t: 'b.progress',
+      battleId: 'b1',
+      gt: 1,
+      killed: 0,
+      total: 1,
+      resolved: 0,
+      leaksBy: { p_1: 1.5 },
+    }),
+  ).toBeNull();
+  expect(
+    validateC2S({
+      t: 'b.progress',
+      battleId: 'b1',
+      gt: 1,
+      killed: 0,
+      total: 1,
+      resolved: 1.5,
+    }),
+  ).toBe('bad field resolved');
+  expect(
+    validateC2S({
+      t: 'hello',
+      name: '博士',
+      ext: { client: 'web', protocol: 1, localMods: [] },
+    }),
+  ).toBeNull();
+  expect(validateC2S({ t: 'hello', name: '博士', ext: 'x' })).toBe(
+    'bad field ext',
+  );
 });

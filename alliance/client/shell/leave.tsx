@@ -1,11 +1,11 @@
 import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useStore } from 'zustand';
-import { leftRoom } from '../infra/boot/presence.js';
-import { useIntent } from '../infra/intent/context.js';
-import { presenceStore } from '../infra/store/presence.js';
-import { useText } from '../infra/text/index.js';
-import { Button, Dialog, Modal } from '../ui/index.js';
+import { leftRoom } from '#infra/boot/presence.js';
+import { useIntent } from '#infra/intent/context.js';
+import { presenceStore } from '#infra/store/presence.js';
+import { useText } from '#infra/text/index.js';
+import { Button, Dialog, Modal } from '#ui/index.js';
 
 /**
  * Leaves the room the server holds the player in, after a confirmation: sends the leave, waits until the server has

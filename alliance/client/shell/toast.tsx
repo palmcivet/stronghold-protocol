@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useIntent } from '../infra/intent/context.js';
-import { errorText, useText } from '../infra/text/index.js';
-import { type ToastItem, ToastStack } from '../ui/index.js';
+import { useIntent } from '#infra/intent/context.js';
+import { errorText, useText } from '#infra/text/index.js';
+import { type ToastItem, ToastStack } from '#ui/index.js';
 
 const TOAST_MS = 3000;
 const TOAST_MAX = 4;

@@ -1,13 +1,16 @@
-import { createPreloader } from '../resource/preloader.js';
-import { loadResourceStore, type ResourceStore } from '../resource/store.js';
+import { createPreloader } from '#infra/resource/preloader.js';
+import {
+  loadResourceStore,
+  type ResourceStore,
+} from '#infra/resource/store.js';
 import {
   assetsStore,
   bindMatchAssets,
   releaseMatchAssets,
-} from '../store/assets.js';
-import { catalogStore } from '../store/catalog.js';
-import { matchStore } from '../store/match.js';
-import { presenceStore } from '../store/presence.js';
+} from '#infra/store/assets.js';
+import { catalogStore } from '#infra/store/catalog.js';
+import { matchStore } from '#infra/store/match.js';
+import { presenceStore } from '#infra/store/presence.js';
 
 /** Resources of a master backend: its `data/assets.json` and its art, through the page's origin. */
 export function loadCompatResources(): Promise<ResourceStore> {

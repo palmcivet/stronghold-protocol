@@ -5,11 +5,12 @@ import {
   Popover as AriaPopover,
   type PopoverProps as AriaPopoverProps,
   Tooltip as AriaTooltip,
+  Focusable,
   Heading,
   ModalOverlay,
   TooltipTrigger,
 } from 'react-aria-components';
-import { cx } from '../infra/theme/class-name.js';
+import { cx } from '#infra/theme/class-name.js';
 import { Button } from './button.js';
 import { Icon } from './icon.js';
 import styles from './widget.module.css';
@@ -60,6 +61,8 @@ export interface ModalProps {
   readonly onOpenChange?: (open: boolean) => void;
   /** Escape and a press outside close the modal. */
   readonly dismissable?: boolean;
+  /** The frame: a centred column (default), a large card, or the whole screen. */
+  readonly size?: 'panel' | 'wide' | 'full';
   readonly children: ReactNode;
 }
 
@@ -68,6 +71,7 @@ export function Modal({
   isOpen,
   onOpenChange,
   dismissable = true,
+  size = 'panel',
   children,
 }: ModalProps) {
   return (
@@ -78,7 +82,9 @@ export function Modal({
       isKeyboardDismissDisabled={!dismissable}
       className={cx(styles.scrim)}
     >
-      <AriaModal className={cx(styles.modal)}>{children}</AriaModal>
+      <AriaModal className={cx(styles.modal)} data-size={size}>
+        {children}
+      </AriaModal>
     </ModalOverlay>
   );
 }
@@ -134,6 +140,36 @@ export function Tooltip({
   return (
     <TooltipTrigger delay={delay}>
       {children}
+      <AriaTooltip className={cx(styles.tooltip)}>{tip}</AriaTooltip>
+    </TooltipTrigger>
+  );
+}
+
+/** A tip on a piece of display that is not a control: the piece takes focus, reads `label`, and shows `tip`. */
+export function InfoTip({
+  tip,
+  label,
+  children,
+  delay = 300,
+}: {
+  readonly tip: ReactNode;
+  readonly label: string;
+  readonly children: ReactNode;
+  readonly delay?: number;
+}) {
+  return (
+    <TooltipTrigger delay={delay}>
+      <Focusable>
+        <span
+          role="img"
+          aria-label={label}
+          // biome-ignore lint/a11y/noNoninteractiveTabindex: the tip has to be reachable from the keyboard
+          tabIndex={0}
+          className={cx(styles.infoTip)}
+        >
+          {children}
+        </span>
+      </Focusable>
       <AriaTooltip className={cx(styles.tooltip)}>{tip}</AriaTooltip>
     </TooltipTrigger>
   );

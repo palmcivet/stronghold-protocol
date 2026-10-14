@@ -1,9 +1,9 @@
-import { useIntent } from '../../infra/intent/context.js';
-import { useMatch, useSession } from '../../infra/store/hook.js';
-import { useText } from '../../infra/text/index.js';
-import { cx } from '../../infra/theme/class-name.js';
-import { Button, Panel } from '../../ui/index.js';
-import { cardName } from '../piece-label.js';
+import { useIntent } from '#infra/intent/context.js';
+import { useMatch, useSession } from '#infra/store/hook.js';
+import { useText } from '#infra/text/index.js';
+import { cx } from '#infra/theme/class-name.js';
+import { cardName } from '#match/piece-label.js';
+import { Button, Panel } from '#ui/index.js';
 import styles from './preparation.module.css';
 
 /** A personal pick-one offer, and the shared pick of the SP draft. */

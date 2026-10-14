@@ -10,6 +10,30 @@ export interface WireText {
   readonly params?: Readonly<Record<string, string | number>>;
 }
 
+/** One mod the welcome lists for the extension handshake. */
+export interface WelcomeMod {
+  readonly id: string;
+  readonly version: string;
+  readonly hash?: string;
+  readonly sides?: string;
+  readonly scope?: string;
+  readonly url?: string;
+  readonly config?: unknown;
+}
+
+/**
+ * `welcome.ext` of the next extension handshake (ARCH). Absent on master backends; the client then stays in
+ * compatibility mode (base content and local appearance mods only).
+ */
+export interface WelcomeExt {
+  readonly protocol?: number;
+  readonly seasonId?: string;
+  readonly contentHash?: string;
+  readonly dataHash?: string;
+  readonly mods?: readonly WelcomeMod[];
+  readonly roles?: readonly string[];
+}
+
 export interface WelcomeMessage {
   readonly t: 'welcome';
   readonly playerId: string;
@@ -19,8 +43,8 @@ export interface WelcomeMessage {
   readonly serverNow: number;
   readonly version: number;
   readonly resumed: boolean;
-  /** Present on a backend with the extension handshake. */
-  readonly ext?: Readonly<Record<string, unknown>>;
+  /** Present on a next backend with the extension handshake. */
+  readonly ext?: WelcomeExt;
 }
 
 export interface OkMessage {
@@ -107,6 +131,10 @@ export interface PlayerView {
   readonly fieldId: string | null;
   readonly status: string;
   readonly autoplay: boolean;
+  /** LP this round's own battle or 联防 will cost at settlement so far; omitted when 0 or outside combat. */
+  readonly pendingLp?: number;
+  /** Enemies still standing for a 联防 leaker, uncapped; omitted outside 联防. */
+  readonly uniteLeft?: number;
 }
 
 export interface FieldProgress {
@@ -165,6 +193,19 @@ export interface RerollVote {
   readonly agreed: readonly string[];
 }
 
+export interface UnitePlanView {
+  readonly helpers: readonly string[];
+  readonly leakers: readonly string[];
+}
+
+export interface UniteResultView {
+  readonly through: boolean;
+  readonly helpers: readonly string[];
+  readonly leakers: readonly string[];
+  /** LP settlement charged this round, by player. */
+  readonly losses: Readonly<Record<string, number>>;
+}
+
 export interface PublicView {
   readonly phase: Phase;
   readonly round: number;
@@ -180,6 +221,8 @@ export interface PublicView {
   readonly rerollVote?: RerollVote | null;
   readonly factions?: readonly string[];
   readonly disabledBonds?: readonly string[];
+  /** The bonds drawn off this match, without the ones the mode never activates. */
+  readonly drawnDisabledBonds?: readonly string[];
   readonly bannedChess?: readonly string[];
   readonly bossId?: string | null;
   readonly hiddenBossId?: string | null;
@@ -191,10 +234,16 @@ export interface PublicView {
   readonly paused?: boolean;
   readonly teamLp?: number;
   readonly bossHp?: { readonly hp: number; readonly max: number };
+  /** Epoch ms when the overtime drain of a 最终攻势 / 隐秘核心 starts. */
+  readonly overtimeAt?: number;
   readonly players: readonly PlayerView[];
   readonly fields: readonly FieldView[];
   readonly draft?: DraftView;
   readonly sp?: SpDraftView;
+  /** 联防 in progress. */
+  readonly unite?: UnitePlanView;
+  /** SETTLE after a 联防: its outcome for the result box. */
+  readonly uniteResult?: UniteResultView;
 }
 
 export interface PublicMessage extends PublicView {
@@ -231,17 +280,29 @@ export interface PieceItem {
   readonly id: string;
 }
 
+export interface PieceDiy {
+  readonly charId: string;
+  readonly skillIndex?: number;
+  readonly uniEquipId?: string;
+}
+
 export interface PieceView {
   readonly uid: number;
-  readonly kind: 'chess' | 'item';
+  readonly kind: 'chess' | 'item' | 'token';
   readonly id: string;
   readonly golden?: boolean;
-  readonly tier?: number;
+  readonly tier?: number | null;
   readonly items?: readonly PieceItem[];
   readonly count?: number;
+  /** Summon's owner piece uid. */
+  readonly ownerUid?: number | null;
   readonly row?: number;
   readonly col?: number;
   readonly dir?: Dir;
+  /** A custom-squad pick composing this piece. */
+  readonly diy?: PieceDiy;
+  /** A stand-in: the operator it fielded for. */
+  readonly standInFor?: string;
 }
 
 export interface EnemyPreview {
@@ -253,6 +314,8 @@ export interface EnemyPreview {
   readonly elite?: boolean;
   readonly boss?: boolean;
   readonly tag?: string | null;
+  /** Leader spawn tile on a boss field, `[row, col]`. */
+  readonly start?: readonly [number, number];
 }
 
 export interface EffectView {
@@ -261,6 +324,8 @@ export interface EffectView {
   readonly desc?: string;
   readonly iconKind?: string;
   readonly iconId?: string;
+  readonly counter?: number | null;
+  readonly counterText?: string;
 }
 
 export interface ChoiceView {
@@ -273,6 +338,26 @@ export interface ChoiceView {
 export interface LoadoutChoice {
   readonly skill?: number;
   readonly module?: string | null;
+}
+
+export interface PrivateOpsEntry {
+  readonly potential?: number;
+  readonly cultivate?: string;
+}
+
+export interface PrivateStats {
+  readonly dmgDealt: number;
+  readonly kills: number;
+  readonly leaks: number;
+  readonly gold: number;
+  readonly refreshes: number;
+  readonly merges: number;
+}
+
+export interface BossMateView {
+  readonly playerId: string;
+  readonly side: 'L' | 'R';
+  readonly units: readonly FieldUnitView[];
 }
 
 export interface PrivateView {
@@ -296,22 +381,75 @@ export interface PrivateView {
   readonly nextEnemies: readonly EnemyPreview[];
   /** Operator loadout by base chess id; chess not listed use their defaults. */
   readonly loadout: Readonly<Record<string, LoadoutChoice>>;
+  /** Per-operator potential / cultivate (0.2.2); operators not listed use 潜能 6, 精英2 Lv.60. */
+  readonly ops?: Readonly<Record<string, PrivateOpsEntry>>;
+  /** Stage map characters already on the board in prep (e.g. 外勤医疗). */
+  readonly prepMapChars?: readonly FieldUnitView[];
+  /** Running match stats for the result strip. */
+  readonly stats?: PrivateStats;
   /** Base chess ids this player fields as stand-ins. */
   readonly standIns?: readonly string[];
+  /** The player's custom squad picks by slot. */
+  readonly diy?: Readonly<Record<string, PieceDiy>>;
+  /** Slots whose picks stay out of the shop this match: every bond of the operator is off. */
+  readonly diyBanned?: readonly string[];
+  /** Boss-round prep: the pair partner's board on its half of the boss field. */
+  readonly bossMate?: BossMateView;
 }
 
 export interface PrivateMessage extends PrivateView {
   readonly t: 'm.private';
 }
 
+/** One unit on an `m.field` (prep scout or live battle meta). */
+export interface FieldUnitView {
+  readonly id: number;
+  readonly uid?: number;
+  readonly kind: string;
+  readonly side: string;
+  readonly ownerId?: string;
+  readonly defId: string;
+  readonly name?: string;
+  readonly tier?: number;
+  readonly golden?: boolean;
+  readonly spine?: string;
+  readonly avatar?: string;
+  readonly x: number;
+  readonly y: number;
+  readonly facing?: number;
+  readonly dir?: Dir;
+  readonly maxHp?: number;
+  readonly area?: 'board' | 'hand' | 'temp';
+  readonly skillIndex?: number;
+  readonly moduleId?: string;
+  readonly items?: readonly string[];
+  readonly form?: string | null;
+  readonly standInFor?: string;
+  readonly diy?: PieceDiy;
+  readonly potential?: number;
+  readonly cultivate?: string;
+}
+
+export interface FieldMateView {
+  readonly playerId: string;
+  readonly side: 'L' | 'R';
+}
+
 export interface FieldMessage {
   readonly t: 'm.field';
   readonly fieldId: string;
   readonly kind: string;
-  readonly live: boolean;
+  readonly live?: boolean;
   readonly stageId?: string | null;
   readonly rect?: FieldRect;
+  /** Prep scout of another player's board. */
   readonly prep?: boolean;
+  readonly units?: readonly FieldUnitView[];
+  readonly effects?: readonly EffectView[];
+  readonly nextEnemies?: readonly EnemyPreview[];
+  /** Boss-field half for a 最终攻势 / 隐秘核心 prep scout. */
+  readonly side?: 'L' | 'R';
+  readonly mate?: FieldMateView;
 }
 
 export interface ToastMessage extends WireText {
@@ -349,6 +487,17 @@ export interface ResultLineupEntry {
   readonly id: string;
   readonly golden?: boolean;
   readonly tier?: number;
+  /** A custom-squad slot: the operator it fielded. */
+  readonly diy?: { readonly charId: string };
+  /** A stand-in: the operator it fielded for. */
+  readonly standInFor?: string;
+}
+
+/** A bond on a result card: active, or holding layers. */
+export interface ResultBond {
+  readonly bondId: string;
+  readonly active?: boolean;
+  readonly layers?: number;
 }
 
 /** A player's statistics on the result screen, by stat id (`dmgDealt`, `kills`, …). */
@@ -365,7 +514,14 @@ export interface ResultRow {
   readonly lp?: number;
   readonly bandId?: string | null;
   readonly lineup?: readonly ResultLineupEntry[];
+  readonly bonds?: readonly ResultBond[];
   readonly stats?: ResultStats;
+  /** Trophies earned this match. */
+  readonly trophies?: number;
+  /** Garrison certification earned this match. */
+  readonly reward?: number;
+  /** The player left before the end. */
+  readonly left?: boolean;
   /** The remark the server gave the player, by name. */
   readonly title?: {
     readonly id?: string;

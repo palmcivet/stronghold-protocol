@@ -262,6 +262,83 @@ export function normalModeBank(
   );
 }
 
+export function skillModeLetter(path: unknown): 'd' | 'h' | 's' | null {
+  const match = SKILL_MODE_FILE.exec(typeof path === 'string' ? path : '');
+  const letter = match?.[1]?.toLowerCase();
+  return letter === 'd' || letter === 'h' || letter === 's' ? letter : null;
+}
+
+/** [ASSUMED] Slot fallback when activation sound names no mode (master 0.2.3 §28.17). */
+export const SLOT_MODE_LETTER: Readonly<Record<number, 'd' | 'h' | 's'>> =
+  Object.freeze({ 0: 'd', 1: 'h', 2: 's' });
+
+export type ModeLetterBanks = Partial<
+  Record<'d' | 'h' | 's', readonly string[]>
+>;
+
+/**
+ * Per-skill-mode banks by letter. Used so attack/hit during an active skill pick the mode bank (master
+ * pickModeAttacks / pickModeHits); ordinary pickUnitSfx still refuses skill-mode files.
+ */
+export function pickModeBanks(
+  banks: ReadonlyMap<string, readonly string[]> | undefined,
+  events: readonly string[],
+): ModeLetterBanks {
+  const candidates = new Map<
+    string,
+    { rank: string; rest: string; paths: readonly string[] }[]
+  >();
+  if (!banks?.size) {
+    return {};
+  }
+  for (const [name, paths] of banks) {
+    const event = events.find((prefix) => name.startsWith(`${prefix}.`));
+    if (!event || !paths.length) {
+      continue;
+    }
+    const ability = name.slice(event.length + 1).split('.')[0] ?? '';
+    if (!/attack|combat/i.test(ability)) {
+      continue;
+    }
+    const letter = skillModeLetter(paths[0]);
+    if (!letter || paths.some((path) => skillModeLetter(path) !== letter)) {
+      continue;
+    }
+    const rest = name.slice(event.length + 1 + ability.length);
+    const numbered = rest ? 1 : 0;
+    const rank = `${events.indexOf(event)}${numbered}`;
+    let list = candidates.get(letter);
+    if (!list) {
+      list = [];
+      candidates.set(letter, list);
+    }
+    list.push({ rank, rest, paths });
+  }
+  const out: ModeLetterBanks = {};
+  for (const [letter, list] of candidates) {
+    list.sort((a, b) =>
+      a.rank !== b.rank
+        ? a.rank < b.rank
+          ? -1
+          : 1
+        : abilityOrder(a.rest, b.rest),
+    );
+    const first = list[0];
+    if (first && (letter === 'd' || letter === 'h' || letter === 's')) {
+      out[letter] = first.paths;
+    }
+  }
+  return out;
+}
+
+export const pickModeAttacks = (
+  banks: ReadonlyMap<string, readonly string[]> | undefined,
+): ModeLetterBanks => pickModeBanks(banks, ['ON_ABILITY_START', 'ON_ABILITY_ON']);
+
+export const pickModeHits = (
+  banks: ReadonlyMap<string, readonly string[]> | undefined,
+): ModeLetterBanks => pickModeBanks(banks, ['ON_ABILITY_HIT']);
+
 export interface UnitSfx {
   attack?: readonly string[];
   hit?: readonly string[];

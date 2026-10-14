@@ -1,4 +1,15 @@
 export {
+  BondDisc,
+  DifficultyTag,
+  EmoteArt,
+  LpTower,
+  PhaseCapsule,
+  PriceHex,
+  SevenSeg,
+  TierChip,
+  UnitThumb,
+} from '#ui/game/game.js';
+export {
   ActionMenu,
   type ActionMenuItem,
   type ActionMenuProps,
@@ -42,17 +53,6 @@ export {
   type PlayFeedback,
   useFeedback,
 } from './feedback.js';
-export {
-  BondDisc,
-  DifficultyTag,
-  EmoteArt,
-  LpTower,
-  PhaseCapsule,
-  PriceHex,
-  SevenSeg,
-  TierChip,
-  UnitThumb,
-} from './game/game.js';
 export { ICON_NAMES, Icon, type IconName } from './icon.js';
 export {
   Cluster,
@@ -72,6 +72,7 @@ export { Meter, type MeterProps } from './meter.js';
 export {
   Dialog,
   type DialogProps,
+  InfoTip,
   Modal,
   type ModalProps,
   Overlay,

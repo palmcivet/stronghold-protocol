@@ -3,10 +3,10 @@
 import type { ServerMessage } from '@alliance/contract/server-message.js';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { applyFrame, resetMatch } from '../../infra/store/frame.js';
-import { streamStore } from '../../infra/store/stream.js';
-import { t } from '../../infra/text/index.js';
-import { StreamField } from '../../match/field/stream-field.js';
+import { applyFrame, resetMatch } from '#infra/store/frame.js';
+import { streamStore } from '#infra/store/stream.js';
+import { t } from '#infra/text/index.js';
+import { StreamField } from '#match/field/stream-field.js';
 
 const frame = (message: Record<string, unknown>): void =>
   act(() => applyFrame(message as unknown as ServerMessage));

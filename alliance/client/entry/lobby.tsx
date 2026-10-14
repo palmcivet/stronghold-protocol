@@ -1,38 +1,163 @@
-import { DIFFICULTIES, ROOM_CODE_LEN } from '@alliance/contract/match.js';
-import { type FormEvent, useState } from 'react';
+import {
+  DIFFICULTIES,
+  MAX_SEATS,
+  MAX_SPECTATORS,
+  ROOM_CODE_LEN,
+} from '@alliance/contract/match.js';
+import { type CSSProperties, type FormEvent, useEffect, useState } from 'react';
 import { Form } from 'react-aria-components';
 import { useStore } from 'zustand';
-import { useIntent } from '../infra/intent/context.js';
-import { useSession } from '../infra/store/hook.js';
-import { lookup, useText } from '../infra/text/index.js';
-import { cx } from '../infra/theme/class-name.js';
+import { useIntent } from '#infra/intent/context.js';
+import { useArt } from '#infra/resource/art.js';
+import { useCatalog, useSession } from '#infra/store/hook.js';
+import { lookup, useText } from '#infra/text/index.js';
+import { cx } from '#infra/theme/class-name.js';
+import { difficultyIconKey, difficultyInfo } from '#part/difficulty.js';
 import {
-  Badge,
   Button,
-  Cluster,
-  DifficultyTag,
   GridList,
+  Icon,
   Muted,
-  Panel,
-  Stack,
   TextField,
-} from '../ui/index.js';
+  Tooltip,
+} from '#ui/index.js';
 import styles from './entry.module.css';
 import { recentStore, rememberRoom } from './recent.js';
 
 type RoomMode = 'solo' | 'coop';
 
-const DIFFICULTY_CODES = ['AC-1', 'AC-2', 'AC-3', 'AC-4'] as const;
+const MODE_ICONS = { solo: 'user', coop: 'users' } as const;
+const MODE_MICRO = {
+  solo: 'SOLO SIMULATION',
+  coop: 'ALLIANCE SIMULATION',
+} as const;
 
-/** Mode and difficulty cards, and the create button. */
+function SectionLabel({
+  index,
+  label,
+  micro,
+}: {
+  readonly index: string;
+  readonly label: string;
+  readonly micro: string;
+}) {
+  return (
+    <div className={cx(styles.sectionLabel)}>
+      <span className={cx(styles.sectionIdx)}>{index}</span>
+      <span>{label}</span>
+      <span className={cx(styles.micro)}>{micro}</span>
+    </div>
+  );
+}
+
+function ModeCard({ mode }: { readonly mode: RoomMode }) {
+  const t = useText();
+  return (
+    <span className={cx(styles.modeCard)}>
+      <span className={cx(styles.modeArt)} aria-hidden="true" />
+      <span className={cx(styles.modeIcon)}>
+        <Icon name={MODE_ICONS[mode]} />
+      </span>
+      <span className={cx(styles.modeText)}>
+        <span className={cx(styles.micro)}>{MODE_MICRO[mode]}</span>
+        <strong className={cx(styles.modeName)}>
+          {lookup(`core:lobby.mode.${mode}`)}
+        </strong>
+        <span className={cx(styles.modeDesc)}>
+          {lookup(`core:lobby.mode.${mode}.desc`, { n: MAX_SEATS - 1 })}
+        </span>
+        <span className={cx(styles.points)}>
+          {lookup(`core:lobby.mode.${mode}.points`, { n: MAX_SEATS })
+            .split('\n')
+            .map((point) => (
+              <span key={point}>{point}</span>
+            ))}
+        </span>
+      </span>
+      <span className={cx(styles.modeCheck)} aria-hidden="true">
+        <Icon name="check" size="0.75rem" />
+        {t('core:lobby.selected')}
+      </span>
+    </span>
+  );
+}
+
+function DifficultyCard({
+  mode,
+  difficulty,
+}: {
+  readonly mode: RoomMode;
+  readonly difficulty: string;
+}) {
+  const t = useText();
+  const modes = useCatalog((state) => state.catalog.modes);
+  const info = difficultyInfo(modes, mode, difficulty);
+  const icon = useArt(info.icon ?? difficultyIconKey(difficulty));
+  return (
+    <span
+      className={cx(styles.difficultyCard)}
+      style={
+        {
+          '--difficulty': `var(--wsde-color-difficulty-${difficulty.toLowerCase()}, var(--wsde-color-amber))`,
+        } as CSSProperties
+      }
+    >
+      <span className={cx(styles.difficultyBar)} aria-hidden="true" />
+      <span className={cx(styles.difficultyHead)}>
+        {icon ? (
+          <img className={cx(styles.difficultyGlyph)} src={icon} alt="" />
+        ) : (
+          <span className={cx(styles.difficultyGlyphFallback)}>
+            <Icon name="rook" size="0.85rem" />
+          </span>
+        )}
+        <span className={cx(styles.difficultyName)}>
+          {lookup(`core:difficulty.${difficulty}`)}
+        </span>
+        {info.code ? (
+          <span className={cx(styles.difficultyCode)}>{info.code}</span>
+        ) : null}
+        <span className={cx(styles.rounds)}>
+          {info.rounds === null
+            ? null
+            : t('core:lobby.rounds', { rounds: info.rounds })}
+          {info.hidden ? (
+            <span className={cx(styles.hiddenBadge)}>
+              {t('core:lobby.hidden')}
+            </span>
+          ) : null}
+        </span>
+      </span>
+      <span className={cx(styles.difficultyDesc)}>{info.desc}</span>
+      <span className={cx(styles.effects)}>
+        {info.effects.map((effect) => (
+          <span key={effect}>{effect}</span>
+        ))}
+        {info.stageNote ? (
+          <span className={cx(styles.stageNote)}>
+            <Icon name="rook" size="0.7rem" />
+            {info.stageNote}
+          </span>
+        ) : null}
+      </span>
+      <span className={cx(styles.difficultyCheck)} aria-hidden="true">
+        <Icon name="check" size="0.85rem" />
+        <span>{t('core:lobby.selected')}</span>
+      </span>
+    </span>
+  );
+}
+
+/** Mode cards, the difficulty ladder, and the create button. */
 export function CreateRoom() {
   const t = useText();
   const intents = useIntent();
   const [mode, setMode] = useState<RoomMode>('solo');
   const [difficulty, setDifficulty] = useState<string>(DIFFICULTIES[0]);
   return (
-    <Panel title={t('core:lobby.create')}>
-      <Stack gap={4}>
+    <section className={cx(styles.create)} aria-label={t('core:lobby.create')}>
+      <div className={cx(styles.createMode)}>
+        <SectionLabel index="01" label={t('core:lobby.mode')} micro="MODE" />
         <GridList
           label={t('core:lobby.mode')}
           selected={mode}
@@ -40,59 +165,111 @@ export function CreateRoom() {
           items={(['solo', 'coop'] as const).map((id) => ({
             id,
             label: lookup(`core:lobby.mode.${id}`),
-            content: (
-              <span className={cx(styles.modeCard)}>
-                <strong>{lookup(`core:lobby.mode.${id}`)}</strong>
-                <Muted>{lookup(`core:lobby.mode.${id}.desc`)}</Muted>
-              </span>
-            ),
+            content: <ModeCard mode={id} />,
           }))}
+        />
+      </div>
+      <div className={cx(styles.createDifficulty)}>
+        <SectionLabel
+          index="02"
+          label={t('core:lobby.difficulty')}
+          micro="DIFFICULTY"
         />
         <GridList
           label={t('core:lobby.difficulty')}
+          layout="stack"
           selected={difficulty}
           onSelect={setDifficulty}
-          items={DIFFICULTIES.map((id, index) => ({
+          items={DIFFICULTIES.map((id) => ({
             id,
             label: lookup(`core:difficulty.${id}`),
-            content: (
-              <span className={cx(styles.difficultyCard)}>
-                <span className={cx(styles.difficultyHead)}>
-                  <DifficultyTag
-                    id={id.toLowerCase()}
-                    label={lookup(`core:difficulty.${id}`)}
-                  />
-                  <Badge>{DIFFICULTY_CODES[index]}</Badge>
-                </span>
-                <span>{lookup(`core:entry.difficulty.${mode}.${id}`)}</span>
-                <span className={cx(styles.effects)}>
-                  {lookup(`core:entry.difficulty.${mode}.${id}.effects`)
-                    .split('\n')
-                    .map((effect) => (
-                      <Muted key={effect}>· {effect}</Muted>
-                    ))}
-                </span>
-              </span>
-            ),
+            content: <DifficultyCard mode={mode} difficulty={id} />,
           }))}
         />
-        <Cluster justify="end">
-          <Button
-            variant="primary"
-            onPress={() =>
-              void intents.dispatch({
-                type: 'room.create',
-                fields: { mode, difficulty },
-              })
-            }
-          >
-            {t('core:lobby.create')}
-          </Button>
-        </Cluster>
-      </Stack>
-    </Panel>
+      </div>
+      <div className={cx(styles.createAction)}>
+        <Button
+          variant="primary"
+          onPress={() =>
+            void intents.dispatch({
+              type: 'room.create',
+              fields: { mode, difficulty },
+            })
+          }
+        >
+          {t(
+            mode === 'solo' ? 'core:lobby.start.solo' : 'core:lobby.start.coop',
+          )}
+          <span className={cx(styles.createChevrons)} aria-hidden="true">
+            ››
+          </span>
+        </Button>
+        <Muted>
+          {t(
+            mode === 'solo'
+              ? 'core:lobby.start.solo.hint'
+              : 'core:lobby.start.coop.hint',
+          )}
+        </Muted>
+      </div>
+    </section>
   );
 }
+
+/** The tips of the season, one at a time, turning every few seconds. */
+export function Tips() {
+  const t = useText();
+  const tips = useCatalog((state) => state.catalog.tips ?? []);
+  const [index, setIndex] = useState(0);
+  useEffect(() => {
+    if (tips.length < 2) {
+      return;
+    }
+    const timer = setInterval(
+      () => setIndex((value) => value + 1),
+      TIP_INTERVAL_MS,
+    );
+    return () => clearInterval(timer);
+  }, [tips.length]);
+  if (!tips.length) {
+    return null;
+  }
+  const shown = ((index % tips.length) + tips.length) % tips.length;
+  return (
+    <aside className={cx(styles.tips)} aria-label={t('core:entry.tips')}>
+      <div className={cx(styles.tipsHead)}>
+        <Icon name="info" size="0.85rem" />
+        <strong>{t('core:entry.tips')}</strong>
+        <span className={cx(styles.micro)}>TACTICAL TIPS</span>
+        <span className={cx(styles.tipsIdx)}>
+          {shown + 1}/{tips.length}
+        </span>
+        <button
+          type="button"
+          className={cx(styles.tipsNav)}
+          aria-label={t('core:entry.tips.previous')}
+          onClick={() => setIndex(shown - 1 + tips.length)}
+        >
+          <Icon name="chevron-left" size="0.75rem" />
+        </button>
+        <button
+          type="button"
+          className={cx(styles.tipsNav)}
+          aria-label={t('core:entry.tips.next')}
+          onClick={() => setIndex(shown + 1)}
+        >
+          <Icon name="chevron-right" size="0.75rem" />
+        </button>
+      </div>
+      <p className={cx(styles.tipsText)} aria-live="polite">
+        {lookup(`data:tip.${tips[shown]}`)}
+      </p>
+    </aside>
+  );
+}
+
+/** Milliseconds between two tips, as master turns them. */
+export const TIP_INTERVAL_MS = 5000;
 
 /** The room code, the recent rooms, and join or spectate. */
 export function JoinRoom() {
@@ -121,41 +298,61 @@ export function JoinRoom() {
     }
   };
   return (
-    <Panel title={t('core:lobby.join')}>
-      <Form onSubmit={join}>
-        <Stack>
-          <TextField
-            label={t('core:lobby.code')}
-            value={code}
-            onChange={setCode}
-            maxLength={64}
-          />
-          <Cluster>
-            <Button type="submit" variant="primary" isDisabled={!codeValid}>
+    <section className={cx(styles.join)} aria-label={t('core:lobby.join')}>
+      <SectionLabel
+        index="03"
+        label={t('core:lobby.join')}
+        micro="JOIN WITH ALLIANCE KEY"
+      />
+      <div className={cx(styles.joinPanel)}>
+        <Form onSubmit={join} className={cx(styles.joinForm)}>
+          <div className={cx(styles.joinRow)}>
+            <TextField
+              label={t('core:lobby.code.hint')}
+              value={code}
+              onChange={setCode}
+              maxLength={64}
+            />
+            <Button type="submit" variant="amber" isDisabled={!codeValid}>
+              <Icon name="users" size="0.9rem" />
               {t('core:lobby.join')}
             </Button>
             {spectatorSeats ? (
-              <Button
-                isDisabled={!codeValid}
-                onPress={() => void go('room.spectate', normalized)}
+              <Tooltip
+                tip={t('core:lobby.spectate.tip', { n: MAX_SPECTATORS })}
               >
-                {t('core:lobby.spectate')}
-              </Button>
+                <Button
+                  isDisabled={!codeValid}
+                  onPress={() => void go('room.spectate', normalized)}
+                >
+                  <Icon name="eye" size="0.9rem" />
+                  {t('core:lobby.spectate')}
+                </Button>
+              </Tooltip>
             ) : null}
-          </Cluster>
-        </Stack>
-      </Form>
-      {recent.length ? (
-        <Cluster gap={2} label={t('core:lobby.recent')}>
-          <Muted>{t('core:lobby.recent')}</Muted>
-          {recent.map((entry) => (
-            <Button key={entry} onPress={() => setCode(entry)}>
-              {entry}
-            </Button>
-          ))}
-        </Cluster>
-      ) : null}
-    </Panel>
+          </div>
+        </Form>
+        <div className={cx(styles.joinFoot)}>
+          {recent.length ? (
+            <>
+              <Muted>{t('core:lobby.recent')}</Muted>
+              {recent.map((entry) => (
+                <button
+                  key={entry}
+                  type="button"
+                  className={cx(styles.codeChip)}
+                  onClick={() => setCode(entry)}
+                >
+                  {entry}
+                </button>
+              ))}
+            </>
+          ) : (
+            <Muted>{t('core:lobby.recent.empty', { n: ROOM_CODE_LEN })}</Muted>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }
 

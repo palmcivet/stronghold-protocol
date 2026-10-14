@@ -1,22 +1,23 @@
 import { PHASE } from '@alliance/contract/match.js';
-import { useMatch } from '../infra/store/hook.js';
-import { useText } from '../infra/text/index.js';
-import { cx } from '../infra/theme/class-name.js';
-import { BattleStatus } from './field/battle-status.js';
-import { Bench } from './field/bench.js';
-import { DomField } from './field/dom-field.js';
-import styles from './field/field.module.css';
-import { StageField } from './field/stage.js';
-import { StreamField } from './field/stream-field.js';
-import { UnitActions } from './field/unit-actions.js';
-import { usePlaybackRuntime } from './playback/context.js';
+import { useMatch } from '#infra/store/hook.js';
+import { useText } from '#infra/text/index.js';
+import { cx } from '#infra/theme/class-name.js';
+import { Bench } from '#match/field/bench.js';
+import { DomField } from '#match/field/dom-field.js';
+import styles from '#match/field/field.module.css';
+import { StageField } from '#match/field/stage.js';
+import { UnitActions } from '#match/field/unit-actions.js';
+import { usePlaybackRuntime } from '#match/playback-runtime.js';
 
 const PREPARATION_PHASES: ReadonlySet<string> = new Set([
   PHASE.PREP,
   PHASE.SP_DRAFT,
 ]);
 
-/** The battlefield boundary: the stage, the battle's status and stream, the board, the bench and the piece menu. */
+/**
+ * The battlefield boundary: the 3D stage filling the screen under the HUD, the battle's status and the piece menu over
+ * it, and the keyboard grid and bench list for keyboards and screen readers.
+ */
 export function Field() {
   const t = useText();
   const playback = usePlaybackRuntime();
@@ -24,19 +25,23 @@ export function Field() {
     phase: state.public?.phase ?? null,
     own: state.private,
   }));
-  const canAct =
-    own?.alive === true && phase !== null && PREPARATION_PHASES.has(phase);
+  const preparing = phase !== null && PREPARATION_PHASES.has(phase);
+  const canAct = own?.alive === true && preparing;
   return (
     <section
       className={cx(styles.fieldPart)}
       aria-label={t('core:field.label')}
     >
-      {playback ? <StageField playback={playback} /> : null}
-      <BattleStatus />
-      <StreamField />
+      <StageField playback={playback} preparing={preparing} canAct={canAct} />
+      <div className={cx(styles.float)}>
+        <UnitActions canAct={canAct} />
+      </div>
       <DomField canAct={canAct} />
-      <UnitActions canAct={canAct} />
-      {own ? <Bench canAct={canAct} /> : null}
+      {own ? (
+        <div className="wsde-visually-hidden">
+          <Bench canAct={canAct} />
+        </div>
+      ) : null}
     </section>
   );
 }

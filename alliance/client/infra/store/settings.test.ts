@@ -1,43 +1,56 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { migrateLegacy } from '#infra/boot/storage.js';
 import {
-  audioGains,
-  DEFAULT_AUDIO,
-  DEFAULT_KEYS,
-  loadSettings,
-} from './settings.js';
+  backendOf,
+  configureStorage,
+  damagedKey,
+  envelope,
+  memoryHost,
+} from '#infra/storage/index.js';
+import { audioGains, DEFAULT_AUDIO, settingsItem } from './settings.js';
 
-function stubStorage(saved: string | null): void {
-  vi.stubGlobal('localStorage', {
-    getItem: () => saved,
-    setItem: () => undefined,
-  });
-}
+const small = () => backendOf('small');
 
 describe('settings', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
+  beforeEach(() => {
+    configureStorage(memoryHost());
   });
 
-  it('fills defaults for what is missing', () => {
-    stubStorage(
-      JSON.stringify({
+  it('fills defaults for what is missing', async () => {
+    await small().set(
+      settingsItem.key(),
+      envelope(2, {
         name: 'Amiya',
-        keys: { freeze: 'KeyQ' },
+        keymap: { 'core:freeze': ['KeyQ'] },
         audio: { music: { muted: true } },
       }),
     );
-    expect(loadSettings()).toEqual({
+    expect(await settingsItem.load()).toEqual({
       language: 'zh-Hans',
       name: 'Amiya',
       avatar: '',
       quality: 'standard',
       textSize: 'sm',
-      keys: { ...DEFAULT_KEYS, freeze: 'KeyQ' },
+      keymap: { 'core:freeze': ['KeyQ'] },
       audio: {
         ...DEFAULT_AUDIO,
         music: { ...DEFAULT_AUDIO.music, muted: true },
       },
     });
+  });
+
+  it('moves the old settings once and keeps the keys the player changed as overrides', async () => {
+    await small().set('alliance.settings', {
+      name: 'Kal',
+      keys: { refresh: 'KeyD', levelUp: 'KeyG', freeze: 'KeyE' },
+    });
+    await migrateLegacy();
+    expect(await small().get('alliance.settings')).toBeUndefined();
+    const loaded = await settingsItem.load();
+    expect(loaded.name).toBe('Kal');
+    // D and E were the old defaults, so the new ones apply; G was the player's own
+    expect(loaded.keymap).toEqual({ 'core:levelUp': ['KeyG'] });
+    expect(await small().get(settingsItem.key())).toEqual(envelope(2, loaded));
   });
 
   it('scales the music and the sound effects by the master volume, and silences a muted channel', () => {
@@ -61,12 +74,14 @@ describe('settings', () => {
     ).toEqual({ music: 0, sfx: 0 });
   });
 
-  it('falls back to defaults for invalid settings', () => {
-    stubStorage(JSON.stringify({ audio: { sfx: { volume: 140 } } }));
-    expect(loadSettings().audio).toEqual(DEFAULT_AUDIO);
-    stubStorage(JSON.stringify({ quality: 'ultra' }));
-    expect(loadSettings().quality).toBe('standard');
-    stubStorage('{not json');
-    expect(loadSettings().keys).toEqual(DEFAULT_KEYS);
+  it('keeps a damaged value as a backup and falls back to defaults', async () => {
+    await small().set(settingsItem.key(), envelope(2, { quality: 'ultra' }));
+    expect((await settingsItem.load()).quality).toBe('standard');
+    expect(await small().get(damagedKey(settingsItem.spec))).toMatchObject({
+      raw: envelope(2, { quality: 'ultra' }),
+    });
+    expect(await small().get(settingsItem.key())).toBeUndefined();
+    await small().set(settingsItem.key(), '{not json');
+    expect((await settingsItem.load()).keymap).toEqual({});
   });
 });

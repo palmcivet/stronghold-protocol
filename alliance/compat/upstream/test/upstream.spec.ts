@@ -75,6 +75,16 @@ describe('upstream manifest from the trimmed master file', () => {
     ]);
   });
 
+  it('labels the plain and elite avatars as their variants', async () => {
+    const { manifest } = await fixtureBuild();
+    expect(manifest.assets['image:char/avatar/char_003_kalts']?.label).toBe(
+      'elite0',
+    );
+    expect(manifest.assets['image:char/avatar/char_003_kalts_2']?.label).toBe(
+      'elite2',
+    );
+  });
+
   it('routes music and sound through the extension-less media route and fonts to the font path', async () => {
     const { manifest } = await fixtureBuild();
     expect(

@@ -6,17 +6,17 @@ import {
   type PackAsset,
 } from 'arknights-assets-catalog';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { playbackStore } from '../../match/playback-state.js';
-import { playCue } from '../audio/feedback.js';
-import type { AudioOutput } from '../audio/player.js';
-import type { IntentBus, IntentListener } from '../intent/bus.js';
-import type { ResourceStore } from '../resource/store.js';
-import { assetsStore } from '../store/assets.js';
-import { initialMatch, matchStore } from '../store/match.js';
-import { presenceStore } from '../store/presence.js';
-import { roomStore } from '../store/room.js';
-import { initialSession, sessionStore } from '../store/session.js';
-import { DEFAULT_AUDIO, settingsStore } from '../store/settings.js';
+import { playCue } from '#infra/audio/feedback.js';
+import type { AudioOutput } from '#infra/audio/player.js';
+import type { IntentBus, IntentListener } from '#infra/intent/bus.js';
+import type { ResourceStore } from '#infra/resource/store.js';
+import { assetsStore } from '#infra/store/assets.js';
+import { initialMatch, matchStore } from '#infra/store/match.js';
+import { presenceStore } from '#infra/store/presence.js';
+import { roomStore } from '#infra/store/room.js';
+import { initialSession, sessionStore } from '#infra/store/session.js';
+import { DEFAULT_AUDIO, settingsStore } from '#infra/store/settings.js';
+import { playbackStore } from '#match/playback-state.js';
 import { installAudio } from './audio.js';
 
 const HASH = 'aa'.repeat(32);

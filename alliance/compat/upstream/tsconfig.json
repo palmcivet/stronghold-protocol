@@ -17,10 +17,5 @@
     "**/*.test.ts",
     "**/*.spec.ts",
     "vitest.config.ts"
-  ],
-  "references": [
-    { "path": "../../../assets-catalog" },
-    { "path": "../../contract" },
-    { "path": "../../data" }
   ]
 }

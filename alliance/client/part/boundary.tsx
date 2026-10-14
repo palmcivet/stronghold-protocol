@@ -1,6 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { useText } from '../infra/text/index.js';
-import { Button, ErrorPanel } from '../ui/index.js';
+import { useText } from '#infra/text/index.js';
+import { Button, ErrorPanel } from '#ui/index.js';
 import { BackToLobby } from './leave.js';
 import { hasPart, Part } from './registry.js';
 

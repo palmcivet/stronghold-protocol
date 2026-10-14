@@ -1,12 +1,12 @@
 import { DIRS } from '@alliance/contract/match.js';
 import { useStore } from 'zustand';
-import { useIntent } from '../../infra/intent/context.js';
-import { useMatch } from '../../infra/store/hook.js';
-import { lookup, useText } from '../../infra/text/index.js';
-import { cx } from '../../infra/theme/class-name.js';
-import { Button, ChoiceGroup, Panel } from '../../ui/index.js';
-import { pieceLabel } from '../piece-label.js';
-import { findPiece, freeHandSlot, selectionStore } from '../selection.js';
+import { useIntent } from '#infra/intent/context.js';
+import { useMatch } from '#infra/store/hook.js';
+import { lookup, useText } from '#infra/text/index.js';
+import { cx } from '#infra/theme/class-name.js';
+import { pieceLabel } from '#match/piece-label.js';
+import { findPiece, freeHandSlot, selectionStore } from '#match/selection.js';
+import { Button, ChoiceGroup, Panel } from '#ui/index.js';
 import styles from './preparation.module.css';
 
 /** Actions on the selected piece. */
@@ -25,19 +25,34 @@ export function UnitActions({ canAct }: { readonly canAct: boolean }) {
   return (
     <Panel title={pieceLabel(piece)} level={3}>
       <div className={cx(styles.actions)}>
-        <Button
-          isDisabled={!canAct}
-          onPress={async () => {
-            await intents.dispatch({
-              type: 'g.sell',
-              fields: { uid: piece.uid },
-            });
-            clear();
-          }}
-        >
-          {t('core:unit.sell')}
-        </Button>
-        {area !== 'hand' && handSlot !== null ? (
+        {piece.kind !== 'item' ? (
+          <Button
+            isDisabled={!canAct}
+            onPress={async () => {
+              await intents.dispatch({
+                type: 'g.sell',
+                fields: { uid: piece.uid },
+              });
+              clear();
+            }}
+          >
+            {t('core:unit.sell')}
+          </Button>
+        ) : area !== 'board' ? (
+          <Button
+            isDisabled={!canAct}
+            onPress={async () => {
+              await intents.dispatch({
+                type: 'g.destroy',
+                fields: { uid: piece.uid },
+              });
+              clear();
+            }}
+          >
+            {t('core:unit.destroy')}
+          </Button>
+        ) : null}
+        {area !== 'hand' && handSlot !== null && piece.kind !== 'item' ? (
           <Button
             isDisabled={!canAct}
             onPress={async () => {
@@ -76,7 +91,7 @@ export function UnitActions({ canAct }: { readonly canAct: boolean }) {
           }))}
         />
       ) : null}
-      <p className="visually-hidden">{t('core:unit.deploy')}</p>
+      <p className="wsde-visually-hidden">{t('core:unit.deploy')}</p>
     </Panel>
   );
 }

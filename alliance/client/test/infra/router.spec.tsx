@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { createMemoryHistory } from '@tanstack/react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { Runtime } from '../../infra/boot/boot.js';
-import { createAppRouter } from '../../infra/router/router.js';
-import { type Presence, presenceStore } from '../../infra/store/presence.js';
-import { initialSession, sessionStore } from '../../infra/store/session.js';
+import type { Runtime } from '#infra/boot/boot.js';
+import { createAppRouter } from '#infra/router/router.js';
+import { type Presence, presenceStore } from '#infra/store/presence.js';
+import { initialSession, sessionStore } from '#infra/store/session.js';
 
 function fakeRuntime(joined: boolean) {
   const joinRoom = vi.fn(async (code: string) => {
@@ -60,19 +60,14 @@ describe('route guards', () => {
     expect(pathname).toBe('/room/HAHT');
   });
 
-  it('joins the room of a shared link and stays on it', async () => {
+  it('never seats the player from a shared link by itself', async () => {
     const { pathname, joinRoom } = await open(
       '/room/HAHT',
       { kind: 'connected' },
       true,
     );
-    expect(joinRoom).toHaveBeenCalledWith('HAHT');
+    expect(joinRoom).not.toHaveBeenCalled();
     expect(pathname).toBe('/room/HAHT');
-  });
-
-  it('goes to the entry page when the room of a link cannot be joined', async () => {
-    const { pathname } = await open('/room/HAHT', { kind: 'connected' });
-    expect(pathname).toBe('/');
   });
 
   it('keeps a player the server holds in a room off the entry page', async () => {

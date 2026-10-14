@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useConnection } from '../infra/connection/context.js';
-import { useSession } from '../infra/store/hook.js';
-import { useText } from '../infra/text/index.js';
-import { cx } from '../infra/theme/class-name.js';
-import { Button } from '../ui/index.js';
+import { useConnection } from '#infra/connection/context.js';
+import { useSession } from '#infra/store/hook.js';
+import { useText } from '#infra/text/index.js';
+import { cx } from '#infra/theme/class-name.js';
+import { Button } from '#ui/index.js';
 import styles from './shell.module.css';
 
 /** Shows the connection state while the session is not online. */

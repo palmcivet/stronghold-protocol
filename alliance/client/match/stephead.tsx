@@ -1,9 +1,9 @@
-import { useIntent } from '../infra/intent/context.js';
-import { useMatch, useSession } from '../infra/store/hook.js';
-import { lookup, useText } from '../infra/text/index.js';
-import { cx } from '../infra/theme/class-name.js';
-import { requestConfirm } from '../part/overlay.js';
-import { Button, Cluster, DifficultyTag, Icon, Muted } from '../ui/index.js';
+import { useIntent } from '#infra/intent/context.js';
+import { useMatch, useSession } from '#infra/store/hook.js';
+import { lookup, useText } from '#infra/text/index.js';
+import { cx } from '#infra/theme/class-name.js';
+import { requestConfirm } from '#part/overlay.js';
+import { Button, Cluster, DifficultyTag, Icon, Muted } from '#ui/index.js';
 import { ClockFace } from './countdown.js';
 import styles from './match.module.css';
 
@@ -24,7 +24,13 @@ export async function confirmLeave(
   }
 }
 
-/** The step head of briefing and strategy: leave, latency and difficulty | the step | the countdown. */
+/** Where briefing and strategy stand in the two setup steps. */
+const STEPS: Readonly<Record<string, number>> = {
+  INFO_CHECK: 1,
+  BAND_DRAFT: 2,
+};
+
+/** The step head of briefing and strategy: leave, latency and difficulty | the step number and name | the countdown. */
 export function StepHead() {
   const t = useText();
   const intents = useIntent();
@@ -33,6 +39,7 @@ export function StepHead() {
   if (!view) {
     return null;
   }
+  const step = STEPS[view.phase] ?? null;
   return (
     <header className={cx(styles.stephead)}>
       <Cluster gap={2}>
@@ -49,6 +56,11 @@ export function StepHead() {
         />
       </Cluster>
       <h1 className={cx(styles.stepTitle)}>
+        {step ? (
+          <span className={cx(styles.stepIndex)}>
+            {t('core:briefing.step', { step, of: 2 })}
+          </span>
+        ) : null}
         {lookup(`core:phase.${view.phase}`)}
       </h1>
       <div className={cx(styles.stepClock)}>

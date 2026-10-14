@@ -40,11 +40,14 @@ ALLIANCE_BACKEND=http://localhost:3001 pnpm dev
 | Path | Part id | Shows |
 | --- | --- | --- |
 | `/` | `core:screen.entry` | code name, then create or join a room |
-| `/profile` | `core:screen.profile` | code name, avatar, language, volume, quality and keys, kept in this browser |
 | `/room/:id` | `core:screen.room` | the room and the loadout |
 | `/room/:id/match` | `core:screen.match` | briefing, strategy, match and result, by phase |
 
+The profile (code name, avatar, language, volume, quality and keys, kept in this browser), the loadout and the guide
+are dialogs, not pages: `core:dialog.profile`, `core:dialog.loadout` and `core:dialog.guide` open over any page
+without changing the address.
+
 A page opened directly first waits for the connection and for the room of a resumed session, then sends the player
-to where the server holds them. A room link outside any room joins that room.
+to where the server holds them. A room link outside any room asks first: join, spectate or back.
 
 `window.alliance` offers `enter`, `createRoom`, `joinRoom`, `submit` and `view` for driving the page from a console.

@@ -76,6 +76,7 @@ interface AssetCandidate {
   readonly address: string | null;
   readonly key: string;
   readonly files: readonly UpstreamFile[];
+  readonly label?: string;
 }
 
 interface RefCandidate {
@@ -192,6 +193,7 @@ function mapAddress(
     address,
     key,
     files: [{ role: 'main', name: null, format, address }],
+    ...(rule.label === undefined ? {} : { label: rule.label }),
   });
   return { key, captures };
 }
@@ -469,6 +471,7 @@ export async function buildUpstreamManifest(
       dependsOn: [],
       fallbackId: null,
       preloadGroup: null,
+      ...(candidate.label === undefined ? {} : { label: candidate.label }),
     };
     const problem = packManifestIssues(
       singleAssetManifest(root, key, asset),

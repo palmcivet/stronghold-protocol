@@ -1,11 +1,8 @@
-import { MODULE_NONE } from '@alliance/contract/message.js';
 import { useMemo } from 'react';
 import { useStore } from 'zustand';
-import { useIntent } from '../infra/intent/context.js';
-import { useCatalog } from '../infra/store/hook.js';
-import { dataName, useText } from '../infra/text/index.js';
+import { useCatalog } from '#infra/store/hook.js';
+import { dataName, useText } from '#infra/text/index.js';
 import {
-  Button,
   ChoiceGroup,
   Cluster,
   EmptyState,
@@ -15,10 +12,13 @@ import {
   Stack,
   Switch,
   TierChip,
-} from '../ui/index.js';
-import { chooseLoadout, loadoutStore } from './state.js';
+} from '#ui/index.js';
+import { LoadoutChoices } from './choices.js';
+import { loadoutStore } from './state.js';
+import { SyncStatus, TakesEffect } from './sync-status.js';
 
-function useAdjustable() {
+/** The roster of the loadout: visible base chess, in tier order. */
+export function useAdjustable() {
   const catalog = useCatalog((state) => state.catalog);
   return useMemo(
     () =>
@@ -28,8 +28,7 @@ function useAdjustable() {
             chess.visible &&
             !chess.golden &&
             chess.loadout !== null &&
-            (chess.loadout.skills.length > 1 ||
-              chess.loadout.modules.length > 1),
+            chess.baseId === chess.id,
         )
         .sort(
           (left, right) =>
@@ -43,14 +42,17 @@ function useAdjustable() {
 export function LoadoutRoster() {
   const t = useText();
   const operators = useAdjustable();
-  const { selected, query, tier, changedOnly, entries } =
+  const { selected, query, tier, changedOnly, entries, ops } =
     useStore(loadoutStore);
+  const isChanged = (chess: (typeof operators)[number]): boolean =>
+    entries[chess.id] !== undefined ||
+    (chess.charId !== null && ops[chess.charId] !== undefined);
   const tiers = [...new Set(operators.map((chess) => chess.tier))];
   const shown = operators.filter((chess) => {
     if (tier !== null && chess.tier !== tier) {
       return false;
     }
-    if (changedOnly && entries[chess.id] === undefined) {
+    if (changedOnly && !isChanged(chess)) {
       return false;
     }
     return query === '' || dataName('chess', chess.id).includes(query.trim());
@@ -101,7 +103,7 @@ export function LoadoutRoster() {
               <Cluster gap={2}>
                 <TierChip tier={chess.tier} />
                 <span>{dataName('chess', chess.id)}</span>
-                {entries[chess.id] ? (
+                {isChanged(chess) ? (
                   <Muted>{t('core:loadout.changed')}</Muted>
                 ) : null}
               </Cluster>
@@ -113,69 +115,28 @@ export function LoadoutRoster() {
   );
 }
 
-/** Skill and module of the selected operator, and saving the working copy. */
+/** Skill, module, potential and cultivation of the selected operator. */
 export function LoadoutDetail() {
   const t = useText();
-  const intents = useIntent();
   const catalog = useCatalog((state) => state.catalog);
-  const { selected, entries, saved } = useStore(loadoutStore);
+  const selected = useStore(loadoutStore, (state) => state.selected);
   const chess = selected === null ? undefined : catalog.chess[selected];
-  const options = chess?.loadout ?? null;
-  const entry = selected === null ? undefined : entries[selected];
   return (
     <Stack gap={3}>
-      {chess && options ? (
+      {chess?.loadout ? (
         <Stack gap={3}>
           <Cluster gap={2}>
             <TierChip tier={chess.tier} />
             <strong>{dataName('chess', chess.id)}</strong>
           </Cluster>
-          {options.skills.length > 1 ? (
-            <ChoiceGroup
-              label={t('core:loadout.skills')}
-              value={String(entry?.skill ?? options.defaultSkill ?? '')}
-              onChange={(value) =>
-                chooseLoadout(chess.id, { skill: Number(value) })
-              }
-              options={options.skills.map((index) => ({
-                value: String(index),
-                label: t('core:loadout.skill', { index: index + 1 }),
-              }))}
-            />
-          ) : null}
-          {options.modules.length > 1 ? (
-            <ChoiceGroup
-              label={t('core:loadout.module')}
-              value={entry?.module ?? options.defaultModule ?? MODULE_NONE}
-              onChange={(value) => chooseLoadout(chess.id, { module: value })}
-              options={options.modules.map((module) => ({
-                value: module,
-                label:
-                  module === MODULE_NONE
-                    ? t('core:loadout.moduleNone')
-                    : module,
-              }))}
-            />
-          ) : null}
+          <LoadoutChoices chess={chess} />
         </Stack>
       ) : (
         <EmptyState title={t('core:loadout.pick')} />
       )}
       <Cluster gap={2}>
-        <Button
-          variant="primary"
-          isDisabled={Object.keys(entries).length === 0}
-          onPress={async () => {
-            const outcome = await intents.dispatch({
-              type: 'room.loadout',
-              fields: { entries },
-            });
-            loadoutStore.setState({ saved: outcome.ok });
-          }}
-        >
-          {t('core:loadout.save')}
-        </Button>
-        {saved ? <span role="status">{t('core:loadout.saved')}</span> : null}
+        <SyncStatus kind="loadout" />
+        <TakesEffect kind="loadout" />
       </Cluster>
     </Stack>
   );
