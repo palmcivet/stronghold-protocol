@@ -1,5 +1,6 @@
 - [范围与原则](#范围与原则)
-- [第一步：可见的基础界面](#第一步可见的基础界面)
+- [基础界面规格](#基础界面规格)
+- [界面待办](#界面待办)
 - [第二步：扩展系统与模组示例](#第二步扩展系统与模组示例)
 - [战场接线](#战场接线)
 - [master 源码对照](#master-源码对照)
@@ -8,8 +9,8 @@
 - [测试迁移](#测试迁移)
 - [验收](#验收)
 
-本文是 `alliance/client` 的落地计划，分两步：先做出能看见、能对 master 后端打完一局的基础界面，再落地扩展系统并用模组示例验证架构。设计依据是 ARCH.md。
-页面框架、部件清单与插槽见 UI.md。调试 API 与调试模组见 DEBUG.md。
+本文是 `alliance/client` 的规格与落地计划。基础界面已能对 master 后端打完一局，其规格留在“基础界面规格”；剩下的是第二步：落地扩展系统并用模组示例验证架构。设计依据是 ARCH.md。
+客户端的技术规格、部件与插槽以文档为准。调试 API 与调试模组见 DEBUG.md。
 
 ## 范围与原则
 
@@ -23,141 +24,93 @@
 - 目录与文件用名词、kebab-case（`preparation`、`panel`、`observation`）。
 - `infra/boot/` 露出全局 API（加入房间、提交意图、读取当前视图），供 `deployment` 的页面脚本、社区外壳与端到端测试调用。
 
-目标目录（按领域嵌套，领域目录与部件 id 命名空间对齐，各自放页面、部件与本地状态）：
+客户端的技术规格（目录与分层、连接、路由、外壳、部件、存储、样式、文案、音频等）以文档为准，本文只留计划与文档未收的内容。
+
+目录（按领域嵌套）：
 
 ```text
 alliance/client/
-  infra/       connection/ router/ store/ intent/ resource/ audio/ text/ theme/ boot/
+  infra/       connection/ router/ store/ storage/ intent/ resource/ audio/ text/ theme/ boot/
   ui/          宿主基础组件（React Aria）与游戏专用小件，导出给模组
   part/        部件注册表、<Part id>、错误边界、布局树
-  shell/       外壳：导航、连接横幅、提示、浮层、对局内设置浮层
+  shell/       外壳：菜单入口部件、连接横幅、提示、浮层、对话框层
   entry/ profile/ loadout/ guide/ room/
   match/       briefing/ strategy/ hud/ settlement/ field/ playback/ observation/
-  extension/   第二步：客户端 ModContext、本地模组加载、存储命名空间
+  extension/   尚未创建，第二步新建：客户端 ModContext、本地模组加载、存储命名空间
   test/
 ```
 
-- 页面定义：没有集中的屏幕目录。每个领域目录导出页面定义（如 `room/screen.tsx`：部件 id `core:screen.room`、组件、加载器、守卫）；`infra/router` 只收集页面定义并生成路由表。路由表就是 ARCH.md 的可扩展页面注册表，模组用同样的页面定义新增页面。
-- 状态：连接相关的会话、房间、对局视图集中在 `infra/store`，其余分片放在使用它的领域。
-- 依赖方向：领域 → `shell`、`part`、`ui` → `infra`；`ui` 只依赖 `infra/theme` 与 `infra/text`；领域之间不互相导入，只共享 `alliance/contract` 的类型与 `infra/store` 的选择器；`match/` 的子目录只依赖 `match/` 根下的共享部分，不跨兄弟导入；由依赖扫描用例强制。`infra/boot` 与 `infra/router` 是装配点，允许依赖领域（组装运行时、收集页面定义），其余 `infra` 不得向上依赖。
+- 页面定义：没有集中的屏幕目录，领域目录下也没有 `screen.tsx`。路由在 `infra/router/router.tsx`，页面经 `infra/boot/parts.ts` 注册为部件（如 `core:screen.room`）。模组新增页面的开放路由表是第二步。
 
-现有文件迁移：
+## 基础界面规格
 
-| 现有 | 新位置 |
-|---|---|
-| `connection/`、`intent/`、`resource/`、`audio/`、`text/`、`theme/` | `infra/` 下同名目录 |
-| `store/` | `infra/store/`（session、room、match、frame、stream、presence、settings、assets、catalog、hook）；`playback.ts` → `match/playback-state.ts`（含 `usePlayback`） |
-| `shell/main.tsx`、`boot.ts`、`api.ts`、`assets.ts`、`audio.ts`、`catalog.ts`、`presence.ts` | `infra/boot/` |
-| `shell/router.tsx`、`page.ts`、`match-view.ts` | `infra/router/` |
-| `shell/boundary.tsx` | `part/` |
-| `shell/banner.tsx`、`toast.tsx`、`leave.tsx`、`settings.tsx`、`shell.module.css` | `shell/` |
-| `shell/pages.tsx` | 拆为 `entry/`、`profile/`、`room/`、`match/` 各自的 `screen.tsx` |
-| `primitive/` | `ui/` |
-| `screen/title.tsx`、`lobby.tsx` | `entry/` |
-| `screen/room.tsx` | `room/` |
-| `screen/loadout.tsx` | `loadout/` |
-| `screen/match.tsx`、`countdown.tsx` | `match/`（阶段分派与步骤头共用的倒计时） |
-| `screen/briefing.tsx`、`strategy.tsx`、`result.tsx` | `match/briefing/`、`match/strategy/`、`match/settlement/` |
-| `screen/screen.module.css` | 拆到各领域 |
-| `panel/`、`preparation/shop.tsx`、`choice.tsx`、`selection.ts`、`piece-label.ts` | `match/hud/` |
-| `preparation/bench.tsx`、`unit-actions.tsx`、`field/` | `match/field/`（整备区与选中菜单属于战场） |
-| `playback/` | `match/playback/` |
-| `test/` | 保留，按领域分子目录 |
-
-## 第一步：可见的基础界面
-
-状态：已完成，验收通过。
-
-交付：
-
-- 依赖：React 19、React Aria、TanStack Router、zustand、valibot；valibot 只由 app 内的包各自声明，不进 pnpm catalog。`index.html` 只留挂载点，入口在 `shell/`。
-- 样式：设计令牌（初始值取 master `public/css/theme.css`）编译为 CSS 变量，`@layer reset, tokens, base, components, mods, overrides`，CSS Modules。
-- 多语言最小版：`core:`、`data:`、`server:` 命名空间与 `t()`，中文完整；master 服务端消息按 msgid 对照表翻译，查不到显示 `text`。
-- 服务端推送的载荷类型（含 `m.ticker`、`m.layer`）定义在 `alliance/contract`；连接层只在收到帧时把它当作这些类型，不做运行期校验。
-- 连接层：对 master 的 `/ws` 握手、重连、请求 id；`welcome` 不带 `ext` 时进入兼容模式，数据经兼容层；能力集按 master 0.2.4 处理，不支持的入口隐藏。两边的 `PROTOCOL_VERSION` 都是 1，不能用它区分能力集。
-- 兼容模式的数据：规则数据来自 master 后端的 `/data`，赛季包不参与；战斗由 master 演算，客户端只播放它推送的战斗帧。
-- 音频：赛季包清单的应用段 `app.cues`（线索表）按线索角色给出 `audio:` 键：`ui.<名>`、`bond.<名>`、`battle.<名>`（如 `ui.click`、`bond.levelUp`、`battle.deploy`），`bgm.<曲目>` 与 `bossBgm.<首领 id>` 各是前奏与循环一对，`combat` 是按回合区间的作战曲目列表，每项 `{ rounds: { from, to? }, intro?, loop? }`（没有 `to` 表示从 `from` 起的所有回合）。线索表不在 `refs` 中：`app` 段由 `alliance/data` 的 schema 定义与校验，资源目录库不解析它，`refs` 只放资源键。客户端按层序合并各层的线索表，后层按角色或曲目名覆盖，`combat` 整表替换；对局开始绑定快照时检查合并后线索表的键，开发构建用 `console.warn` 列出没有资源的键，生产构建不提示，缺键只是不播放，不阻塞对局。角色名单定在数据 schema 中，客户端只按角色取声音，不认文件名，模组可按角色覆盖。
+- 依赖：React 19、React Aria、TanStack Router、zustand、valibot；valibot 只由 app 内的包各自声明，不进 pnpm catalog。`index.html` 只留挂载点，入口在 `infra/boot/`。
+- 音频（线索角色、接线、音量与兼容映射见文档；以下是文档未收的部分）：
   - 官方数据的线索表在赛季包源中手写（线索角色是本项目的表现概念，官方数据没有）；编译器按 `alliance/data` 的 schema 校验：角色名有效、键都是 `audio:` 键、每个键由本包或其依赖的包发布、`combat` 的回合从 1 起且不倒置不重叠，不满足时不写包。线索用到的基础包音效列在资源抽取的语音路径表中，由此进入基础包需求。
-  - 曲目角色按屏幕与阶段选：对局外与简报类阶段为 `lobby`，备战 `prep`，作战 `combat`，联防 `unite`（缺省用 `combat`），首领阶段 `boss:<首领 id>`（缺省用 `boss`）。作战时客户端按当前回合在 `combat` 中选取曲目，没有覆盖该回合的项时用 `bgm.combat`。
-  - 线索接到事件：按钮按下 `ui.click`、切换 `ui.tab`；意图被接受时按意图类型播放（购买、出售、刷新等，离开房间 `ui.matchCancel`），被拒绝时 `ui.error`，加入或创建房间被拒绝时 `ui.matchFail`；标题页进入 `ui.start`；连接从在线断开 `ui.disconnect`；房间里有其他玩家入座 `ui.joinRoom`；服务端宣布开局 `ui.matchSucceed`；进入阶段（回合开始、备战、作战、联防、首领、特殊征募）；选队时自己先手 `ui.goFirst`、轮到自己 `ui.yourTurn`；战斗结束按结算数据判定：状态带有结算数据中自己的 LP 扣减时按它（兼容层把 master `SETTLE` 视图的 `uniteResult.losses` 映射为中立的结算数据，只在联防后有），没有时在阶段离开 `SETTLE` 进入下一回合或结果的第一个状态按与开战时相比的 LP；扣减为正播放 `ui.battleOverReduce`、联防后未减少 `ui.battleOverNoReduce`、其余 `ui.battleOverNormal`，不依赖 LP 推送与阶段推送的先后；自己 LP 降到 5 及以下 `ui.danger`；首领血量归零 `ui.killBoss`；备战最后 5 秒每秒 `ui.timer`；新的播报 `ui.broadcast`；他人的表情 `ui.emote`；结算失败 `ui.settlementFail`，胜利时单人 `ui.settlementSucceed`、多人 `ui.settlementTeam`；对局中自己的盟约层数增长（`m.layer`）`bond.levelUp`；当前显示的战场上的部署、阵亡、敌人攻击、治疗与漏怪（按 `spawn` 事件得知单位阵营与种类）。
   - 待接线（客户端尚无对应事件）：`ui.killBossAll`、`ui.killBossNormal`、`ui.load`、`ui.yourTurnCircle`、`ui.target`、`ui.goodEvaluation`、`ui.settlementBossSign`、`ui.defenceStart`、`ui.battleStartBoss`、`ui.merge`、`ui.itemMerge`、`ui.income`、`battle.win`、`battle.lose`、`battle.killCoin`。
-  - 单位各自的攻击、受击、技能音效与语音不是线索角色，留在单位引用中，随渲染层的单位表现处理。
-  - 音量：总音量、音乐、音效三个通道，各有音量与静音，存在本地设置中，在 `/profile` 调整；音乐与音效的增益是各自音量乘以总音量。
-  - 兼容模式由兼容规则把 master 清单的 `audio.sfx.ui`、`audio.sfx.battle`、`audio.bgm`、`audio.bossBgm` 按其键名填进 `app.cues`，名单外的名字不填；master 的两首交替作战曲按其排期映射为 `combat` 的两项，回合 1–7 与 8 起。文件仍是 master 无扩展名的 `/media/` 音频。
 - 预加载组按屏幕划分：`room` 是房间界面图与可选干员的头像；`match` 是地图、本局干员（未被禁用的可见干员）与关卡敌人（赛季波次中的敌人与本局首领）的图；`results` 是结算界面图与自己干员的立绘。清单的 `preloadGroup` 只标出各组固定的界面图，其余键由客户端按目录算出；`match` 与 `results` 按本局的资源快照计算。进入下一组时释放上一组。
 - 开局绑定：收到服务端宣布开局的消息时，把当时的清单与目录冻结为本局的资源快照，本局内不变；此时清单或目录还在加载的，加载完成时绑定。离开对局时释放快照，下一局重新绑定。对局内的界面读快照中的目录。
 - 表情：轮盘只发官方表情 id；服务端只接受官方表情 id，没有其他白名单。
-- 页面与路由：
-  - `/` 入口页：服务器信息、昵称、加入或创建房间。
-  - `/profile` 个人配置：昵称、头像、按键、语言、画质、音量，只存本地，不经服务端。
-  - `/loadout` 干员调配、`/guide` 玩法说明：只读写本地，不影响连接状态，任何状态下可进入并返回来处（尚未实现）。
-  - `/room/:id` 房间页：等待、赛季规则、准备。
-  - `/room/:id/match` 对局页：只在服务端宣布开局后进入。
-  - `/replay/:id` 留到第二步。
-  - 两层状态：URL 路由表示用户在看哪一页（可分享、刷新不丢）；连接状态机（未连接、已连接、在房间、对局中）表示服务端认为玩家在哪。状态机是普通 reducer，不用 XState。
-  - 路由加载器对齐状态机，不一致时重定向。例如在对局页刷新：先经房间重连，服务端确认对局仍在进行时才回到对局页。
-  - 服务端仍把玩家留在房间或对局里时，导航栏的大厅入口换成“离开房间”：确认后发离开消息，服务端接受后状态机回到已连接（master 不再给离开者发房间消息），再进大厅；直接打开大厅地址的按状态机重定向回房间或对局页。
-  - 每个页面注册为部件 id（如 `core:screen.lobby`）；第二步按 ARCH.md 开放路由表扩展。
-- 错误边界按路由分层，以部件 id 为键：页面出错显示可恢复的错误面板（重试、返回大厅，返回大厅走状态机与离开流程）；对局页的战场单独包一层，渲染出错只替换战场。第二步部件注册表的安全模式复用这层隔离。
-- 屏幕：房间页与对局页内的简报、策略、配装、对局、结算按阶段切换，先出基础版，部件先直接渲染，第二步再改成按 id 注册。
-- 战场：`match/field/` 持有 `mission-renderer` 舞台，`match/playback/` 播放服务端的战斗帧，并留有按 `b.start` 用 `mission-core` 演算、回报 `b.progress` 与 `b.result` 的通路，未接桥接；不装骨骼后端，演员显示替身。master 服务端演算模式（`SP_COMBAT=server`）推送的快照与事件（`b.snap`、`b.ev`、`m.field`）由兼容层映射成中立视图，DOM 替身战场直接呈现单位位置、生命、倒下与伤害，只做呈现，不在客户端重算；新战斗开始（`m.field` 或 `b.start`）时清空，结算阶段保留最后一帧供查看。master 默认模式只发 `b.start`、不推快照，客户端不演算，只显示战斗状态与进度，没有战斗画面，第一步接受。
-- Vite 开发代理：`/ws`、`/data`、`/assets`、`/media` 转发到 master 后端（master 没有 CORS 头，同源最省事）；后端地址取自环境变量。
+- 第二步部件注册表的安全模式复用错误边界的隔离。
+- 战场（舞台接线、地面半场、特效、键盘网格、备战手势见文档）。调试推流画面可用 `SP_COMBAT=server` 重启 master，或打多人局。
 - master 参考副本准备：安装依赖、执行其资源抓取脚本补齐 `public/assets/`、`npm start`（默认端口 3000）；步骤写进 `alliance/client` 的开发说明。
 
-验收：本机起 master 与 Vite，浏览器里能建房、开局，服务端演算模式下能看到战斗过程，并打完一局到结算；`tsc --noEmit` 与已有用例通过。
+后续：新协议加入战斗结果事件，携带本场结算的 LP 扣减，供 `ui.battleOver*` 等表现直接使用；与 `BattleResult` 结算的归属一起设计。
 
-后续（不在第一步）：新协议加入战斗结果事件，携带本场结算的 LP 扣减，供 `ui.battleOver*` 等表现直接使用；与 `BattleResult` 结算的归属一起设计。
+后续：自定义 skill kit（hooks / 未知 trigger）仍由 ECS / 内容一线补；`battleSpecOf` 与本地战斗桥已接线，见文档。
 
-后续（不在第一步）：兼容模式下由客户端把 master 的 `b.start` 映射进 `mission-core` 演算。依赖内容模块，由 ECS 一线规划；在此之前客户端不做数据视图，也不做只有普攻的战斗。
+## 界面待办
+
+从界面规划收进、尚未落地的项（已写入文档的交付不再列）：
+
+- 玩法说明：内容保持占位观感，待用户审阅后再定。
+- 连接横幅的「服务器已更新」提示（master `ui/buildGuard.js`）未实现。
+- 干员调配：列表的职业、盟约筛选；详情的属性预览、语音试听、导入导出未做。
+- 个人配置：master 设置里的语音语言、伤害数字、特效数量等不再扩充（`display` 已有的画质与文字大小保持现状），等模组设置方案定下后再定归属。
+- 视觉布局：用户逐页重新设计；结算主布局已按 master 移植骨架，细节皮与资源图标仍待审阅。仍不如 master 的全视觉皮、844×390 商店高度与密度、联防 ×N / pending 红塔动效、官方立绘/评语图标等，随布局审阅一并定。
+- 视觉布局：844×390（手机横屏）下对局 HUD 的商店栏占去大半高度，战场偏小；等用户审阅布局后再定。
+- 对局层叠：match HUD 已改为绝对叠在全屏 `mission-renderer` 舞台上（对齐 master `.gm__field` / `.gm__hud`）；机位内边距按真实 HUD 占位量。目录风味标签（如 `infection`）已注册；`battleSpecOf` 按 master 数组路线 + `routeIndex` / `start:[row,col]` 映射刷怪，本机演算快照进舞台、appearances 绑定，作战单位可见。装饰性边缘模型完整度与全视觉皮仍待审阅。
+- 对照 master：同一流程状态下用无头浏览器分别截图 master 与 next，并排交给用户人工审阅（不做像素比对），记录缺失的信息与操作。
+- 插槽验证：用聊天示例模组 `insert into` `core:room.side` 与 `core:match.hud.side`，确认不装模组时布局不变。
+- 持久 skill 光环（跟单位到 skill-end，弹药技不加光环）需渲染器 follow-unit 效果种类，未做。
+- 手柄导航待设计后再做（键盘网格见战场文档）。
+- 自定义 skill kit（hooks / 未知 trigger）内容模块仍待 ECS/内容一线。
 
 ## 第二步：扩展系统与模组示例
 
 交付：
 
-- `extension/`：客户端 `ModContext`（形状与作用域按 ARCH.md），本地模组从 `examples/extensions/<id>/` 加载，存储按模组划分命名空间。模组清单的具体格式（ARCH.md 的字段落成文件与校验 schema）与本地加载一起设计。
-- `part/`：所有界面部件按 id 注册，支持 `replace`、`wrap`、`insert`（含 `insert into` 容器），每个部件带错误边界，出错恢复默认并标记模组。
-- `infra/text/`：按命名空间加载语言包，模组键 `<modId>:`，回退链按 ARCH.md。
+- `extension/`：客户端 `ModContext`（形状与作用域按 ARCH.md），本地模组从 `examples/extensions/<id>/` 加载，把 `#infra/storage` 已有的模组存储接进模组上下文。模组清单的具体格式（ARCH.md 的字段落成文件与校验 schema）与本地加载一起设计。
+- `part/`：部件注册表已有，第二步接到模组上：模组的 `replace`、`wrap`、`insert` 经 `ModContext` 注册，部件出错时恢复默认并标记模组。
+- `infra/text/`：按命名空间加载语言包，模组键 `<modId>:`（模组 id 格式见 ARCH.md“模组 id 与本地存储”），回退链按 ARCH.md。
 - `infra/theme/`：令牌包作为模组加载，覆盖进 `mods` 层。
-- 模组新增的线索角色用命名空间键 `<modId>:<角色>`；第一步的角色名单是封闭的。模组加载时随模组清单正式校验其 `app` 段与线索键。
+- 模组新增的线索角色用命名空间键 `<modId>:<角色>`；宿主的角色名单是封闭的。模组加载时随模组清单正式校验其 `app` 段与线索键。
+- `/replay/:id` 回放页。
+- 开放路由表扩展（ARCH.md），模组用同样的页面定义新增页面。
 - 握手 `ext`：兼容模式稳定后再做；`ext` 中赛季包与资源地址的字段尚未设计，客户端暂不依赖。
 
 模组示例，放在 `examples/extensions/`（是否提交由用户按模组决定），各验证一条架构主张：
 
 | 示例 | 验证 |
 |---|---|
-| `skeleton-spine`（SPINE.md） | 第三方许可的运行时只作客户端本地模组；渲染后端按格式 id 注册，缺席时退回替身 |
+| `examples/skeleton-spine`（SPINE.md） | 第三方许可的运行时只作客户端本地模组；渲染后端按格式 id 注册，缺席时退回替身 |
 | 替换一个界面部件（如商店卡片） | 部件 `replace`/`wrap` 与错误边界安全模式；替换后的组件做不到用户做不到的事 |
-| `double-tap-buy` | 官方“点两次购买 / 升级”：`wrap` 商店卡与升级卡，宿主默认单击即买 |
-| `stats` | 本机统计（master `screens/stats.js`、`ui/stats.js`）作为模组：注册页面 `stats:screen.main`，`insert into` 导航与 `core:result.extra`，存储用模组命名空间 |
+| `examples/double-tap-buy` | 官方“点两次购买 / 升级”：`wrap` 商店卡与升级卡，宿主默认单击即买 |
+| `examples/stats` | 本机统计（master `screens/stats.js`、`ui/stats.js`）作为模组：注册页面 `examples/stats:screen.main`，在页面路由上带 `menu` 元数据进菜单入口，`insert into` `core:result.extra`，存储用模组命名空间（`wsde:device:examples/stats:<key>`） |
 | 主题令牌包 | 主题就是令牌覆盖，宿主基础组件只用令牌 |
 | 文案包 | 无代码的 `lang` 包能为某命名空间提供翻译，回退链生效 |
 
-验收：所有示例都能在 master 后端的对局中加载与卸载；部件替换出错时自动恢复默认；不装任何模组时与第一步行为一致。
+验收：所有示例都能在 master 后端的对局中加载与卸载；部件替换出错时自动恢复默认；不装任何模组时与现有基础界面行为一致。
 
 ## 战场接线
 
-- 目标：`alliance/client` 用真实数据驱动 `mission-renderer` 舞台，与 `field/` 的落地一起进行。
-- 范围：`alliance/client`（`field/`、`audio/`、资源接入）、`alliance/data`、`assets-extractor`、拼装 `BattleSpec` 的适配层；引擎只在契约不够时改动。
+已落地部分（舞台接线、数据规范化、`BattleSpec` 地形与风机、`skillBankOf` 选取辅助、地面半场与备战手势）见 `docs/alliance/client/14-field.md`、`13-audio.md`、`docs/alliance/data/02-compiler.md`、`docs/alliance/compat/04-battle.md`。下列仍推迟：
 
-交付：
-
-- 舞台：`alliance/client` 接上 `createMissionStage`、`createMissionResourcePort`、`set-appearances` 与指针事件流；快照与事件到 renderer 输入的转换在 `field/`。
-- 表现数据：
-  - `alliance/data` 提供真实的 `MissionAppearance` 与动画角色表（`json:anim-roles/<seasonId>`）。
-  - 法线、粗糙度、遮罩贴图在 `alliance/data` 或 `assets-extractor` 标 `colorSpace: "linear"`。
-  - `modelScaleY`、`mirrorX`、敌人缩放与偏移（`enemy_scales.py`、`enemy_model_offsets.py` 的结果）编成 `json:prefab/*` 表现数据，不计入 `contentHash`。
-- 数据规范化：
-  - `alliance/data` 把未知的 `skillTriggerType` 映射为 `DEFAULT` 并警告。
-  - `rangeRadius`、`attackAnim`/`attackMoves` 在 `alliance/data` 编译期规范化为 `attackRange`、`attackClip` 与 `attack-moves` 标签；拼装 `BattleSpec` 时只选用已规范化的数据。
-- 地形与装置：拼装 `BattleSpec` 的适配层写上地块的 `terrain`，`special` 放进 `notes`；风机编成带风机标签的装置单位，作用格换成按朝向的攻击范围，技能黑板放进它的 `script`。
-- 技能音库：技能期间的攻击、命中音按技能槽选音库（master 0.2.3 设计记录「主动技能的攻击与命中音」）。核心事件与音效线索已带 `skillSlot`，先到的技能音已由渲染器暂存；选音库的规则放在 `audio/`。
-
-验收：
-
-- 涉及的 app 子包内测试与 `tsc --noEmit` 通过。
-- 用一场真实赛季数据的战斗跑通快照、事件到舞台的链路（演员、头顶条、特效、音效线索、地形），截图随报告提交。
-- 截图用真实的 WebGL 渲染器，覆盖地面阴影：renderer 的单元测试只断言了无渲染器时不投影。
-- 引擎包的测试与黄金摘要不变；契约有变时按有意变更处理。
+- 真实 `MissionAppearance`、`json:anim-roles/<seasonId>`、法线/粗糙度等 `colorSpace: "linear"` 贴图、以及 `modelScaleY` / `mirrorX` / 敌人缩放偏移编成的 `json:prefab/*`（不计入 `contentHash`）。当前用占位管线与 catalog 缩放。
+- WebGL + 地面阴影的截图验收（renderer 单测只覆盖无渲染器时不投影）；用真实赛季数据跑通演员/头顶条/特效/音效/地形后随报告提交截图。
+- 单位逐条 attack / hit 的完整播放链：舞台已能发出带 `skillSlot` 的 `MissionAudioCue`，`skillBankOf` 也能按槽选库，但宿主尚未把 cue 接到单位音库播放（目录侧音库数据也未进客户端 catalog）。本轮未接线。
+- 完整 extract → 赛季包，以及 `model:mesh` / `json:board` / 风门水体 AB（上游包缺部分 bundle 时保持空）。
+- 引擎包测试与黄金摘要保持不变；契约有变时按有意变更处理。
 
 ## master 源码对照
 
@@ -170,12 +123,12 @@ alliance/client/
 | `public/css/theme.css`、`render/style.js` 的界面配色 | `infra/theme/` |
 | `public/js/net.js` | `infra/connection/` |
 | `public/js/store.js` | `infra/store/` 与各领域 |
-| `screens/*.js`、`screens/game.js`、`screens/game/overlays.js` | 各领域的 `screen.tsx`；`game.js` 按阶段拆进 `match/` 子目录；`screens/stats.js` 进示例模组 `stats` |
+| `screens/*.js`、`screens/game.js`、`screens/game/overlays.js` | 各领域目录，路由在 `infra/router/router.tsx`、页面经 `infra/boot/parts.ts` 注册；`game.js` 按阶段拆进 `match/` 子目录；`screens/stats.js` 进示例模组 `examples/stats` |
 | `ui/gameActions.js`、`ui/gameLogic*.js`、`ui/shopBar.js`、`ui/equipReplace.js`、`ui/choiceOverlay.js`、`ui/rewardOverlay.js`、`ui/buildGuard.js`、`ui/facing*.js`、`ui/underframe.js`、`screens/game/standInTags.js`、`render/drag.js`、`render/prepfield.js`、`render/pen.js`、`render/promote.js` | `match/hud/`（商店、选择、奖励、装备替换）与 `match/field/`（拖放、朝向、选中菜单、替补标签）；动作改为意图，合法性判断作本地预览 |
 | `ui/hud.js`、`combatHud.js`、`matchChrome.js`、`matchStatus.js`、`matchInfo.js`、`ticker.js`、`teamPanel.js`、`detailPanel.js`、`abilityLines.js`、`bondStrip.js`、`effectsList.js`、`enemyDrawer.js`、`emotes.js` | `match/hud/`；只读视图，`gameLogic/shortcuts.js` 进 `infra/intent/`；`guide.js` 进 `guide/` |
 | `ui/fieldHost.js`、`render/app.js`、`render/app/*.js`、`ui/gameLogic/camera.js`、`screens/game/marks.js` | `match/field/`；机位与高亮由它算好传给舞台 |
 | `ui/fallbackField.js` | `match/field/`，重做为可用键盘与屏幕阅读器操作的 DOM 战场 |
-| `public/js/battle/runner.js`、`screens/game/early.js` | `playback/` |
+| `public/js/battle/runner.js`、`screens/game/early.js` | `match/playback/` |
 | `public/js/battle/observe.js`、`ui/gameLogic/watch.js`、`ui/watchBonds.js` | `match/observation/` |
 | `public/js/audio.js` | `infra/audio/`，只接收资源句柄与音效线索 |
 | `public/js/data.js` | next 后端按 `seasonId` 读赛季包；兼容模式读 master 的 `/data`；游戏文本由 `infra/text/` 的 `data:` 键提供 |
@@ -213,6 +166,6 @@ alliance/client/
 - 能连接 master 0.2.4 服务端完成标题到结算的完整流程；next 服务端就绪后同样通过。
 - 所有屏幕与面板可用键盘与屏幕阅读器操作。
 - 不引用 master 参考副本路径、不依赖 Pixi、不解析资源地址。
-- 界面文本全部经命名空间键，中文与英文完整。
+- 界面文本全部经命名空间键；语言只有 `zh-Hans` 与 `en`，已完成页面的英文键组由覆盖测试检查齐全。
 - 每个界面组件按 id 注册，替换、包装、插入可用，出错恢复默认。
 - 用例与 `tsc --noEmit` 通过。

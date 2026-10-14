@@ -71,7 +71,6 @@
 - [ ] H1：`docs/alliance/index.md`（「盟约」）与 `docs/alliance/protocol/index.md`（「对局协议」）没有对应的单一包名，暂保留中文。
 - [ ] `docs/alliance/data/03-resource.md` 的 `loadResourceStore` 示例为 `check:skip`：`@alliance/client` 没有 `exports`，要检查就需为文档改导出。
 - [ ] `docs/mission-core/02`–`13` 的叙述，以及 `docs/mission-renderer/10-architecture.md` 的 systems 一列，未逐句对照源码核实。
-- [ ] `alliance/client/shell/main.ts` 只有一行占位，`docs/alliance/01-quick-start.md` 无法写到实际开一局。
 
 ## 7. 引擎文档待办
 

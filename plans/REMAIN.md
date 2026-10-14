@@ -19,14 +19,14 @@
 - [部署（P2）](#部署p2)
 - [待决事项](#待决事项)
 
-本文记录 app 侧还没完成的工作：服务端接口、数据包、兼容层、alliance/server、资源与部署，对照对象是 master 0.2.1。master 参考副本放在 `alliance/compat/upstream/repo/`，不入库，由用户放入。
+本文记录 app 侧还没完成的工作：服务端接口、数据包、兼容层、alliance/server、资源与部署，对照对象是 master 0.2.6（提交 `488db49`）。master 参考副本放在 `alliance/compat/upstream/repo/`，不入库，由用户放入。
 
 ## 协议与契约缺口（P0）
 
-- `room.ownership { notOwned }`（0.2.0 的干员持有）与 `room.diy { picks }`（0.2.0 的自选编队）：next 的契约与分发都没有，客户端发送会被以 `BAD_MSG` 拒绝，补位与自选编队无法生效。在 next 实现：补契约与分发，并在开局时取值；数据来源是 `backups.json`。
-- `g.watch.playerId`：master 可选，联防与首领双人场地用它指定观看的玩家；next 的契约没有此字段，分发只读 `fieldId`，双人场地无法指定观看对象。
-- 握手 `ext`：`hello` 与 `welcome` 的 `ext`（字段见 ARCH.md）尚未实现，next 服务端还不下发 `seasonId`、`contentHash`。
-- 未逐项比对的消息：`m.private`、`m.field`、`m.unitStats`、`b.start`、`b.pool`、`b.end` 的完整字段。`b.start` 的消费方（客户端战斗运行器）尚未迁移，无法联调。
+- `room.ownership` / `room.diy`：形状已进 `@alliance/contract` 与协议文档；**待新 server** 分发并在开局取值（数据来源仍是赛季 `backups.json`）。
+- 握手 `ext`（`hello` / `welcome`）：形状已进契约（`HelloExt` / `WelcomeExt`）与协议文档；master 0.2.6 不下发。**待新 server** 下发 `seasonId`、`contentHash` 等。
+- `b.start` 消费方（客户端战斗运行器）尚未迁移，无法与新 server 联调；消息字段本身已与 master 0.2.6 对齐进契约。
+- 线路字段缺口（相对 master 0.2.6）已收入契约：`g.watch.playerId`、`g.choice.choiceId`、`b.progress.resolved` / `leaksBy`，以及 `m.public` / `m.private` / `m.field` 等视图字段。连接上游时不再需要单独的 `wire/` 映射。
 
 ## 数据包对齐（P0）
 
@@ -49,7 +49,7 @@ alliance/compat/upstream/
   data/             读取 master 的 /data/<file>.json，输出本仓库的数据视图
   battle/           master 的 b.start spec → mission-core 的 BattleSpec
   result/           mission-core 的 BattleResult → master 的 b.result（perPlayer 形状）
-  wire/             仅在线路字段不一致时存在（当前：g.watch.playerId）
+  wire/             仅在线路字段不一致时存在（当前无：g.watch.playerId 等已与契约对齐）
   test/             golden 样例与往返测试
 ```
 
@@ -60,7 +60,7 @@ master 出新版或出现其他第三方 fork 时，在 `alliance/compat/` 下�
 1. 数据链：master 的 `<base>/data/<file>.json`（地址由后端基址拼出）→ 数据视图（packet 视图）。
 2. 战斗输入链：`b.start` 中的 master spec → mission-core `BattleSpec`。`tiles`、`cost`、`modules` 不在 master 的 spec 里，由数据视图推导，所以数据链是战斗输入链的前提。
 3. 战斗输出链：mission-core `BattleResult` → `b.result`（master 的 `perPlayer` 形状），先通过 `alliance/contract` 中的语义边界检查再发送。
-4. 线路链：只处理字段不一致的情况。当前只有 `g.watch.playerId`：app 的意图是“观看某一玩家”，线路上填入 `playerId`。
+4. 线路链：只处理字段不一致的情况。相对 master 0.2.6，当前无未对齐字段；`g.watch.playerId` 已进契约。
 
 ### 原则
 
