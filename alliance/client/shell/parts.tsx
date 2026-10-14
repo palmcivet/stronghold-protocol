@@ -132,20 +132,10 @@ function TooltipLayer() {
   return null;
 }
 
-/** The layers of the shell, bottom to top: backdrop, banner, page, overlay, toast. */
-export function ShellFrame({
-  children,
-  bare = false,
-}: {
-  readonly children: ReactNode;
-  /** The match page moves the banner under its top bar. */
-  readonly bare?: boolean;
-}) {
+/** Banner + page body shared by the design stage and the bare match shell. */
+function ShellBody({ children }: { readonly children: ReactNode }) {
   return (
-    <div className={cx(styles.app)} data-bare={bare || undefined}>
-      <div className={cx(styles.backdrop)} data-layer="backdrop">
-        <Part id={SHELL.backdrop} />
-      </div>
+    <>
       <div className={cx(styles.barLayer)} data-layer="bar">
         <div className={cx(styles.bannerSlot)}>
           <Part id={SHELL.banner} />
@@ -154,14 +144,51 @@ export function ShellFrame({
       <main className={cx(styles.main)} data-layer="main">
         {children}
       </main>
-      <div data-layer="overlay">
-        <Slot id={SHELL.overlay} defaults={OVERLAY_DEFAULTS} />
+    </>
+  );
+}
+
+/**
+ * Shell layers bottom to top: backdrop, banner, page, overlay, toast.
+ * Non-match pages sit in the contain stage; match (`bare`) fills the viewport.
+ * Backdrop paints full-bleed under surplus bands outside the stage.
+ */
+export function ShellFrame({
+  children,
+  bare = false,
+}: {
+  readonly children: ReactNode;
+  /** The match page moves the banner under its top bar. */
+  readonly bare?: boolean;
+}) {
+  const t = useText();
+  const body = <ShellBody>{children}</ShellBody>;
+  return (
+    <>
+      <div className="wsde-rotate" role="status">
+        {t('core:shell.rotate')}
       </div>
-      <div data-layer="toast">
-        <Part id={SHELL.toast} />
-        <Part id={SHELL.tooltip} />
+      <div className={cx(styles.app, 'wsde-app')} data-bare={bare || undefined}>
+        <div className={cx(styles.backdrop)} data-layer="backdrop">
+          <Part id={SHELL.backdrop} />
+          <div className={cx(styles.backdropVignette)} aria-hidden="true" />
+        </div>
+        {bare ? (
+          body
+        ) : (
+          <div className="wsde-layout-host">
+            <div className="wsde-layout-stage">{body}</div>
+          </div>
+        )}
+        <div data-layer="overlay">
+          <Slot id={SHELL.overlay} defaults={OVERLAY_DEFAULTS} />
+        </div>
+        <div data-layer="toast">
+          <Part id={SHELL.toast} />
+          <Part id={SHELL.tooltip} />
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

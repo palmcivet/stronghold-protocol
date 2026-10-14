@@ -10,14 +10,14 @@ import type {
   TileSpec,
   UnitSpec,
 } from 'arknights-mission-core';
-import type { StageDevice, StageMap } from '#data/view/stage-map.js';
+import { skillScriptOf, skillSpecOf } from '#battle/skill.js';
 import type {
   CombatChessDef,
   CombatDefs,
   CombatEnemyDef,
   CombatStats,
 } from '#data/view/combat-def.js';
-import { skillScriptOf, skillSpecOf } from '#battle/skill.js';
+import type { StageDevice, StageMap } from '#data/view/stage-map.js';
 
 const FACINGS: readonly Direction[] = ['UP', 'RIGHT', 'DOWN', 'LEFT'];
 
@@ -47,9 +47,7 @@ function attackRangeCells(
   return def.attackRange.map(([x, y]) => ({ x, y }));
 }
 
-function damageKindOf(
-  stats: CombatStats,
-): 'physical' | 'arts' | 'heal' {
+function damageKindOf(stats: CombatStats): 'physical' | 'arts' | 'heal' {
   return stats.dmgType === 'arts' ? 'arts' : 'physical';
 }
 
@@ -208,7 +206,9 @@ interface NormalizedRoute {
 }
 
 /** Master `[row, col]` (or `{row,col}` / `{r,c}`) → mission-core `{x:col, y:row}`. */
-function tileOf(value: unknown): { readonly x: number; readonly y: number } | null {
+function tileOf(
+  value: unknown,
+): { readonly x: number; readonly y: number } | null {
   if (Array.isArray(value) && value.length >= 2) {
     const row = value[0];
     const col = value[1];
@@ -250,7 +250,9 @@ function routesOf(raw: unknown): readonly NormalizedRoute[] {
         }
       }
       const first = checkpoints.find((point) => point.type === 'move');
-      const last = [...checkpoints].reverse().find((point) => point.type === 'move');
+      const last = [...checkpoints]
+        .reverse()
+        .find((point) => point.type === 'move');
       if (!first || first.type !== 'move' || !last || last.type !== 'move') {
         return [];
       }
@@ -282,7 +284,11 @@ function normalizeMasterRoute(raw: unknown): NormalizedRoute | null {
     : Array.isArray(raw.cp)
       ? raw.cp
       : []) {
-    if (Array.isArray(cp) && typeof cp[0] === 'number' && typeof cp[1] === 'number') {
+    if (
+      Array.isArray(cp) &&
+      typeof cp[0] === 'number' &&
+      typeof cp[1] === 'number'
+    ) {
       checkpoints.push({ type: 'move', x: cp[1], y: cp[0] });
       continue;
     }
@@ -291,11 +297,17 @@ function normalizeMasterRoute(raw: unknown): NormalizedRoute | null {
     }
     const type = String(cp.type ?? 'move').toLowerCase();
     if (type === 'wait' || type === 'w') {
-      const time = typeof cp.time === 'number' ? cp.time : typeof cp.t === 'number' ? cp.t : 0;
+      const time =
+        typeof cp.time === 'number'
+          ? cp.time
+          : typeof cp.t === 'number'
+            ? cp.t
+            : 0;
       checkpoints.push({ type: 'wait', time });
       continue;
     }
-    const tile = tileOf(cp.pos ?? cp.position ?? cp) ?? tileOf([cp.row, cp.col]);
+    const tile =
+      tileOf(cp.pos ?? cp.position ?? cp) ?? tileOf([cp.row, cp.col]);
     if (tile) {
       checkpoints.push({ type: 'move', ...tile });
     }
@@ -405,13 +417,13 @@ export function battleSpecOf(
           ? entry.route
           : 0;
     const route = routeOf(routes, routeIndex, fieldFallback);
-    const explicit = tileOf(entry.pos) ?? (
-      typeof entry.col === 'number' && typeof entry.row === 'number'
+    const explicit =
+      tileOf(entry.pos) ??
+      (typeof entry.col === 'number' && typeof entry.row === 'number'
         ? { x: entry.col, y: entry.row }
         : typeof entry.x === 'number' && typeof entry.y === 'number'
           ? { x: entry.x, y: entry.y }
-          : null
-    );
+          : null);
     const start = explicit ?? route.start;
     const id = `spawn:${index}:${entry.enemyKey}`;
     const unit = enemyUnitOf(
@@ -457,7 +469,7 @@ export function battleSpecOf(
       stageId,
       fieldId: typeof raw.fieldId === 'string' ? raw.fieldId : null,
       waveId: typeof raw.waveId === 'string' ? raw.waveId : null,
-      ...((stage.special && Object.keys(stage.special).length)
+      ...(stage.special && Object.keys(stage.special).length
         ? { special: stage.special }
         : {}),
     },

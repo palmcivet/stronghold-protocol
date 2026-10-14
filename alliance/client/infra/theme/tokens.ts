@@ -97,13 +97,19 @@ export const TOKENS: TokenGroup = {
     },
   },
   'font-size': {
-    xs: dimension(0.75),
-    sm: dimension(0.875),
-    md: dimension(1),
-    lg: dimension(1.25),
-    xl: dimension(1.5),
-    '2xl': dimension(2),
-    display: dimension(3),
+    /* Semantic font roles at design baseline (px); applyViewport scales by layout.scale. */
+    caption: dimension(11, 'px'),
+    label: dimension(12, 'px'),
+    body: dimension(14, 'px'),
+    title: dimension(18, 'px'),
+    display: dimension(24, 'px'),
+    /* Short aliases for the same role bases. */
+    xs: dimension(11, 'px'),
+    sm: dimension(12, 'px'),
+    md: dimension(14, 'px'),
+    lg: dimension(18, 'px'),
+    xl: dimension(24, 'px'),
+    '2xl': dimension(24, 'px'),
   },
   ease: {
     out: { $type: 'cubicBezier', $value: [0.2, 0.8, 0.2, 1] },
@@ -117,12 +123,14 @@ export const TOKENS: TokenGroup = {
   /** Factor applied to every duration; the reduced-motion layer sets it to 0. */
   motion: { $type: 'number', $value: 1 },
   space: {
-    1: { $type: 'dimension', $value: { value: 0.25, unit: 'rem' } },
-    2: { $type: 'dimension', $value: { value: 0.5, unit: 'rem' } },
-    3: { $type: 'dimension', $value: { value: 0.75, unit: 'rem' } },
-    4: { $type: 'dimension', $value: { value: 1, unit: 'rem' } },
-    6: { $type: 'dimension', $value: { value: 1.5, unit: 'rem' } },
-    8: { $type: 'dimension', $value: { value: 2, unit: 'rem' } },
+    /* Spacing ladder bases (px) at design baseline; keys 6/8 alias steps 5/6. */
+    1: dimension(4, 'px'),
+    2: dimension(8, 'px'),
+    3: dimension(12, 'px'),
+    4: dimension(16, 'px'),
+    5: dimension(24, 'px'),
+    6: dimension(24, 'px'),
+    8: dimension(32, 'px'),
   },
   radius: {
     1: { $type: 'dimension', $value: { value: 2, unit: 'px' } },
@@ -148,14 +156,19 @@ export const TOKENS: TokenGroup = {
     avatar: dimension(2.5),
     'avatar-lg': dimension(4),
     thumb: dimension(3.5),
-    touch: dimension(2.75),
+    touch: dimension(44, 'px'),
     page: dimension(72),
   },
-  /** Breakpoints for script and container queries; a media query cannot read a custom property. */
+  /**
+   * Material 3 window size class floors (CSS px) for script / debug mirror.
+   * A media query cannot read a custom property; `infra/theme/viewport` owns the live class.
+   */
   breakpoint: {
-    phone: dimension(40),
-    tablet: dimension(64),
-    desktop: dimension(80),
+    compact: dimension(0, 'px'),
+    medium: dimension(600, 'px'),
+    expanded: dimension(840, 'px'),
+    large: dimension(1200, 'px'),
+    xlarge: dimension(1600, 'px'),
   },
   layer: {
     backdrop: { $type: 'number', $value: 0 },

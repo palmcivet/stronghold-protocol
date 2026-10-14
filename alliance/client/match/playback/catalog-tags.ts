@@ -1,4 +1,8 @@
-import { defineTag, type MissionModule, type TagKey } from 'arknights-mission-core';
+import {
+  defineTag,
+  type MissionModule,
+  type TagKey,
+} from 'arknights-mission-core';
 
 /**
  * Season enemy catalog tags (race / material flavor). Master puts them on unit specs; mission-core only ships

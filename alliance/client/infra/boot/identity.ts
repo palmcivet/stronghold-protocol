@@ -1,4 +1,5 @@
 import * as v from 'valibot';
+import { getPlatform } from '#infra/platform/index.js';
 import {
   CORE_OWNER,
   defineItem,
@@ -6,7 +7,7 @@ import {
 } from '#infra/storage/index.js';
 
 /**
- * Which reconnect token a tab uses, as master's `createIdentity` (public/js/net.js): decided once per page load by
+ * Which reconnect token a tab uses. Decided once per page load by
  * `init()`:
  *   1. this tab's own token (the tab secret slot: survives reloads of this tab, never copied into a new one),
  *   2. else, with a channel, the most recent token of the device (the device secret slot, at most four) so closing
@@ -173,7 +174,7 @@ export interface Identity {
 
 function defaultChannel(): IdentityChannel | null {
   try {
-    return typeof BroadcastChannel === 'function'
+    return getPlatform().broadcastChannel
       ? new BroadcastChannel(IDENTITY_CHANNEL)
       : null;
   } catch {

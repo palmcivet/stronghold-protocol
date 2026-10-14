@@ -10,8 +10,20 @@ describe('combat defs', () => {
           charId: 'char_1',
           profession: 'SNIPER',
           dmgType: 'phys',
-          rangeGrid: [[1, 0], [2, 0]],
-          stats: { maxHp: 100, atk: 20, def: 5, res: 0, bat: 1, aspd: 100, moveSpeed: 1, blockCnt: 1 },
+          rangeGrid: [
+            [1, 0],
+            [2, 0],
+          ],
+          stats: {
+            maxHp: 100,
+            atk: 20,
+            def: 5,
+            res: 0,
+            bat: 1,
+            aspd: 100,
+            moveSpeed: 1,
+            blockCnt: 1,
+          },
           skill: {
             skillId: 'sk_a',
             skillType: 'MANUAL',
@@ -45,8 +57,14 @@ describe('combat defs', () => {
       },
     );
     expect(defs.chess.chess_a?.stats.maxHp).toBe(100);
-    expect(defs.chess.chess_a?.rangeGrid).toEqual([[1, 0], [2, 0]]);
-    expect(defs.chess.chess_a?.attackRange).toEqual([[1, 0], [2, 0]]);
+    expect(defs.chess.chess_a?.rangeGrid).toEqual([
+      [1, 0],
+      [2, 0],
+    ]);
+    expect(defs.chess.chess_a?.attackRange).toEqual([
+      [1, 0],
+      [2, 0],
+    ]);
     expect(defs.chess.chess_a?.profession).toBe('SNIPER');
     expect(defs.chess.chess_a?.skill?.skillId).toBe('sk_a');
     expect(defs.enemies.enemy_1?.stats.atk).toBe(30);
@@ -78,6 +96,9 @@ describe('combat defs', () => {
       },
     );
     expect(defs.enemies.walker?.tags).toContain('attack-moves');
-    expect(defs.enemies.walker?.attackClip).toEqual({ duration: 0.8, hit: 0.3 });
+    expect(defs.enemies.walker?.attackClip).toEqual({
+      duration: 0.8,
+      hit: 0.3,
+    });
   });
 });

@@ -496,10 +496,6 @@ export function buildConfig(
     })),
     titleRule:
       'each player gets at most one title; each title is used at most once per match; assign by the category where the player ranks best relative to teammates [ASSUMED]',
-    tips: listOf(ac.gameTipsList).map((tip) => ({
-      tip: String(tip.tip).trim(),
-      weight: tip.weight,
-    })),
     broadcasts: listOf(ac.broadcastList).map((row) => ({
       id: row.id,
       type: row.type,

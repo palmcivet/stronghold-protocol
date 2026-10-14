@@ -5,8 +5,8 @@ import {
   pickModeAttacks,
   pickModeHits,
   pickUnitSfx,
-  skillModeLetter,
   SLOT_MODE_LETTER,
+  skillModeLetter,
 } from '#compiler/media/need/audio-bank.js';
 
 test('asset paths and unit sfx role picking', () => {

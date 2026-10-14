@@ -134,10 +134,6 @@ export const EN: Readonly<Partial<Record<CoreKey, string>>> = {
   'core:lobby.start.solo.hint': 'The simulation can start right after',
   'core:lobby.start.coop.hint':
     'Invite friends or add AI teammates after creating it',
-  'core:entry.tips': 'Tactical tips',
-  'core:entry.tips.position': '{index}/{total}',
-  'core:entry.tips.previous': 'Previous tip',
-  'core:entry.tips.next': 'Next tip',
   'core:lobby.recent': 'Recent',
   'core:match.away': 'AI is playing',
   'core:match.awayHint': 'The AI plays for you until you come back.',
@@ -180,6 +176,10 @@ export const EN: Readonly<Partial<Record<CoreKey, string>>> = {
   'core:profile.textSize.md': 'Medium',
   'core:profile.textSize.sm': 'Small',
   'core:profile.textSize.xl': 'Extra large',
+  'core:profile.safeAreaUi': 'Notch-safe UI',
+  'core:profile.safeAreaUi.hint':
+    'When on, interactive UI stays inside the safe area; the map and backdrop stay full-bleed.',
+  'core:shell.rotate': 'Please rotate to landscape',
   'core:result.boss': 'Leader {name}',
   'core:result.hidden': 'Reached the hidden core',
   'core:result.lineup': 'Lineup',

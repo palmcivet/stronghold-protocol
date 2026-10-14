@@ -219,7 +219,13 @@ export function streamEventsOf(events: readonly unknown[]): StreamEvent[] {
       const unit = streamUnitInfoOf(a);
       return unit ? [{ kind: 'spawn', unit }] : [];
     }
-    if (type === 'fx' && typeof a === 'string' && a && isNumber(b) && isNumber(c)) {
+    if (
+      type === 'fx' &&
+      typeof a === 'string' &&
+      a &&
+      isNumber(b) &&
+      isNumber(c)
+    ) {
       const extra = isRecord(d) ? d : {};
       const data: Record<string, unknown> = { ...extra, x: b, y: c };
       if (isId(extra.id)) {

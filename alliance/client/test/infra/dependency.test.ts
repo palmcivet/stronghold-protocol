@@ -7,16 +7,25 @@ const clientRoot = fileURLToPath(new URL('../..', import.meta.url));
 const DOMAIN = '(entry|profile|loadout|guide|room|match|extension)';
 const TESTS = '(^test/|\\.(test|spec)\\.tsx?$)';
 const COMPOSITION = '^infra/(boot|router)/';
+const SETTINGS = '^infra/settings/';
 
 /** The dependency direction of the client: domains → shell, part, ui → infra. */
 const RULES: IForbiddenRuleType[] = [
   {
     name: 'infra-stays-below',
     comment:
-      'infra depends on no layer above it; boot and router assemble the client',
+      'infra depends on no layer above it; boot and router assemble the client; settings may use part',
     severity: 'error',
-    from: { path: '^infra/', pathNot: [TESTS, COMPOSITION] },
+    from: { path: '^infra/', pathNot: [TESTS, COMPOSITION, SETTINGS] },
     to: { path: `^(ui|part|shell|${DOMAIN})/` },
+  },
+  {
+    name: 'settings-may-use-part',
+    comment:
+      'settings registers profile tabs via part; it must not reach ui, shell, or domains',
+    severity: 'error',
+    from: { path: SETTINGS, pathNot: TESTS },
+    to: { path: `^(ui|shell|${DOMAIN})/` },
   },
   {
     name: 'ui-reads-theme-and-text',

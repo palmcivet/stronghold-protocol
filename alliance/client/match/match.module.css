@@ -126,12 +126,6 @@
     align-items: start;
   }
 
-  @media (width < 64rem) {
-    .draftColumns {
-      grid-template-columns: 1fr;
-    }
-  }
-
   .orderRow {
     display: flex;
     align-items: center;
@@ -178,17 +172,6 @@
     grid-row: 1 / span 3;
   }
 
-  @media (width < 64rem) {
-    .briefColumns {
-      grid-template-columns: minmax(0, 1fr);
-    }
-
-    .briefColumns > [data-slot] > :nth-child(4) {
-      grid-column: 1;
-      grid-row: auto;
-    }
-  }
-
   .stickyFoot {
     position: sticky;
     bottom: 0;
@@ -199,17 +182,9 @@
 }
 
 @layer components {
-  @media (height < 30rem) {
-    .stickyFoot {
-      position: static;
-    }
-  }
-}
-
-@layer components {
   /* Master's briefing and draft fit the screen: the head and the foot stay, the body scrolls between them. */
   .step {
-    height: 100dvh;
+    height: 100%;
     min-height: 0;
   }
 
@@ -225,16 +200,14 @@
     position: static;
   }
 
-  /* The draft's columns run the full height; the grid scrolls inside its own column. */
-  @media (width >= 64rem) {
-    .draftColumns {
-      align-items: stretch;
-      overflow: hidden;
-    }
+  /* Draft columns run the full height; each column scrolls inside itself. */
+  .draftColumns {
+    align-items: stretch;
+    overflow: hidden;
+  }
 
-    .draftColumns > * {
-      min-height: 0;
-      overflow: auto;
-    }
+  .draftColumns > * {
+    min-height: 0;
+    overflow: auto;
   }
 }

@@ -16,15 +16,15 @@ description: 盟约是「卫戍协议：盟约」的应用：赛季数据与资�
 
 ## 内容
 
-- [快速开始](./01-quick-start.md)：构建数据包，启动对局进程与开发服务器
-- [架构](./02-architecture.md)：`alliance/` 下的各个包与它们的依赖
-- [客户端](./client/index.md)：浏览器客户端的技术栈、分层、页面与部件
-- [卫戍协议数据](./data/index.md)：赛季数据包、基础包与赛季包的编译，资源的发布布局与客户端加载
-- [对局协议](./protocol/index.md)：对局进程的 HTTP 与 WebSocket 接口，房间、对局与作战消息
-- [连接 master 后端](./compat/index.md)：master 资源表的映射、用例对照表与追溯标记
+- [快速开始](./maintain/01-quick-start.md)：构建数据包，并启动开发服务器
+- [架构](./maintain/02-architecture.md)：`alliance/` 下各包的职责与数据流（依赖图见 [包依赖](./maintain/03-deps.md)）
+- [客户端](./maintain/client/index.md)：浏览器客户端的技术栈、分层、页面与部件
+- [卫戍协议数据](./maintain/data/index.md)：赛季数据包、基础包与赛季包的编译，资源的发布布局与客户端加载
+- [对局协议](./maintain/protocol/index.md)：对局进程的 HTTP 与 WebSocket 接口，房间、对局与作战消息
+- [连接 master 后端](./maintain/compat/index.md)：master 资源表的映射、用例对照表与追溯标记
 
 ## 下一步
 
-- 第一次运行：读 [快速开始](./01-quick-start.md)
-- 想了解资源怎样从社区仓库到达浏览器：读 [资源从哪里来](./data/03-resource.md)
-- 想接入对局服务：读 [对局协议](./protocol/index.md)
+- 第一次运行：读 [快速开始](./maintain/01-quick-start.md)
+- 想了解资源怎样从社区仓库到达浏览器：读 [资源从哪里来](./maintain/data/03-resource.md)
+- 想接入对局服务：读 [对局协议](./maintain/protocol/index.md)

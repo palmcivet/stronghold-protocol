@@ -1,0 +1,57 @@
+language js(typescript)
+
+or {
+  `Math.$name` as $expr where {
+    $name <: or {
+      `acos`,
+      `acosh`,
+      `asin`,
+      `asinh`,
+      `atan`,
+      `atanh`,
+      `atan2`,
+      `cbrt`,
+      `cos`,
+      `cosh`,
+      `exp`,
+      `expm1`,
+      `hypot`,
+      `log`,
+      `log1p`,
+      `log10`,
+      `log2`,
+      `pow`,
+      `sin`,
+      `sinh`,
+      `tan`,
+      `tanh`,
+      `random`
+    },
+    register_diagnostic(span=$expr, message="Approximated or nondeterministic Math is not allowed. Use kernel/math, and take randomness from the battle generator.")
+  },
+  `Date.now` as $expr where {
+    register_diagnostic(span=$expr, message="Date.now is nondeterministic.")
+  },
+  `performance.now` as $expr where {
+    register_diagnostic(span=$expr, message="performance.now is nondeterministic.")
+  },
+  `crypto.getRandomValues` as $expr where {
+    register_diagnostic(span=$expr, message="crypto.getRandomValues is nondeterministic.")
+  },
+  `crypto.randomUUID` as $expr where {
+    register_diagnostic(span=$expr, message="crypto.randomUUID is nondeterministic.")
+  },
+  `new Date($_)` as $expr where {
+    register_diagnostic(span=$expr, message="new Date is nondeterministic.")
+  },
+  `new Date` as $expr where {
+    register_diagnostic(span=$expr, message="new Date is nondeterministic.")
+  },
+  `$base ** $exp` as $expr where {
+    $exp <: not r"\d+(?:_\d+)*",
+    register_diagnostic(span=$expr, message="Exponent must be an integer literal. Non-integer powers are not deterministic.")
+  },
+  `**=` as $op where {
+    register_diagnostic(span=$op, message="**= is not allowed.")
+  }
+}

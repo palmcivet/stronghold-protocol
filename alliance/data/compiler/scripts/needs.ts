@@ -4,6 +4,7 @@
 // --full 另按 gamedata 全表列出全部干员、皮肤、召唤物与敌人（可选需求）；compiler/input/base/absent.json 列出的键标为可选并写明原因。
 
 import { join, resolve } from 'node:path';
+import { parseArgs } from 'node:util';
 import type { Need, NeedsList } from 'arknights-assets-catalog';
 import {
   type BuildFiles,
@@ -62,56 +63,36 @@ function parseOptions(
   argv: readonly string[],
   workspace: ReturnType<typeof dataWorkspace>,
 ): Options {
-  const seasons: string[] = [];
-  let outDir = workspace.needsDir;
-  let extractCacheDir = workspace.extractCacheDir;
-  let voiceLang: VoiceLang = 'cn';
-  let voiceAll = false;
-  let full = false;
-  for (let index = 0; index < argv.length; index++) {
-    const token = argv[index] ?? '';
-    const eq = token.indexOf('=');
-    const name = eq === -1 ? token : token.slice(0, eq);
-    const inline = eq === -1 ? null : token.slice(eq + 1);
-    if (name === '--help' || name === '-h') {
-      console.log(USAGE);
-      process.exit(0);
+  const { values } = (() => {
+    try {
+      return parseArgs({
+        args: [...argv],
+        strict: true,
+        options: {
+          help: { type: 'boolean' as const, short: 'h' as const },
+          'voice-all': { type: 'boolean' as const },
+          full: { type: 'boolean' as const },
+          season: { type: 'string' as const, multiple: true as const },
+          out: { type: 'string' as const },
+          cache: { type: 'string' as const },
+          'voice-lang': { type: 'string' as const },
+        },
+      });
+    } catch (cause) {
+      fail(cause instanceof Error ? cause.message : String(cause));
     }
-    if (name === '--voice-all') {
-      voiceAll = true;
-      continue;
-    }
-    if (name === '--full') {
-      full = true;
-      continue;
-    }
-    if (
-      name === '--season' ||
-      name === '--out' ||
-      name === '--cache' ||
-      name === '--voice-lang'
-    ) {
-      const value = inline ?? argv[++index];
-      if (!value || value.startsWith('--')) {
-        fail(`${name} needs a value`);
-      }
-      if (name === '--season') {
-        seasons.push(value);
-      } else if (name === '--out') {
-        outDir = resolve(value);
-      } else if (name === '--cache') {
-        extractCacheDir = resolve(value);
-      } else if (VOICE_LANGS.includes(value as VoiceLang)) {
-        voiceLang = value as VoiceLang;
-      } else {
-        fail(`--voice-lang must be one of ${VOICE_LANGS.join(', ')}`);
-      }
-      continue;
-    }
-    fail(`unknown option ${token}`);
+  })();
+  if (values.help === true) {
+    console.log(USAGE);
+    process.exit(0);
   }
+  const seasons = values.season ?? [];
   if (seasons.length === 0) {
     fail('--season is required');
+  }
+  const voiceLang = values['voice-lang'] ?? 'cn';
+  if (!VOICE_LANGS.includes(voiceLang as VoiceLang)) {
+    fail(`--voice-lang must be one of ${VOICE_LANGS.join(', ')}`);
   }
   for (const season of seasons) {
     try {
@@ -120,7 +101,17 @@ function parseOptions(
       fail(cause instanceof Error ? cause.message : String(cause));
     }
   }
-  return { seasons, outDir, extractCacheDir, voiceLang, voiceAll, full };
+  return {
+    seasons,
+    outDir: values.out === undefined ? workspace.needsDir : resolve(values.out),
+    extractCacheDir:
+      values.cache === undefined
+        ? workspace.extractCacheDir
+        : resolve(values.cache),
+    voiceLang: voiceLang as VoiceLang,
+    voiceAll: values['voice-all'] === true,
+    full: values.full === true,
+  };
 }
 
 async function readJson(files: BuildFiles, path: string): Promise<unknown> {

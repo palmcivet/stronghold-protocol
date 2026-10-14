@@ -26,8 +26,9 @@
     "check:test": "tsc -p tsconfig.test.json",
     "clean": "rimraf dist dist-test dist-web tsconfig.test.tsbuildinfo",
     "dev": "vite",
-    "test": "vitest run",
-    "lint": "biome check . && stylelint \"**/*.css\" --ignore-pattern \"dist*/**\""
+    "format": "biome check --write",
+    "lint": "biome check . && stylelint \"**/*.css\" --ignore-pattern \"dist*/**\"",
+    "test": "vitest run"
   },
   "dependencies": {
     "@alliance/compat-upstream": "workspace:*",

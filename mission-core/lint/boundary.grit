@@ -1,0 +1,12 @@
+language js(typescript)
+
+or {
+  `$name` where {
+    $name <: r"(?:[Pp]layer[A-Za-z0-9_]*|[A-Za-z_][A-Za-z0-9_]*[a-z0-9][Pp]layer[A-Za-z0-9_]*|['\"][Pp]layer.*['\"]|['\"].*[^A-Za-z0-9][Pp]layer.*['\"])",
+    register_diagnostic(span=$name, message="The core does not name players. Use owner.")
+  },
+  `$name` where {
+    $name <: r"(?:_?[Rr]oom[A-Za-z0-9_]*|['\"]_?[Rr]oom.*['\"])",
+    register_diagnostic(span=$name, message="The core does not name rooms. Use owner.")
+  }
+}

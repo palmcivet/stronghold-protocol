@@ -1,6 +1,7 @@
 // 从官方 display / activity / item 表编译对局表情清单，写到 product/season/<id>/emotes.json。
 
 import { join, resolve } from 'node:path';
+import { parseArgs } from 'node:util';
 import { type AssetKey, formatAssetKey } from 'arknights-assets-catalog';
 import { type BuildFiles, BuildReadError } from 'arknights-assets-extractor';
 import { gamedataPath, readGamedata } from '#compiler/gamedata.js';
@@ -269,48 +270,39 @@ interface EmoteArgs {
 }
 
 function parseEmoteArgs(argv: readonly string[]): EmoteArgs {
-  let check = false;
-  let out: string | null = null;
-  let cache: string | null = null;
-  let season: string | null = null;
-  for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i];
-    if (arg === '--check') {
-      check = true;
-    } else if (arg === '--out' || arg === '--cache' || arg === '--season') {
-      const value = argv[++i];
-      if (!value || value.startsWith('--')) {
-        throw new Error(`${arg} needs a value`);
-      }
-      if (arg === '--out') {
-        out = resolve(value);
-      } else if (arg === '--cache') {
-        cache = resolve(value);
-      } else {
-        season = value;
-      }
-    } else if (arg?.startsWith('--season=')) {
-      const value = arg.slice('--season='.length);
-      if (!value) {
-        throw new Error('--season needs an id');
-      }
-      season = value;
-    } else {
+  const { values } = (() => {
+    try {
+      return parseArgs({
+        args: [...argv],
+        strict: true,
+        options: {
+          check: { type: 'boolean' as const },
+          out: { type: 'string' as const },
+          cache: { type: 'string' as const },
+          season: { type: 'string' as const },
+        },
+      });
+    } catch (cause) {
+      const detail = cause instanceof Error ? cause.message : String(cause);
       throw new Error(
-        `unknown option ${arg}\nusage: [--check] --season <id> [--out <file>] [--cache <dir>]`,
+        `${detail}\nusage: [--check] --season <id> [--out <file>] [--cache <dir>]`,
       );
     }
-  }
-  if (!season && !out) {
+  })();
+  const season = values.season ?? null;
+  if (!season && values.out === undefined) {
     throw new Error('--season is required');
   }
   const seasonOut = season
     ? join(workspace.seasonDir(season), 'emotes.json')
     : '';
   return {
-    check,
-    out: out ?? seasonOut,
-    cache: cache ?? workspace.extractCacheDir,
+    check: values.check === true,
+    out: values.out === undefined ? seasonOut : resolve(values.out),
+    cache:
+      values.cache === undefined
+        ? workspace.extractCacheDir
+        : resolve(values.cache),
   };
 }
 

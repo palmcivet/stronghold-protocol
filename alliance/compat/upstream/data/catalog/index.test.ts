@@ -200,7 +200,6 @@ describe('buildUpstreamCatalog', () => {
             effectDescList: ['·可使用盟约数增加', '·大幅增加奖励'],
           },
         },
-        tips: [{ tip: '提示一', weight: 50 }, { weight: 1 }, '提示三'],
       },
       bosses: {
         boss_7: { bossId: 'boss_7', enemyKey: 'enemy_9', name: '领袖' },
@@ -228,8 +227,6 @@ describe('buildUpstreamCatalog', () => {
       icon: 'image:ui/modeIcon/mode_normal_icon',
     });
     expect(text['data:mode.m1.effects']).toBe('可使用盟约数增加\n大幅增加奖励');
-    expect(catalog.tips).toEqual(['0', '2']);
-    expect(text['data:tip.2']).toBe('提示三');
     expect(catalog.chess.normal?.droppable).toBe(true);
     expect(catalog.chess.preset?.droppable).toBe(false);
     expect(catalog.bosses?.boss_7).toEqual({

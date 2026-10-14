@@ -22,12 +22,14 @@ import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { listWorkspacePackages } from '@wsde/shared/workspace';
+import matter from 'gray-matter';
+import { SyntaxKind } from 'typescript/unstable/ast';
+import { createScanner } from 'typescript/unstable/ast/scanner';
 import type { MarkdownRenderer, SiteConfig } from 'vitepress';
 
 /** Fence languages that hold checked code; both mean TypeScript. */
 const FENCE_LANGS = new Set(['ts', 'typescript']);
 const SKIP = /<!--\s*check:skip\s*-->\s*$/;
-const IMPORT = /^\s*import\s/m;
 const CUT_BEFORE = /^\s*\/\/\s*---cut---\s*$/;
 const CUT_AFTER = /^\s*\/\/\s*---cut-after---\s*$/;
 
@@ -56,14 +58,15 @@ function isChecked(file: string, modules: readonly string[]): boolean {
 
 /** Lines VitePress strips as frontmatter before markdown-it sees the page. */
 function frontmatterLines(source: string): number {
-  const lines = source.split('\n');
-  if (lines[0]?.trim() !== '---') {
+  // Empty options skip gray-matter's cache. A cached copy drops the
+  // non-enumerable `matter` field, so a second read of the same page throws.
+  const parsed = matter(source, {});
+  if (parsed.matter.length === 0) {
     return 0;
   }
-  const end = lines.findIndex(
-    (line, index) => index > 0 && /^---\s*$/.test(line),
-  );
-  return end < 0 ? 0 : end + 1;
+  const prefix = source.slice(0, source.length - parsed.content.length);
+  const lines = prefix.split('\n');
+  return prefix.endsWith('\n') ? lines.length - 1 : lines.length;
 }
 
 /**
@@ -132,6 +135,102 @@ interface Line {
   at: string | null;
 }
 
+const IMPORT_TRIVIA = new Set<SyntaxKind>([
+  SyntaxKind.WhitespaceTrivia,
+  SyntaxKind.NewLineTrivia,
+  SyntaxKind.SingleLineCommentTrivia,
+  SyntaxKind.MultiLineCommentTrivia,
+]);
+
+/** A block that contains an import statement starts a new checked program. */
+function hasImport(body: string): boolean {
+  const scanner = createScanner(true);
+  scanner.setText(body);
+  for (;;) {
+    const kind = scanner.scan();
+    if (kind === SyntaxKind.EndOfFile) {
+      return false;
+    }
+    if (kind === SyntaxKind.ImportKeyword) {
+      return true;
+    }
+  }
+}
+
+/**
+ * 0-based line numbers of each import, from the `import` keyword through
+ * its module specifier and a trailing semicolon. Blank lines in between count.
+ */
+function importLineNumbers(body: string): ReadonlySet<number> {
+  const scanner = createScanner(false);
+  scanner.setText(body);
+  const lineStarts = [0];
+  for (let index = 0; index < body.length; index += 1) {
+    if (body[index] === '\n') {
+      lineStarts.push(index + 1);
+    }
+  }
+  const lineOf = (position: number): number => {
+    let low = 0;
+    let high = lineStarts.length - 1;
+    while (low < high) {
+      const middle = (low + high + 1) >> 1;
+      if ((lineStarts[middle] ?? 0) <= position) {
+        low = middle;
+      } else {
+        high = middle - 1;
+      }
+    }
+    return low;
+  };
+  const lines = new Set<number>();
+  let start: number | null = null;
+  let pending: SyntaxKind | null = null;
+  for (;;) {
+    const kind = pending ?? scanner.scan();
+    pending = null;
+    if (kind === SyntaxKind.EndOfFile) {
+      break;
+    }
+    if (IMPORT_TRIVIA.has(kind)) {
+      continue;
+    }
+    if (start === null) {
+      if (kind === SyntaxKind.ImportKeyword) {
+        start = lineOf(scanner.getTokenStart());
+      }
+      continue;
+    }
+    const isSpecifier =
+      kind === SyntaxKind.StringLiteral ||
+      kind === SyntaxKind.NoSubstitutionTemplateLiteral;
+    if (!isSpecifier) {
+      continue;
+    }
+    let end = lineOf(scanner.getTokenStart());
+    for (;;) {
+      const next = scanner.scan();
+      if (next === SyntaxKind.EndOfFile) {
+        break;
+      }
+      if (IMPORT_TRIVIA.has(next)) {
+        continue;
+      }
+      if (next === SyntaxKind.SemicolonToken) {
+        end = lineOf(scanner.getTokenStart());
+      } else {
+        pending = next;
+      }
+      break;
+    }
+    for (let line = start; line <= end; line += 1) {
+      lines.add(line);
+    }
+    start = null;
+  }
+  return lines;
+}
+
 /**
  * Groups each page's blocks into programs: a block with an import starts
  * one, the others continue it.
@@ -141,20 +240,18 @@ function programs(pages: readonly string[]): Line[][] {
   for (const page of [...pages].sort()) {
     let current: { imports: Line[]; body: Line[] } | null = null;
     for (const block of blocksByPage.get(page) ?? []) {
-      if (current === null || IMPORT.test(block.body)) {
+      if (current === null || hasImport(block.body)) {
         current = { imports: [], body: [] };
         result.push(current);
       }
       const program = current;
-      // An import may span several lines; it ends at its module specifier.
-      let inImport = false;
+      const imported = importLineNumbers(block.body);
       block.body
         .replace(/\n$/, '')
         .split('\n')
         .forEach((code, index) => {
           const line = { code, at: `${block.page}:${block.start + index}` };
-          if (inImport || /^import\s/.test(code)) {
-            inImport = !/["']\s*;?\s*$/.test(code);
+          if (imported.has(index)) {
             program.imports.push(line);
           } else {
             program.body.push(line);

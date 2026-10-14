@@ -10,7 +10,7 @@ import { type PartInsert, Slot } from '#part/slot.js';
 import { MENU_ENTRY } from '#shell/menu.js';
 import { Badge, Button, Cluster, Icon, Region } from '#ui/index.js';
 import styles from './entry.module.css';
-import { CreateRoom, JoinRoom, Tips } from './lobby.js';
+import { CreateRoom, JoinRoom } from './lobby.js';
 import { ResumeSeat } from './resume.js';
 import { NameForm } from './title.js';
 
@@ -23,7 +23,6 @@ export const ENTRY = {
   corner: 'core:entry.corner',
   settings: 'core:entry.settings',
   guide: 'core:entry.guide',
-  tips: 'core:entry.tips',
   resume: 'core:entry.resume',
   topbar: 'core:entry.topbar',
 } as const;
@@ -222,9 +221,6 @@ function EntryLayout() {
                 <Part id={ENTRY.create} />
                 <Part id={ENTRY.join} />
               </Region>
-              <Region name="tips" className={cx(styles.tipsRegion)}>
-                <Part id={ENTRY.tips} />
-              </Region>
             </div>
           </>
         ) : (
@@ -255,7 +251,6 @@ export function registerEntryParts(): readonly (() => void)[] {
     definePart(ENTRY.server, ServerInfo),
     definePart(ENTRY.settings, SettingsLink),
     definePart(ENTRY.guide, GuideLink),
-    definePart(ENTRY.tips, Tips, { extensible: true }),
     definePart(ENTRY.resume, ResumeSeat),
     definePart(ENTRY.topbar, LobbyTopbar, { extensible: true }),
   ];

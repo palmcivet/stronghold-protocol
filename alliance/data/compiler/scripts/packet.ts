@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { join, resolve } from 'node:path';
+import { parseArgs as parseArgv } from 'node:util';
 import { BuildReadError, nodeBuildFiles } from 'arknights-assets-extractor';
 import {
   type CompileOptions,
@@ -32,67 +33,31 @@ function parseArgs(
   argv: readonly string[],
   workspace: ReturnType<typeof dataWorkspace>,
 ): ParsedArgs {
-  let quiet = false;
-  let noResearch = false;
-  let force = false;
-  let seasonId: string | null = null;
-  let outDir: string | null = null;
-  let cacheDir: string | null = null;
-  let reportPath: string | null = null;
-  const flags: Readonly<Record<string, 'quiet' | 'noResearch' | 'force'>> = {
-    '--quiet': 'quiet',
-    '--no-research': 'noResearch',
-    '--force': 'force',
-  };
-  const values: Readonly<
-    Record<string, 'out' | 'cache' | 'report' | 'season'>
-  > = {
-    '--out': 'out',
-    '--cache': 'cache',
-    '--report': 'report',
-    '--season': 'season',
-  };
-  for (let index = 0; index < argv.length; index++) {
-    const token = argv[index] ?? '';
-    const eq = token.indexOf('=');
-    const name = eq === -1 ? token : token.slice(0, eq);
-    const inline = eq === -1 ? null : token.slice(eq + 1);
-    if (name === '--help' || name === '-h') {
-      console.log(USAGE);
-      process.exit(0);
+  const { values } = (() => {
+    try {
+      return parseArgv({
+        args: [...argv],
+        strict: true,
+        options: {
+          help: { type: 'boolean' as const, short: 'h' as const },
+          quiet: { type: 'boolean' as const },
+          'no-research': { type: 'boolean' as const },
+          force: { type: 'boolean' as const },
+          season: { type: 'string' as const },
+          out: { type: 'string' as const },
+          cache: { type: 'string' as const },
+          report: { type: 'string' as const },
+        },
+      });
+    } catch (cause) {
+      fail(cause instanceof Error ? cause.message : String(cause));
     }
-    const flag = flags[name];
-    if (flag && inline === null) {
-      if (flag === 'quiet') {
-        quiet = true;
-      } else if (flag === 'noResearch') {
-        noResearch = true;
-      } else {
-        force = true;
-      }
-      continue;
-    }
-    const valueName = values[name];
-    if (valueName) {
-      const value = inline ?? argv[++index];
-      if (!value || value.startsWith('--')) {
-        fail(
-          `${name} needs ${valueName === 'season' ? 'an id' : 'a path argument'}\n${USAGE}`,
-        );
-      }
-      if (valueName === 'season') {
-        seasonId = value;
-      } else if (valueName === 'out') {
-        outDir = resolve(value);
-      } else if (valueName === 'cache') {
-        cacheDir = resolve(value);
-      } else {
-        reportPath = resolve(value);
-      }
-      continue;
-    }
-    fail(`unknown option ${token}\n${USAGE}`);
+  })();
+  if (values.help === true) {
+    console.log(USAGE);
+    process.exit(0);
   }
+  const seasonId = values.season ?? null;
   if (!seasonId) {
     fail(`--season is required\n${USAGE}`);
   }
@@ -102,13 +67,22 @@ function parseArgs(
     fail(cause instanceof Error ? cause.message : String(cause));
   }
   return {
-    quiet,
-    noResearch,
-    force,
+    quiet: values.quiet === true,
+    noResearch: values['no-research'] === true,
+    force: values.force === true,
     seasonId,
-    outDir: outDir ?? workspace.seasonDir(seasonId),
-    extractCacheDir: cacheDir ?? workspace.extractCacheDir,
-    reportPath: reportPath ?? workspace.reportPath,
+    outDir:
+      values.out === undefined
+        ? workspace.seasonDir(seasonId)
+        : resolve(values.out),
+    extractCacheDir:
+      values.cache === undefined
+        ? workspace.extractCacheDir
+        : resolve(values.cache),
+    reportPath:
+      values.report === undefined
+        ? workspace.reportPath
+        : resolve(values.report),
     researchDir: workspace.researchDir,
     tuningPath: join(workspace.seasonInputDir(seasonId), 'tuning.json'),
   };

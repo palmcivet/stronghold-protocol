@@ -1,0 +1,118 @@
+@layer overrides {
+  .wsde-debug-root {
+    position: fixed;
+    inset: 0;
+    z-index: calc(var(--wsde-layer-tooltip) + 5);
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .wsde-debug-bleed-layer,
+  .wsde-debug-aspect-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  /* Full-screen capture sheet: blocks clicks to underlying UI while highlighting. */
+  .wsde-debug-highlight-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: auto;
+  }
+
+  /* Default fill stays light so stacked part boxes remain distinguishable. */
+  .wsde-debug-highlight-box {
+    position: absolute;
+    box-sizing: border-box;
+    border: 1px solid
+      color-mix(in srgb, var(--wsde-color-accent-400) 55%, transparent);
+    background: var(--wsde-color-accent-a10);
+  }
+
+  /* DevTools-style inspect: hovered part is stronger (layer captures pointers). */
+  .wsde-debug-highlight-box-hovered {
+    z-index: 1;
+    border-color: var(--wsde-color-accent-400);
+    border-width: 2px;
+    background: var(--wsde-color-accent-a35);
+    box-shadow: 0 0 0 1px
+      color-mix(in srgb, var(--wsde-color-accent-400) 40%, transparent);
+  }
+
+  .wsde-debug-highlight-label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    max-width: 100%;
+    padding: 0 0.25rem;
+    overflow: hidden;
+    color: var(--wsde-color-text-hi);
+    font-family:
+      ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+      "Courier New", monospace;
+    font-size: var(--wsde-font-size-xs);
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    background: var(--wsde-color-bg-3);
+  }
+
+  /* Hovered: full part id — no max-width / ellipsis (default label stays compact). */
+  .wsde-debug-highlight-box-hovered .wsde-debug-highlight-label {
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: nowrap;
+    color: var(--wsde-color-text-on-accent);
+    background: var(--wsde-color-accent-500);
+  }
+
+  .wsde-debug-bleed-band {
+    position: absolute;
+    background: color-mix(in srgb, var(--wsde-color-amber) 20%, transparent);
+  }
+
+  .wsde-debug-bleed-frame {
+    position: absolute;
+    box-sizing: border-box;
+    border: 1px solid var(--wsde-color-amber);
+  }
+
+  .wsde-debug-bleed-label {
+    position: absolute;
+    padding: 0.1rem 0.35rem;
+    color: var(--wsde-color-text-hi);
+    font-family: var(--wsde-font-number), var(--wsde-font-body);
+    font-size: var(--wsde-font-size-xs);
+    line-height: 1.25;
+    white-space: nowrap;
+    background: var(--wsde-color-bg-3);
+    border: 1px solid var(--wsde-color-line-2);
+  }
+
+  .wsde-debug-aspect-band {
+    position: absolute;
+    background: color-mix(in srgb, var(--wsde-color-ice) 16%, transparent);
+  }
+
+  .wsde-debug-aspect-frame {
+    position: absolute;
+    box-sizing: border-box;
+    border: 1px solid var(--wsde-color-ice);
+  }
+
+  .wsde-debug-aspect-label {
+    position: absolute;
+    right: 0.25rem;
+    bottom: 0.25rem;
+    padding: 0.15rem 0.4rem;
+    color: var(--wsde-color-text-hi);
+    font-family: var(--wsde-font-number), var(--wsde-font-body);
+    font-size: var(--wsde-font-size-xs);
+    line-height: 1.3;
+    white-space: nowrap;
+    background: var(--wsde-color-bg-3);
+    border: 1px solid var(--wsde-color-line-2);
+  }
+}

@@ -1,9 +1,14 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import matter from 'gray-matter';
 import { type DefaultTheme, defineConfig } from 'vitepress';
 import { generateSidebar } from 'vitepress-sidebar';
-import type { VitePressSidebarOptions } from 'vitepress-sidebar/types';
+import type {
+  Sidebar,
+  SidebarMulti,
+  VitePressSidebarOptions,
+} from 'vitepress-sidebar/types';
 import { noticeLinks } from './plugins/notice-links';
 import { typecheck } from './plugins/typecheck';
 
@@ -12,65 +17,98 @@ const docsRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 /** Sidebar label of a section home. */
 const OVERVIEW_TEXT = '概览';
 
-/** Top navigation order. A section appears once it has an `index.md`. */
-const SECTION_ORDER = [
-  'alliance',
-  'guides',
-  'mission-core',
-  'mission-renderer',
-  'assets-catalog',
-  'assets-extractor',
-  'license',
+interface Section {
+  /** Docs directory and nav slug. */
+  name: string;
+  /** Sidebar「概览」points at this section's index. */
+  overview?: boolean;
+  /** Unwrap maintain/ so its pages sit directly under the section. */
+  flattenMaintain?: boolean;
+  /** License pages have no fenced examples to type-check. */
+  skipExamples?: boolean;
+}
+
+/**
+ * Nav order. A section appears once it has an `index.md`.
+ * alliance is maintainer-only for now: pages live under maintain/, that
+ * folder is unwrapped (no「维护」header), and the index stays as「概览」.
+ */
+const SECTIONS: readonly Section[] = [
+  { name: 'alliance', overview: true, flattenMaintain: true },
+  { name: 'mission-core' },
+  { name: 'mission-renderer' },
+  { name: 'assets-catalog' },
+  { name: 'assets-extractor' },
+  { name: 'license', skipExamples: true },
 ];
 
-const sectionNames = SECTION_ORDER.filter((section) =>
-  existsSync(join(docsRoot, section, 'index.md')),
+const published = SECTIONS.filter((section) =>
+  existsSync(join(docsRoot, section.name, 'index.md')),
 );
 
-function sectionOptions(section: string): VitePressSidebarOptions {
+function sectionOptions(section: Section): VitePressSidebarOptions {
   return {
     documentRootPath: '/',
-    scanStartPath: section,
-    resolvePath: `/${section}/`,
-    basePath: `/${section}/`,
+    scanStartPath: section.name,
+    resolvePath: `/${section.name}/`,
+    basePath: `/${section.name}/`,
     excludeByGlobPattern: ['node_modules/**'],
     useTitleFromFrontmatter: true,
     useTitleFromFileHeading: true,
+    // Topic folders keep the title and link of their index.md.
+    // reference/ and maintain/ have no index.md; shapeSidebar names them.
     useFolderTitleFromIndexFile: true,
     useFolderLinkFromIndexFile: true,
     folderLinkNotIncludesFileName: true,
     sortMenusOrderNumericallyFromLink: true,
     removePrefixAfterOrdering: true,
     prefixSeparator: /^\d+-/,
+    // Group headers start expanded.
     collapsed: false,
-    includeRootIndexFile: true,
+    includeRootIndexFile: section.overview === true,
   };
 }
 
 function sectionTitle(section: string): string {
   const indexPath = join(docsRoot, section, 'index.md');
   try {
-    const title = readFileSync(indexPath, 'utf8').match(
-      /^title:\s*"?([^"\n]+?)"?\s*$/m,
-    );
-    return title?.[1] ?? section;
+    // `{}` skips gray-matter's cache. A cached parse drops fields on the next read.
+    const title = matter(readFileSync(indexPath, 'utf8'), {}).data.title;
+    return typeof title === 'string' && title.length > 0 ? title : section;
   } catch {
     return section;
   }
 }
 
-function toDirectoryLink(link: string | undefined): string | undefined {
-  return link?.replace(/\/index(\.md)?$/, '/').replace(/^index\.md$/, '');
+function toDirectoryLink(link: string): string {
+  return link.replace(/\/index(\.md)?$/, '/').replace(/^index\.md$/, '');
+}
+
+function withChildItems(
+  item: DefaultTheme.SidebarItem,
+  map: (items: DefaultTheme.SidebarItem[]) => DefaultTheme.SidebarItem[],
+): DefaultTheme.SidebarItem {
+  const next: DefaultTheme.SidebarItem = { ...item };
+  if (item.items) {
+    next.items = map(item.items);
+  }
+  return next;
 }
 
 /**
- * Moves the section home to the top of its sidebar, labelled as the overview.
- * The theme prefixes links with the group base and skips empty links, so the home link is the base itself from the site root.
+ * Overview sections: the section home becomes a top「概览」item.
+ * Other sections drop it; the top nav already opens index.md.
+ * The theme prefixes links with the group base and skips empty links,
+ * so the home link is the base itself, resolved from the site root.
  */
-function withOverviewFirst(
+function withSidebarItems(
+  section: Section,
   base: string,
   items: DefaultTheme.SidebarItem[],
 ): DefaultTheme.SidebarItem[] {
+  if (!section.overview) {
+    return withDirectoryLinks(items.filter((item) => item.link !== 'index.md'));
+  }
   const home = items.find((item) => item.link === 'index.md');
   if (!home) {
     return withDirectoryLinks(items);
@@ -89,45 +127,162 @@ function withOverviewFirst(
 function withDirectoryLinks(
   items: DefaultTheme.SidebarItem[],
 ): DefaultTheme.SidebarItem[] {
-  return items.map((item) => ({
-    ...item,
-    link: toDirectoryLink(item.link),
-    items: item.items && withDirectoryLinks(item.items),
-  }));
+  return items.map((item) => {
+    const next = withChildItems(item, withDirectoryLinks);
+    if (item.link !== undefined) {
+      next.link = toDirectoryLink(item.link);
+    }
+    return next;
+  });
 }
 
-const generated = generateSidebar(sectionNames.map(sectionOptions)) as Record<
-  string,
-  { base: string; items: DefaultTheme.SidebarItem[] }
->;
+/** Disk folder → header. These folders have no index.md, so they are not links. */
+const GROUP_LABEL = {
+  reference: '参考',
+  maintain: '维护',
+} as const;
+
+type GroupFolder = keyof typeof GROUP_LABEL;
+
+function isGroupLink(link: string, folder: GroupFolder): boolean {
+  const path = link.endsWith('/') ? link.slice(0, -1) : link;
+  return path === folder || path.endsWith(`/${folder}`);
+}
+
+/** A reference/ or maintain/ group, before or after it has been renamed. */
+function groupFolder(item: DefaultTheme.SidebarItem): GroupFolder | undefined {
+  const text = item.text ?? '';
+  for (const folder of Object.keys(GROUP_LABEL) as GroupFolder[]) {
+    if (
+      text === folder ||
+      text === GROUP_LABEL[folder] ||
+      (item.link !== undefined && isGroupLink(item.link, folder))
+    ) {
+      return folder;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Rename reference/maintain groups to 参考/维护 and drop their links,
+ * so they render as collapsible headers.
+ */
+function withGroupFolders(
+  items: DefaultTheme.SidebarItem[],
+): DefaultTheme.SidebarItem[] {
+  return items.map((item) => {
+    const folder = groupFolder(item);
+    const next = withChildItems(item, withGroupFolders);
+    if (!folder) {
+      return next;
+    }
+    const header: DefaultTheme.SidebarItem = {
+      ...next,
+      text: GROUP_LABEL[folder],
+    };
+    delete header.link;
+    return header;
+  });
+}
+
+/** Replace a maintain/ group with its children. Their links already include `maintain/`. */
+function withFlattenedMaintain(
+  section: Section,
+  items: DefaultTheme.SidebarItem[],
+): DefaultTheme.SidebarItem[] {
+  if (!section.flattenMaintain) {
+    return items;
+  }
+  return items.flatMap((item) =>
+    groupFolder(item) === 'maintain' ? (item.items ?? []) : [item],
+  );
+}
+
+/**
+ * vitepress-sidebar orders by link, so maintain/ comes before reference/.
+ * Swap those two groups. Every other item stays where it is.
+ */
+function withReferenceBeforeMaintain(
+  items: DefaultTheme.SidebarItem[],
+): DefaultTheme.SidebarItem[] {
+  const next = items.map((item) =>
+    withChildItems(item, withReferenceBeforeMaintain),
+  );
+  const reference = next.findIndex((item) => groupFolder(item) === 'reference');
+  const maintain = next.findIndex((item) => groupFolder(item) === 'maintain');
+  const referenceItem = next[reference];
+  const maintainItem = next[maintain];
+  if (referenceItem && maintainItem && maintain < reference) {
+    next[maintain] = referenceItem;
+    next[reference] = maintainItem;
+  }
+  return next;
+}
+
+function shapeSidebar(
+  section: Section,
+  base: string,
+  items: DefaultTheme.SidebarItem[],
+): DefaultTheme.SidebarItem[] {
+  const withOverview = withSidebarItems(section, base, items);
+  const named = withGroupFolders(withOverview);
+  const flattened = withFlattenedMaintain(section, named);
+  return withReferenceBeforeMaintain(flattened);
+}
+
+function sectionSidebars(options: VitePressSidebarOptions[]): SidebarMulti {
+  const sidebar: Sidebar = generateSidebar(options);
+  if (Array.isArray(sidebar)) {
+    throw new Error(
+      'vitepress-sidebar returned one sidebar; expected a group per section',
+    );
+  }
+  return sidebar;
+}
+
+const generated = sectionSidebars(published.map(sectionOptions));
 
 const sidebar: Record<
   string,
   { base: string; items: DefaultTheme.SidebarItem[] }
 > = Object.fromEntries(
-  Object.entries(generated).map(([path, group]) => [
-    path,
-    { base: group.base, items: withOverviewFirst(group.base, group.items) },
-  ]),
+  published.map((section) => {
+    const path = `/${section.name}/`;
+    const group = generated[path];
+    if (!group) {
+      throw new Error(`vitepress-sidebar omitted the ${path} sidebar`);
+    }
+    return [
+      path,
+      {
+        base: group.base,
+        items: shapeSidebar(section, group.base, group.items),
+      },
+    ];
+  }),
 );
 
-const nav: DefaultTheme.NavItem[] = sectionNames.map((section) => ({
-  text: sectionTitle(section),
-  link: `/${section}/`,
-  activeMatch: `^/${section}/`,
+const nav: DefaultTheme.NavItem[] = published.map((section) => ({
+  text: sectionTitle(section.name),
+  link: `/${section.name}/`,
+  activeMatch: `^/${section.name}/`,
 }));
 
 const examples = typecheck({
-  modules: [
-    'assets-catalog',
-    'assets-extractor',
-    'alliance',
-    'mission-renderer',
-    'mission-core',
-  ],
+  modules: published
+    .filter((section) => !section.skipExamples)
+    .map((section) => section.name),
 });
 
+const sourceConditions = ['@wsde/source', 'import', 'module', 'default'];
+
 export default defineConfig({
+  // Resolve workspace TypeScript packages to their `@wsde/source` entry (e.g. `@alliance/compat-upstream/trace`).
+  vite: {
+    resolve: { conditions: sourceConditions },
+    ssr: { resolve: { conditions: sourceConditions } },
+  },
   title: '卫戍协议：盟约',
   description: 'Stronghold Protocol: Alliance 的项目文档',
   locales: {
@@ -181,7 +336,7 @@ export default defineConfig({
     editLink: {
       text: '编辑此页',
       pattern:
-        'https://https://github.com/palmcivet/stronghold-protocol/edit/main/docs/:path',
+        'https://github.com/palmcivet/stronghold-protocol/edit/main/docs/:path',
     },
     socialLinks: [
       {

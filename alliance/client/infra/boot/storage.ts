@@ -1,5 +1,13 @@
 import { recentItem, recentStore } from '#entry/recent.js';
 import {
+  audioItem,
+  displayItem,
+  identityItem,
+  keysItem,
+  migrateSettingsSections,
+  settingsStore,
+} from '#infra/settings/index.js';
+import {
   backendOf,
   configureStorage,
   envelope,
@@ -9,7 +17,6 @@ import {
   type StorageHost,
   setServerOrigin,
 } from '#infra/storage/index.js';
-import { settingsItem, settingsStore } from '#infra/store/settings.js';
 import { loadoutItem, loadoutStore, savedOf } from '#loadout/state.js';
 import { tokenItem } from './identity.js';
 
@@ -18,13 +25,13 @@ const LEGACY: readonly {
   readonly old: string;
   readonly item: Item<unknown>;
 }[] = [
-  { old: 'alliance.settings', item: settingsItem as Item<unknown> },
   { old: 'alliance.recentRooms', item: recentItem as Item<unknown> },
   { old: 'alliance.token', item: tokenItem as Item<unknown> },
 ];
 
 /** Moves each old key once: its value becomes version 1 of the new item, so the item's migrations run on load. */
 export async function migrateLegacy(): Promise<void> {
+  await migrateSettingsSections();
   for (const { old, item } of LEGACY) {
     const backend = backendOf(item.spec.tier ?? 'small');
     const raw = await backend.get(old);
@@ -51,7 +58,8 @@ export function serverOrigin(socketUrl: string): string {
 
 /**
  * Prepares storage before the stores are read: the host's adapters, the server origin, the one-time move of the
- * old keys, the preload into snapshots, and the stores kept in step with their items.
+ * old keys, the preload into snapshots. Settings section persist/apply runs later via `startSettings` after
+ * `registerOfficialSettings`.
  */
 export async function startStorage(
   socketUrl: string,
@@ -63,12 +71,13 @@ export async function startStorage(
   setServerOrigin(serverOrigin(socketUrl));
   await migrateLegacy();
   await preload();
-  persistStore(
-    settingsStore,
-    settingsItem,
-    (state) => state,
-    (value) => value,
-  );
+  // Seed the aggregate from preloaded section items so boot can read before startSettings.
+  settingsStore.setState({
+    ...identityItem.get(),
+    ...displayItem.get(),
+    ...audioItem.get(),
+    ...keysItem.get(),
+  });
   persistStore(
     recentStore,
     recentItem,

@@ -1,5 +1,11 @@
 {
   "extends": "//",
+  "plugins": [
+    {
+      "path": "./lint/no-pixi-display.grit",
+      "includes": ["**/*.ts", "!**/*.test.ts", "!**/*.spec.ts", "!**/test/**"]
+    }
+  ],
   "linter": {
     "rules": {
       "style": {
@@ -13,6 +19,10 @@
               {
                 "group": ["@wsde/shared/**"],
                 "message": "A library stays independent of the workspace tooling; only vitest.config.ts may use it."
+              },
+              {
+                "group": ["@pixi/*", "@pixi-spine/*"],
+                "message": "Only actor/skeleton may import @pixi/* and @pixi-spine/*."
               }
             ]
           }
@@ -27,6 +37,29 @@
         "rules": {
           "style": {
             "noRestrictedImports": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["actor/skeleton/**", "**/*.{test,spec}.ts", "test/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "@wsde/shared": "A library stays independent of the workspace tooling; only vitest.config.ts may use it."
+                },
+                "patterns": [
+                  {
+                    "group": ["@wsde/shared/**"],
+                    "message": "A library stays independent of the workspace tooling; only vitest.config.ts may use it."
+                  }
+                ]
+              }
+            }
           }
         }
       }

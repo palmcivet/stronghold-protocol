@@ -16,9 +16,9 @@ import {
 import { fexliSource } from '#source/fexli/adapter.js';
 import { fontsSource } from '#source/fonts/adapter.js';
 import { gamedataSource } from '#source/gamedata/adapter.js';
+import { localClientSource } from '#source/local-client/adapter.js';
 import { loadPathTable } from '#source/path-table.js';
 import { voiceSource } from '#source/voice/adapter.js';
-import { localClientSource } from '#source/local-client/adapter.js';
 import { yuanyanSource } from '#source/yuanyan/adapter.js';
 
 export interface SourceRoute {

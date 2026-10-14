@@ -54,7 +54,9 @@ export interface StageMap {
 const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
   value !== null && typeof value === 'object' && !Array.isArray(value);
 
-function terrainOf(tile: Readonly<Record<string, unknown>>): string | undefined {
+function terrainOf(
+  tile: Readonly<Record<string, unknown>>,
+): string | undefined {
   if (typeof tile.terrain === 'string' && tile.terrain) {
     return tile.terrain;
   }
@@ -104,7 +106,9 @@ function attackRangeOf(value: unknown): readonly (readonly [number, number])[] {
   });
 }
 
-function scriptOf(device: Readonly<Record<string, unknown>>): Readonly<Record<string, unknown>> {
+function scriptOf(
+  device: Readonly<Record<string, unknown>>,
+): Readonly<Record<string, unknown>> {
   const skill = isRecord(device.skill) ? device.skill : null;
   const bb = skill && isRecord(skill.bb) ? skill.bb : null;
   return bb ? { ...bb } : {};

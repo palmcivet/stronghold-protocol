@@ -4,6 +4,7 @@
 
 import { rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
+import { parseArgs } from 'node:util';
 import {
   type AssetKey,
   fileAddress,
@@ -117,31 +118,31 @@ async function deriveBoard(
 
 async function main(): Promise<void> {
   const workspace = dataWorkspace();
-  const seasons: string[] = [];
-  let extractCacheDir = workspace.extractCacheDir;
-  const argv = process.argv.slice(2);
-  for (let index = 0; index < argv.length; index++) {
-    const token = argv[index] ?? '';
-    if (token === '--season') {
-      const value = argv[++index];
-      if (!value || value.startsWith('--')) {
-        fail('--season needs an id');
-      }
-      seasonPacketDirectory(value);
-      seasons.push(value);
-    } else if (token === '--cache') {
-      const value = argv[++index];
-      if (!value || value.startsWith('--')) {
-        fail('--cache needs a path');
-      }
-      extractCacheDir = resolve(value);
-    } else {
-      fail(`unknown option ${token}`);
+  const { values } = (() => {
+    try {
+      return parseArgs({
+        args: process.argv.slice(2),
+        strict: true,
+        options: {
+          season: { type: 'string' as const, multiple: true as const },
+          cache: { type: 'string' as const },
+        },
+      });
+    } catch (cause) {
+      fail(cause instanceof Error ? cause.message : String(cause));
     }
-  }
+  })();
+  const seasons = values.season ?? [];
   if (seasons.length === 0) {
     fail('--season is required');
   }
+  for (const season of seasons) {
+    seasonPacketDirectory(season);
+  }
+  const extractCacheDir =
+    values.cache === undefined
+      ? workspace.extractCacheDir
+      : resolve(values.cache);
 
   const files = nodeBuildFiles;
   const extracted = cacheLayout(extractCacheDir);

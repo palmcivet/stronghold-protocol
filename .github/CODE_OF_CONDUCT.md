@@ -12,6 +12,9 @@
     - [页面撰写](#页面撰写)
     - [表格](#表格)
     - [篇幅与枚举](#篇幅与枚举)
+  - [alliance 开发](#alliance-开发)
+    - [设置](#设置)
+    - [平台](#平台)
 
 ## 代码风格
 
@@ -144,7 +147,7 @@ const t = duration <= 0 ? 1 : elapsed / duration
   import type { AttackProfile } from '../../attack/profile'
   ```
 
-- 对外接口的注释尽量使用英语，中文也可接受
+- 库模块对外接口的注释尽量使用英语，中文也可接受
 - 报错信息应使用英语，便于日志检索与对外暴露
 
   ```ts
@@ -245,3 +248,19 @@ mission-renderer/test/effect/lifecycle.spec.ts
 <!-- bad — 揉进一段话里 -->
 攻击时钟负责充能，并且也会推进弹药间隔，此外回旋体进度也由它更新，暂停时三者一起停。
 ```
+
+## alliance 开发
+### 设置
+
+- 按段注册：`defineSettingSection`
+- 领域读写：`getSetting` / `setSetting` / `useSetting`；预读与注册之后 `startSettings`
+- 启动 / 集成：`migrateSettingsSections`、`registerOfficialSettings`、`setChannel`、`onGroundQuality`
+- 不与 welcome 的后端 `Capabilities` 合并；模组经自有段 id 贡献设置，不塞进官方四段
+- 持久化走存储命名空间（每段一项 `settings.*`），见本地存储文档
+
+### 平台
+
+- 只用 `configurePlatform` / `probe` / `getPlatform`；`Platform` 为布尔能力字段快照
+- 与 `infra/connection` 的后端 `Capabilities` 分开，不要混用或合并
+- 业务代码禁止临时 `typeof` / UA 嗅探判能力；宿主（Tauri / Capacitor 等）用 `configurePlatform` 覆盖
+- `resetPlatform` / `resetSettingSections` 仅测试，产品代码不得调用

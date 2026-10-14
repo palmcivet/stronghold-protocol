@@ -1,39 +1,5 @@
 import type { BattleEventMap, CueMap } from 'arknights-mission-core';
 import { expect, test } from 'vitest';
-import {
-  isTestFile,
-  packageSources,
-  significant,
-  tokenize,
-} from '#test/source.js';
-
-/** 名字按驼峰与连字符拆成的小写词。 */
-function words(name: string): string[] {
-  return name
-    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-    .split(/[^A-Za-z0-9]+/)
-    .filter((word) => word.length > 0)
-    .map((word) => word.toLowerCase());
-}
-
-test('核心不引用玩家或房间：名字与字符串里没有 player，也没有以 room 开头的名字', () => {
-  const found: string[] = [];
-  for (const file of packageSources()) {
-    if (isTestFile(file.path)) {
-      continue;
-    }
-    for (const token of significant(tokenize(file.text))) {
-      const parts = words(token.value);
-      if (
-        parts.some((word) => word.startsWith('player')) ||
-        parts[0]?.startsWith('room') === true
-      ) {
-        found.push(`${file.path}:${token.line} ${token.text}`);
-      }
-    }
-  }
-  expect(found).toEqual([]);
-});
 
 /** 类型里出现的属性名，向下展开到第 4 层，数组看元素。 */
 type FieldNames<T, Depth extends unknown[] = []> = Depth['length'] extends 4

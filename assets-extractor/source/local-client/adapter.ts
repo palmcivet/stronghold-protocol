@@ -67,9 +67,7 @@ function textureFiles(
   const png = fileIfExists(`${base}.png`);
   const webp = fileIfExists(`${base}.webp`);
   const location = png ?? webp;
-  return location
-    ? [{ role: 'main', name: null, location }]
-    : null;
+  return location ? [{ role: 'main', name: null, location }] : null;
 }
 
 function materialFiles(root: string, theme: string): SourceFile[] | null {

@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   test:
-    name: Lint, build & test (Node 22)
+    name: Lint, typecheck, build & test (Node 22)
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -37,6 +37,9 @@ jobs:
 
       - name: Lint
         run: pnpm -r --no-bail --if-present lint
+
+      - name: Typecheck
+        run: pnpm check
 
       - name: Build
         run: pnpm -r --if-present build

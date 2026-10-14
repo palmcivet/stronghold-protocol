@@ -1,4 +1,5 @@
 import { createStore as createIdbStore, del, get, keys, set } from 'idb-keyval';
+import { getPlatform } from '#infra/platform/index.js';
 
 /**
  * The adapter a host provides. Values are JSON-compatible; every call is async, so a host can back it with the
@@ -132,10 +133,9 @@ export function browserSmallBackend(): StorageBackend {
 /** The browser's adapter for large data: IndexedDB through idb-keyval, other tabs told over a BroadcastChannel. */
 export function browserLargeBackend(name = 'wsde'): StorageBackend {
   const store = createIdbStore(name, 'items');
-  const channel =
-    typeof BroadcastChannel === 'function'
-      ? new BroadcastChannel(`${name}:storage`)
-      : null;
+  const channel = getPlatform().broadcastChannel
+    ? new BroadcastChannel(`${name}:storage`)
+    : null;
   const tell = (key: string): void => channel?.postMessage({ key });
   return {
     get: (key) => get(key, store),
@@ -149,7 +149,7 @@ export function browserLargeBackend(name = 'wsde'): StorageBackend {
     },
     keys: async (prefix) => withPrefix((await keys(store)).map(String), prefix),
     watch: (listener) => {
-      if (typeof BroadcastChannel !== 'function') {
+      if (!getPlatform().broadcastChannel) {
         return () => {};
       }
       // a channel does not hear its own messages, so this one hears only other tabs

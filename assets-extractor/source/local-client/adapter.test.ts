@@ -2,18 +2,20 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from 'vitest';
 import { extractorPackageRoot } from '#package-root.js';
+import type { SourceContext } from '#source/asset-source.js';
 import {
   AUTOCHESS_MAP_TEXTURE_KEYS,
   localClientFilesDirs,
   localClientSource,
 } from '#source/local-client/adapter.js';
-import type { SourceContext } from '#source/asset-source.js';
 
 const filesRoot = join(
   extractorPackageRoot(),
   '.cache/assets/sources/local-client/files',
 );
-const hasCache = existsSync(join(filesRoot, 'map/autochess/TX_autochessi_D.png'));
+const hasCache = existsSync(
+  join(filesRoot, 'map/autochess/TX_autochessi_D.png'),
+);
 
 function stubContext(cacheDir: string): SourceContext {
   return {
@@ -46,10 +48,7 @@ test.skipIf(!hasCache)(
       expect(hit?.repo).toBeNull();
       expect(hit?.files[0]?.location).toMatch(/TX_autochessi_/);
     }
-    const material = await source.locate(
-      'json:material/autochess',
-      context,
-    );
+    const material = await source.locate('json:material/autochess', context);
     expect(material?.files[0]?.location).toMatch(/materials\.json$/);
   },
 );

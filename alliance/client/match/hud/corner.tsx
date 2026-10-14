@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getPlatform } from '#infra/platform/index.js';
 import { useMatch } from '#infra/store/hook.js';
 import { has, lookup, useText } from '#infra/text/index.js';
 import { cx } from '#infra/theme/class-name.js';
@@ -12,10 +13,13 @@ import styles from './hud.module.css';
 const BANNER_MS = 1800;
 
 function toggleFullscreen(): void {
+  if (!getPlatform().fullscreen) {
+    return;
+  }
   if (document.fullscreenElement) {
     void document.exitFullscreen();
   } else {
-    void document.documentElement.requestFullscreen?.();
+    void document.documentElement.requestFullscreen();
   }
 }
 

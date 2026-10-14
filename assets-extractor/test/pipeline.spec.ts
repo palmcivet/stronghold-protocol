@@ -10,7 +10,7 @@ import {
 } from 'arknights-assets-catalog';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import { cacheLayout } from '#catalog/cache-layout.js';
-import { extractAssets, TABLE_SOURCE_ID } from '#catalog/extract.js';
+import { extractAssets } from '#catalog/extract.js';
 import type { ExtractReport } from '#catalog/report.js';
 import type { RepoRef } from '#download/repo-cache.js';
 import { nodeBuildFiles } from '#port/node-files.js';
@@ -163,7 +163,7 @@ describe('a run over every git source kind', () => {
       'texture:map/main_00-01',
     ]);
     expect(missing['texture:map/main_00-01']?.tried).toEqual([
-      { source: TABLE_SOURCE_ID, reason: 'no source provides this namespace' },
+      { source: 'local-client', reason: 'not found' },
     ]);
     expect(missing['image:skill/sk_dup_1_']?.tried[0]?.source).toBe('yuanyan');
     expect(report.ambiguous).toEqual([

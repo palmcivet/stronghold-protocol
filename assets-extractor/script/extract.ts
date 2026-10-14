@@ -4,6 +4,7 @@
 
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { parseArgs } from 'node:util';
 import { DEFAULT_CACHE_DIR } from '#catalog/cache-layout.js';
 import { extractAssets } from '#catalog/extract.js';
 import { readNeeds } from '#catalog/needs.js';
@@ -49,83 +50,93 @@ export class UsageError extends Error {
   }
 }
 
-export function parseExtractArgs(argv: readonly string[]): ExtractFlags {
-  const needs: string[] = [];
-  let cacheDir = DEFAULT_CACHE_DIR;
-  let offline = false;
-  let force = false;
-  let refreshIndex = false;
-  let proxy: string | null = null;
-  let timeoutMs = 600_000;
-  let help = false;
-  const readValue = (
-    name: string,
-    inline: string | null,
-    index: number,
-  ): string => {
-    const value = inline ?? argv[index];
-    if (!value || value.startsWith('--')) {
-      throw new UsageError(`${name} needs a value`);
-    }
-    return value;
-  };
+function repeatNeeds(argv: readonly string[]): string[] {
+  const out: string[] = [];
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index] ?? '';
-    const eq = arg.indexOf('=');
-    const name = arg.startsWith('--') && eq > 0 ? arg.slice(0, eq) : arg;
-    const inline = arg.startsWith('--') && eq > 0 ? arg.slice(eq + 1) : null;
-    if (name === '--help' || name === '-h') {
-      help = true;
-    } else if (name === '--offline') {
-      offline = true;
-    } else if (name === '--force') {
-      force = true;
-    } else if (name === '--refresh-index') {
-      refreshIndex = true;
-    } else if (name === '--needs') {
-      if (inline !== null) {
-        needs.push(inline);
-      }
-      while (
-        index + 1 < argv.length &&
-        !(argv[index + 1] ?? '').startsWith('--')
-      ) {
-        needs.push(argv[++index] as string);
-      }
-      if (needs.length === 0) {
-        throw new UsageError('--needs needs at least one file');
-      }
-    } else if (name === '--cache') {
-      cacheDir = readValue(name, inline, inline === null ? ++index : index);
-    } else if (name === '--proxy') {
-      proxy = readValue(name, inline, inline === null ? ++index : index);
-    } else if (name === '--timeout') {
-      const value = Number(
-        readValue(name, inline, inline === null ? ++index : index),
-      );
-      if (!Number.isInteger(value) || value <= 0) {
-        throw new UsageError(
-          '--timeout needs a positive integer of milliseconds',
-        );
-      }
-      timeoutMs = value;
-    } else {
-      throw new UsageError(`unknown option ${arg}`);
+    if (arg !== '--needs') {
+      out.push(arg);
+      continue;
+    }
+    const value = argv[index + 1];
+    if (value === undefined || value.startsWith('--')) {
+      out.push(arg);
+      continue;
+    }
+    out.push('--needs', value);
+    index += 1;
+    while (
+      index + 1 < argv.length &&
+      !(argv[index + 1] ?? '').startsWith('--')
+    ) {
+      index += 1;
+      out.push('--needs', argv[index] ?? '');
     }
   }
-  if (offline && refreshIndex) {
-    throw new UsageError('--offline and --refresh-index cannot be combined');
+  return out;
+}
+
+function usageFromParse(cause: unknown): UsageError {
+  const message = cause instanceof Error ? cause.message : String(cause);
+  const option = /--[\w-]+/.exec(message)?.[0];
+  if (option === '--needs') {
+    return new UsageError('--needs needs at least one file');
   }
+  if (option === '--cache' || option === '--proxy' || option === '--timeout') {
+    return new UsageError(`${option} needs a value`);
+  }
+  if (/unknown option/i.test(message)) {
+    return new UsageError(`unknown option ${option ?? message}`);
+  }
+  return new UsageError(message);
+}
+
+export function parseExtractArgs(argv: readonly string[]): ExtractFlags {
+  const { values } = (() => {
+    try {
+      return parseArgs({
+        args: repeatNeeds(argv),
+        strict: true,
+        options: {
+          help: { type: 'boolean' as const, short: 'h' as const },
+          offline: { type: 'boolean' as const },
+          force: { type: 'boolean' as const },
+          'refresh-index': { type: 'boolean' as const },
+          needs: { type: 'string' as const, multiple: true as const },
+          cache: { type: 'string' as const },
+          proxy: { type: 'string' as const },
+          timeout: { type: 'string' as const },
+        },
+      });
+    } catch (cause) {
+      throw usageFromParse(cause);
+    }
+  })();
+  const help = values.help === true;
+  const needs = values.needs ?? [];
   if (!help && needs.length === 0) {
     throw new UsageError('--needs is required');
   }
+  if (values.offline === true && values['refresh-index'] === true) {
+    throw new UsageError('--offline and --refresh-index cannot be combined');
+  }
+  let timeoutMs = 600_000;
+  if (values.timeout !== undefined) {
+    const parsed = Number(values.timeout);
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+      throw new UsageError(
+        '--timeout needs a positive integer of milliseconds',
+      );
+    }
+    timeoutMs = parsed;
+  }
   return {
     needs,
-    cacheDir,
-    offline,
-    force,
-    refreshIndex,
-    proxy,
+    cacheDir: values.cache ?? DEFAULT_CACHE_DIR,
+    offline: values.offline === true,
+    force: values.force === true,
+    refreshIndex: values['refresh-index'] === true,
+    proxy: values.proxy ?? null,
     timeoutMs,
     help,
   };

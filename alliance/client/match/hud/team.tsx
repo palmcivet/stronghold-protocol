@@ -23,7 +23,16 @@ import styles from './hud.module.css';
 function statusMeta(
   status: string,
   offline: boolean,
-  t: (key: 'core:room.offline' | 'core:room.ready' | 'core:match.deciding' | 'core:playback.ended' | 'core:match.eliminated' | 'core:combat.heading' | 'core:match.acting') => string,
+  t: (
+    key:
+      | 'core:room.offline'
+      | 'core:room.ready'
+      | 'core:match.deciding'
+      | 'core:playback.ended'
+      | 'core:match.eliminated'
+      | 'core:combat.heading'
+      | 'core:match.acting',
+  ) => string,
 ): { readonly tip: string; readonly tone: string } {
   if (offline) {
     return { tip: t('core:room.offline'), tone: 'offline' };
@@ -171,6 +180,7 @@ export function TeamRow({ player }: { readonly player: PlayerView }) {
             <span
               className={cx(styles.teamStatus)}
               data-tone={meta.tone}
+              role="img"
               aria-label={meta.tip}
             >
               {status === 'ready' || status === 'done' ? (

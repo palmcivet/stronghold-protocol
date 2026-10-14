@@ -40,13 +40,13 @@ console.log(code) // 0：全部必需键都已取到
 
 ## 核心概念
 
-- [来源](./02-sources.md)：来源表按种类与命名空间排出候选来源，适配器把键映射到上游文件
-- [传输](./03-transfer.md)：每个仓库分支一次浅克隆，只检出命中文件所在的目录
-- [提取与输出](./04-output.md)：校验、转换、写文件，以及三个 JSON 的内容
-- [命令](./05-command.md)：`pnpm extract` 与 `pnpm extract:local` 的参数和退出码
+- [来源](./reference/02-sources.md)：来源表按种类与命名空间排出候选来源，适配器把键映射到上游文件
+- [传输](./reference/03-transfer.md)：每个仓库分支一次浅克隆，只检出命中文件所在的目录
+- [提取与输出](./reference/04-output.md)：校验、转换、写文件，以及三个 JSON 的内容
+- [命令](./reference/05-command.md)：`pnpm extract` 与 `pnpm extract:local` 的参数和退出码
 
 ## 下一步
 
-- 从零跑通一遍：[快速开始](./01-quick-start.md)
-- 查接口：[核心接口](./06-api.md)
-- 了解整体设计：[架构设计](./07-architecture.md)
+- 从零跑通一遍：[快速开始](./reference/01-quick-start.md)
+- 查接口：[核心接口](./reference/06-api.md)
+- 了解整体设计：[架构设计](./maintain/01-architecture.md)

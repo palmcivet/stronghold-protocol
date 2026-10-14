@@ -36,18 +36,18 @@ console.log(avatar?.files[0]?.url)
 // "https://cdn.example/files/image/avatar/knight.png?v=9f9f9f9f9f9f"
 ```
 
-清单的内容见 [快速开始](./01-quick-start.md)。
+清单的内容见 [快速开始](./reference/01-quick-start.md)。
 
 ## 核心概念
 
-- [资源键](./02-key.md)：`<kind>:<path>`，资源唯一的身份
-- [清单](./03-manifest.md)：需求清单、原始清单、包清单与 Spine 元数据，以及检查它们的守卫
-- [地址](./04-address.md)：键与文件到相对地址，再按清单解析成绝对地址
-- [解析](./05-resolver.md)：多份包清单叠成覆盖层，按键查找，沿回退链取下一个
-- [缓存](./06-cache.md)：以键为缓存键的 Spine 句柄缓存与音频解码缓存
+- [资源键](./reference/02-key.md)：`<kind>:<path>`，资源唯一的身份
+- [清单](./reference/03-manifest.md)：需求清单、原始清单、包清单与 Spine 元数据，以及检查它们的守卫
+- [地址](./reference/04-address.md)：键与文件到相对地址，再按清单解析成绝对地址
+- [解析](./reference/05-resolver.md)：多份包清单叠成覆盖层，按键查找，沿回退链取下一个
+- [缓存](./reference/06-cache.md)：以键为缓存键的 Spine 句柄缓存与音频解码缓存
 
 ## 下一步
 
-- 从零跑通一遍：[快速开始](./01-quick-start.md)
-- 查接口：[核心接口](./07-api.md)
-- 了解整体设计：[架构设计](./09-architecture.md)
+- 从零跑通一遍：[快速开始](./reference/01-quick-start.md)
+- 查接口：[核心接口](./reference/07-api.md)
+- 了解整体设计：[架构设计](./maintain/01-architecture.md)

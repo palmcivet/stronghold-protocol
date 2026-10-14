@@ -11,6 +11,12 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./trace": {
+      "@wsde/source": "./trace/index.ts",
+      "types": "./dist/trace/index.d.ts",
+      "import": "./dist/trace/index.js",
+      "default": "./dist/trace/index.js"
     }
   },
   "imports": {

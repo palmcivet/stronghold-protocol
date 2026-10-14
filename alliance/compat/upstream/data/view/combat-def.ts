@@ -26,7 +26,7 @@ export interface CombatStats {
   readonly aspd: number;
   readonly moveSpeed: number;
   readonly blockCnt: number;
-  /** Legacy radius; prefer `attackRange` on the def. */
+  /** Source-table radius, used when the record has no attack cells. */
   readonly rangeRadius: number;
   readonly motion: 'WALK' | 'FLY';
   readonly dmgType: 'physical' | 'arts' | 'true';
@@ -44,7 +44,7 @@ export interface CombatChessDef {
   readonly stats: CombatStats;
   /** Facing RIGHT attack cells as `[x, y]` offsets (normalized; from master `rangeGrid` or radius). */
   readonly attackRange: readonly (readonly [number, number])[];
-  /** @deprecated Prefer `attackRange`. */
+  /** Source-table attack cells. An empty grid becomes `[[1, 0]]`. */
   readonly rangeGrid: readonly (readonly [number, number])[];
   readonly attackClip: AttackClip | null;
   readonly tags: readonly string[];

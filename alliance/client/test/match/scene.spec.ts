@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
-import { MODEL_SCALE, modelScaleOf } from '#match/field/actors.js';
 import { PHASE } from '@alliance/contract/match.js';
 import { MISSION_GROUND_AREAS } from 'arknights-mission-renderer';
+import { describe, expect, it } from 'vitest';
+import { MODEL_SCALE, modelScaleOf } from '#match/field/actors.js';
 import {
   assetDefIdOf,
   battleEventOf,
@@ -58,7 +58,6 @@ describe('field scene', () => {
     expect(camera.height).toBeGreaterThan(PREP_RECT.r1 - PREP_RECT.r0);
   });
 
-
   it('resolves prep piece, local op and spawn unit ids to catalog defs for appearances', () => {
     const pieces = new Map([[pieceUnitId(7), 'chess_texas']]);
     expect(assetDefIdOf('piece:7', pieces)).toBe('chess_texas');
@@ -69,7 +68,7 @@ describe('field scene', () => {
     expect(assetDefIdOf('unknown', pieces, 'from-stream')).toBe('from-stream');
   });
 
-    it('keeps piece ids reversible and turns stream hits into battle events the effect layer draws', () => {
+  it('keeps piece ids reversible and turns stream hits into battle events the effect layer draws', () => {
     expect(pieceUnitId(12)).toBe('piece:12');
     expect(pieceUidOf('piece:12')).toBe(12);
     expect(pieceUidOf('7')).toBeNull();
@@ -195,13 +194,17 @@ describe('ground areas by phase', () => {
     }
     const full = { cols: 21, rows: 19, tiles };
     const prep = clipMissionMapForPhase(full, PHASE.PREP);
-    expect(Math.max(...prep.tiles.map((tile) => tile.x))).toBeLessThanOrEqual(10);
+    expect(Math.max(...prep.tiles.map((tile) => tile.x))).toBeLessThanOrEqual(
+      10,
+    );
     expect(prep.tiles.some((tile) => tile.y >= 14)).toBe(false);
     expect(prep.tiles.some((tile) => tile.x === 15 && tile.y === 10)).toBe(
       false,
     );
     const prepPen = clipMissionMapForPhase(full, PHASE.PREP, { pen: true });
-    expect(Math.max(...prepPen.tiles.map((tile) => tile.x))).toBeLessThanOrEqual(14);
+    expect(
+      Math.max(...prepPen.tiles.map((tile) => tile.x)),
+    ).toBeLessThanOrEqual(14);
     expect(prepPen.tiles.some((tile) => tile.y >= 14)).toBe(true);
     const unite = clipMissionMapForPhase(full, PHASE.UNITE);
     expect(unite.tiles.some((tile) => tile.x === 15 && tile.y === 10)).toBe(

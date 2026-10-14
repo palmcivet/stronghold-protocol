@@ -1,0 +1,40 @@
+language js(typescript)
+
+or {
+  `import { $spec } from $source` where {
+    $source <: r".*@pixi/.*",
+    $spec <: contains or {
+      `Application`,
+      `Renderer`,
+      `autoDetectRenderer`,
+      `Spine`,
+      `Container`,
+      `Sprite`,
+      `Graphics`,
+      `Mesh`,
+      `SimpleMesh`,
+      `Texture`,
+      `BaseTexture`,
+      `DisplayObject`
+    },
+    register_diagnostic(span=$spec, message="Do not value-import a Pixi renderer, display object, or texture. Draw with Three; type imports of these names are allowed.")
+  },
+  `import { $spec } from $source` where {
+    $source <: r".*@pixi-spine/.*",
+    $spec <: contains or {
+      `Application`,
+      `Renderer`,
+      `autoDetectRenderer`,
+      `Spine`,
+      `Container`,
+      `Sprite`,
+      `Graphics`,
+      `Mesh`,
+      `SimpleMesh`,
+      `Texture`,
+      `BaseTexture`,
+      `DisplayObject`
+    },
+    register_diagnostic(span=$spec, message="Do not value-import a Pixi renderer, display object, or texture. Draw with Three; type imports of these names are allowed.")
+  }
+}

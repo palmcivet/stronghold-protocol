@@ -1,4 +1,11 @@
-import { Component, type ErrorInfo, type ReactNode } from 'react';
+import {
+  Component,
+  type ErrorInfo,
+  type ReactNode,
+  useLayoutEffect,
+  useRef,
+} from 'react';
+import { registerPartMount } from '#infra/debug/mount.js';
 import { useText } from '#infra/text/index.js';
 import { Button, ErrorPanel } from '#ui/index.js';
 import { BackToLobby } from './leave.js';
@@ -58,6 +65,26 @@ export class PartBoundary extends Component<
 
 function PartRemount({ children }: { readonly children: ReactNode }) {
   return children;
+}
+
+/**
+ * Always-on `[data-part]` marker (display: contents) for debug highlight / queries.
+ * Registers with infra/debug while mounted. Skipped when `boundary="none"`.
+ */
+function PartMark({
+  part,
+  children,
+}: {
+  readonly part: string;
+  readonly children: ReactNode;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => registerPartMount(part, ref.current), [part]);
+  return (
+    <div data-part={part} style={{ display: 'contents' }} ref={ref}>
+      {children}
+    </div>
+  );
 }
 
 /** The error panel of a failed page or part. */
@@ -133,7 +160,7 @@ export function PageBoundary({
       part={part}
       fallback={(retry) => <ErrorFallback retry={retry} scope="page" />}
     >
-      {children}
+      <PartMark part={part}>{children}</PartMark>
     </PartBoundary>
   );
 }
@@ -151,7 +178,7 @@ export function PartSlot({
       part={part}
       fallback={(retry) => <ErrorFallback retry={retry} scope="part" />}
     >
-      {children}
+      <PartMark part={part}>{children}</PartMark>
     </PartBoundary>
   );
 }

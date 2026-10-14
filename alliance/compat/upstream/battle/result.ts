@@ -1,7 +1,11 @@
 /**
  * mission-core `Battle` → master's `b.result` shape (`perPlayer` from the ledger's owners).
  */
-import type { Battle, BattleLedger, UnitSnapshot } from 'arknights-mission-core';
+import type {
+  Battle,
+  BattleLedger,
+  UnitSnapshot,
+} from 'arknights-mission-core';
 
 const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
   value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -11,7 +15,9 @@ export interface BattleResultContext {
   readonly playerIds?: readonly string[];
 }
 
-function reasonOf(winner: 'ally' | 'enemy' | null): 'cleared' | 'timeout' | 'forced' {
+function reasonOf(
+  winner: 'ally' | 'enemy' | null,
+): 'cleared' | 'timeout' | 'forced' {
   if (winner === 'ally') {
     return 'cleared';
   }
@@ -51,7 +57,8 @@ function unitsEndOf(
     .slice(0, 64)
     .map((unit) => {
       const maxHp = Math.max(1, unit.maxHp || 1);
-      const hp = typeof unit.attributes.hp === 'number' ? unit.attributes.hp : 0;
+      const hp =
+        typeof unit.attributes.hp === 'number' ? unit.attributes.hp : 0;
       const skill = unit.skills[0];
       const spCost = skill && skill.spCost > 0 ? skill.spCost : 0;
       const sp = skill ? skill.sp : 0;

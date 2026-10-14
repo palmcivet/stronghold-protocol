@@ -143,6 +143,26 @@ describe('error boundaries', () => {
     expect(screen.queryByText(t('core:error.page'))).toBeNull();
   });
 
+  it('exposes data-part on a healthy PartSlot and PageBoundary', async () => {
+    broken = false;
+    mount(() => (
+      <PageBoundary part="core:screen.room">
+        <p>hud</p>
+        <PartSlot part="core:room.roster">
+          <span>roster</span>
+        </PartSlot>
+      </PageBoundary>
+    ));
+    expect(await screen.findByText('roster')).toBeTruthy();
+    expect(
+      document.querySelector('[data-part="core:screen.room"]'),
+    ).toBeTruthy();
+    expect(
+      document.querySelector('[data-part="core:room.roster"]'),
+    ).toBeTruthy();
+    expect(document.querySelector('[data-failed-part]')).toBeNull();
+  });
+
   it('has English text', async () => {
     setLanguage('en');
     mount(() => (

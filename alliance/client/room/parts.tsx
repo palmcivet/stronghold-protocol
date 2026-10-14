@@ -2,6 +2,7 @@ import { DIFFICULTIES, MAX_SPECTATORS } from '@alliance/contract/match.js';
 import type { SeatView } from '@alliance/contract/server-message.js';
 import { useState } from 'react';
 import { useIntent } from '#infra/intent/context.js';
+import { getPlatform } from '#infra/platform/index.js';
 import { PAGE } from '#infra/router/page.js';
 import {
   useCatalog,
@@ -51,6 +52,9 @@ export const ROOM = {
 
 /** Copies text; false when the clipboard refuses. */
 async function copyText(text: string): Promise<boolean> {
+  if (!getPlatform().clipboardWrite) {
+    return false;
+  }
   try {
     await navigator.clipboard.writeText(text);
     return true;

@@ -83,10 +83,7 @@ export function Bonds() {
     }));
   };
   return (
-    <div
-      className={cx(styles.bonds)}
-      data-other={owner ? '' : undefined}
-    >
+    <div className={cx(styles.bonds)} data-other={owner ? '' : undefined}>
       <Button
         aria-expanded={!collapsed}
         aria-controls="match-bond-strip"

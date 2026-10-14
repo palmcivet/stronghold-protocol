@@ -4,7 +4,7 @@ import {
   MAX_SPECTATORS,
   ROOM_CODE_LEN,
 } from '@alliance/contract/match.js';
-import { type CSSProperties, type FormEvent, useEffect, useState } from 'react';
+import { type CSSProperties, type FormEvent, useState } from 'react';
 import { Form } from 'react-aria-components';
 import { useStore } from 'zustand';
 import { useIntent } from '#infra/intent/context.js';
@@ -215,61 +215,6 @@ export function CreateRoom() {
     </section>
   );
 }
-
-/** The tips of the season, one at a time, turning every few seconds. */
-export function Tips() {
-  const t = useText();
-  const tips = useCatalog((state) => state.catalog.tips ?? []);
-  const [index, setIndex] = useState(0);
-  useEffect(() => {
-    if (tips.length < 2) {
-      return;
-    }
-    const timer = setInterval(
-      () => setIndex((value) => value + 1),
-      TIP_INTERVAL_MS,
-    );
-    return () => clearInterval(timer);
-  }, [tips.length]);
-  if (!tips.length) {
-    return null;
-  }
-  const shown = ((index % tips.length) + tips.length) % tips.length;
-  return (
-    <aside className={cx(styles.tips)} aria-label={t('core:entry.tips')}>
-      <div className={cx(styles.tipsHead)}>
-        <Icon name="info" size="0.85rem" />
-        <strong>{t('core:entry.tips')}</strong>
-        <span className={cx(styles.micro)}>TACTICAL TIPS</span>
-        <span className={cx(styles.tipsIdx)}>
-          {shown + 1}/{tips.length}
-        </span>
-        <button
-          type="button"
-          className={cx(styles.tipsNav)}
-          aria-label={t('core:entry.tips.previous')}
-          onClick={() => setIndex(shown - 1 + tips.length)}
-        >
-          <Icon name="chevron-left" size="0.75rem" />
-        </button>
-        <button
-          type="button"
-          className={cx(styles.tipsNav)}
-          aria-label={t('core:entry.tips.next')}
-          onClick={() => setIndex(shown + 1)}
-        >
-          <Icon name="chevron-right" size="0.75rem" />
-        </button>
-      </div>
-      <p className={cx(styles.tipsText)} aria-live="polite">
-        {lookup(`data:tip.${tips[shown]}`)}
-      </p>
-    </aside>
-  );
-}
-
-/** Milliseconds between two tips, as master turns them. */
-export const TIP_INTERVAL_MS = 5000;
 
 /** The room code, the recent rooms, and join or spectate. */
 export function JoinRoom() {

@@ -1,13 +1,13 @@
-import { describe, expect, it } from 'vitest';
 import { isBattleResult } from '@alliance/contract/message.js';
 import {
-  createBattle,
-  costModule,
-  deployModule,
-  blockModule,
-  leakModule,
   type BattleSpec,
+  blockModule,
+  costModule,
+  createBattle,
+  deployModule,
+  leakModule,
 } from 'arknights-mission-core';
+import { describe, expect, it } from 'vitest';
 import { battleResultOf, playerIdsOfSpec } from './result.js';
 
 function tinySpec(owners: readonly string[]): BattleSpec {
@@ -23,7 +23,16 @@ function tinySpec(owners: readonly string[]): BattleSpec {
       side: 'ally' as const,
       kind: 'operator' as const,
       owner,
-      attributes: { hp: 100, atk: 10, def: 0, res: 0, atkInterval: 1, attackSpeed: 100, moveSpeed: 1, block: 1 },
+      attributes: {
+        hp: 100,
+        atk: 10,
+        def: 0,
+        res: 0,
+        atkInterval: 1,
+        attackSpeed: 100,
+        moveSpeed: 1,
+        block: 1,
+      },
       skills: [],
       attackRange: [{ x: 1, y: 0 }],
       tags: [],
@@ -51,12 +60,13 @@ describe('battleResultOf', () => {
       blockModule,
       leakModule,
     ]);
-    // Finish with no enemies: ally wins after enough ticks with empty spawn list? 
+    // Finish with no enemies: ally wins after enough ticks with empty spawn list?
     // Empty battle may not finish — force by reading unfinished shape still has perPlayer.
     const result = battleResultOf(battle, { playerIds: ['p_1'] });
     expect(result.perPlayer).toHaveProperty('p_1');
     expect(result.reason).toMatch(/cleared|timeout|forced/);
-    const player = (result.perPlayer as Record<string, Record<string, unknown>>).p_1!;
+    const player = (result.perPlayer as Record<string, Record<string, unknown>>)
+      .p_1!;
     expect(player).toMatchObject({
       leaked: [],
       layerGains: {},

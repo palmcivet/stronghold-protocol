@@ -2,7 +2,11 @@
  * Master chess / enemy skill records → mission-core `SkillSpec`. Attribute mods that core already understands are
  * inlined; custom triggers and blackboard hooks stay for content modules (skill kits).
  */
-import type { SkillModifier, SkillSpec, TileCoord } from 'arknights-mission-core';
+import type {
+  SkillModifier,
+  SkillSpec,
+  TileCoord,
+} from 'arknights-mission-core';
 import type { CombatSkillSource } from '#data/view/combat-def.js';
 
 export type { CombatSkillSource };
@@ -46,9 +50,7 @@ function cellsOf(value: unknown): readonly TileCoord[] {
   });
 }
 
-function spTypeOf(
-  raw: unknown,
-): 'time' | 'attack' | 'hurt' | 'none' {
+function spTypeOf(raw: unknown): 'time' | 'attack' | 'hurt' | 'none' {
   switch (raw) {
     case 'INCREASE_WHEN_ATTACK':
       return 'attack';
@@ -91,7 +93,11 @@ function bodyOf(
     return { body: 'passive', ammo: 0, duration: 0 };
   }
   if (durationType === 'AMMO' || durationType === 'ammo') {
-    return { body: 'ammo', ammo: Math.max(1, ammo), duration: Math.max(0, duration) };
+    return {
+      body: 'ammo',
+      ammo: Math.max(1, ammo),
+      duration: Math.max(0, duration),
+    };
   }
   if (durationType === 'TOGGLE' || durationType === 'toggle') {
     return { body: 'toggle', ammo: 0, duration: 0 };
@@ -106,7 +112,9 @@ function bodyOf(
  * Flat blackboard keys core can apply as skill attribute mods while the skill is active. Everything else stays in
  * `script` for content modules.
  */
-function modsOf(bb: Readonly<Record<string, unknown>>): readonly SkillModifier[] {
+function modsOf(
+  bb: Readonly<Record<string, unknown>>,
+): readonly SkillModifier[] {
   const mods: SkillModifier[] = [];
   const push = (
     key: string,
@@ -149,7 +157,6 @@ function scriptOf(
   }
   return out;
 }
-
 
 /**
  * One mission-core skill of a chess skill record, or null when there is no usable skill id.

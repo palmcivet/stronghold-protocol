@@ -24,7 +24,6 @@ import {
   DifficultyTag,
   Icon,
   LpTower,
-
   Muted,
   Num,
   Stack,
@@ -100,7 +99,9 @@ function Hero() {
         {victory ? t('core:result.clearedLine') : t('core:result.failedLine')}
       </p>
       <div className={cx(styles.rounds)}>
-        <span className={cx(styles.roundsLabel)}>{t('core:result.rounds')}</span>
+        <span className={cx(styles.roundsLabel)}>
+          {t('core:result.rounds')}
+        </span>
         <b className={cx(styles.roundsNum)}>
           <Num>{result.roundsPassed}</Num>
         </b>
@@ -256,10 +257,7 @@ function PlayerCard({
           ) : null}
         </div>
         {player.title?.name ? (
-          <div
-            className={cx(styles.cardTitle)}
-            title={player.title.text ?? ''}
-          >
+          <div className={cx(styles.cardTitle)} title={player.title.text ?? ''}>
             <Icon name="crown" />
             <Stack gap={1}>
               <Muted>{t('core:result.remark')}</Muted>
@@ -267,7 +265,11 @@ function PlayerCard({
             </Stack>
           </div>
         ) : (
-          <span className={cx(styles.cardTitle)} data-none="" aria-hidden="true" />
+          <span
+            className={cx(styles.cardTitle)}
+            data-none=""
+            aria-hidden="true"
+          />
         )}
       </header>
       <dl className={cx(styles.stats)}>

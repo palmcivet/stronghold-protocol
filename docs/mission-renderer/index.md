@@ -13,8 +13,8 @@ description: arknights-mission-renderer 把战斗快照和事件画成三维战�
 
 - 不判断命中、不计算伤害、不决定移动：这些由 [arknights-mission-core](../mission-core/index.md) 完成
 - 同一份快照和事件序列，换一套画法不改变战斗结果
-- 不读文件：资源按键经 [资源端口](./05-port.md) 申请，加载函数由宿主提供
-- 不播放声音：事件变成 [音效线索](./08-audio.md)，交给宿主
+- 不读文件：资源按键经 [资源端口](./reference/05-port.md) 申请，加载函数由宿主提供
+- 不播放声音：事件变成 [音效线索](./reference/08-audio.md)，交给宿主
 - 没有 WebGL 时地面隐藏，舞台仍接收快照与事件、拾取格子并发出音效线索
 
 ## 最小示例
@@ -52,20 +52,20 @@ stage.update(1 / 60)
 console.log(stage.pick(320, 180).type) // "tile"
 ```
 
-这个示例没有地面与模型：只有棋盘的拾取与音效线索。加上三维地面和 Spine 模型见 [快速开始](./01-quick-start.md)。
+这个示例没有地面与模型：只有棋盘的拾取与音效线索。加上三维地面和 Spine 模型见 [快速开始](./reference/01-quick-start.md)。
 
 ## 核心概念
 
-- [舞台](./02-stage.md)：命令、每帧更新、拾取、视口与画布
-- [本地喂数](./03-feed.md)：`local` 模式下用渲染时钟插值单位、按 tick 释放事件
-- [地面](./04-ground.md)：三维棋盘、地形资源包与显示模式
-- [资源端口](./05-port.md)：按资源键申请图片、Spine、模型与 JSON
-- [演员](./06-actor.md)：单位的模型、动画、头顶条与替身
-- [特效与线索绑定](./07-effect.md)：事件画哪种特效、发哪种声音
-- [音效线索](./08-audio.md)：交给宿主播放的声音提示
+- [舞台](./reference/02-stage.md)：命令、每帧更新、拾取、视口与画布
+- [本地喂数](./reference/03-feed.md)：`local` 模式下用渲染时钟插值单位、按 tick 释放事件
+- [地面](./reference/04-ground.md)：三维棋盘、地形资源包与显示模式
+- [资源端口](./reference/05-port.md)：按资源键申请图片、Spine、模型与 JSON
+- [演员](./reference/06-actor.md)：单位的模型、动画、头顶条与替身
+- [特效与线索绑定](./reference/07-effect.md)：事件画哪种特效、发哪种声音
+- [音效线索](./reference/08-audio.md)：交给宿主播放的声音提示
 
 ## 下一步
 
-- 从零跑通一遍：[快速开始](./01-quick-start.md)
-- 查接口：[核心接口](./09-api.md)
-- 了解整体设计：[架构设计](./10-architecture.md)
+- 从零跑通一遍：[快速开始](./reference/01-quick-start.md)
+- 查接口：[核心接口](./reference/09-api.md)
+- 了解整体设计：[架构设计](./maintain/01-architecture.md)

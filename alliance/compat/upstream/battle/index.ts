@@ -1,12 +1,12 @@
-export { battleSpecOf, type BattleSpecContext } from './spec.js';
 export {
   allyCostOf,
   battleProgressOf,
   type UpstreamBattleProgress,
 } from './progress.js';
 export {
+  type BattleResultContext,
   battleResultOf,
   playerIdsOfSpec,
-  type BattleResultContext,
 } from './result.js';
-export { skillSpecOf, skillScriptOf } from './skill.js';
+export { skillScriptOf, skillSpecOf } from './skill.js';
+export { type BattleSpecContext, battleSpecOf } from './spec.js';

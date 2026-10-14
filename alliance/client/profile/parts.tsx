@@ -2,18 +2,22 @@ import { APP_VERSION, NAME_MAX_LEN } from '@alliance/contract/match.js';
 import { useEffect, useMemo, useState } from 'react';
 import { useStore } from 'zustand';
 import { keymapStore } from '#infra/intent/keymap.js';
+import { getPlatform } from '#infra/platform/index.js';
 import { avatarVariants } from '#infra/resource/art.js';
-import { assetsStore } from '#infra/store/assets.js';
-import { useCatalog, useSession, useSettings } from '#infra/store/hook.js';
 import {
   AUDIO_CHANNELS,
+  PROFILE_TABS,
   QUALITIES,
   type Quality,
+  registerOfficialSettings,
+  SECTION,
   setChannel,
   settingsStore,
   TEXT_SIZES,
   type TextSize,
-} from '#infra/store/settings.js';
+} from '#infra/settings/index.js';
+import { assetsStore } from '#infra/store/assets.js';
+import { useCatalog, useSession, useSettings } from '#infra/store/hook.js';
 import {
   dataName,
   has,
@@ -38,18 +42,19 @@ import {
   Muted,
   Slider,
   Stack,
+  Switch,
   TextField,
   ToggleButton,
 } from '#ui/index.js';
 import styles from './profile.module.css';
 
 export const PROFILE = {
-  tabs: 'core:profile.tabs',
-  identity: 'core:profile.identity',
+  tabs: PROFILE_TABS,
+  identity: SECTION.identity,
   language: 'core:profile.language',
-  keys: 'core:profile.keys',
-  display: 'core:profile.display',
-  audio: 'core:profile.audio',
+  keys: SECTION.keys,
+  display: SECTION.display,
+  audio: SECTION.audio,
   feedback: 'core:profile.feedback',
 } as const;
 
@@ -204,9 +209,10 @@ function Keys() {
 
 function Display() {
   const t = useText();
-  const { quality, textSize } = useSettings((state) => ({
+  const { quality, textSize, safeAreaUi } = useSettings((state) => ({
     quality: state.quality,
     textSize: state.textSize,
+    safeAreaUi: state.safeAreaUi,
   }));
   return (
     <Stack>
@@ -233,6 +239,13 @@ function Display() {
         }))}
       />
       <Muted>{t('core:profile.textSize.hint')}</Muted>
+      <Switch
+        isSelected={safeAreaUi}
+        onChange={(on) => settingsStore.setState({ safeAreaUi: on })}
+      >
+        {t('core:profile.safeAreaUi')}
+      </Switch>
+      <Muted>{t('core:profile.safeAreaUi.hint')}</Muted>
     </Stack>
   );
 }
@@ -304,6 +317,11 @@ function Feedback() {
       language,
       agent: globalThis.navigator?.userAgent ?? '',
     });
+    if (!getPlatform().clipboardWrite) {
+      setNote('refused');
+      setManual(text);
+      return;
+    }
     try {
       await navigator.clipboard.writeText(text);
       setNote('copied');
@@ -350,25 +368,27 @@ function ProfileLayout() {
   );
 }
 
-/** The settings tabs in order. They go into `core:profile.tabs` as inserts, so every container of that id shows them. */
-const TABS = [
-  [PROFILE.identity, Identity, 'identity'],
-  [PROFILE.language, LanguageSetting, 'language'],
-  [PROFILE.keys, Keys, 'keys'],
-  [PROFILE.display, Display, 'display'],
-  [PROFILE.audio, Audio, 'audio'],
-  [PROFILE.feedback, Feedback, 'feedback'],
+/** Non-persistent / non-section tabs kept in the profile domain. */
+const PROFILE_ONLY = [
+  [PROFILE.language, LanguageSetting, 'language', 20],
+  [PROFILE.feedback, Feedback, 'feedback', 60],
 ] as const;
 
 export function registerProfileParts(): readonly (() => void)[] {
   return [
     definePart(DIALOG.profile, ProfileLayout, { extensible: true }),
-    ...TABS.flatMap(([id, component, tab], index) => [
+    ...registerOfficialSettings({
+      identity: Identity,
+      keys: Keys,
+      display: Display,
+      audio: Audio,
+    }),
+    ...PROFILE_ONLY.flatMap(([id, component, tab, order]) => [
       definePart(id, component, {
         extensible: true,
         title: `core:profile.tab.${tab}`,
       }),
-      insertPart({ into: PROFILE.tabs, id, order: (index + 1) * 10 }),
+      insertPart({ into: PROFILE.tabs, id, order }),
     ]),
   ];
 }

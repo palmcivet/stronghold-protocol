@@ -1,3 +1,4 @@
+import { relative } from 'node:path';
 import { danglingReferences } from '@wsde/shared/references';
 import * as v from 'valibot';
 
@@ -17,7 +18,10 @@ const rewrittenEntry = v.object({
 });
 const movedEntry = v.object({
   status: v.literal('moved'),
-  owner: text,
+  /** Workspace package name from `listWorkspacePackages` (e.g. `@alliance/client`). */
+  owner: v.optional(text),
+  /** Optional area root relative to the workspace (e.g. `alliance`) when no single package owns the case. */
+  area: v.optional(text),
   reason: v.optional(text),
 });
 const notMigratedEntry = v.object({
@@ -70,9 +74,29 @@ export function parseMapping(
   input: unknown,
 ): { mapping: Mapping } | { issues: readonly string[] } {
   const result = v.safeParse(MappingSchema, input);
-  return result.success
-    ? { mapping: result.output }
-    : { issues: describeIssues(result.issues) };
+  if (!result.success) {
+    return { issues: describeIssues(result.issues) };
+  }
+  const issues: string[] = [];
+  for (const rule of result.output.rules) {
+    if (
+      rule.status === 'moved' &&
+      rule.owner === undefined &&
+      rule.area === undefined
+    ) {
+      issues.push(`rules: moved ${rule.match} needs owner and/or area`);
+    }
+  }
+  for (const [id, entry] of Object.entries(result.output.cases)) {
+    if (
+      entry.status === 'moved' &&
+      entry.owner === undefined &&
+      entry.area === undefined
+    ) {
+      issues.push(`cases.${id}: moved needs owner and/or area`);
+    }
+  }
+  return issues.length > 0 ? { issues } : { mapping: result.output };
 }
 
 export function parseInventory(
@@ -244,4 +268,86 @@ export function hasFailures(report: CheckReport): boolean {
     report.dangling.length > 0 ||
     report.notCaseByCase.length > 0
   );
+}
+
+// MARK: owner, area & reason checks
+
+/** Repo docs path in free text, e.g. `docs/mission-core` or `docs/foo/bar.md`. */
+const DOCS_PATH = /docs\/[A-Za-z0-9._/-]+/;
+
+/** `owner` must be a workspace package name from `listWorkspacePackages`. */
+export function isValidPackageOwner(
+  owner: string,
+  packageNames: readonly string[],
+): boolean {
+  return packageNames.includes(owner);
+}
+
+/**
+ * `area` is a directory relative to the workspace root that contains at least
+ * one workspace package (e.g. `alliance` for `@alliance/client`).
+ */
+export function isValidArea(
+  area: string,
+  packageDirs: readonly string[],
+  workspaceRoot: string,
+): boolean {
+  const relDirs = packageDirs.map((dir) =>
+    relative(workspaceRoot, dir).replaceAll('\\', '/'),
+  );
+  const prefix = area.endsWith('/') ? area : `${area}/`;
+  return relDirs.some((dir) => dir === area || dir.startsWith(prefix));
+}
+
+export interface MappingOwnership {
+  readonly owners: readonly string[];
+  readonly areas: readonly string[];
+}
+
+/** Package owners and areas named by moved rules and moved case entries. */
+export function mappingOwnership(mapping: Mapping): MappingOwnership {
+  const owners = new Set<string>();
+  const areas = new Set<string>();
+  for (const rule of mapping.rules) {
+    if (rule.status === 'moved') {
+      if (rule.owner !== undefined) {
+        owners.add(rule.owner);
+      }
+      if (rule.area !== undefined) {
+        areas.add(rule.area);
+      }
+    }
+  }
+  for (const entry of Object.values(mapping.cases)) {
+    if (entry.status === 'moved') {
+      if (entry.owner !== undefined) {
+        owners.add(entry.owner);
+      }
+      if (entry.area !== undefined) {
+        areas.add(entry.area);
+      }
+    }
+  }
+  return {
+    owners: [...owners].sort(),
+    areas: [...areas].sort(),
+  };
+}
+
+/** Reasons (rules and cases) that embed a `docs/...` path. */
+export function reasonsWithDocsPaths(mapping: Mapping): readonly string[] {
+  const hits: string[] = [];
+  for (const rule of mapping.rules) {
+    const reason = 'reason' in rule ? rule.reason : undefined;
+    if (reason !== undefined && DOCS_PATH.test(reason)) {
+      hits.push(`rule ${rule.match}: ${reason}`);
+    }
+  }
+  for (const [id, entry] of Object.entries(mapping.cases)) {
+    const reason = 'reason' in entry ? entry.reason : undefined;
+    if (reason !== undefined && DOCS_PATH.test(reason)) {
+      hits.push(`case ${id}: ${reason}`);
+    }
+  }
+  return hits;
 }

@@ -33,6 +33,14 @@
       var(--wsde-color-bg-0);
   }
 
+  /* Full-bleed edge décor; stays outside the safe-area HUD inset. */
+  .backdropVignette {
+    position: absolute;
+    inset: 0;
+    box-shadow: inset 0 0 4rem rgb(0 0 0 / 0.45);
+    pointer-events: none;
+  }
+
   .barLayer {
     position: sticky;
     top: 0;
@@ -50,16 +58,22 @@
     pointer-events: auto;
   }
 
+  /*
+   * Non-bare chrome pads device safe-area (--wsde-safe-*) in CSS px.
+   * Bare match keeps padding 0; match HUD owns safe-area pad; map stays full-bleed.
+   */
   .main {
     position: relative;
     z-index: var(--wsde-layer-screen);
     flex: 1;
     min-height: 0;
+    width: 100%;
     display: flex;
     flex-direction: column;
-    overflow: auto;
-    padding: var(--wsde-space-4);
-    gap: var(--wsde-space-4);
+    overflow: hidden;
+    padding: var(--wsde-safe-top) var(--wsde-safe-right) var(--wsde-safe-bottom)
+      var(--wsde-safe-left);
+    gap: 0;
   }
 
   .app[data-bare] .main {

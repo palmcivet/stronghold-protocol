@@ -13,21 +13,23 @@
       "below";
     gap: var(--wsde-space-4);
     width: 100%;
-    max-width: var(--wsde-size-page);
-    min-height: calc(100dvh - 2 * var(--wsde-space-4));
-    margin: 0 auto;
+    max-width: none;
+    height: 100%;
+    min-height: 0;
+    margin: 0;
+    padding: var(--wsde-space-4);
+    box-sizing: border-box;
   }
 
-  @media (width >= 64rem) {
-    .layout[data-mode="coop"] {
-      grid-template-columns: minmax(0, 1fr) minmax(14rem, 18rem);
-      grid-template-rows: auto 1fr auto auto;
-      grid-template-areas:
-        "head head"
-        "main side"
-        "actions actions"
-        "below below";
-    }
+  /* Fixed design-canvas room: coop side column + solo seat|brief always on. */
+  .layout[data-mode="coop"] {
+    grid-template-columns: minmax(0, 1fr) minmax(14rem, 18rem);
+    grid-template-rows: auto 1fr auto auto;
+    grid-template-areas:
+      "head head"
+      "main side"
+      "actions actions"
+      "below below";
   }
 
   .layout[data-mode="solo"] .sideRegion:empty {
@@ -42,12 +44,10 @@
   }
 
   /* Solo: the seat and the briefing side by side, as master. */
-  @container room (width >= 40rem) {
-    [data-mode="solo"] .mainRegion {
-      grid-template-columns: minmax(12rem, 16rem) minmax(0, 32rem);
-      justify-content: center;
-      align-items: stretch;
-    }
+  [data-mode="solo"] .mainRegion {
+    grid-template-columns: minmax(12rem, 16rem) minmax(0, 32rem);
+    justify-content: center;
+    align-items: stretch;
   }
 
   .sideRegion {
@@ -199,18 +199,5 @@
     display: flex;
     align-items: center;
     gap: var(--wsde-space-2);
-  }
-}
-
-@layer components {
-  /* A phone on its side: the bar follows the page instead of covering the seat, and the seat is shorter. */
-  @media (height < 30rem) {
-    .actionsRegion {
-      position: static;
-    }
-
-    .seat {
-      min-height: 12rem;
-    }
   }
 }

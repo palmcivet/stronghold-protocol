@@ -8,14 +8,14 @@ import { renderPart } from '#test/support/part.js';
 
 afterEach(() => {
   cleanup();
-  settingsStore.setState({ audio: DEFAULT_AUDIO });
+  settingsStore.setState({ audio: DEFAULT_AUDIO, safeAreaUi: true });
 });
 
 describe('audio settings', () => {
   it('sets the volume of a channel and mutes it, keeping the others', () => {
     const cues: string[] = [];
     const unset = setCueSink((role) => cues.push(role));
-    renderPart('core:profile.audio', { play: playCue });
+    renderPart('core:audio', { play: playCue });
     const music = screen.getByRole('slider', { name: '音乐' });
     fireEvent.change(music, { target: { value: '25' } });
     fireEvent.click(screen.getByRole('button', { name: '音效 静音' }));
@@ -32,5 +32,17 @@ describe('audio settings', () => {
         .disabled,
     ).toBe(true);
     expect(cues).toEqual(['ui.tab']);
+  });
+});
+
+describe('display settings', () => {
+  it('toggles notch-safe UI and keeps it local in the settings store', () => {
+    settingsStore.setState({ safeAreaUi: true });
+    expect(settingsStore.getState().safeAreaUi).toBe(true);
+    renderPart('core:display', { play: playCue });
+    fireEvent.click(screen.getByRole('switch', { name: '异形屏 UI 适配' }));
+    expect(settingsStore.getState().safeAreaUi).toBe(false);
+    fireEvent.click(screen.getByRole('switch', { name: '异形屏 UI 适配' }));
+    expect(settingsStore.getState().safeAreaUi).toBe(true);
   });
 });

@@ -10,16 +10,16 @@ import type {
 } from '@alliance/contract/server-message.js';
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { MASTER_CAPABILITIES } from '#infra/connection/backend.js';
 import type { Intent, IntentBus } from '#infra/intent/bus.js';
 import { applyFrame, resetMatch } from '#infra/store/frame.js';
 import { matchStore } from '#infra/store/match.js';
 import { presenceStore } from '#infra/store/presence.js';
 import { roomStore } from '#infra/store/room.js';
+import { sessionStore } from '#infra/store/session.js';
 import { t } from '#infra/text/index.js';
 import { emoteName } from '#match/hud/emote.js';
 import { hudStore } from '#match/hud/state.js';
-import { MASTER_CAPABILITIES } from '#infra/connection/backend.js';
-import { sessionStore } from '#infra/store/session.js';
 import { cardName } from '#match/piece-label.js';
 import { renderPart } from '#test/support/part.js';
 
@@ -331,7 +331,14 @@ describe('team watch and enemy intel', () => {
         },
       ],
       players: [
-        { ...template, playerId: 'p-self', seat: 0, name: 'Self', fieldId: 'f1', status: 'combat' },
+        {
+          ...template,
+          playerId: 'p-self',
+          seat: 0,
+          name: 'Self',
+          fieldId: 'f1',
+          status: 'combat',
+        },
         {
           ...template,
           playerId: 'p-other',
@@ -355,7 +362,9 @@ describe('team watch and enemy intel', () => {
     const { bus, sent } = fakeBus();
     renderPart('core:match.team', { bus });
     fireEvent.click(
-      screen.getByRole('button', { name: t('core:watch.field', { name: 'Other' }) }),
+      screen.getByRole('button', {
+        name: t('core:watch.field', { name: 'Other' }),
+      }),
     );
     expect(sent.at(-1)).toEqual({
       type: 'g.watch',
@@ -388,4 +397,3 @@ describe('team watch and enemy intel', () => {
     expect(hudStore.getState().intel).toBe('enemies');
   });
 });
-

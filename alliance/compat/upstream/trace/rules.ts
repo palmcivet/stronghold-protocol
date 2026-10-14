@@ -8,7 +8,7 @@ export const TRACE_RULES: readonly TraceRule[] = [
     id: 'assumed/cold-pair-max',
     package: 'mission-core',
     rule: '寒冷叠寒冷时冻结取两段中更长的，不分寒冷来自哪个阵营',
-    location: '`ability/effect/catalog.ts`（`freezeFromCold`）',
+    location: [{ file: 'ability/effect/catalog.ts', symbol: 'freezeFromCold' }],
     source:
       '参考实现 `server/sim/battle/status.js`（`applyStatus` 的寒冷分支），设计记录 0.2.0 寒冷转冻结',
     basis:
@@ -25,8 +25,10 @@ export const TRACE_RULES: readonly TraceRule[] = [
     id: 'assumed/max-hp-ratio',
     package: 'mission-core',
     rule: '最大生命变化时在场单位的当前生命按新旧上限之比缩放，夹在 0 到新上限，不取整；不在场或倒下时只记新上限。结算在拍内第一次读到最大生命时，没人读时在拍末',
-    location:
-      '`ability/effect/attribute.ts`（`maxHpOf`）、`battle/step.ts`（`engine:max-hp`）',
+    location: [
+      { file: 'ability/effect/attribute.ts', symbol: 'maxHpOf' },
+      { file: 'battle/step.ts', symbol: 'engine:max-hp' },
+    ],
     source:
       '参考实现 `server/sim/units.js`（属性重算时 `hp × maxHp / prevMax`），用例 `core.test.js` stat aggregation',
     basis:
@@ -46,7 +48,12 @@ export const TRACE_RULES: readonly TraceRule[] = [
     id: 'assumed/condition-every-tick',
     package: 'mission-core',
     rule: '条件效果（如模组的「攻击范围内存在 2 名及以上敌人时攻击速度 +12」）每拍重新判断一次：条件成立的那一拍挂上，不成立的那一拍取下',
-    location: '`ability/effect/condition.ts`（`registerConditionSystem`）',
+    location: [
+      {
+        file: 'ability/effect/condition.ts',
+        symbol: 'registerConditionSystem',
+      },
+    ],
     source:
       '参考实现 `server/sim/content/traitMods.js`（`installTraitAttackSpeed`），设计记录 0.2.2 §27.15',
     basis:
@@ -60,9 +67,9 @@ export const TRACE_RULES: readonly TraceRule[] = [
     id: 'assumed/hud-shake-amplitude',
     package: 'mission-renderer',
     rule: '首领头顶条受击抖动的幅度：每剩 1 秒抖 0.16 格，由 master 的 10 像素按 64 像素一格换算',
-    location: '`actor/hud/index.ts`（`MISSION_HUD_SHAKE`）',
+    location: [{ file: 'actor/hud/index.ts', symbol: 'MISSION_HUD_SHAKE' }],
     source:
-      '参考实现 `public/js/render/units.js`（`_updateHud` 的 `Math.sin(t * 90) * this.shake * 10`，`sync` 里首领掉血时 `shake = 0.25`）',
+      '参考实现 `render/units.js`（`_updateHud` 的 `Math.sin(t * 90) * this.shake * 10`，`sync` 里首领掉血时 `shake = 0.25`）',
     basis:
       '参考实现按屏幕像素抖动，随缩放不变；renderer 的头顶条在格空间里，像素到格的换算没有出处，64 像素一格是假定',
     verified: '时长与角速度已按参考实现核对，幅度为假定',
@@ -74,7 +81,7 @@ export const TRACE_RULES: readonly TraceRule[] = [
     id: 'assumed/mire-first-trigger',
     package: 'mission-core',
     rule: '沼泽在单位进入时先陷入一次，之后每个间隔再陷入一次',
-    location: '`field/terrain/official.ts`（`mire`）',
+    location: [{ file: 'field/terrain/official.ts', symbol: 'mire' }],
     source:
       'PRTS「沼泽控制」「FC-TR-1 潮湿泥土」「卫戍协议：盟约 下半/战场一览」；参考实现的沼泽地形',
     basis:
@@ -89,9 +96,10 @@ export const TRACE_RULES: readonly TraceRule[] = [
     id: 'assumed/displace-slide-fallback',
     package: 'mission-renderer',
     rule: '没有时长的推拉位移滑行 0.14·√D 现实秒，夹在 0.12–0.45 秒；带时长时按游戏秒除以倍速',
-    location: '`actor/entity/index.ts`（`MISSION_ACTOR_SLIDE`）',
-    source:
-      '参考实现 `public/js/render/units.js`（`DISPLACE_SLIDE`、`slideTo`）；`docs/research/13-knockback-official.md`',
+    location: [
+      { file: 'actor/entity/index.ts', symbol: 'MISSION_ACTOR_SLIDE' },
+    ],
+    source: '参考实现 `render/units.js`（`DISPLACE_SLIDE`、`slideTo`）',
     basis:
       '官方没有给出滑行时长；参考实现的回退公式是自定的，只用于不带时长的位移',
     verified: '带时长时的匀减速滑行已按参考实现核对，回退公式为假定',
@@ -103,8 +111,11 @@ export const TRACE_RULES: readonly TraceRule[] = [
     id: 'source/latest-deployed',
     package: 'mission-core',
     rule: '用部署策略时，敌人的「最后部署的目标」按部署先后：开场按名单（干员按列从左到右、同列从上到下，再召唤物）排仇恨序，开场时随干员放进来的召唤物排在名单之后；战斗中放进来的友方与再部署的友方排到最后',
-    location:
-      '`unit/record/index.ts`（`markLatestDeployed`）、`unit/deploy/strategy.ts`、`unit/deploy/command.ts`',
+    location: [
+      { file: 'unit/record/index.ts', symbol: 'markLatestDeployed' },
+      { file: 'unit/deploy/strategy.ts' },
+      { file: 'unit/deploy/command.ts' },
+    ],
     source:
       'PRTS 作战机制「索敌」，PRTS 卫戍协议/帮助；参考实现用例 `playtest5-targeting.test.js` #5',
     basis:
@@ -124,7 +135,7 @@ export const TRACE_RULES: readonly TraceRule[] = [
     id: 'source/fly-over-block',
     package: 'mission-core',
     rule: '`targetPriority` 为 `fly` 的友方（速射手）范围里有飞行敌人时，先打飞行的，不先打自己挡着的地面敌人；别的特殊优先级（如神射手）仍先打挡着的',
-    location: '`combat/target/catalog.ts`（`blockRank`）',
+    location: [{ file: 'combat/target/catalog.ts', symbol: 'blockRank' }],
     source:
       '参考实现用例 `playtest5-targeting.test.js` #220（所有者 2026-10-08 的决定）',
     basis: '速射手「优先攻击空中单位」压过阻挡优先',
@@ -140,8 +151,11 @@ export const TRACE_RULES: readonly TraceRule[] = [
     id: 'source/deterministic-math',
     package: 'mission-core',
     rule: '`hypot`、`powi`、`sin`、`cos`、`atan2` 只用正确舍入的运算，各引擎逐位一致',
-    location:
-      '`kernel/math/hypot.ts`、`kernel/math/powi.ts`、`kernel/math/trig.ts`',
+    location: [
+      { file: 'kernel/math/hypot.ts' },
+      { file: 'kernel/math/powi.ts' },
+      { file: 'kernel/math/trig.ts' },
+    ],
     source:
       '参考实现 `server/sim/detmath.js`，设计记录 0.2.2 §27.1；`sin`、`cos`、`atan2` 是 fdlibm 5.3 与 FreeBSD msun 的算法',
     basis:
@@ -175,8 +189,12 @@ export const TRACE_RULES: readonly TraceRule[] = [
     id: 'source/attack-stand',
     package: 'mission-core',
     rule: '敌人命中后站到攻击片段放完（没有片段时 0.35 秒，被麻痹打断时没被阻挡的远程敌人也站 0.35 秒）；没被阻挡、攻击范围不为空的敌人在前摇里也站着；`attack-moves` 不站；站定只停行走，等待、消失、出现照常推进；无法行动、路线消失、倒下离场、位移时作废，恐惧时不站',
-    location:
-      '`combat/attack/stand.ts`（`standAfterStrike`）、`combat/attack/index.ts`（`strike`、`attackWillWind`）、`battle/step.ts`（`engine:enemy-route`）',
+    location: [
+      { file: 'combat/attack/stand.ts', symbol: 'standAfterStrike' },
+      { file: 'combat/attack/index.ts', symbol: 'strike' },
+      { file: 'combat/attack/index.ts', symbol: 'attackWillWind' },
+      { file: 'battle/step.ts', symbol: 'engine:enemy-route' },
+    ],
     source:
       '参考实现 `server/sim/ai.js`（`attackStand`、`updateEnemy`、`advanceRoute`）、`server/sim/battle/events.js`（`stand`、`standCut`）；GitHub #58',
     basis: '攻击动作播放期间敌人不走，片段放完再走',
@@ -204,7 +222,7 @@ export const TRACE_RULES: readonly TraceRule[] = [
     id: 'source/enemy-swing',
     package: 'mission-core',
     rule: '开始一下出手时，冷却在这一拍之前就已经在前摇以内（没有目标、前摇被晕眩或缴械打断、刚解除控制），从头走完整个前摇；冷却这一拍才降进前摇的，前摇就是余下的冷却',
-    location: '`combat/attack/index.ts`（`openSwing`）',
+    location: [{ file: 'combat/attack/index.ts', symbol: 'openSwing' }],
     source:
       '参考实现 `server/sim/ai.js`（`enemyAttack` 的 `prevCd < wind`）；GitHub #187、#170；PRTS 异常效果 STUNNED / DISARMED「正在进行的普通攻击将被中断」',
     basis: '短时晕眩能打断敌人普攻',
@@ -231,8 +249,12 @@ export const TRACE_RULES: readonly TraceRule[] = [
     id: 'source/unbalance',
     package: 'mission-core',
     rule: '推、拉让敌人失衡：推按受力等级的位移时间，拉按作用时间（受力等级 < −1 减半），保底 0.1 秒；失衡期间不走、不开始普攻、前摇被打断；静态刚体不动也失衡，位移免疫不失衡；浮空、出现结束失衡',
-    location:
-      '`field/motion/unbalance.ts`（`PUSH_UNBALANCE`、`unbalanceUnit`）、`field/motion/index.ts`（`push`、`pull`）',
+    location: [
+      { file: 'field/motion/unbalance.ts', symbol: 'PUSH_UNBALANCE' },
+      { file: 'field/motion/unbalance.ts', symbol: 'unbalanceUnit' },
+      { file: 'field/motion/index.ts', symbol: 'push' },
+      { file: 'field/motion/index.ts', symbol: 'pull' },
+    ],
     source:
       '参考实现 `server/sim/battle/displacement.js`（`_unbalance`、`_staticForce`）、`server/sim/constants.js`（`PUSH_UNBALANCE`）、`server/sim/ai.js`；PRTS 失衡位移机制、游戏数据基础推力-位移近似对应表、推与拉、特殊机制静态刚体',
     basis: '推拉后敌人短暂停住、普攻被打断',
@@ -257,7 +279,7 @@ export const TRACE_RULES: readonly TraceRule[] = [
     id: 'source/block-targets',
     package: 'mission-core',
     rule: '`blockTargets` 形状的一次攻击打阻挡数个目标，不低于 1，阻挡的敌人在前',
-    location: '`combat/target/aim.ts`（`attackTargetIds`）',
+    location: [{ file: 'combat/target/aim.ts', symbol: 'attackTargetIds' }],
     source:
       '参考实现 `server/sim/ai.js` 的 `acquireTargets` / `targetCount`（`hitAllBlocked`）；PRTS 分支特性 强攻手 等"普通攻击最大目标数等于阻挡数（不会低于1）"',
     basis: '强攻手、重剑手、推击手这类分支由数据写 `blockTargets`',
@@ -275,8 +297,11 @@ export const TRACE_RULES: readonly TraceRule[] = [
     id: 'source/down-effects',
     package: 'mission-core',
     rule: '友方倒下或撤下时取下身上的效果（各调用一次 onRemove），定义写了 `keepOnDown` 的留着',
-    location:
-      '`ability/effect/index.ts`（`dropEffectsOnDown`）、`unit/deploy/strategy.ts`、`unit/deploy/command.ts`',
+    location: [
+      { file: 'ability/effect/index.ts', symbol: 'dropEffectsOnDown' },
+      { file: 'unit/deploy/strategy.ts' },
+      { file: 'unit/deploy/command.ts' },
+    ],
     source:
       '参考实现 `server/sim/battle/deploy.js` 的移除流程（keep persistent buffs only）',
     basis: '特性、天赋这类常驻效果写 `keepOnDown`',
@@ -290,7 +315,10 @@ export const TRACE_RULES: readonly TraceRule[] = [
     id: 'source/extra-range',
     package: 'mission-core',
     rule: '内容加进攻击范围的绝对格子，换位置、换范围之后都留着，直到内容重新设置；不进技能触发的初始范围',
-    location: '`combat/target/selector.ts`（`EXTRA_RANGE`、`setExtraRange`）',
+    location: [
+      { file: 'combat/target/selector.ts', symbol: 'EXTRA_RANGE' },
+      { file: 'combat/target/selector.ts', symbol: 'setExtraRange' },
+    ],
     source:
       '参考实现 `server/sim/battle/queries.js` 的 `setExtraRange`、`_refreshRange`',
     basis: '指定目标、额外目标格这类内容能让单位打到范围外的格子',
@@ -306,8 +334,11 @@ export const TRACE_RULES: readonly TraceRule[] = [
     id: 'source/trigger-area',
     package: 'mission-core',
     rule: '内容登记的技能触发区域（绝对格子或某个单位当前的攻击范围）里有敌人时，非治疗技能每拍按 DEFAULT 释放，攻击者也不等攻击',
-    location:
-      '`ability/skill/trigger.ts`（`TRIGGER_AREAS`、`areaTriggerMet`）、`ability/skill/point.ts`（`consider`）',
+    location: [
+      { file: 'ability/skill/trigger.ts', symbol: 'TRIGGER_AREAS' },
+      { file: 'ability/skill/trigger.ts', symbol: 'areaTriggerMet' },
+      { file: 'ability/skill/point.ts', symbol: 'consider' },
+    ],
     source:
       '参考实现 `server/sim/skills.js` 的 `addTriggerRange`、`_extraTriggerSatisfied`（TRIGGER_PROFILE：飞行的也算）',
     basis: '召唤物或光束等区域里有敌人就放技能',
@@ -323,7 +354,10 @@ export const TRACE_RULES: readonly TraceRule[] = [
     id: 'source/range-extend-base',
     package: 'mission-core',
     rule: '攻击距离分永久（`rangeExtendBase`）与随技能、限时效果撤下的（`rangeExtend`）两份；普攻范围算两者之和，技能触发（`DEFAULT` 的范围、`ACTIVE_RANGE` 的触发范围、友方触发的范围）只算永久的',
-    location: '`combat/target/selector.ts`（`RANGE_EXTEND_BASE`、`baseRange`）',
+    location: [
+      { file: 'combat/target/selector.ts', symbol: 'RANGE_EXTEND_BASE' },
+      { file: 'combat/target/selector.ts', symbol: 'baseRange' },
+    ],
     source:
       '参考实现 `server/sim/units.js` 的 `baseRangeExtend`（permRangeExtend）、`server/sim/skills.js` 的 `_defaultCondition` 与 `_triggerKeys`',
     basis: '技能延伸的距离不让技能自己提前触发',
@@ -336,7 +370,7 @@ export const TRACE_RULES: readonly TraceRule[] = [
     id: 'source/active-range',
     package: 'mission-core',
     rule: '持续时攻击范围严格大于自身范围的技能，基础策略的条件放到持续时的范围上，每拍都问，不等攻击',
-    location: '`ability/skill/trigger.ts`（`activeRange`）',
+    location: [{ file: 'ability/skill/trigger.ts', symbol: 'activeRange' }],
     source:
       '参考实现 `server/sim/skills.js` 的 ACTIVE_RANGE（项目所有者 2026-10-05 的规则，有意偏离官方）',
     basis: '技能不必等普攻命中，敌人一进持续范围就放',
@@ -357,7 +391,7 @@ export const TRACE_RULES: readonly TraceRule[] = [
     id: 'source/blocked-first',
     package: 'mission-core',
     rule: '自己挡着的敌人总是阻挡者的目标，基础策略的技能条件也算它，在不在攻击范围里都一样',
-    location: '`ability/skill/trigger.ts`（`holdsEnemy`）',
+    location: [{ file: 'ability/skill/trigger.ts', symbol: 'holdsEnemy' }],
     source:
       '参考实现 `server/sim/skills.js` `_defaultCondition`；PRTS 卫戍协议/帮助「敌人被近战干员自身阻挡」；用户 playtest #6',
     basis: '远程站近战位也为挡住的敌人放技能',
@@ -375,8 +409,11 @@ export const TRACE_RULES: readonly TraceRule[] = [
     id: 'source/element-order',
     package: 'mission-core',
     rule: '元素槽给画面的显示值取最满的一槽，一样满时按 `neural`、`erosion`、`burn`、`apoptosis`、`necrosis` 的先后取',
-    location:
-      '`combat/element/index.ts`（`ELEMENT_ORDER`，内置元素定义的 `order`）；比较在 `combat/element/gauge.ts`（`ELEMENT_GAUGES` 的 view）',
+    location: [
+      { file: 'combat/element/index.ts', symbol: 'ELEMENT_ORDER' },
+      { file: 'combat/element/index.ts', symbol: 'order' },
+      { file: 'combat/element/gauge.ts', symbol: 'ELEMENT_GAUGES' },
+    ],
     source:
       '参考实现 `server/sim/constants.js`（`ELEMENT_ORDER`）、`server/sim/damage.js`（`elementView`）',
     basis: '官方元素 id 的先后；画面只显示一个元素图标',
@@ -391,8 +428,11 @@ export const TRACE_RULES: readonly TraceRule[] = [
     id: 'source/immunity-names',
     package: 'mission-core',
     rule: '免疫名单用免疫名：冻结是 `frozen`，恐惧和战栗是 `feared`，其余与状态 id 相同',
-    location:
-      '`contract/spec.ts`（`UnitSpec.immunity`）、`ability/effect/immunity.ts`、`port/definition.ts`（`EffectDefinition.immunity`）',
+    location: [
+      { file: 'contract/spec.ts', symbol: 'UnitSpec.immunity' },
+      { file: 'ability/effect/immunity.ts' },
+      { file: 'port/definition.ts', symbol: 'EffectDefinition.immunity' },
+    ],
     source: '参考实现 `server/sim/buffs.js` 状态表的 `immune` 字段',
     basis: '关卡与内容数据沿用这套名字，兼容层不必转换',
     verified: '未核对',
@@ -406,7 +446,10 @@ export const TRACE_RULES: readonly TraceRule[] = [
     id: 'source/loadout-compose',
     package: 'mission-core',
     rule: '带模块的属性是无模块属性加模块的平加值并保留六位小数；天赋按序号覆盖，模块未写的键保留，其余追加，空占位丢弃',
-    location: '`port/loadout.ts`（`composeStats`、`composeTalents`）',
+    location: [
+      { file: 'port/loadout.ts', symbol: 'composeStats' },
+      { file: 'port/loadout.ts', symbol: 'composeTalents' },
+    ],
     source:
       '参考实现 `tools/build-data.mjs`（`mergeTalentChanges`）、`shared/loadoutRecord.js`',
     basis: '与数据构建时的合并规则一致，详情卡与战斗读到同一组数',
@@ -423,7 +466,7 @@ export const TRACE_RULES: readonly TraceRule[] = [
     id: 'source/loadout-range',
     package: 'mission-core',
     rule: '部署时的攻击范围：技能写明「被动效果：攻击范围扩大」用技能范围；精英且模块写明「攻击范围扩大」用模块范围；否则用记录范围；再加特性的永久攻击距离',
-    location: '`port/loadout.ts`（`attackRangeGrid`）',
+    location: [{ file: 'port/loadout.ts', symbol: 'attackRangeGrid' }],
     source: '参考实现 `shared/loadoutRecord.js`，设计记录 DESIGN §16',
     basis: '官方技能与模块描述的文字约定',
     verified: '已按 port/loadout.ts 的用例核对，未逐条对照参考实现',
@@ -440,7 +483,7 @@ export const TRACE_RULES: readonly TraceRule[] = [
     id: 'source/range-extend',
     package: 'mission-core',
     rule: '攻击距离增加 n 时，范围每一行在最远端外补上 1…⌊n⌋ 格（最多补到场地列数 21 格），去重，丢弃无效项',
-    location: '`port/loadout.ts`（`extendedGrid`）',
+    location: [{ file: 'port/loadout.ts', symbol: 'extendedGrid' }],
     source:
       '参考实现 `server/sim/targeting.js`（`absoluteRangeKeys`），设计记录 DESIGN §3',
     basis: '官方「攻击距离 +1」按行向前延伸',

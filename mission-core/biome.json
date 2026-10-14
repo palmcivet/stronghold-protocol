@@ -1,5 +1,29 @@
 {
   "extends": "//",
+  "plugins": [
+    {
+      "path": "./lint/determinism.grit",
+      "includes": [
+        "**/*.ts",
+        "!**/*.test.ts",
+        "!**/*.spec.ts",
+        "!**/test/**",
+        "!**/*.d.ts",
+        "!**/dist/**"
+      ]
+    },
+    {
+      "path": "./lint/boundary.grit",
+      "includes": [
+        "**/*.ts",
+        "!**/*.test.ts",
+        "!**/*.spec.ts",
+        "!**/test/**",
+        "!**/*.d.ts",
+        "!**/dist/**"
+      ]
+    }
+  ],
   "linter": {
     "rules": {
       "style": {

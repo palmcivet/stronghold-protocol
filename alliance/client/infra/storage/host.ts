@@ -1,3 +1,4 @@
+import { getPlatform } from '#infra/platform/index.js';
 import {
   browserDeviceSecretBackend,
   browserLargeBackend,
@@ -22,10 +23,7 @@ const hasWindow = typeof window !== 'undefined';
 function browserHost(): StorageHost {
   return {
     small: browserSmallBackend(),
-    large:
-      typeof indexedDB === 'undefined'
-        ? memoryBackend()
-        : browserLargeBackend(),
+    large: getPlatform().indexedDb ? browserLargeBackend() : memoryBackend(),
     secureTab: browserTabBackend(),
     secureDevice: browserDeviceSecretBackend(),
   };

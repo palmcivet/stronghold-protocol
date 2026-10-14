@@ -10,14 +10,20 @@ export const TRACE_PACKAGES = ['mission-core', 'mission-renderer'] as const;
 
 const traceId = v.pipe(text, v.regex(/^(assumed|source)\/[a-z0-9-]+$/));
 
+/** 规则在包内的一处代码位置：相对包根的文件，以及可选的符号（导出名、属性路径、系统 id 等）。 */
+export const TraceLocationSchema = v.object({
+  file: text,
+  symbol: v.optional(text),
+});
+
 /** 一条追溯记录：引擎里的一条规则、它在上游的出处，以及在 next 里锁住它的用例。 */
 export const TraceRuleSchema = v.pipe(
   v.object({
     id: traceId,
     package: v.picklist(TRACE_PACKAGES),
     rule: text,
-    /** 规则在包里的代码位置，相对包根。 */
-    location: text,
+    /** 规则在包里的代码位置，相对包根；可多处。 */
+    location: v.pipe(v.array(TraceLocationSchema), v.minLength(1)),
     /** 上游出处：参考实现的文件与设计记录，或官方资料。 */
     source: text,
     basis: text,
@@ -38,7 +44,21 @@ export const TraceRuleSchema = v.pipe(
 
 export const TraceRulesSchema = v.array(TraceRuleSchema);
 
+export type TraceLocation = v.InferInput<typeof TraceLocationSchema>;
 export type TraceRule = v.InferInput<typeof TraceRuleSchema>;
+
+/** 把结构化 location 收成表格用的行内文本。 */
+export function formatTraceLocation(
+  location: readonly TraceLocation[],
+): string {
+  return location
+    .map((entry) =>
+      entry.symbol === undefined
+        ? `\`${entry.file}\``
+        : `\`${entry.file}\`（\`${entry.symbol}\`）`,
+    )
+    .join('、');
+}
 
 /** 校验追溯表。失败时返回带路径的问题列表。 */
 export function parseTraceRules(

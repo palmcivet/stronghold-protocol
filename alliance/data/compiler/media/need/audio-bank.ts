@@ -333,7 +333,8 @@ export function pickModeBanks(
 
 export const pickModeAttacks = (
   banks: ReadonlyMap<string, readonly string[]> | undefined,
-): ModeLetterBanks => pickModeBanks(banks, ['ON_ABILITY_START', 'ON_ABILITY_ON']);
+): ModeLetterBanks =>
+  pickModeBanks(banks, ['ON_ABILITY_START', 'ON_ABILITY_ON']);
 
 export const pickModeHits = (
   banks: ReadonlyMap<string, readonly string[]> | undefined,

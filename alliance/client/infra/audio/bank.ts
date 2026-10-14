@@ -27,7 +27,11 @@ export function skillBankOf(
   if (!banks) {
     return null;
   }
-  if (typeof skillSlot === 'number' && Number.isFinite(skillSlot) && skillSlot >= 0) {
+  if (
+    typeof skillSlot === 'number' &&
+    Number.isFinite(skillSlot) &&
+    skillSlot >= 0
+  ) {
     const table = kind === 'attack' ? banks.attacks : banks.hits;
     const keyed = table?.[String(Math.trunc(skillSlot))];
     if (typeof keyed === 'string' && keyed) {

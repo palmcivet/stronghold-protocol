@@ -20,10 +20,20 @@ import {
 } from 'react';
 import { useStore } from 'zustand';
 import { useIntent } from '#infra/intent/context.js';
+import {
+  groundQualityOf,
+  onGroundQuality,
+  settingsStore,
+} from '#infra/settings/index.js';
 import { assetsStore } from '#infra/store/assets.js';
 import { useMatch, useMatchCatalog, useStream } from '#infra/store/hook.js';
 import { stageMapStore } from '#infra/store/stage-map.js';
 import { cx } from '#infra/theme/class-name.js';
+import {
+  clientToDesign,
+  type FitLayout,
+  fitLayout,
+} from '#infra/theme/viewport.js';
 import { equipItem } from '#match/equip.js';
 import { createActorModels, modelScaleOf } from '#match/field/actors.js';
 import { useBoardActions } from '#match/field/board-actions.js';
@@ -89,6 +99,18 @@ function hudInsets(host: HTMLElement): HudInsets {
     bottom: bottom ? Math.max(0, box.bottom - bottom.top) : 0,
     left: 0,
     right: 0,
+  };
+}
+
+/** HUD insets in design CSS px (viewport insets ÷ fit scale). */
+function designInsets(host: HTMLElement, scale: number): HudInsets {
+  const view = hudInsets(host);
+  const s = Math.max(scale, 1e-6);
+  return {
+    top: view.top / s,
+    bottom: view.bottom / s,
+    left: view.left / s,
+    right: view.right / s,
   };
 }
 
@@ -198,10 +220,10 @@ export function StageField({
         continue;
       }
       const enemy =
-        defId.startsWith('enemy_') || unit.kind === 'enemy' || Boolean(enemyKeyOfPenUnit(unit.id));
-      const key = enemy
-        ? (`spine:enemy/${defId}` as const)
-        : charKey(defId);
+        defId.startsWith('enemy_') ||
+        unit.kind === 'enemy' ||
+        Boolean(enemyKeyOfPenUnit(unit.id));
+      const key = enemy ? (`spine:enemy/${defId}` as const) : charKey(defId);
       if (key) {
         keys[unit.id] = key;
       }
@@ -230,6 +252,8 @@ export function StageField({
   const host = useRef<HTMLDivElement>(null);
   const stage = useRef<MissionBoard | null>(null);
   const [hostSize, setHostSize] = useState({ width: 0, height: 0 });
+  const coverRef = useRef<HTMLDivElement | null>(null);
+  const layoutRef = useRef<FitLayout | null>(null);
   useEffect(() => {
     if (!showsPrep && penStore.getState().pen) {
       setPen(false);
@@ -266,21 +290,30 @@ export function StageField({
   const resourcesLive = useRef(resources);
   resourcesLive.current = resources;
 
-  const frame = useCallback((): void => {
+  const syncFrame = useCallback((): void => {
     const element = host.current;
     const board = stage.current;
-    if (!element || !board) {
+    const cover = coverRef.current;
+    if (!element || !board || !cover) {
       return;
     }
-    const { width, height } = element.getBoundingClientRect();
-    setHostSize({ width, height });
-    board.resize(width, height);
+    const box = element.getBoundingClientRect();
+    const layout = fitLayout({ width: box.width, height: box.height });
+    layoutRef.current = layout;
+    setHostSize({ width: layout.design.width, height: layout.design.height });
+    // Design×scale CSS box (no transform); canvas CSS fills the cover.
+    cover.style.left = `${layout.offsetX}px`;
+    cover.style.top = `${layout.offsetY}px`;
+    cover.style.width = `${layout.design.width * layout.scale}px`;
+    cover.style.height = `${layout.design.height * layout.scale}px`;
+    cover.style.removeProperty('transform');
+    board.resize(layout.design.width, layout.design.height);
     board.dispatch({
       type: 'set-camera',
       camera: cameraFor(
         live.current.rect,
-        { width, height },
-        hudInsets(element),
+        layout.design,
+        designInsets(element, layout.scale),
       ),
     });
   }, []);
@@ -288,6 +321,7 @@ export function StageField({
   // Pack key: rebuild only when diffuse source flips (stand-in ↔ official). Actor models hot-update via configureActors.
   const groundPackKey = hasOfficialDiffuse(resources) ? 'official' : 'stand-in';
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: groundPackKey restarts the stage when the pack source flips; the run reads the live store
   useEffect(() => {
     const element = host.current;
     if (!element) {
@@ -302,8 +336,8 @@ export function StageField({
         canvas?.remove();
         canvas = next;
         next.style.pointerEvents = 'none';
-        element.append(next);
-        frame();
+        coverRef.current?.append(next);
+        syncFrame();
       }
     };
     try {
@@ -334,6 +368,7 @@ export function StageField({
         cues,
         terrain: {
           allowSlowGpu: true,
+          quality: groundQualityOf(settingsStore.getState().quality),
           resources: createGroundArtPort(groundResources),
           pack: groundArtPackOf(packResources),
           // Own-half field (no pen) unless the pen camera is on; 联防 widens.
@@ -348,6 +383,9 @@ export function StageField({
       return;
     }
     stage.current = board;
+    const stopQuality = onGroundQuality((quality) => {
+      stage.current?.terrain?.setQuality(quality);
+    });
     shown.current = new Map();
     const running: MissionBoard = board;
     // Replay map / snapshot after (re)build; appearances rebind in the rAF path; seenEvent watermark is kept across rebuilds.
@@ -360,7 +398,7 @@ export function StageField({
         snapshot: live.current.snapshot,
       });
     }
-    const observer = new ResizeObserver(() => frame());
+    const observer = new ResizeObserver(() => syncFrame());
     observer.observe(element);
     const layout = element.closest('[data-layout="match"]');
     for (const region of layout?.querySelectorAll('[data-region]') ?? []) {
@@ -375,7 +413,11 @@ export function StageField({
       board: MissionBoard,
     ): void => {
       const { models: actorModels, catalog: cat, streamInfo } = live.current;
-      if (!actorModels || shown.current.get(unitId) === key || !actorModels.has(key)) {
+      if (
+        !actorModels ||
+        shown.current.get(unitId) === key ||
+        !actorModels.has(key)
+      ) {
         return;
       }
       shown.current.set(unitId, key);
@@ -459,9 +501,7 @@ export function StageField({
                 const charId = defId.startsWith('char_')
                   ? defId
                   : (cat.chess[defId]?.charId ?? null);
-                return charId
-                  ? (`spine:char/${charId}/front` as const)
-                  : null;
+                return charId ? (`spine:char/${charId}/front` as const) : null;
               })();
           if (key) {
             bindAppearance(unit.id, key, running);
@@ -476,13 +516,14 @@ export function StageField({
     raf = requestAnimationFrame(tick);
     return () => {
       cancelAnimationFrame(raf);
+      stopQuality();
       observer.disconnect();
       running.destroy();
       canvas?.remove();
       stage.current = null;
     };
     // Rebuild only when the ground pack source flips; models hot-update below.
-  }, [frame, groundPackKey]);
+  }, [syncFrame, groundPackKey]);
 
   // Late-arriving Spine models: hot-update the actor backend instead of destroying the stage.
   useEffect(() => {
@@ -494,25 +535,23 @@ export function StageField({
     shown.current = new Map();
   }, [models]);
 
-
   useEffect(() => {
     if (map) {
       stage.current?.dispatch({ type: 'set-map', map });
-      frame();
+      syncFrame();
     }
-  }, [map, frame]);
+  }, [map, syncFrame]);
 
   useEffect(() => {
     // Master boardArea: own half in prep/combat; both halves only in 联防; pen mesh only for the pen camera.
     stage.current?.terrain?.setAreas(groundAreasForPhase(phase, { pen }));
-    frame();
-  }, [phase, pen, frame]);
-
+    syncFrame();
+  }, [phase, pen, syncFrame]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: the rect is read through `live`; its edges trigger a reframe
   useEffect(() => {
-    frame();
-  }, [frame, rect.r0, rect.r1, rect.c0, rect.c1]);
+    syncFrame();
+  }, [syncFrame, rect.r0, rect.r1, rect.c0, rect.c1]);
 
   useEffect(() => {
     stage.current?.dispatch({
@@ -530,6 +569,7 @@ export function StageField({
 
   const seenEvent = useRef(0);
   // Reset watermark on field / stream session change (`m.field`, `b.start` → openStreamField).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fieldId is the session trigger; the effect only resets the watermark
   useEffect(() => {
     seenEvent.current = 0;
   }, [stream.fieldId]);
@@ -714,11 +754,19 @@ export function StageField({
       },
       pickTile: (clientX, clientY) => {
         const board = stage.current;
-        if (!board || !showsPrep) {
+        const layout = layoutRef.current;
+        if (!board || !showsPrep || !layout) {
           return null;
         }
         const box = element.getBoundingClientRect();
-        const hit = board.pick(clientX - box.left, clientY - box.top);
+        const design = clientToDesign(
+          clientX,
+          clientY,
+          layout,
+          box.left,
+          box.top,
+        );
+        const hit = board.pick(design.x, design.y);
         if (hit.type === 'tile') {
           return { row: hit.y, col: hit.x };
         }
@@ -746,16 +794,24 @@ export function StageField({
     clientY: number;
   } | null => {
     const element = host.current;
-    if (!element) {
+    const layout = layoutRef.current;
+    if (!element || !layout) {
       return null;
     }
     const box = element.getBoundingClientRect();
+    const design = clientToDesign(
+      event.clientX,
+      event.clientY,
+      layout,
+      box.left,
+      box.top,
+    );
     return {
       pointerId: event.pointerId,
       pointerType: event.pointerType,
       button: event.button,
-      x: event.clientX - box.left,
-      y: event.clientY - box.top,
+      x: design.x,
+      y: design.y,
       clientX: event.clientX,
       clientY: event.clientY,
     };
@@ -836,7 +892,9 @@ export function StageField({
       ? cameraFor(
           rect,
           hostSize,
-          host.current ? hudInsets(host.current) : NO_INSETS,
+          host.current && layoutRef.current
+            ? designInsets(host.current, layoutRef.current.scale)
+            : NO_INSETS,
         )
       : null;
 
@@ -850,15 +908,17 @@ export function StageField({
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerCancel}
     >
-      {showsPrep && prepCamera ? (
-        <PrepItemMarks
-          view={own}
-          map={map}
-          camera={prepCamera}
-          width={hostSize.width}
-          height={hostSize.height}
-        />
-      ) : null}
+      <div ref={coverRef} className={cx(styles.coverFrame)}>
+        {showsPrep && prepCamera ? (
+          <PrepItemMarks
+            view={own}
+            map={map}
+            camera={prepCamera}
+            width={hostSize.width}
+            height={hostSize.height}
+          />
+        ) : null}
+      </div>
     </div>
   );
 }

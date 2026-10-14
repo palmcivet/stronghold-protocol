@@ -150,8 +150,6 @@ export interface Catalog {
   readonly diySlots?: readonly CatalogDiySlot[];
   /** Owned 6★ operators a custom slot may field; they take a potential and cultivation like the roster. */
   readonly diyOwned?: readonly string[];
-  /** Ids of the tips shown on the entry page; their text is `data:tip.<id>`. */
-  readonly tips?: readonly string[];
 }
 
 /** Display text of a catalog, keyed by `data:` keys such as `data:chess.<id>.name`. */

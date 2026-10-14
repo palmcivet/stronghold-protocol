@@ -1,6 +1,12 @@
 import type { ResultView } from '@alliance/contract/server-message.js';
 import { describe, expect, it } from 'vitest';
-import { bestOf, cardBonds, cardOf, formatStat, seatOrder } from './result-model.js';
+import {
+  bestOf,
+  cardBonds,
+  cardOf,
+  formatStat,
+  seatOrder,
+} from './result-model.js';
 
 const view = (patch: Partial<ResultView> = {}): ResultView => ({
   victory: true,

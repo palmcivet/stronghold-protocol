@@ -16,7 +16,7 @@
   }
 
   .layout::before {
-    content: '';
+    content: "";
     position: absolute;
     inset: 0;
     z-index: 0;
@@ -109,12 +109,14 @@
     letter-spacing: 0.12em;
     line-height: 1.05;
     color: var(--wsde-color-accent-400);
-    text-shadow: 0 0 0.4rem color-mix(in srgb, var(--wsde-color-accent-400) 45%, transparent);
+    text-shadow: 0 0 0.4rem
+      color-mix(in srgb, var(--wsde-color-accent-400) 45%, transparent);
   }
 
   .hero:not([data-victory]) .verdict {
     color: var(--wsde-color-danger);
-    text-shadow: 0 0 0.4rem color-mix(in srgb, var(--wsde-color-danger) 40%, transparent);
+    text-shadow: 0 0 0.4rem
+      color-mix(in srgb, var(--wsde-color-danger) 40%, transparent);
   }
 
   .sub {
@@ -239,7 +241,10 @@
 
   .cardHead {
     display: grid;
-    grid-template-columns: auto minmax(4rem, 6rem) minmax(0, 1fr) auto minmax(5rem, 7rem);
+    grid-template-columns: auto minmax(4rem, 6rem) minmax(0, 1fr) auto minmax(
+        5rem,
+        7rem
+      );
     gap: var(--wsde-space-2);
     align-items: center;
   }

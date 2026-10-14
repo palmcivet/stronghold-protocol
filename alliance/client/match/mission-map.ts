@@ -70,7 +70,10 @@ export function missionMapForPhase(
   phase: Phase | string | null | undefined,
   options: GroundAreaOptions = {},
 ): MissionMap {
-  return clipMapToAreas(missionMapOf(stage), groundAreasForPhase(phase, options));
+  return clipMapToAreas(
+    missionMapOf(stage),
+    groundAreasForPhase(phase, options),
+  );
 }
 
 /** Clip an already-built MissionMap the same way. */

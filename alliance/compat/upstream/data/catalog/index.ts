@@ -334,23 +334,6 @@ export function buildUpstreamCatalog(
   const draftConfig = isJsonRecord(config.bandDraft) ? config.bandDraft : {};
   const timeoutBandId = str(draftConfig.timeoutBandId);
 
-  const tips: string[] = [];
-  for (const [index, record] of (Array.isArray(config.tips)
-    ? config.tips
-    : []
-  ).entries()) {
-    const tip =
-      typeof record === 'string'
-        ? record
-        : isJsonRecord(record)
-          ? str(record.tip)
-          : null;
-    if (tip) {
-      tips.push(String(index));
-      put(`data:tip.${index}`, tip);
-    }
-  }
-
   const bosses: Record<string, CatalogBoss> = {};
   for (const [key, record] of records(input.bosses)) {
     const id = str(record.bossId) ?? key;
@@ -454,7 +437,6 @@ export function buildUpstreamCatalog(
       factions,
       diySlots,
       diyOwned: owned,
-      tips,
       ...(timeoutBandId ? { timeoutBandId } : {}),
     },
     text,

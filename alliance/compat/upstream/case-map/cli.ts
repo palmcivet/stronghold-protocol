@@ -7,6 +7,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { parseArgs } from 'node:util';
 import {
   type CheckReport,
   checkCaseMap,
@@ -41,34 +42,37 @@ interface Options {
 }
 
 function parseOptions(args: readonly string[]): Options {
-  let repo = DEFAULT_REPO_DIR;
-  let commit: string | null = null;
-  let writeInventory = false;
-  let concurrency: number | undefined;
-  for (let index = 0; index < args.length; index += 1) {
-    const arg = args[index];
-    const value = args[index + 1];
-    if (arg === '--write-inventory') {
-      writeInventory = true;
-    } else if (arg === '--repo' && value !== undefined) {
-      repo = resolve(value);
-      index += 1;
-    } else if (arg === '--commit' && value !== undefined) {
-      commit = value;
-      index += 1;
-    } else if (
-      arg === '--concurrency' &&
-      value !== undefined &&
-      Number.isInteger(Number(value)) &&
-      Number(value) > 0
-    ) {
-      concurrency = Number(value);
-      index += 1;
-    } else {
-      throw new Error(`${USAGE}\nunknown argument: ${arg ?? ''}`);
+  const { values } = (() => {
+    try {
+      return parseArgs({
+        args: [...args],
+        strict: true,
+        options: {
+          repo: { type: 'string' as const },
+          commit: { type: 'string' as const },
+          'write-inventory': { type: 'boolean' as const },
+          concurrency: { type: 'string' as const },
+        },
+      });
+    } catch (cause) {
+      const detail = cause instanceof Error ? cause.message : String(cause);
+      throw new Error(`${USAGE}\n${detail}`);
     }
+  })();
+  let concurrency: number | undefined;
+  if (values.concurrency !== undefined) {
+    const parsed = Number(values.concurrency);
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+      throw new Error(`${USAGE}\nunknown argument: --concurrency`);
+    }
+    concurrency = parsed;
   }
-  return { repo, commit, writeInventory, concurrency };
+  return {
+    repo: values.repo === undefined ? DEFAULT_REPO_DIR : resolve(values.repo),
+    commit: values.commit ?? null,
+    writeInventory: values['write-inventory'] === true,
+    concurrency,
+  };
 }
 
 /** master 目录的提交号。目录本身不是 git 检出的根（包括位于别的仓库之内）时返回 null。 */

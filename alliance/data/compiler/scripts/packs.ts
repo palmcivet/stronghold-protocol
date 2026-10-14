@@ -3,6 +3,7 @@
 // 守卫：必需键缺失、基础与赛季命名空间混放、键集合比上一版缩水，任一项都不写出清单（--allow-shrink 只放行缩水）。
 
 import { join, resolve } from 'node:path';
+import { parseArgs } from 'node:util';
 import {
   type AssetKey,
   fileAddress,
@@ -49,36 +50,38 @@ function parseOptions(
   argv: readonly string[],
   extractCacheDir: string,
 ): Options {
-  const seasons: string[] = [];
-  let allowShrink = false;
-  let cache = extractCacheDir;
-  for (let index = 0; index < argv.length; index++) {
-    const token = argv[index] ?? '';
-    if (token === '--allow-shrink') {
-      allowShrink = true;
-    } else if (token === '--season' || token === '--cache') {
-      const value = argv[++index];
-      if (!value || value.startsWith('--')) {
-        fail(`${token} needs a value`);
-      }
-      if (token === '--season') {
-        try {
-          seasonPacketDirectory(value);
-        } catch (cause) {
-          fail(cause instanceof Error ? cause.message : String(cause));
-        }
-        seasons.push(value);
-      } else {
-        cache = resolve(value);
-      }
-    } else {
-      fail(`unknown option ${token}`);
+  const { values } = (() => {
+    try {
+      return parseArgs({
+        args: [...argv],
+        strict: true,
+        options: {
+          'allow-shrink': { type: 'boolean' as const },
+          season: { type: 'string' as const, multiple: true as const },
+          cache: { type: 'string' as const },
+        },
+      });
+    } catch (cause) {
+      fail(cause instanceof Error ? cause.message : String(cause));
     }
-  }
+  })();
+  const seasons = values.season ?? [];
   if (seasons.length === 0) {
     fail('--season is required');
   }
-  return { seasons, allowShrink, extractCacheDir: cache };
+  for (const season of seasons) {
+    try {
+      seasonPacketDirectory(season);
+    } catch (cause) {
+      fail(cause instanceof Error ? cause.message : String(cause));
+    }
+  }
+  return {
+    seasons,
+    allowShrink: values['allow-shrink'] === true,
+    extractCacheDir:
+      values.cache === undefined ? extractCacheDir : resolve(values.cache),
+  };
 }
 
 async function readJson(files: BuildFiles, path: string): Promise<unknown> {

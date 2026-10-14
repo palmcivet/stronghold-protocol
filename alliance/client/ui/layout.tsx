@@ -3,7 +3,7 @@ import { cx } from '#infra/theme/class-name.js';
 import styles from './layout.module.css';
 
 /** A step of the spacing scale (`--wsde-space-N`). */
-export type Space = 1 | 2 | 3 | 4 | 6 | 8;
+export type Space = 1 | 2 | 3 | 4 | 5 | 6 | 8;
 
 interface BoxProps {
   readonly children?: ReactNode;

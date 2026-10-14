@@ -78,17 +78,18 @@ battle.snapshot().tick // 1
 
 ## 核心概念
 
-- [规格](./02-spec.md)：地块、单位、技能与刷出
-- [战斗](./03-battle.md)：推进、输入、快照、事件、结果、账本与导出
-- [模块](./04-module.md)：登记规则，发命令，做查询
-- [世界、组件、资源与标签](./05-world.md)：按带类型的键存取状态
-- [伤害](./06-damage.md)、[技能](./07-skill.md)、[攻击](./08-attack.md)、[计时](./09-timer.md)
-- [效果与属性](./10-effect.md)、[选择器](./11-selector.md)、[费用、阻挡与投射物](./12-field.md)
-- [黄金回放与源码扫描](./13-testing.md)
-- [地形与装置作用区](./14-terrain.md)：地块上的地形、站位、部署与寻路代价，装置按朝向圈出的作用区，官方地形
+- [规格](./reference/02-spec.md)：地块、单位、技能与刷出
+- [战斗](./reference/03-battle.md)：推进、输入、快照、事件、结果、账本与导出
+- [模块](./reference/04-module.md)：安装登记、订阅与系统、发命令与做查询
+- [世界、组件、资源与标签](./reference/05-world.md)：按带类型的键存取状态
+- [伤害](./reference/06-damage.md)、[技能](./reference/07-skill.md)、[攻击](./reference/08-attack.md)、[计时](./reference/09-timer.md)
+- [效果与属性](./reference/10-effect.md)、[选择器](./reference/11-selector.md)、[费用、阻挡与投射物](./reference/12-field.md)
+- [黄金回放与源码扫描](./maintain/03-testing.md)
+- [地形与装置作用区](./reference/14-terrain.md)：地块上的地形、站位、部署与寻路代价，装置按朝向圈出的作用区，官方地形
 
 ## 下一步
 
-- [快速开始](./01-quick-start.md)：装上内置模块，跑完一场有敌人的战斗
-- [API 参考](./15-api.md)：公开函数与类型的签名
-- [架构设计](./16-architecture.md)：包布局、依赖方向与确定性数学
+- [快速开始](./reference/01-quick-start.md)：装上内置模块，跑完一场有敌人的战斗
+- [API 参考](./reference/15-api.md)：公开函数与类型的签名
+- [架构设计](./maintain/01-architecture.md)：包布局、依赖方向与确定性数学
+- [World 与状态模型](./maintain/02-world-state.md)：World 字段、单位记录、内置组件路径与导出编码

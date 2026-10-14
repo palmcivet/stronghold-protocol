@@ -7,7 +7,7 @@ import { settingsStore } from '#infra/store/settings.js';
 import { playbackStore } from '#match/playback-state.js';
 
 /** What the page exposes to page scripts, community shells and end-to-end tests. */
-export interface AllianceApi {
+export interface WsdeHostApi {
   /** Enters the game with a code name, as the title screen does. */
   enter(name: string): void;
   createRoom(mode: 'solo' | 'coop', difficulty: string): Promise<IntentOutcome>;
@@ -26,7 +26,7 @@ export interface AllianceApi {
 export function createApi(options: {
   readonly connection: Connection;
   readonly intents: IntentBus;
-}): AllianceApi {
+}): WsdeHostApi {
   const { connection, intents } = options;
   return {
     enter(name) {
@@ -54,6 +54,10 @@ export function createApi(options: {
 
 declare global {
   interface Window {
-    alliance?: AllianceApi;
+    /**
+     * Page host API (`enter` / room / `submit` / `view`).
+     * In DEV builds, boot also mixes debug overlay methods onto the same object.
+     */
+    wsde?: WsdeHostApi;
   }
 }

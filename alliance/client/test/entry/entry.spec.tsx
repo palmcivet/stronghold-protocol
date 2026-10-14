@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { EMPTY_CATALOG } from '@alliance/contract/catalog.js';
-import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { IntentBus } from '#infra/intent/bus.js';
 import { catalogStore } from '#infra/store/catalog.js';
@@ -76,22 +76,6 @@ describe('entry', () => {
     expect(screen.getByText('14 回合')).toBeTruthy();
     expect(screen.getByText('9 回合')).toBeTruthy();
     expect(screen.getByRole('button', { name: '开始独立模拟' })).toBeTruthy();
-  });
-
-  it('turns the tips with the buttons and hides the bar without tips', () => {
-    const { unmount } = renderPart('core:entry.tips');
-    expect(screen.queryByRole('complementary')).toBeNull();
-    unmount();
-    catalogStore.setState({
-      catalog: { ...EMPTY_CATALOG, tips: ['0', '1'] },
-      loaded: true,
-    });
-    setDataText({ 'data:tip.0': '提示一', 'data:tip.1': '提示二' });
-    renderPart('core:entry.tips');
-    expect(screen.getByText('提示一')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: '下一条' }));
-    expect(screen.getByText('提示二')).toBeTruthy();
-    expect(screen.getByText('2/2')).toBeTruthy();
   });
 
   it('names avatar variants by their catalog label', () => {

@@ -44,7 +44,9 @@
     display: flex;
     flex-direction: column;
     gap: var(--wsde-space-1);
-    padding: var(--wsde-space-2) var(--wsde-space-3) 0;
+    padding: max(var(--wsde-space-2), var(--wsde-safe-top))
+      max(var(--wsde-space-3), var(--wsde-safe-right)) 0
+      max(var(--wsde-space-3), var(--wsde-safe-left));
     min-width: 0;
   }
 
@@ -96,9 +98,11 @@
 
   .left {
     position: absolute;
-    left: var(--wsde-space-3);
+    left: max(var(--wsde-space-3), var(--wsde-safe-left));
     top: calc(
-      var(--wsde-size-hud-bar) + var(--wsde-size-touch) + var(--wsde-space-4)
+      var(--wsde-size-hud-bar) +
+      var(--wsde-size-touch) +
+      var(--wsde-space-4)
     );
     z-index: var(--wsde-layer-hud);
     max-width: min(14rem, 40vw);
@@ -108,9 +112,11 @@
 
   .side {
     position: absolute;
-    right: var(--wsde-space-3);
+    right: max(var(--wsde-space-3), var(--wsde-safe-right));
     top: calc(
-      var(--wsde-size-hud-bar) + var(--wsde-size-touch) + var(--wsde-space-4)
+      var(--wsde-size-hud-bar) +
+      var(--wsde-size-touch) +
+      var(--wsde-space-4)
     );
     z-index: var(--wsde-layer-hud);
     display: flex;
@@ -124,11 +130,16 @@
 
   .bottom {
     position: absolute;
-    right: var(--wsde-space-3);
-    bottom: var(--wsde-space-2);
+    right: max(var(--wsde-space-3), var(--wsde-safe-right));
+    bottom: max(var(--wsde-space-2), var(--wsde-safe-bottom));
     z-index: var(--wsde-layer-hud);
     width: min(calc(100% - 2 * var(--wsde-space-3)), 64rem);
-    max-width: calc(100% - 5rem);
+    max-width: calc(
+      100% -
+      5rem -
+      var(--wsde-safe-left) -
+      var(--wsde-safe-right)
+    );
     min-width: 0;
   }
 
@@ -143,8 +154,8 @@
   /* detail cards float over the right of the field, clear of the dock and the effects */
   .floatArea {
     position: absolute;
-    right: var(--wsde-space-3);
-    bottom: calc(var(--wsde-space-2) + 8rem);
+    right: max(var(--wsde-space-3), var(--wsde-safe-right));
+    bottom: calc(max(var(--wsde-space-2), var(--wsde-safe-bottom)) + 8rem);
     z-index: var(--wsde-layer-hud);
     max-width: min(22rem, 42vw);
     max-height: min(70dvh, 36rem);
@@ -157,8 +168,8 @@
 
   .corner {
     position: absolute;
-    left: var(--wsde-space-3);
-    bottom: var(--wsde-space-2);
+    left: max(var(--wsde-space-3), var(--wsde-safe-left));
+    bottom: max(var(--wsde-space-2), var(--wsde-safe-bottom));
     z-index: var(--wsde-layer-hud);
   }
 
@@ -349,12 +360,15 @@
 
   .teamRow[data-self] .teamArt :global([data-framed]),
   .teamRow[data-self] .teamArt {
-    box-shadow: 0 0 0 2px var(--wsde-color-accent-500),
-      0 0 0.18rem color-mix(in srgb, var(--wsde-color-accent-400) 35%, transparent);
+    box-shadow:
+      0 0 0 2px var(--wsde-color-accent-500),
+      0 0 0.18rem
+      color-mix(in srgb, var(--wsde-color-accent-400) 35%, transparent);
   }
 
   .teamRow[data-watched] .teamArt {
-    box-shadow: 0 0 0 2px var(--wsde-color-amber),
+    box-shadow:
+      0 0 0 2px var(--wsde-color-amber),
       0 0 0.18rem color-mix(in srgb, var(--wsde-color-amber) 45%, transparent);
   }
 
@@ -397,12 +411,12 @@
     gap: 0.25rem;
   }
 
-  .teamLine :global([class*='lpBar']) {
+  .teamLine :global([class*="lpBar"]) {
     width: 0.35rem;
     height: 1.1rem;
   }
 
-  .teamLine :global([class*='lpValue']) {
+  .teamLine :global([class*="lpValue"]) {
     font-size: var(--wsde-font-size-xs);
   }
 
@@ -422,20 +436,20 @@
     color: var(--wsde-color-text-lo);
   }
 
-  .teamStatus[data-tone='mint'] {
+  .teamStatus[data-tone="mint"] {
     color: var(--wsde-color-accent-400);
   }
 
-  .teamStatus[data-tone='gold'] {
+  .teamStatus[data-tone="gold"] {
     color: var(--wsde-color-gold);
   }
 
-  .teamStatus[data-tone='orange'] {
+  .teamStatus[data-tone="orange"] {
     color: var(--wsde-color-orange);
   }
 
-  .teamStatus[data-tone='red'],
-  .teamStatus[data-tone='offline'] {
+  .teamStatus[data-tone="red"],
+  .teamStatus[data-tone="offline"] {
     color: var(--wsde-color-danger);
   }
 

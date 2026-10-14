@@ -26,7 +26,16 @@ const defs = combatDefsOf(
       profession: 'SNIPER',
       dmgType: 'phys',
       rangeGrid: [[1, 0]],
-      stats: { maxHp: 100, atk: 20, def: 0, res: 0, bat: 1, aspd: 100, moveSpeed: 1, blockCnt: 1 },
+      stats: {
+        maxHp: 100,
+        atk: 20,
+        def: 0,
+        res: 0,
+        bat: 1,
+        aspd: 100,
+        moveSpeed: 1,
+        blockCnt: 1,
+      },
       skill: {
         skillId: 'sk_a',
         skillType: 'AUTO',
@@ -73,7 +82,10 @@ const defs = combatDefsOf(
         motion: 'WALK',
         dmgType: 'phys',
       },
-      attackRange: [[1, 0], [2, 0]],
+      attackRange: [
+        [1, 0],
+        [2, 0],
+      ],
       attackClip: { duration: 1, hit: 0.4 },
     },
   },
@@ -91,11 +103,25 @@ describe('battleSpecOf', () => {
           {
             playerId: 'p1',
             colOffset: 0,
-            units: [{ kind: 'chess', chessId: 'chess_a', uid: 1, row: 3, col: 5, dir: 'RIGHT' }],
+            units: [
+              {
+                kind: 'chess',
+                chessId: 'chess_a',
+                uid: 1,
+                row: 3,
+                col: 5,
+                dir: 'RIGHT',
+              },
+            ],
           },
         ],
         spawns: [{ enemyKey: 'enemy_1', time: 1, row: 0, col: 5, route: 'r0' }],
-        routes: { r0: [{ row: 0, col: 5 }, { row: 7, col: 5 }] },
+        routes: {
+          r0: [
+            { row: 0, col: 5 },
+            { row: 7, col: 5 },
+          ],
+        },
       },
       { defs, stages: { s1: stage! } },
     );
@@ -103,7 +129,12 @@ describe('battleSpecOf', () => {
     expect(spec!.seed).toBe(7);
     expect(spec!.tiles.length).toBeGreaterThan(0);
     expect(spec!.units).toHaveLength(1);
-    expect(spec!.units[0]).toMatchObject({ id: 'op:1', x: 5, y: 3, side: 'ally' });
+    expect(spec!.units[0]).toMatchObject({
+      id: 'op:1',
+      x: 5,
+      y: 3,
+      side: 'ally',
+    });
     expect(spec!.units[0]?.skills).toHaveLength(1);
     expect(spec!.units[0]?.skills[0]).toMatchObject({
       id: 'sk_a',
@@ -133,7 +164,10 @@ describe('battleSpecOf', () => {
           dir: 'DOWN',
           role: 'blower',
           active: true,
-          rangeGrid: [[0, 1], [0, 2]],
+          rangeGrid: [
+            [0, 1],
+            [0, 2],
+          ],
           skill: { bb: { 'blower_s_character[equal].atk': 0.3 } },
         },
       ],
@@ -143,9 +177,9 @@ describe('battleSpecOf', () => {
       { seed: 1, stageId: 'fan', kind: 'normal', players: [], spawns: [] },
       { defs, stages: { fan: board! } },
     );
-    expect(spec!.tiles.find((tile) => tile.x === 0 && tile.y === 0)?.terrain).toBe(
-      'mire',
-    );
+    expect(
+      spec!.tiles.find((tile) => tile.x === 0 && tile.y === 0)?.terrain,
+    ).toBe('mire');
     expect(spec!.notes).toMatchObject({
       stageId: 'fan',
       special: {
@@ -187,6 +221,8 @@ describe('battleSpecOf', () => {
   });
 
   it('returns null without a known stage', () => {
-    expect(battleSpecOf({ seed: 1, stageId: 'missing' }, { defs, stages: {} })).toBeNull();
+    expect(
+      battleSpecOf({ seed: 1, stageId: 'missing' }, { defs, stages: {} }),
+    ).toBeNull();
   });
 });

@@ -1,5 +1,12 @@
 import { tokenSheet } from './token.js';
 import { TOKENS } from './tokens.js';
+import {
+  applySafeArea,
+  applyViewport,
+  installViewport,
+  type SafeAreaMode,
+  viewportStore,
+} from './viewport.js';
 import './layer.css';
 
 const TOKEN_STYLE_ID = 'alliance-tokens';
@@ -19,3 +26,11 @@ export function installTheme(target: Document = document): void {
 export function applyTextSize(size: string, target: Document = document): void {
   target.documentElement.dataset['text'] = size;
 }
+
+export {
+  applySafeArea,
+  applyViewport,
+  installViewport,
+  type SafeAreaMode,
+  viewportStore,
+};

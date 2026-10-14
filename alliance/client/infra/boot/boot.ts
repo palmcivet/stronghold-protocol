@@ -5,14 +5,14 @@ import type {
 } from '@alliance/contract/server-message.js';
 import { createConnection, pageSocketUrl } from '#infra/connection/socket.js';
 import { createIntentBus } from '#infra/intent/bus.js';
+import { settingsStore, startSettings } from '#infra/settings/index.js';
 import { assetsStore } from '#infra/store/assets.js';
 import { catalogStore } from '#infra/store/catalog.js';
 import { applyFrame } from '#infra/store/frame.js';
 import { dispatchPresence } from '#infra/store/presence.js';
 import { sessionStore } from '#infra/store/session.js';
-import { settingsStore } from '#infra/store/settings.js';
 import { setLanguage } from '#infra/text/index.js';
-import { applyTextSize } from '#infra/theme/install.js';
+import { applyTextSize, installViewport } from '#infra/theme/install.js';
 import { loadoutStore } from '#loadout/state.js';
 import {
   lockedKinds,
@@ -27,7 +27,7 @@ import {
 import { createLazyPlayback, type LazyPlayback } from '#match/playback/lazy.js';
 import { createUpstreamBattleBridge } from '#match/playback/upstream-bridge.js';
 import { dialogStore } from '#part/dialog.js';
-import { type AllianceApi, createApi } from './api.js';
+import { createApi, type WsdeHostApi } from './api.js';
 import { installAssets, loadCompatResources } from './assets.js';
 import { elementOutput, installAudio } from './audio.js';
 import { loadCompatCatalog } from './catalog.js';
@@ -157,7 +157,7 @@ export interface Runtime {
   readonly connection: ReturnType<typeof createConnection>;
   readonly intents: ReturnType<typeof createIntentBus>;
   readonly playback: LazyPlayback;
-  readonly api: AllianceApi;
+  readonly api: WsdeHostApi;
   readonly identity: Identity;
 }
 
@@ -221,17 +221,11 @@ export function boot(
   installAssets();
   setLanguage(settingsStore.getState().language);
   applyTextSize(settingsStore.getState().textSize);
-  settingsStore.subscribe((state, previous) => {
-    if (state.language !== previous.language) {
-      setLanguage(state.language);
-    }
-    if (state.textSize !== previous.textSize) {
-      applyTextSize(state.textSize);
-    }
-  });
+  installViewport(() => settingsStore.getState().safeAreaUi);
 
   connection.connect();
   registerCoreParts();
+  startSettings();
   const api = createApi({ connection, intents });
   const remembered = settingsStore.getState().name;
   if (remembered) {

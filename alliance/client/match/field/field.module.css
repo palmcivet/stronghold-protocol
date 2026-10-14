@@ -79,9 +79,22 @@
     position: absolute;
     inset: 0;
     overflow: hidden;
-    /* Match mission-renderer clear (0x0c1114): letterbox beside the board-sized canvas reads as ground, not a HUD column. */
+    /* Match mission-renderer clear (0x0c1114): bleed margins read as ground, not a HUD column. */
     background: #0c1114;
     touch-action: none;
+  }
+
+  /* Design×scale contain box; left/top/width/height set from fitLayout (no transform). */
+  .coverFrame {
+    position: absolute;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .coverFrame > canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
   }
 
   .status {

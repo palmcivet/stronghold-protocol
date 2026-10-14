@@ -56,7 +56,15 @@ export const OFFICIAL_BOARD_TILES: AssetKey = 'json:board/autochess/tiles';
  */
 const ATLAS = 2048;
 
-type RegionKind = 'plate' | 'concrete' | 'stripe' | 'panel' | 'side' | 'crate' | 'pad' | 'hatch';
+type RegionKind =
+  | 'plate'
+  | 'concrete'
+  | 'stripe'
+  | 'panel'
+  | 'side'
+  | 'crate'
+  | 'pad'
+  | 'hatch';
 
 type Region = readonly [
   x: number,
@@ -145,12 +153,7 @@ function paintRegion(
     const px = x + noise2(x + i, y, 1) * w;
     const py = y + noise2(x, y + i, 2) * h;
     context.fillStyle = noise2(i, x + y, 3) > 0.5 ? '#ffffff' : '#000000';
-    context.fillRect(
-      px,
-      py,
-      1 + noise2(i, y, 4) * 2,
-      1 + noise2(x, i, 5) * 2,
-    );
+    context.fillRect(px, py, 1 + noise2(i, y, 4) * 2, 1 + noise2(x, i, 5) * 2);
   }
   context.globalAlpha = 1;
 
@@ -383,5 +386,5 @@ export function createGroundArtPort(resources: ImagePort | null): GroundPort {
   };
 }
 
-/** @deprecated use {@link createGroundArtPort} */
+/** Port with no image loaders: official diffuse is the painted stand-in. */
 export const groundArtPort: GroundPort = createGroundArtPort(null);
