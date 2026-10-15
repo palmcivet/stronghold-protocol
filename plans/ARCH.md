@@ -49,7 +49,7 @@
 
 `mission-renderer` 采用轻量 ECS 风格的视图层：每个单位一个视图对象，按特性注册视图系统（骨骼本体、血条、SP 与护盾、状态图标、朝向、离场淡出），特效按 kind 注册到特效表。Three 的场景图仍是显示树。
 
-`alliance/server` 的对局层不使用 ECS：休整、商店、经济是回合制规则，采用类型化钩子注册表和显式阶段状态机。`content/` 中带 `@ts-nocheck` 的 master 内容与 `content/support/battle-facade.ts` 适配层，改写为类型化的 `MissionModule` 与对局钩子。
+`alliance/server` 的对局层不使用 ECS：休整、商店、经济是回合制规则，采用类型化钩子注册表和显式阶段状态机。内容写成类型化的 `MissionModule` 与对局钩子。
 
 理由：单场战斗只有几十个单位，性能不是瓶颈；确定性、可读规则和少依赖更重要。真正的扩展压力来自干员、首领、召唤物的个别机制和大量特效种类，这需要类型化注册表与模块自有状态，而不是高性能实体数据库。
 
@@ -259,15 +259,15 @@ N 人联机涉及 `MAX_SEATS`、棋盘几何与波次表，作为核心特性设
 
 确定性规则：时间只来自 `env.clock`，随机只来自 `env.random(stream)`；不使用 `Date.now`、`performance.now`、`Math.random`；迭代顺序稳定；浮点按固定顺序累加；用 lint 禁止上述全局。状态导出与导入要求 `MatchState` 是纯数据。
 
-对局核心采用函数式核心与命令式外壳：`step(state, input, env) -> { state, outputs }`，`outputs` 为发送、广播、定时、取消、结束、日志。`Match` 类成为薄适配层，保留现有大厅契约（`match/flow/index.ts` 头部的接口说明）。阶段流转使用手写的类型化状态转移表，键为 `PHASE`，不使用 XState。
+对局核心采用函数式核心与命令式外壳：`step(state, input, env) -> { state, outputs }`，`outputs` 为发送、广播、定时、取消、结束、日志。阶段流转使用手写的类型化状态转移表，键为 `PHASE`，不使用 XState。
 
 测试：
 
 - 黄金回放：用记录的日志断言检查点哈希；规则有意变更时重新确认。
-- 模糊与属性测试：沿用 `match/test/harness.ts` 与 `fuzz.spec.ts` 的不变量检查。
+- 模糊与属性测试：对局不变量用属性测试检查。
 - 线路契约：在 `alliance/contract` 用 valibot 定义 C2S、S2C 与扩展信道的 schema，推导 TS 类型；用 master 服务端录制的帧作为黄金样例做契约测试。
 - 客户端：状态仓库与选择器用录制的帧流测试；React 组件用 Testing Library 按语义查询测试；作战播放用 `mission-core` 的帧时钟与 `mission-renderer` 的本地喂数配合假时钟测试。
-- `alliance/scenario`：整页端到端测试，由脚本座位回放日志驱动；`infra/boot/` 暴露的全局 API 同时作为测试与 Browser Use 的入口。
+- 整页端到端测试由脚本座位回放日志驱动；`infra/boot/` 暴露的全局 API 同时作为测试与 Browser Use 的入口。
 - 模组：在无界面对局中按 YAML 夹具加载模组，与黄金回放一起运行。
 
 ## 客户端数据流

@@ -23,8 +23,6 @@ API 分查询、命令、订阅三类。每一项都有一个 valibot schema，�
 | `debug.field.set` | 修改单位属性（生命、技力、攻击…）或玩家数值（LP、资金、等级） | 战场，服务端执行 |
 | `debug.match.skip` | 跳到下一阶段或指定回合 | 对局，服务端执行 |
 | `debug.match.pause`、`debug.match.step` | 暂停、按 tick 单步 | 对局，服务端执行 |
-| `debug.ui.language` | 切换界面语言 | 客户端 |
-| `debug.ui.highlight`、`debug.ui.isolate` | 高亮部件或容器；只渲染某个部件 | 客户端 |
 | `debug.ui.fail` | 让某个部件抛错，检验错误边界与安全模式 | 客户端 |
 
 ### 订阅

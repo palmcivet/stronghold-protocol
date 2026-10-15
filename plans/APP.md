@@ -22,7 +22,7 @@
 - 资源只经资源键与 `infra/resource/` 申请，不解析地址。
 - 所有 `g.*`、`room.*` 与扩展消息经意图总线发出，界面不直接调用连接。
 - 目录与文件用名词、kebab-case（`preparation`、`panel`、`observation`）。
-- `infra/boot/` 露出全局 API（加入房间、提交意图、读取当前视图），供 `deployment` 的页面脚本、社区外壳与端到端测试调用。
+- `infra/boot/` 露出全局 API `window.wsde`（加入房间、提交意图、读取当前视图），供 `deployment` 的页面脚本、社区外壳与端到端测试调用；DEV 下同一对象混入 `infra/debug` 叠层方法。
 
 客户端的技术规格（目录与分层、连接、路由、外壳、部件、存储、样式、文案、音频等）以文档为准，本文只留计划与文档未收的内容。
 
@@ -30,7 +30,7 @@
 
 ```text
 alliance/client/
-  infra/       connection/ router/ store/ storage/ intent/ resource/ audio/ text/ theme/ boot/
+  infra/       connection/ router/ store/ storage/ settings/ platform/ intent/ resource/ audio/ text/ theme/ boot/
   ui/          宿主基础组件（React Aria）与游戏专用小件，导出给模组
   part/        部件注册表、<Part id>、错误边界、布局树
   shell/       外壳：菜单入口部件、连接横幅、提示、浮层、对话框层
@@ -66,7 +66,7 @@ alliance/client/
 - 玩法说明：内容保持占位观感，待用户审阅后再定。
 - 连接横幅的「服务器已更新」提示（master `ui/buildGuard.js`）未实现。
 - 干员调配：列表的职业、盟约筛选；详情的属性预览、语音试听、导入导出未做。
-- 个人配置：master 设置里的语音语言、伤害数字、特效数量等不再扩充（`display` 已有的画质与文字大小保持现状），等模组设置方案定下后再定归属。
+- 个人配置：官方段为 `core:identity` / `core:display` / `core:audio` / `core:keys`（`infra/settings`）；原单体 `wsde:device:core:settings` v2 启动时拆进四段（含 `safeAreaUi`）。master 的语音语言、伤害数字、特效数量等不再扩充。模组自有设置段随扩展系统用 `defineSettingSection` 挂上。平台能力在 `infra/platform`（`probe` / `getPlatform`），与 welcome `Capabilities` 分开。
 - 视觉布局：用户逐页重新设计；结算主布局已按 master 移植骨架，细节皮与资源图标仍待审阅。仍不如 master 的全视觉皮、844×390 商店高度与密度、联防 ×N / pending 红塔动效、官方立绘/评语图标等，随布局审阅一并定。
 - 视觉布局：844×390（手机横屏）下对局 HUD 的商店栏占去大半高度，战场偏小；等用户审阅布局后再定。
 - 对局层叠：match HUD 已改为绝对叠在全屏 `mission-renderer` 舞台上（对齐 master `.gm__field` / `.gm__hud`）；机位内边距按真实 HUD 占位量。目录风味标签（如 `infection`）已注册；`battleSpecOf` 按 master 数组路线 + `routeIndex` / `start:[row,col]` 映射刷怪，本机演算快照进舞台、appearances 绑定，作战单位可见。装饰性边缘模型完整度与全视觉皮仍待审阅。
@@ -104,7 +104,7 @@ alliance/client/
 
 ## 战场接线
 
-已落地部分（舞台接线、数据规范化、`BattleSpec` 地形与风机、`skillBankOf` 选取辅助、地面半场与备战手势）见 `docs/alliance/client/14-field.md`、`13-audio.md`、`docs/alliance/data/02-compiler.md`、`docs/alliance/compat/04-battle.md`。下列仍推迟：
+已落地部分（舞台接线、数据规范化、`BattleSpec` 地形与风机、`skillBankOf` 选取辅助、地面半场与备战手势）见 `docs/alliance/maintain/client/14-field.md`、`docs/alliance/maintain/client/13-audio.md`、`docs/alliance/maintain/data/02-compiler.md`、`docs/alliance/maintain/compat/04-battle.md`。下列仍推迟：
 
 - 真实 `MissionAppearance`、`json:anim-roles/<seasonId>`、法线/粗糙度等 `colorSpace: "linear"` 贴图、以及 `modelScaleY` / `mirrorX` / 敌人缩放偏移编成的 `json:prefab/*`（不计入 `contentHash`）。当前用占位管线与 catalog 缩放。
 - WebGL + 地面阴影的截图验收（renderer 单测只覆盖无渲染器时不投影）；用真实赛季数据跑通演员/头顶条/特效/音效/地形后随报告提交截图。
@@ -155,7 +155,7 @@ alliance/client/
 ## 测试迁移
 
 - 单文件界面逻辑用 `.test.ts` 放在代码边上，多文件的进 `alliance/client/test` 用 `.spec.ts`，来源 `test/ui/*.test.js`。
-- 整页用例进 `alliance/scenario`，用 `.e2e.ts`，来源 `test/ui/*.e2e.test.js` 与 `test/e2e/`。
+- 整页用例（来源 `test/ui/*.e2e.test.js` 与 `test/e2e/`）的目录尚未单列。
 - `test/render/` 中依赖商店、手牌与拖放的用例（`drag`、`pen`、`playtest6-promote`）进 `alliance/client/test`；只喂快照与事件的属于 renderer。
 - 音频用例随 `infra/audio/` 的新混音接口改写；表情用例 `test/ui/emotes*.js` 随 `match/hud/`。
 - 依赖全局 `PIXI` 或 `@pixi-spine/*` 的加载用例不迁移。
