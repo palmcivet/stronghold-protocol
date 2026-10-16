@@ -1,17 +1,14 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "./tsconfig.json",
   "compilerOptions": {
-    "lib": ["es2024", "dom", "dom.iterable"],
-    "types": ["node", "vite/client"],
-    "customConditions": ["@wsde/source"],
-    "rootDir": ".",
     "composite": false,
     "incremental": false,
     "declaration": false,
     "declarationMap": false,
     "sourceMap": false,
     "noEmit": true,
-    "jsx": "react-jsx"
+    "outDir": null,
+    "tsBuildInfoFile": null
   },
   "include": ["**/*.test.ts", "**/*.spec.ts", "**/*.test.tsx", "**/*.spec.tsx"],
   "exclude": [

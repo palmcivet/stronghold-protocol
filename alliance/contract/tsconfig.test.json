@@ -1,16 +1,15 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "./tsconfig.json",
   "compilerOptions": {
-    "lib": ["es2024"],
-    "types": ["node"],
-    "customConditions": ["@wsde/source"],
     "rootDir": ".",
     "composite": false,
     "incremental": false,
     "declaration": false,
     "declarationMap": false,
     "sourceMap": false,
-    "noEmit": true
+    "noEmit": true,
+    "outDir": null,
+    "tsBuildInfoFile": null
   },
   "include": ["test/**/*.test.ts", "test/**/*.spec.ts"],
   "exclude": ["dist", "dist-test", "node_modules", "**/vitest.config.ts"]

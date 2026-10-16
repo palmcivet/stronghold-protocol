@@ -1,5 +1,5 @@
 ---
-title: "@alliance/client"
+title: 客户端
 description: 盟约的浏览器客户端：技术栈、目录分层，以及各页说明。
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: "@alliance/compat-upstream"
+title: 上游兼容
 description: 客户端连接 master 后端时的资源表、目录与战斗适配，以及上游 master 用例与引擎规则在 next 里的去向。
 ---
 

@@ -8,26 +8,26 @@
   "exports": {
     "./static-policy": {
       "@wsde/source": "./client/config/static-policy.ts",
-      "types": "./client/config/dist/static-policy.d.ts",
-      "import": "./client/config/dist/static-policy.js",
-      "default": "./client/config/dist/static-policy.js"
+      "types": "./client/dist/config/static-policy.d.ts",
+      "import": "./client/dist/config/static-policy.js",
+      "default": "./client/dist/config/static-policy.js"
     }
   },
   "imports": {
     "#static-policy.js": {
       "@wsde/source": "./client/config/static-policy.ts",
-      "default": "./client/config/dist/static-policy.js"
+      "default": "./client/dist/config/static-policy.js"
     }
   },
   "scripts": {
-    "build": "tsc -b client/config",
+    "build": "tsc -b client",
     "check": "pnpm check:src && pnpm check:test",
-    "check:src": "tsc -p client/config --noEmit --incremental false --composite false",
-    "check:test": "tsc -p client/config/tsconfig.test.json",
-    "clean": "rimraf client/config/dist client/config/dist-test client/config/tsconfig.test.tsbuildinfo",
+    "check:src": "tsc -p client --noEmit --incremental false --composite false",
+    "check:test": "tsc -p client/tsconfig.test.json",
+    "clean": "rimraf client/dist client/dist-test client/tsconfig.test.tsbuildinfo",
     "format": "biome check --write",
     "lint": "biome lint",
-    "test": "vitest run --root client/config"
+    "test": "vitest run --root client"
   },
   "dependencies": {
     "@alliance/data": "workspace:*"

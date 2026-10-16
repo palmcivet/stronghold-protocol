@@ -17,7 +17,7 @@
     { "path": "./alliance/server/tsconfig.test.json" },
     { "path": "./alliance/client" },
     { "path": "./alliance/client/tsconfig.test.json" },
-    { "path": "./deployment/client/config" },
-    { "path": "./deployment/client/config/tsconfig.test.json" }
+    { "path": "./deployment/client/tsconfig.json" },
+    { "path": "./deployment/client/tsconfig.test.json" }
   ]
 }

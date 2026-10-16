@@ -1,7 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["es2024"],
     "types": ["node"],
     "customConditions": ["@wsde/source"],
     "outDir": "dist",
@@ -16,10 +15,5 @@
     "**/*.test.ts",
     "**/*.spec.ts",
     "vitest.config.ts"
-  ],
-  "references": [
-    { "path": "../contract" },
-    { "path": "../data" },
-    { "path": "../../mission-core" }
   ]
 }

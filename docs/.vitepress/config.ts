@@ -9,8 +9,9 @@ import type {
   SidebarMulti,
   VitePressSidebarOptions,
 } from 'vitepress-sidebar/types';
-import { noticeLinks } from './plugins/notice-links';
-import { typecheck } from './plugins/typecheck';
+import { noticeLinks } from './plugins/notice-links.js';
+import { typecheck } from './plugins/typecheck.js';
+import { renderTraceSection, traceSourceFiles } from './trace-page.js';
 
 const docsRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -275,13 +276,34 @@ const examples = typecheck({
     .map((section) => section.name),
 });
 
-const sourceConditions = ['@wsde/source', 'import', 'module', 'default'];
-
 export default defineConfig({
-  // Resolve workspace TypeScript packages to their `@wsde/source` entry (e.g. `@alliance/compat-upstream/trace`).
   vite: {
-    resolve: { conditions: sourceConditions },
-    ssr: { resolve: { conditions: sourceConditions } },
+    plugins: [
+      {
+        name: 'trace-entries',
+        enforce: 'pre',
+        async transform(code, id) {
+          if (!id.endsWith('alliance/maintain/compat/03-trace.md')) {
+            return;
+          }
+          for (const file of traceSourceFiles()) {
+            this.addWatchFile(file);
+          }
+          let next = code;
+          for (const match of code.matchAll(
+            /<!-- trace-entries:([a-z-]+) -->/g,
+          )) {
+            const pkg = match[1];
+            if (pkg === undefined) {
+              continue;
+            }
+            const section = await renderTraceSection(pkg);
+            next = next.replace(match[0], () => section);
+          }
+          return next;
+        },
+      },
+    ],
   },
   title: '卫戍协议：盟约',
   description: 'Stronghold Protocol: Alliance 的项目文档',
