@@ -11,12 +11,12 @@
     flex-direction: column;
     align-items: flex-start;
     gap: var(--wsde-space-1);
-    min-height: var(--wsde-size-touch);
+    min-height: calc(var(--wsde-dp) * 44);
     padding: var(--wsde-space-1);
-    border: 1px dashed var(--wsde-color-line-2);
-    font-size: var(--wsde-font-size-xs);
+    border: 1px dashed var(--wsde-color-border-default);
+    font-size: var(--wsde-font-size-caption);
     overflow: hidden;
-    background: var(--wsde-color-bg-2);
+    background: var(--wsde-palette-gray-800);
     text-align: start;
   }
 
@@ -39,14 +39,14 @@
   .itemMark {
     position: absolute;
     transform: translate(-50%, -50%);
-    width: var(--wsde-size-touch);
-    height: var(--wsde-size-touch);
+    width: calc(var(--wsde-dp) * 44);
+    height: calc(var(--wsde-dp) * 44);
     display: grid;
     place-items: center;
   }
 
   .itemMark[data-equipped] {
-    width: calc(var(--wsde-size-touch) * 0.55);
-    height: calc(var(--wsde-size-touch) * 0.55);
+    width: calc(calc(var(--wsde-dp) * 44) * 0.55);
+    height: calc(calc(var(--wsde-dp) * 44) * 0.55);
   }
 }

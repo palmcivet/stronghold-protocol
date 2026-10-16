@@ -70,7 +70,7 @@ describe('menu entry', () => {
     render(<RouterProvider router={router} />);
     fireEvent.click(await screen.findByRole('button', { name: '菜单' }));
     expect(
-      screen.getAllByRole('menuitem').map((item) => item.textContent),
+      screen.getAllByRole('option').map((item) => item.textContent),
     ).toEqual(['大厅', '个人配置', '个人配置', '玩法说明', '玩法说明']);
   });
 
@@ -80,7 +80,7 @@ describe('menu entry', () => {
     await router.load();
     render(<RouterProvider router={router} />);
     fireEvent.click(await screen.findByRole('button', { name: '菜单' }));
-    const items = screen.getAllByRole('menuitem');
+    const items = screen.getAllByRole('option');
     // the routes, then the core dialogs; the loadout dialog needs the backend's loadout capability
     expect(items.map((item) => item.textContent)).toEqual([
       '个人配置',
@@ -100,7 +100,7 @@ describe('menu dialog items', () => {
     await router.load();
     render(<RouterProvider router={router} />);
     fireEvent.click(await screen.findByRole('button', { name: '菜单' }));
-    const items = screen.getAllByRole('menuitem');
+    const items = screen.getAllByRole('option');
     // order 20 twice: the route '/a', then the profile dialog
     fireEvent.click(items[2] as HTMLElement);
     await new Promise((resolve) => setTimeout(resolve, 0));

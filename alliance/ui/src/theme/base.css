@@ -1,0 +1,219 @@
+@layer reset, tokens, base, components, mods, overrides;
+
+@layer reset {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #app {
+    margin: 0;
+    height: 100%;
+  }
+
+  body {
+    padding: 0;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+
+  h1,
+  h2,
+  h3,
+  p,
+  ul,
+  ol {
+    margin: 0;
+  }
+
+  ul,
+  ol {
+    padding: 0;
+    list-style: none;
+  }
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+    background: var(--wsde-color-surface-base);
+    color: var(--wsde-color-text-primary);
+    font-family: var(--wsde-font-body);
+    line-height: 1.5;
+    /* Default scale of the design canvas; a host that fits a canvas overrides it. */
+    --wsde-scale: 1;
+    --wsde-dp: calc(var(--wsde-scale) * 1px);
+    --wsde-text-factor: 1;
+    --wsde-text-dp: calc(var(--wsde-dp) * var(--wsde-text-factor));
+  }
+
+  :root[data-text="sm"] {
+    --wsde-text-factor: 1;
+  }
+
+  :root[data-text="md"] {
+    --wsde-text-factor: 1.125;
+  }
+
+  :root[data-text="lg"] {
+    --wsde-text-factor: 1.25;
+  }
+
+  :root[data-text="xl"] {
+    --wsde-text-factor: 1.375;
+  }
+
+  /* Unspecified text, including buttons and popups portaled to the body, follows the body size. */
+  body {
+    font-size: var(--wsde-font-size-body);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--wsde-color-focus);
+    outline-offset: 2px;
+  }
+
+  .wsde-num {
+    font-family: var(--wsde-font-number);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .wsde-display {
+    font-family: var(--wsde-font-display);
+    font-stretch: 125%;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  /* A tone picked on an element: its descendants read `--wsde-tone-*`. */
+  [data-tone="accent"] {
+    --wsde-tone-base: var(--wsde-tone-accent-base);
+    --wsde-tone-strong: var(--wsde-tone-accent-strong);
+    --wsde-tone-soft: var(--wsde-tone-accent-soft);
+    --wsde-tone-glow: var(--wsde-tone-accent-glow);
+    --wsde-tone-contrast: var(--wsde-tone-accent-contrast);
+  }
+
+  [data-tone="gold"] {
+    --wsde-tone-base: var(--wsde-tone-gold-base);
+    --wsde-tone-strong: var(--wsde-tone-gold-strong);
+    --wsde-tone-soft: var(--wsde-tone-gold-soft);
+    --wsde-tone-glow: var(--wsde-tone-gold-glow);
+    --wsde-tone-contrast: var(--wsde-tone-gold-contrast);
+  }
+
+  [data-tone="amber"] {
+    --wsde-tone-base: var(--wsde-tone-amber-base);
+    --wsde-tone-strong: var(--wsde-tone-amber-strong);
+    --wsde-tone-soft: var(--wsde-tone-amber-soft);
+    --wsde-tone-glow: var(--wsde-tone-amber-glow);
+    --wsde-tone-contrast: var(--wsde-tone-amber-contrast);
+  }
+
+  [data-tone="orange"] {
+    --wsde-tone-base: var(--wsde-tone-orange-base);
+    --wsde-tone-strong: var(--wsde-tone-orange-strong);
+    --wsde-tone-soft: var(--wsde-tone-orange-soft);
+    --wsde-tone-glow: var(--wsde-tone-orange-glow);
+    --wsde-tone-contrast: var(--wsde-tone-orange-contrast);
+  }
+
+  [data-tone="danger"] {
+    --wsde-tone-base: var(--wsde-tone-danger-base);
+    --wsde-tone-strong: var(--wsde-tone-danger-strong);
+    --wsde-tone-soft: var(--wsde-tone-danger-soft);
+    --wsde-tone-glow: var(--wsde-tone-danger-glow);
+    --wsde-tone-contrast: var(--wsde-tone-danger-contrast);
+  }
+
+  [data-tone="ice"] {
+    --wsde-tone-base: var(--wsde-tone-ice-base);
+    --wsde-tone-strong: var(--wsde-tone-ice-strong);
+    --wsde-tone-soft: var(--wsde-tone-ice-soft);
+    --wsde-tone-glow: var(--wsde-tone-ice-glow);
+    --wsde-tone-contrast: var(--wsde-tone-ice-contrast);
+  }
+
+  [data-tone="neutral"] {
+    --wsde-tone-base: var(--wsde-tone-neutral-base);
+    --wsde-tone-strong: var(--wsde-tone-neutral-strong);
+    --wsde-tone-soft: var(--wsde-tone-neutral-soft);
+    --wsde-tone-glow: var(--wsde-tone-neutral-glow);
+    --wsde-tone-contrast: var(--wsde-tone-neutral-contrast);
+  }
+
+  /**
+   * Four L-shaped corners drawn on `::after`, in the tone of the element.
+   * Set `--wsde-bracket-size` (arm length) and `--wsde-bracket-inset` to fit the element.
+   */
+  .wsde-brackets {
+    --wsde-bracket-color: var(--wsde-tone-base, var(--wsde-tone-accent-base));
+    --wsde-bracket-size: calc(var(--wsde-dp) * 14);
+    position: relative;
+  }
+
+  .wsde-brackets::after {
+    content: "";
+    position: absolute;
+    inset: var(--wsde-bracket-inset, -1px);
+    pointer-events: none;
+    background:
+      linear-gradient(var(--wsde-bracket-color), var(--wsde-bracket-color)) top
+      left / var(--wsde-bracket-size) var(--wsde-stroke-thick) no-repeat,
+      linear-gradient(var(--wsde-bracket-color), var(--wsde-bracket-color)) top
+      left / var(--wsde-stroke-thick) var(--wsde-bracket-size) no-repeat,
+      linear-gradient(var(--wsde-bracket-color), var(--wsde-bracket-color)) top
+      right / var(--wsde-bracket-size) var(--wsde-stroke-thick) no-repeat,
+      linear-gradient(var(--wsde-bracket-color), var(--wsde-bracket-color)) top
+      right / var(--wsde-stroke-thick) var(--wsde-bracket-size) no-repeat,
+      linear-gradient(var(--wsde-bracket-color), var(--wsde-bracket-color))
+      bottom left / var(--wsde-bracket-size) var(--wsde-stroke-thick) no-repeat,
+      linear-gradient(var(--wsde-bracket-color), var(--wsde-bracket-color))
+      bottom left / var(--wsde-stroke-thick) var(--wsde-bracket-size) no-repeat,
+      linear-gradient(var(--wsde-bracket-color), var(--wsde-bracket-color))
+      bottom right / var(--wsde-bracket-size) var(--wsde-stroke-thick) no-repeat,
+      linear-gradient(var(--wsde-bracket-color), var(--wsde-bracket-color))
+      bottom right / var(--wsde-stroke-thick) var(--wsde-bracket-size) no-repeat;
+  }
+
+  /* Icons follow the text they sit in. */
+  svg[data-icon] {
+    width: 1em;
+    height: 1em;
+    flex: none;
+  }
+
+  .wsde-visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :root {
+      --wsde-motion: 0;
+    }
+
+    *,
+    *::before,
+    *::after {
+      /* biome-ignore lint/complexity/noImportantStyles: an important declaration in the reset layer outranks every later layer */
+      transition-duration: 0s !important;
+      /* biome-ignore lint/complexity/noImportantStyles: as above */
+      animation-duration: 0s !important;
+    }
+  }
+}

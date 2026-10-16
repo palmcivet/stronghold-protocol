@@ -328,6 +328,15 @@ export const ASSET_RULES: readonly AssetRule[] = [
   // MARK: ui
   {
     action: 'map',
+    name: 'ui.backdrop',
+    location: ['ui', 'entry/bkg_01'],
+    value: 'text',
+    pattern: /^\/assets\/ui\/(entry\/bkg_01)\.png$/,
+    key: (context) => `image:ui/${captureOf(context.captures, 1)}`,
+    ref: () => ['backdrop'],
+  },
+  {
+    action: 'map',
     name: 'ui',
     location: ['ui', ANY],
     value: 'text',

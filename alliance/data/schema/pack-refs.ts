@@ -92,6 +92,8 @@ export type SeasonRefs = {
   readonly items?: KeyMap;
   /** Animation role table of the season. */
   readonly animRoles?: AssetKey;
+  /** Full-viewport plate behind every page. */
+  readonly backdrop?: AssetKey;
   readonly board?: BoardRefs;
 };
 
@@ -126,6 +128,7 @@ const SEASON_FIELDS: Readonly<Record<keyof SeasonRefs, Shape>> = {
   bonds: KEY_MAP,
   items: KEY_MAP,
   animRoles: KEY,
+  backdrop: KEY,
   board: fields({ theme: KEY }),
 };
 

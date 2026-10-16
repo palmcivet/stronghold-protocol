@@ -1,0 +1,39 @@
+import { FeedbackDemo } from './feedback.demo.js';
+
+# FeedbackProvider
+
+## 色调与尺寸类型
+
+组件在按下与切换时播放短音效，音效由宿主注入。`FeedbackProvider` 给出播放函数；没有提供时，调用什么都不发生。
+
+| 音效角色 | 触发位置 |
+| --- | --- |
+| `ui.click` | `Button` 按下 |
+| `ui.tab` | `ToggleButton`、`Segmented`、`Tabs` 切换 |
+
+:::code-group
+
+<div data-title="Preview">
+
+<div className="wsde-doc-preview">
+
+<FeedbackDemo />
+
+</div>
+
+</div>
+
+```tsx [Code]
+<FeedbackProvider play={(role) => audio.play(role)}>
+  {children}
+</FeedbackProvider>
+```
+
+:::
+
+`PlayFeedback` 的类型为 `(role: 'ui.click' | 'ui.tab') => void`。组件只声明角色，播放什么声音由宿主决定。
+
+- `ToneName`：`'accent' | 'gold' | 'amber' | 'orange' | 'danger' | 'ice' | 'neutral'`，对应主题里的色调组，见 [主题与令牌](/theme)。
+- `ControlSize`：`'sm' | 'md' | 'lg' | 'xl'`，对应控件高度令牌 `size.sm` 到 `size.xl`。
+
+`cx(...names)` 拼接类名，跳过空值。它从包入口导出，供应用侧的样式拼接使用。

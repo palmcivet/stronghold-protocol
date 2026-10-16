@@ -1,0 +1,34 @@
+import { GridDemo } from './grid.demo.js';
+
+# Grid
+
+等分的格子，填满一行，每格至少 `min` 个设计像素宽。
+
+:::code-group
+
+<div data-title="Preview">
+
+<div className="wsde-doc-preview">
+
+<GridDemo />
+
+</div>
+
+</div>
+
+```tsx [Code]
+import { Grid } from '@alliance/ui';
+
+<Grid columns={3} gap="md">
+  <Card title="一" />
+  <Card title="二" />
+  <Card title="三" />
+</Grid>
+```
+
+:::
+
+| 属性 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `gap` | `Space` | — | 格子之间的间距 |
+| `min` | `number` | `192` | 每格的最小宽度，单位为设计像素 |

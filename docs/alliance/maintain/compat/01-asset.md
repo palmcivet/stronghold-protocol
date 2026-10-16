@@ -56,6 +56,8 @@ description: 从 master 后端的 assets.json 读出资源，哪些地址能映�
   - 领域引用：`prof.icon.<prof>` 等
 - `ui.<path>` → `image:ui/<path>`
   - 领域引用：无
+- `ui.entry/bkg_01` → `image:ui/entry/bkg_01`
+  - 领域引用：`backdrop`（页面背景图）
 
 ### 音频 `audio`
 

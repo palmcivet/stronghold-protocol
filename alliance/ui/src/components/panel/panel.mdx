@@ -1,0 +1,61 @@
+import { PanelDemo, PanelGlowDemo } from './panel.demo.js';
+
+# Panel
+
+带标题的区域。框体外是四角角标，标题上方可以有英文微标签，头部右侧可以放操作。
+
+:::code-group
+
+<div data-title="Preview">
+
+<div className="wsde-doc-preview">
+
+<PanelDemo />
+
+</div>
+
+</div>
+
+```tsx [Code]
+import { Button, Panel } from '@alliance/ui';
+
+<Panel title="同盟大厅" micro="LOBBY" tone="amber" actions={<Button>刷新</Button>}>
+  选择模式与难度后创建同盟。
+</Panel>
+```
+
+:::
+
+:::code-group
+
+<div data-title="Preview">
+
+<div className="wsde-doc-preview">
+
+<PanelGlowDemo />
+
+</div>
+
+</div>
+
+```tsx [Code]
+import { Panel } from '@alliance/ui';
+
+<Panel title="决策中" tone="accent" glow>
+  当前玩家正在选择策略。
+</Panel>
+```
+
+:::
+
+| 属性 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `title` | `string` | — | 标题，作为区域的无障碍名称 |
+| `level` | `2 \| 3` | `2` | 标题的标题级别 |
+| `micro` | `string` | — | 标题上方的英文微标签 |
+| `tone` | `ToneName` | `'accent'` | 角标的色调 |
+| `glow` | `boolean` | `false` | 外围的光晕与带色的边 |
+| `flush` | `boolean` | `false` | 正文不留内边距，用于内容自带边距的情况 |
+| `actions` | `ReactNode` | — | 头部右侧的控件 |
+
+面板是一个 `section`，由标题给出名称。

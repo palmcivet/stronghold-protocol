@@ -1,4 +1,18 @@
 import { APP_VERSION, NAME_MAX_LEN } from '@alliance/contract/match.js';
+import {
+  Button,
+  Card,
+  Cluster,
+  cx,
+  Hotkey,
+  Segmented,
+  Slider,
+  Stack,
+  Switch,
+  Text,
+  TextField,
+  ToggleButton,
+} from '@alliance/ui';
 import { useEffect, useMemo, useState } from 'react';
 import { useStore } from 'zustand';
 import { keymapStore } from '#infra/intent/keymap.js';
@@ -27,25 +41,11 @@ import {
   shownName,
   useText,
 } from '#infra/text/index.js';
-import { cx } from '#infra/theme/class-name.js';
 import { PlayerAvatar } from '#part/art.js';
 import { DIALOG } from '#part/dialog.js';
 import { definePart } from '#part/registry.js';
 import { insertPart } from '#part/slot.js';
 import { PartTabs } from '#part/tabs.js';
-import {
-  Button,
-  ChoiceGroup,
-  Cluster,
-  Hotkey,
-  Item,
-  Muted,
-  Slider,
-  Stack,
-  Switch,
-  TextField,
-  ToggleButton,
-} from '#ui/index.js';
 import styles from './profile.module.css';
 
 export const PROFILE = {
@@ -99,7 +99,7 @@ function Identity() {
   return (
     <Stack>
       <Cluster align="end">
-        <PlayerAvatar avatar={avatar} name={name || '?'} size="lg" framed />
+        <PlayerAvatar avatar={avatar} name={name || '?'} size="lg" active />
         <TextField
           label={t('core:title.name')}
           value={name}
@@ -107,7 +107,7 @@ function Identity() {
           onChange={(value) => settingsStore.setState({ name: value })}
         />
       </Cluster>
-      <ChoiceGroup
+      <Segmented
         label={t('core:profile.avatar')}
         value={avatar}
         onChange={(value) => settingsStore.setState({ avatar: value })}
@@ -128,7 +128,7 @@ function LanguageSetting() {
   const t = useText();
   const language = useSettings((state) => state.language);
   return (
-    <ChoiceGroup
+    <Segmented
       label={t('core:settings.language')}
       value={language}
       onChange={(value) =>
@@ -172,7 +172,7 @@ function KeyBindingRow({
     return () => window.removeEventListener('keydown', onKey);
   }, [waiting, id]);
   return (
-    <Item>
+    <Card as="li" layout="row">
       <span>{lookup(label)}</span>
       <Button onPress={() => setWaiting(true)} aria-live="polite">
         {waiting ? (
@@ -183,7 +183,7 @@ function KeyBindingRow({
           '—'
         )}
       </Button>
-    </Item>
+    </Card>
   );
 }
 
@@ -202,7 +202,7 @@ function Keys() {
           />
         ))}
       </Stack>
-      <Muted>{t('core:profile.key.hint')}</Muted>
+      <Text kind="muted">{t('core:profile.key.hint')}</Text>
     </Stack>
   );
 }
@@ -216,7 +216,7 @@ function Display() {
   }));
   return (
     <Stack>
-      <ChoiceGroup
+      <Segmented
         label={t('core:profile.quality')}
         value={quality}
         onChange={(value) =>
@@ -227,7 +227,7 @@ function Display() {
           label: t(`core:profile.quality.${value}`),
         }))}
       />
-      <ChoiceGroup
+      <Segmented
         label={t('core:profile.textSize')}
         value={textSize}
         onChange={(value) =>
@@ -238,14 +238,16 @@ function Display() {
           label: t(`core:profile.textSize.${value}`),
         }))}
       />
-      <Muted>{t('core:profile.textSize.hint')}</Muted>
+      <Text kind="muted">{t('core:profile.textSize.hint')}</Text>
       <Switch
+        onText={t('core:common.on')}
+        offText={t('core:common.off')}
         isSelected={safeAreaUi}
         onChange={(on) => settingsStore.setState({ safeAreaUi: on })}
       >
         {t('core:profile.safeAreaUi')}
       </Switch>
-      <Muted>{t('core:profile.safeAreaUi.hint')}</Muted>
+      <Text kind="muted">{t('core:profile.safeAreaUi.hint')}</Text>
     </Stack>
   );
 }
@@ -338,7 +340,7 @@ function Feedback() {
         <Button onPress={() => void copy()}>
           {t('core:profile.feedback.copy')}
         </Button>
-        <Muted>{ISSUES_URL.replace(/^https:\/\//, '')}</Muted>
+        <Text kind="muted">{ISSUES_URL.replace(/^https:\/\//, '')}</Text>
       </Cluster>
       {note ? <p role="status">{t(`core:profile.feedback.${note}`)}</p> : null}
       {manual ? (
@@ -363,7 +365,7 @@ function ProfileLayout() {
         label={t('core:nav.profile')}
         orientation="vertical"
       />
-      <Muted>{t('core:profile.local')}</Muted>
+      <Text kind="muted">{t('core:profile.local')}</Text>
     </section>
   );
 }

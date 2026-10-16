@@ -1,3 +1,4 @@
+import { Button, ListBox, Popover, PopoverTrigger } from '@alliance/ui';
 import { useNavigate, useRouter } from '@tanstack/react-router';
 import { useStore } from 'zustand';
 import { menuItems, menuKey } from '#infra/router/menu.js';
@@ -6,7 +7,6 @@ import { sessionStore } from '#infra/store/session.js';
 import { lookup, useText } from '#infra/text/index.js';
 import { dialogStore, openDialog } from '#part/dialog.js';
 import { matches } from '#part/slot.js';
-import { ActionMenu } from '#ui/index.js';
 
 /** Id of the menu entry part. Page layouts place it in their own regions; mods move, replace or add beside it. */
 export const MENU_ENTRY = 'core:menu.entry';
@@ -30,20 +30,28 @@ export function MenuEntry() {
     return null;
   }
   return (
-    <ActionMenu
-      label={t('core:menu.label')}
-      items={items.map((item) => ({
-        id: menuKey(item),
-        label: lookup(item.label),
-      }))}
-      onAction={(key) => {
-        const item = items.find((entry) => menuKey(entry) === key);
-        if (item?.kind === 'dialog') {
-          void openDialog(item.dialog);
-        } else if (item) {
-          void navigate({ to: item.path });
-        }
-      }}
-    />
+    <PopoverTrigger>
+      <Button>{t('core:menu.label')}</Button>
+      <Popover label={t('core:menu.label')}>
+        {(close) => (
+          <ListBox
+            label={t('core:menu.label')}
+            items={items.map((item) => ({
+              id: menuKey(item),
+              label: lookup(item.label),
+            }))}
+            onAction={(key) => {
+              close();
+              const item = items.find((entry) => menuKey(entry) === key);
+              if (item?.kind === 'dialog') {
+                void openDialog(item.dialog);
+              } else if (item) {
+                void navigate({ to: item.path });
+              }
+            }}
+          />
+        )}
+      </Popover>
+    </PopoverTrigger>
   );
 }

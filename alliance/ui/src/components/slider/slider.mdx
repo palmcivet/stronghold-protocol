@@ -1,0 +1,35 @@
+import { SliderDemo } from './slider.demo.js';
+
+# Slider
+
+滑块，拇指为六边形，旁边显示当前数值。
+
+:::code-group
+
+<div data-title="Preview">
+
+<div className="wsde-doc-preview">
+
+<SliderDemo />
+
+</div>
+
+</div>
+
+```tsx [Code]
+import { Slider } from '@alliance/ui';
+
+<Slider label="音量" value={50} onChange={() => {}} />
+```
+
+:::
+
+| 属性 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `label` | `string` | — | 名称，作为无障碍名称 |
+| `value` | `number` | — | 当前值 |
+| `onChange` | `(value: number) => void` | — | 拖动时调用 |
+| `minValue` | `number` | `0` | 最小值 |
+| `maxValue` | `number` | `100` | 最大值 |
+| `step` | `number` | `1` | 步长 |
+| `isDisabled` | `boolean` | `false` | 禁用 |

@@ -5,7 +5,7 @@
     gap: var(--wsde-space-2);
     margin: 0;
     aspect-ratio: 16 / 9;
-    max-height: 60vh;
+    max-height: calc(var(--wsde-dp) * 648);
   }
 
   .image {
@@ -16,7 +16,7 @@
   }
 
   .caption {
-    font-size: var(--wsde-font-size-lg);
+    font-size: var(--wsde-font-size-title);
   }
 
   .dots {
@@ -30,13 +30,13 @@
   .dot {
     width: var(--wsde-space-3);
     height: var(--wsde-space-3);
-    border: var(--wsde-stroke-thin) solid var(--wsde-color-line-3);
+    border: var(--wsde-stroke-thin) solid var(--wsde-color-border-strong);
     border-radius: var(--wsde-radius-round);
     background: transparent;
     cursor: pointer;
   }
 
   .dot[aria-current="page"] {
-    background: var(--wsde-color-accent-500);
+    background: var(--wsde-palette-mint-500);
   }
 }

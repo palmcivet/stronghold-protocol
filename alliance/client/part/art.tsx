@@ -1,11 +1,38 @@
 import type { CatalogChess } from '@alliance/contract/catalog.js';
-import type { ComponentProps } from 'react';
+import {
+  AvatarFrame,
+  type AvatarFrameProps,
+  Thumb,
+  type ThumbProps as UiThumbProps,
+} from '@alliance/ui';
 import { type ArtSource, useArt } from '#infra/resource/art.js';
 import { useCatalog } from '#infra/store/hook.js';
 import { dataName } from '#infra/text/index.js';
-import { Avatar, UnitThumb } from '#ui/index.js';
+import { tierColor } from '#part/badge.js';
 
-type ThumbProps = Omit<ComponentProps<typeof UnitThumb>, 'name' | 'src'>;
+/** What a unit, item or icon thumbnail takes: the tier colors the frame, an elite one has a halo. */
+type ThumbProps = Omit<UiThumbProps, 'name' | 'src' | 'color' | 'glow'> & {
+  readonly tier?: number;
+  readonly elite?: boolean;
+};
+
+/** A thumbnail in the frame of its tier. */
+function Tile({
+  tier,
+  elite = false,
+  ...props
+}: ThumbProps & Pick<UiThumbProps, 'name' | 'src'>) {
+  return (
+    <Thumb
+      {...props}
+      {...(tier === undefined ? {} : { color: tierColor(tier) })}
+      glow={elite}
+    />
+  );
+}
+
+/** Hues of the four seats, in degrees. */
+const SEAT_HUES = [162, 196, 38, 280] as const;
 
 /** The avatar ref of a chess: its operator's, the elite one for an elite chess. */
 export function chessArt(chess: CatalogChess | undefined): ArtSource | null {
@@ -35,7 +62,7 @@ export function ChessThumb({
       : chessArt(chess),
   );
   return (
-    <UnitThumb
+    <Tile
       name={
         label ??
         (charId ? dataName('operator', charId) : dataName('chess', chessId))
@@ -57,7 +84,7 @@ export function PieceThumb({
   if (kind === 'chess') {
     return <ChessThumb chessId={id} {...props} />;
   }
-  return <UnitThumb name={dataName('item', id)} src={src} {...props} />;
+  return <Tile name={dataName('item', id)} src={src} {...props} />;
 }
 
 /** An enemy thumbnail with its icon. */
@@ -67,16 +94,47 @@ export function EnemyThumb({
   ...props
 }: ThumbProps & { readonly enemyId: string | null; readonly name: string }) {
   const src = useArt(enemyId ? ['enemies', enemyId, 'icon'] : null);
-  return <UnitThumb name={name} src={src} {...props} />;
+  return <Tile name={name} src={src} {...props} />;
 }
 
-/** A player's avatar: the chosen operator art (`charId:refField`, see the profile), else the name's first letter. */
+/** A player's avatar: the chosen operator art (`charId:refField`, see the profile), else the name's first letter; marks for the host, yourself and a computer teammate. */
 export function PlayerAvatar({
   avatar,
+  seat = 0,
+  host = false,
+  self = false,
+  bot = false,
+  offline = false,
   ...props
-}: ComponentProps<typeof Avatar> & { readonly avatar?: string | null }) {
+}: Omit<
+  AvatarFrameProps,
+  'hue' | 'icon' | 'startMark' | 'endMark' | 'tag' | 'dimmed'
+> & {
+  readonly avatar?: string | null;
+  /** Seat number from 0; tints the plate behind a missing picture. */
+  readonly seat?: number;
+  /** The room's creator: a crown. */
+  readonly host?: boolean;
+  /** The viewer's own: marked and framed in the accent tone. */
+  readonly self?: boolean;
+  /** A computer teammate: a robot and an `AI` tag. */
+  readonly bot?: boolean;
+  /** Gone from the room: grey. */
+  readonly offline?: boolean;
+}) {
   const src = useArt(avatar || null);
-  return <Avatar {...props} src={src ?? props.src ?? null} />;
+  return (
+    <AvatarFrame
+      {...props}
+      src={src ?? props.src ?? null}
+      hue={SEAT_HUES[((Math.trunc(seat) % 4) + 4) % 4] ?? SEAT_HUES[0]}
+      active={props.active === true || self}
+      dimmed={offline}
+      {...(host ? { startMark: { icon: 'crown', tone: 'gold' } as const } : {})}
+      {...(self ? { endMark: { icon: 'user', tone: 'accent' } as const } : {})}
+      {...(bot ? { icon: 'bot' as const, tag: 'AI' } : {})}
+    />
+  );
 }
 
 /** A strategy's icon, its name as the label. */
@@ -85,7 +143,7 @@ export function BandIcon({
   ...props
 }: ThumbProps & { readonly bandId: string }) {
   const src = useArt(['bands', bandId]);
-  return <UnitThumb name={dataName('band', bandId)} src={src} {...props} />;
+  return <Tile name={dataName('band', bandId)} src={src} {...props} />;
 }
 
 /** A bond's icon, its name as the label. */
@@ -94,7 +152,7 @@ export function BondIcon({
   ...props
 }: ThumbProps & { readonly bondId: string }) {
   const src = useArt(['bonds', bondId]);
-  return <UnitThumb name={dataName('bond', bondId)} src={src} {...props} />;
+  return <Tile name={dataName('bond', bondId)} src={src} {...props} />;
 }
 
 /** A special-enemy type's badge. */
@@ -106,7 +164,5 @@ export function FactionIcon({
     (state) => state.catalog.factions?.[factionId]?.icon ?? null,
   );
   const src = useArt(icon);
-  return (
-    <UnitThumb name={dataName('faction', factionId)} src={src} {...props} />
-  );
+  return <Tile name={dataName('faction', factionId)} src={src} {...props} />;
 }

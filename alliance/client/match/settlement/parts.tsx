@@ -2,6 +2,7 @@ import type {
   ResultLineupEntry,
   ResultRow,
 } from '@alliance/contract/server-message.js';
+import { Badge, Button, Cluster, cx, Icon, Stack, Text } from '@alliance/ui';
 import { resetMatch } from '#infra/store/frame.js';
 import {
   useCatalog,
@@ -12,22 +13,17 @@ import {
 } from '#infra/store/hook.js';
 import { dispatchPresence } from '#infra/store/presence.js';
 import { dataName, lookup, shownName, useText } from '#infra/text/index.js';
-import { cx } from '#infra/theme/class-name.js';
-import { BandIcon, BondIcon, ChessThumb, EnemyThumb } from '#part/art.js';
+import {
+  BandIcon,
+  BondIcon,
+  ChessThumb,
+  EnemyThumb,
+  PlayerAvatar,
+} from '#part/art.js';
+import { DifficultyBadge } from '#part/badge.js';
+import { LpTower } from '#part/lp-tower.js';
 import { definePart, Part } from '#part/registry.js';
 import { Slot } from '#part/slot.js';
-import {
-  Avatar,
-  Badge,
-  Button,
-  Cluster,
-  DifficultyTag,
-  Icon,
-  LpTower,
-  Muted,
-  Num,
-  Stack,
-} from '#ui/index.js';
 import styles from './result.module.css';
 import {
   bestOf,
@@ -87,8 +83,8 @@ function Hero() {
     <header className={cx(styles.hero)} data-victory={victory || undefined}>
       <span className={cx(styles.brand)}>STRONGHOLD PROTOCOL</span>
       {difficulty ? (
-        <DifficultyTag
-          id={difficulty.toLowerCase()}
+        <DifficultyBadge
+          difficulty={difficulty}
           label={lookup(`core:difficulty.${difficulty}`)}
         />
       ) : null}
@@ -103,7 +99,7 @@ function Hero() {
           {t('core:result.rounds')}
         </span>
         <b className={cx(styles.roundsNum)}>
-          <Num>{result.roundsPassed}</Num>
+          <Text variant="number">{result.roundsPassed}</Text>
         </b>
         {lastRound !== null && result.roundsPassed <= lastRound ? (
           <span className={cx(styles.roundsOf)}>/{lastRound}</span>
@@ -185,11 +181,11 @@ function PlayerCard({
       data-off={player.alive === false || undefined}
     >
       <header className={cx(styles.cardHead)}>
-        <Avatar name={player.name} framed={self} />
+        <PlayerAvatar name={player.name} active={self} />
         <div className={cx(styles.cardWho)}>
           <b className={cx(styles.cardName)}>
             {player.name}
-            {player.isBot ? <Badge tone="info">AI</Badge> : null}
+            {player.isBot ? <Badge tone="ice">AI</Badge> : null}
             {self ? <Badge tone="accent">{t('core:result.you')}</Badge> : null}
           </b>
           <span className={cx(styles.cardBand)}>
@@ -228,7 +224,9 @@ function PlayerCard({
                   title={dataName('bond', bond.bondId)}
                 >
                   <BondIcon bondId={bond.bondId} size="sm" />
-                  {bond.layers === null ? null : <Num>{bond.layers}</Num>}
+                  {bond.layers === null ? null : (
+                    <Text variant="number">{bond.layers}</Text>
+                  )}
                 </span>
               ))}
             </div>
@@ -237,20 +235,20 @@ function PlayerCard({
         <div className={cx(styles.cardRound)}>
           <span className={cx(styles.brand)}>ROUNDS</span>
           <b>
-            <Num>{player.roundsPassed ?? 0}</Num>
+            <Text variant="number">{player.roundsPassed ?? 0}</Text>
           </b>
           {(player.trophies ?? 0) > 0 || (player.reward ?? 0) > 0 ? (
             <span className={cx(styles.cardGain)}>
               {(player.trophies ?? 0) > 0 ? (
                 <span title={t('core:result.trophies')}>
                   <Icon name="crown" />
-                  <Num>+{player.trophies}</Num>
+                  <Text variant="number">+{player.trophies}</Text>
                 </span>
               ) : null}
               {(player.reward ?? 0) > 0 ? (
                 <span title={t('core:result.reward')}>
                   <Icon name="shield" />
-                  <Num>+{player.reward}</Num>
+                  <Text variant="number">+{player.reward}</Text>
                 </span>
               ) : null}
             </span>
@@ -260,7 +258,7 @@ function PlayerCard({
           <div className={cx(styles.cardTitle)} title={player.title.text ?? ''}>
             <Icon name="crown" />
             <Stack gap={1}>
-              <Muted>{t('core:result.remark')}</Muted>
+              <Text kind="muted">{t('core:result.remark')}</Text>
               <b>{player.title.name}</b>
             </Stack>
           </div>
@@ -281,7 +279,7 @@ function PlayerCard({
           >
             <dt>{t(`core:result.stat.${key}`)}</dt>
             <dd>
-              <Num>{formatStat(player.stats?.[key])}</Num>
+              <Text variant="number">{formatStat(player.stats?.[key])}</Text>
             </dd>
           </div>
         ))}
@@ -315,7 +313,7 @@ function Players() {
   const rows = seatOrder(result?.players ?? []);
   const best = bestOf(rows);
   if (!rows.length) {
-    return <Muted>{t('core:result.empty')}</Muted>;
+    return <Text kind="muted">{t('core:result.empty')}</Text>;
   }
   return (
     <ul className={cx(styles.cards)}>

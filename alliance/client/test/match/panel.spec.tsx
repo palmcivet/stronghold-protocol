@@ -141,7 +141,7 @@ describe('emotes', () => {
       throw new Error('there is no official emote');
     }
     fireEvent.click(
-      await screen.findByRole('menuitem', { name: emoteName(first.id) }),
+      await screen.findByRole('option', { name: emoteName(first.id) }),
     );
     expect(sent).toEqual([{ type: 'g.emote', fields: { id: first.id } }]);
     expect(

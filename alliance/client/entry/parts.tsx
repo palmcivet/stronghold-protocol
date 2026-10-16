@@ -1,14 +1,14 @@
+import { Badge, Button, Cluster, cx, Icon, Region } from '@alliance/ui';
 import { PAGE } from '#infra/router/page.js';
 import { useSession, useSettings } from '#infra/store/hook.js';
 import { sessionStore } from '#infra/store/session.js';
 import { useText } from '#infra/text/index.js';
-import { cx } from '#infra/theme/class-name.js';
 import { PlayerAvatar } from '#part/art.js';
+import { PingBadge } from '#part/badge.js';
 import { DIALOG, openDialog } from '#part/dialog.js';
 import { definePart, Part } from '#part/registry.js';
 import { type PartInsert, Slot } from '#part/slot.js';
 import { MENU_ENTRY } from '#shell/menu.js';
-import { Badge, Button, Cluster, Icon, Region } from '#ui/index.js';
 import styles from './entry.module.css';
 import { CreateRoom, JoinRoom } from './lobby.js';
 import { ResumeSeat } from './resume.js';
@@ -37,7 +37,8 @@ function Hero() {
   );
 }
 
-function PingPill() {
+/** The connection's round trip, in the lobby topbar. */
+function LobbyPing() {
   const t = useText();
   const { ping, status } = useSession((state) => ({
     ping: state.connection.ping,
@@ -45,20 +46,16 @@ function PingPill() {
   }));
   const online = status === 'online';
   return (
-    <span
-      className={cx(styles.pingPill)}
-      data-online={online || undefined}
-      title={
+    <PingBadge
+      ms={ping}
+      online={online}
+      label={
         online && ping !== null
           ? t('core:entry.ping', { ms: Math.round(ping) })
           : t('core:lobby.ping.offline')
       }
-    >
-      <span className={cx(styles.pingDot)} aria-hidden="true" />
-      {online && ping !== null
-        ? t('core:lobby.ping.online', { ms: Math.round(ping) })
-        : t('core:lobby.ping.offline')}
-    </span>
+      offlineText={t('core:lobby.ping.offline')}
+    />
   );
 }
 
@@ -72,7 +69,7 @@ function ServerInfo() {
   const online = status === 'online';
   return (
     <Cluster gap={2} label={t('core:entry.server')}>
-      <Badge tone={online ? 'accent' : 'warn'}>
+      <Badge tone={online ? 'accent' : 'amber'}>
         {t(`core:entry.status.${online ? 'online' : 'offline'}`)}
       </Badge>
       {mode === null ? null : <span>{t(`core:entry.mode.${mode}`)}</span>}
@@ -128,7 +125,7 @@ function ToolIcon({
       title={label}
       onClick={onPress}
     >
-      <Icon name={icon} size="1rem" />
+      <Icon name={icon} size="calc(var(--wsde-dp) * 16)" />
     </button>
   );
 }
@@ -149,7 +146,7 @@ function LobbyTopbar() {
           <Icon name="chevron-left" />
           {t('core:common.back')}
         </Button>
-        <PingPill />
+        <LobbyPing />
         <span className={cx(styles.topbarSep)} aria-hidden="true" />
         <div className={cx(styles.topbarTools)}>
           <ToolIcon
@@ -170,8 +167,7 @@ function LobbyTopbar() {
       </div>
       <div className={cx(styles.topbarRight)}>
         <Part id={ENTRY.resume} />
-        <Button onPress={() => void openDialog(DIALOG.loadout)}>
-          <Icon name="users" size="0.95rem" />
+        <Button icon="users" onPress={() => void openDialog(DIALOG.loadout)}>
           {t('core:lobby.loadout')}
         </Button>
         <button

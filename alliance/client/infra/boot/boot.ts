@@ -5,6 +5,7 @@ import type {
 } from '@alliance/contract/server-message.js';
 import { createConnection, pageSocketUrl } from '#infra/connection/socket.js';
 import { createIntentBus } from '#infra/intent/bus.js';
+import { installFontStyles } from '#infra/resource/fonts.js';
 import { settingsStore, startSettings } from '#infra/settings/index.js';
 import { assetsStore } from '#infra/store/assets.js';
 import { catalogStore } from '#infra/store/catalog.js';
@@ -204,7 +205,10 @@ export function boot(
         catalogLoading = true;
         void loadCompatCatalog();
         loadCompatResources().then(
-          (resources) => assetsStore.setState({ resources }),
+          (resources) => {
+            assetsStore.setState({ resources });
+            void installFontStyles(resources.fontStylesheets);
+          },
           (failure: unknown) =>
             console.warn('[assets] the backend art is not available', failure),
         );

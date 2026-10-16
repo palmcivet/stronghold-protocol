@@ -12,7 +12,7 @@ const clientRoot = join(repoRoot, 'alliance', 'client');
 
 /** Backend the dev server forwards to. The master backend sends no CORS headers, so the page stays same-origin. */
 const DEFAULT_BACKEND = 'http://localhost:3000';
-const PROXIED_PATHS = ['/data', '/assets', '/media'] as const;
+const PROXIED_PATHS = ['/data', '/assets', '/media', '/fonts'] as const;
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, clientRoot, 'ALLIANCE_');

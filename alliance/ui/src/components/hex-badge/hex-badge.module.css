@@ -1,0 +1,65 @@
+@layer components {
+  .hex {
+    --hexHeight: calc(var(--wsde-dp) * 40);
+    --hexSlope: calc(var(--hexHeight) * 0.3);
+    display: inline-grid;
+    height: var(--hexHeight);
+    padding: var(--wsde-stroke-thin);
+    background: var(--wsde-tone-base);
+    clip-path: polygon(
+      var(--hexSlope) 0,
+      calc(100% - var(--hexSlope)) 0,
+      100% 50%,
+      calc(100% - var(--hexSlope)) 100%,
+      var(--hexSlope) 100%,
+      0 50%
+    );
+    vertical-align: middle;
+  }
+
+  .hex[data-size="sm"] {
+    --hexHeight: calc(var(--wsde-dp) * 32);
+  }
+
+  .hex[data-size="lg"] {
+    --hexHeight: calc(var(--wsde-dp) * 56);
+  }
+
+  .fill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--wsde-space-1);
+    min-width: calc(var(--hexHeight) * 0.95);
+    padding: 0 calc(var(--hexSlope) + var(--wsde-space-1));
+    background:
+      radial-gradient(
+        120% 90% at 50% 0%,
+        rgb(255 255 255 / 0.08),
+        transparent 60%
+      ),
+      var(--wsde-color-surface-sunken);
+    color: var(--wsde-tone-strong);
+    clip-path: polygon(
+      var(--hexSlope) 0,
+      calc(100% - var(--hexSlope)) 0,
+      100% 50%,
+      calc(100% - var(--hexSlope)) 100%,
+      var(--hexSlope) 100%,
+      0 50%
+    );
+  }
+
+  .fill svg {
+    width: calc(var(--hexHeight) * 0.5);
+    height: calc(var(--hexHeight) * 0.5);
+  }
+
+  .value {
+    font-family: var(--wsde-font-number);
+    font-size: calc(var(--hexHeight) * 0.6);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+}

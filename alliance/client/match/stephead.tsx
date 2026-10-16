@@ -1,9 +1,9 @@
+import { Button, Cluster, cx, Icon, Text } from '@alliance/ui';
 import { useIntent } from '#infra/intent/context.js';
 import { useMatch, useSession } from '#infra/store/hook.js';
 import { lookup, useText } from '#infra/text/index.js';
-import { cx } from '#infra/theme/class-name.js';
+import { DifficultyBadge } from '#part/badge.js';
 import { requestConfirm } from '#part/overlay.js';
-import { Button, Cluster, DifficultyTag, Icon, Muted } from '#ui/index.js';
 import { ClockFace } from './countdown.js';
 import styles from './match.module.css';
 
@@ -48,10 +48,12 @@ export function StepHead() {
           {t('core:match.exit')}
         </Button>
         {ping === null ? null : (
-          <Muted>{t('core:entry.ping', { ms: Math.round(ping) })}</Muted>
+          <Text kind="muted">
+            {t('core:entry.ping', { ms: Math.round(ping) })}
+          </Text>
         )}
-        <DifficultyTag
-          id={view.difficulty.toLowerCase()}
+        <DifficultyBadge
+          difficulty={view.difficulty}
           label={lookup(`core:difficulty.${view.difficulty}`)}
         />
       </Cluster>

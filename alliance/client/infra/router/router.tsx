@@ -1,3 +1,4 @@
+import { FeedbackProvider } from '@alliance/ui';
 import {
   createRootRouteWithContext,
   createRoute,
@@ -23,7 +24,6 @@ import { LeaveProvider } from '#part/leave.js';
 import { Part } from '#part/registry.js';
 import { LeaveRoom } from '#shell/leave.js';
 import { ShellFrame } from '#shell/parts.js';
-import { FeedbackProvider } from '#ui/feedback.js';
 import './menu.js';
 import { PAGE, type PageId } from './page.js';
 

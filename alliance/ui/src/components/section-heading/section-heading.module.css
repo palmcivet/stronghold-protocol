@@ -1,0 +1,24 @@
+@layer components {
+  .heading {
+    display: flex;
+    align-items: baseline;
+    gap: var(--wsde-space-2);
+    min-width: 0;
+  }
+
+  .index {
+    padding: 0 var(--wsde-space-2);
+    border: var(--wsde-stroke-thin) solid var(--wsde-tone-accent-base);
+    color: var(--wsde-tone-accent-base);
+    font-family: var(--wsde-font-number);
+    font-size: var(--wsde-font-size-caption);
+    letter-spacing: 0.06em;
+    line-height: 1.35;
+  }
+
+  .title {
+    font-size: var(--wsde-font-size-label);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+}

@@ -1,18 +1,18 @@
+import {
+  Cluster,
+  ListBox,
+  Notice,
+  Segmented,
+  Stack,
+  Switch,
+  Text,
+  TextField,
+} from '@alliance/ui';
 import { useMemo } from 'react';
 import { useStore } from 'zustand';
 import { useCatalog } from '#infra/store/hook.js';
 import { dataName, useText } from '#infra/text/index.js';
-import {
-  ChoiceGroup,
-  Cluster,
-  EmptyState,
-  GridList,
-  Muted,
-  SearchField,
-  Stack,
-  Switch,
-  TierChip,
-} from '#ui/index.js';
+import { TierBadge } from '#part/badge.js';
 import { LoadoutChoices } from './choices.js';
 import { loadoutStore } from './state.js';
 import { SyncStatus, TakesEffect } from './sync-status.js';
@@ -60,13 +60,16 @@ export function LoadoutRoster() {
   return (
     <Stack gap={3}>
       <Cluster gap={2}>
-        <SearchField
+        <TextField
+          type="search"
           label={t('core:loadout.search')}
+          labelHidden
+          placeholder={t('core:loadout.search')}
           value={query}
           onChange={(next) => loadoutStore.setState({ query: next })}
           clearLabel={t('core:loadout.searchClear')}
         />
-        <ChoiceGroup
+        <Segmented
           label={t('core:loadout.tier')}
           value={tier === null ? 'all' : String(tier)}
           onChange={(value) =>
@@ -83,6 +86,8 @@ export function LoadoutRoster() {
           ]}
         />
         <Switch
+          onText={t('core:common.on')}
+          offText={t('core:common.off')}
           isSelected={changedOnly}
           onChange={(next) => loadoutStore.setState({ changedOnly: next })}
         >
@@ -90,9 +95,10 @@ export function LoadoutRoster() {
         </Switch>
       </Cluster>
       {shown.length === 0 ? (
-        <EmptyState title={t('core:loadout.empty')} />
+        <Notice title={t('core:loadout.empty')} />
       ) : (
-        <GridList
+        <ListBox
+          variant="cards"
           label={t('core:loadout.heading')}
           selected={selected}
           onSelect={(id) => loadoutStore.setState({ selected: id })}
@@ -101,10 +107,10 @@ export function LoadoutRoster() {
             label: dataName('chess', chess.id),
             content: (
               <Cluster gap={2}>
-                <TierChip tier={chess.tier} />
+                <TierBadge tier={chess.tier} />
                 <span>{dataName('chess', chess.id)}</span>
                 {isChanged(chess) ? (
-                  <Muted>{t('core:loadout.changed')}</Muted>
+                  <Text kind="muted">{t('core:loadout.changed')}</Text>
                 ) : null}
               </Cluster>
             ),
@@ -126,13 +132,13 @@ export function LoadoutDetail() {
       {chess?.loadout ? (
         <Stack gap={3}>
           <Cluster gap={2}>
-            <TierChip tier={chess.tier} />
+            <TierBadge tier={chess.tier} />
             <strong>{dataName('chess', chess.id)}</strong>
           </Cluster>
           <LoadoutChoices chess={chess} />
         </Stack>
       ) : (
-        <EmptyState title={t('core:loadout.pick')} />
+        <Notice title={t('core:loadout.pick')} />
       )}
       <Cluster gap={2}>
         <SyncStatus kind="loadout" />

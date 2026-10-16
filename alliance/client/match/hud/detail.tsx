@@ -1,4 +1,14 @@
 import { PHASE } from '@alliance/contract/match.js';
+import {
+  Badge,
+  Button,
+  Cluster,
+  cx,
+  Icon,
+  RichText,
+  Stack,
+  Text,
+} from '@alliance/ui';
 import { type CSSProperties, type ReactNode, useEffect, useState } from 'react';
 import { useStore } from 'zustand';
 import { useIntent } from '#infra/intent/context.js';
@@ -6,7 +16,6 @@ import { combatDefsStore } from '#infra/store/combat-defs.js';
 import { useMatch, useMatchCatalog, useStream } from '#infra/store/hook.js';
 import { unitStatsStore } from '#infra/store/unit-stats.js';
 import { dataName, has, lookup, useText } from '#infra/text/index.js';
-import { cx } from '#infra/theme/class-name.js';
 import {
   battleOpId,
   type LiveStatsView,
@@ -18,19 +27,7 @@ import { cardName } from '#match/piece-label.js';
 import { usePlaybackRuntime } from '#match/playback-runtime.js';
 import { findPiece, selectionStore } from '#match/selection.js';
 import { EnemyThumb, PieceThumb } from '#part/art.js';
-import {
-  Badge,
-  BondDisc,
-  Button,
-  Chip,
-  Cluster,
-  Icon,
-  Muted,
-  Num,
-  RichText,
-  Stack,
-  TierChip,
-} from '#ui/index.js';
+import { BondBadge, TierBadge } from '#part/badge.js';
 import styles from './hud.module.css';
 import { hudStore } from './state.js';
 
@@ -60,7 +57,7 @@ function Head({
         {art}
         <Stack gap={1}>
           <strong className={cx(styles.detailName)}>{title}</strong>
-          {subtitle ? <Muted>{subtitle}</Muted> : null}
+          {subtitle ? <Text kind="muted">{subtitle}</Text> : null}
           <Cluster gap={1}>{chips}</Cluster>
         </Stack>
       </Cluster>
@@ -92,7 +89,7 @@ function BondChips({ bondIds }: { readonly bondIds: readonly string[] }) {
               : 'on';
         return (
           <Button key={id} onPress={() => hudStore.setState({ bond: id })}>
-            <BondDisc
+            <BondBadge
               label={dataName('bond', id)}
               count={view?.count ?? 0}
               next={
@@ -123,7 +120,7 @@ function StatCell({
     <div className={cx(styles.dstat)}>
       <span className={cx(styles.dstatK)}>{label}</span>
       <b className={cx(styles.dstatV)}>
-        <Num>{value}</Num>
+        <Text variant="number">{value}</Text>
       </b>
     </div>
   );
@@ -149,7 +146,7 @@ function RangeGrid({
   const cols = maxX - minX + 1;
   const rows = maxY - minY + 1;
   if (cols * rows > 120) {
-    return <Muted>{t('core:detail.rangeField')}</Muted>;
+    return <Text kind="muted">{t('core:detail.rangeField')}</Text>;
   }
   return (
     <div
@@ -308,7 +305,8 @@ function CombatStats({
             }}
           />
           <span>
-            <Num>{live.hp}</Num>/<Num>{live.maxHp}</Num>
+            <Text variant="number">{live.hp}</Text>/
+            <Text variant="number">{live.maxHp}</Text>
           </span>
         </div>
       ) : null}
@@ -447,7 +445,7 @@ function ChessBody({
         }
         chips={
           <>
-            {tier === undefined ? null : <TierChip tier={tier} />}
+            {tier === undefined ? null : <TierBadge tier={tier} />}
             {golden ? <Badge tone="gold">{t('core:unit.golden')}</Badge> : null}
             {profession ? <Badge>{profession}</Badge> : null}
           </>
@@ -464,7 +462,9 @@ function ChessBody({
       {items.length ? (
         <Cluster gap={1} label={t('core:detail.items')}>
           {items.map((item) => (
-            <Chip key={item.uid}>{dataName('item', item.id)}</Chip>
+            <Badge shape="pill" key={item.uid}>
+              {dataName('item', item.id)}
+            </Badge>
           ))}
         </Cluster>
       ) : null}
@@ -494,10 +494,10 @@ function ItemBody({
             size="md"
           />
         }
-        chips={tier === undefined ? null : <TierChip tier={tier} />}
+        chips={tier === undefined ? null : <TierBadge tier={tier} />}
       />
       {has(descKey) ? <RichText source={lookup(descKey)} /> : null}
-      {!has(descKey) ? <Muted>{t('core:detail.item')}</Muted> : null}
+      {!has(descKey) ? <Text kind="muted">{t('core:detail.item')}</Text> : null}
     </>
   );
 }
@@ -527,18 +527,18 @@ function EnemyBody({
               <Badge tone="danger">{t('core:match.enemy.boss')}</Badge>
             ) : null}
             {enemy?.fly ? (
-              <Badge tone="info">{t('core:match.enemy.fly')}</Badge>
+              <Badge tone="ice">{t('core:match.enemy.fly')}</Badge>
             ) : null}
             {count !== undefined ? (
               <Badge>
-                ×<Num>{count}</Num>
+                ×<Text variant="number">{count}</Text>
               </Badge>
             ) : null}
           </>
         }
       />
       <CombatStats defId={enemyId} kind="enemy" />
-      <Muted>{t('core:detail.enemyNote')}</Muted>
+      <Text kind="muted">{t('core:detail.enemyNote')}</Text>
     </>
   );
 }

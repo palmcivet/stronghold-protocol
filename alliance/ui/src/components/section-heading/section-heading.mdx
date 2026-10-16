@@ -1,0 +1,32 @@
+import { SectionHeadingDemo } from './section-heading.demo.js';
+
+# SectionHeading
+
+小节标题：可选的序号块、标题与英文微标签。
+
+:::code-group
+
+<div data-title="Preview">
+
+<div className="wsde-doc-preview">
+
+<SectionHeadingDemo />
+
+</div>
+
+</div>
+
+```tsx [Code]
+import { SectionHeading } from '@alliance/ui';
+
+<SectionHeading micro="CORE">核心盟约</SectionHeading>
+```
+
+:::
+
+| 属性 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `index` | `string` | — | 标题前的序号，如 `01` |
+| `title` | `ReactNode` | — | 标题 |
+| `micro` | `string` | — | 标题旁的英文微标签 |
+| `level` | `2 \| 3 \| 4` | `3` | 标题的标题级别 |

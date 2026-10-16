@@ -13,15 +13,15 @@ description: 所有页面共用的外壳分层，对话框注册表与菜单入�
 
 | 层 | 内容 | 部件或插槽 |
 | --- | --- | --- |
-| 背景 | 赛季背景 | `core:shell.backdrop` |
-| 横幅 | 连接横幅 | `core:shell.banner` |
+| 背景 | 铺满视口的背景：渐变、网格、扫描线与暗角，资源包声明 `refs.backdrop` 时叠加赛季背景图 | `core:shell.backdrop` |
 | 主区 | 当前路由的页面 | `core:screen.*` |
+| 横幅 | 连接横幅 | `core:shell.banner` |
 | 浮层 | 对话框层、确认框 | 插槽 `core:shell.overlay` |
 | 提示 | 提示栈、工具提示 | `core:shell.toast`、`core:shell.tooltip` |
 
-对局页的横幅移到顶栏下方。浮层与提示层在所有页面都在。
+连接横幅是悬浮在主区上的小条：画布底部居中，对局页移到顶栏与盟约条下方。提示栈在画布顶部居中，对局页同样下移；对局页里连接横幅显示时，提示栈再让到它下面。浮层与提示层在所有页面都在。
 
-外壳根节点高度为 `100dvh`，`overflow` 为 `hidden`：整页不滚动，需要滚动的内容在面板或对话框框体内滚。对局页（`bare`）主区无内边距，战场铺满。
+外壳根节点用 `position: fixed` 铺满视口，`overflow` 为 `hidden`：整页不滚动，需要滚动的内容在面板或对话框框体内滚。对局页（`bare`）主区无内边距，战场铺满。
 
 ## 对话框
 
@@ -36,7 +36,7 @@ description: 所有页面共用的外壳分层，对话框注册表与菜单入�
 | `core:dialog.guide` | 玩法说明 | 40 | 总是 |
 
 - 对话框注册表以 id 为键。每项有标题文案键、可选的菜单元数据与可选的加载函数。
-- 注册项可选 `size` 定对话框框体，默认 `panel`：`panel` 居中窄栏（宽不超过 40rem，个人配置）；`wide` 大卡片（宽不超过 72rem，`core:dialog.guide`）；`full` 铺满屏幕（`core:dialog.loadout`）。内容超出时在框体内滚动。
+- 注册项可选 `size` 定对话框框体，默认 `panel`：`panel` 居中窄栏（宽不超过 640 dp，个人配置）；`wide` 大卡片（宽不超过 1152 dp，`core:dialog.guide`）；`full` 铺满画布，四周留 16 dp（`core:dialog.loadout`）。内容超出时在框体内滚动。
 - 对话框的内容是同 id 的部件，所以模组可以对它 `replace` 或 `wrap`。
 - 模组可以用自己的 id 加对话框。同一 id 注册两次会报错。
 - `openDialog(id)` 先加载对话框的模块，再显示它。
@@ -49,7 +49,7 @@ description: 所有页面共用的外壳分层，对话框注册表与菜单入�
 `requestConfirm(options)` 在外壳浮层上排队一个确认框，按玩家的回答兑现为 `true` 或 `false`。
 
 - `cancel` 为 `null` 时是只有一个按钮的告知框。
-- `tone: "danger"` 标出危险操作。
+- `tone: "danger"` 标出危险操作：对话框的角标与斜纹条、确认键都转危险色。
 - 移出玩家、离开简报等操作先经确认框。
 
 ## 菜单入口

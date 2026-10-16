@@ -1,0 +1,40 @@
+import { ListBoxDemo } from './list-box.demo.js';
+
+# ListBox
+
+列表框，用方向键在项目间移动，可单选、多选，或只响应按下。`variant` 选择外观：`list` 是普通的行，`cards` 是带框的网格，`ladder` 是带框、每行一项的阶梯。`items` 中 `disabled` 的项不可选。
+
+:::code-group
+
+<div data-title="Preview">
+
+<div className="wsde-doc-preview">
+
+<ListBoxDemo />
+
+</div>
+
+</div>
+
+```tsx [Code]
+import { ListBox } from '@alliance/ui';
+
+<ListBox
+  label="模式"
+  items={[{ id: 'standard', label: '标准' }]}
+  selected="standard"
+  onSelect={() => {}}
+/>
+```
+
+:::
+
+| 属性 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `label` | `string` | — | 无障碍名称 |
+| `items` | `readonly CollectionItem[]` | — | `CollectionItem` 为 `{ id; label; content?; disabled? }`，`content` 替代默认的文字显示 |
+| `variant` | `'list' \| 'cards' \| 'ladder'` | `'list'` | 外观 |
+| `selected` | `string \| null`；`multiple` 时为 `readonly string[]` | — | 选中项的 `id` |
+| `onSelect` | `(id: string) => void`；`multiple` 时为 `(ids: readonly string[]) => void` | — | 选中变化时调用；两者都不给则不可选 |
+| `multiple` | `boolean` | `false` | 允许多选 |
+| `onAction` | `(id: string) => void` | — | 按下项目时调用，不改变选中项 |

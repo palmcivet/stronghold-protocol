@@ -24,8 +24,7 @@ alliance/client/
     resource/    资源清单、解析与预加载
     audio/       音效线索与播放
     text/        文案目录与格式化
-    theme/       设计令牌、视口与层叠顺序
-  ui/         基础组件（React Aria）与游戏专用小件
+    theme/       视口与画布（令牌与基础层在 `@alliance/ui`）
   part/       部件注册表、插槽、对话框注册表与错误边界
   shell/      外壳：横幅、提示、菜单入口、对话框层与离开流程
   entry/      入口页
@@ -49,7 +48,7 @@ alliance/client/
 | --- | --- |
 | 领域 | `entry`、`profile`、`loadout`、`guide`、`room`、`match` |
 | 外壳 | `shell` |
-| 部件与基础组件 | `part`、`ui` |
+| 部件 | `part` |
 | 基础设施 | `infra` |
 
 ## 依赖规则
@@ -61,7 +60,7 @@ alliance/client/
 跨目录的导入一律使用 `package.json` 的 `imports` 别名，每个顶层目录一个：
 
 ```text
-#infra/*  #ui/*  #part/*  #shell/*
+#infra/*  #part/*  #shell/*
 #entry/*  #profile/*  #loadout/*  #guide/*  #room/*  #match/*
 #test/*
 ```
@@ -81,7 +80,7 @@ alliance/client/
 
 - 命名由 stylelint 的 `selector-class-pattern` 与 `custom-property-pattern` 检查，配置在 `stylelint.config.mjs`，`*.module.css` 单独覆盖。
 - `pnpm lint` 运行 stylelint；格式等其余规则归 Biome。
-- 设计令牌定义在 `infra/theme/tokens.ts`。
+- 设计令牌与基础组件属于 `@alliance/ui`（`alliance/ui`），不在客户端目录内。
 
 对外的命名约定与令牌类别见 [样式与令牌](./11-style.md)。
 

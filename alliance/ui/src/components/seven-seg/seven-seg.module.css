@@ -1,0 +1,25 @@
+@layer components {
+  .seg {
+    position: relative;
+    display: inline-block;
+    font-family: var(--wsde-font-number);
+    font-size: var(--wsde-font-size-display);
+    line-height: 1;
+    letter-spacing: 0.05em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .segGhost {
+    color: var(--wsde-color-control-hover);
+  }
+
+  .segValue {
+    position: absolute;
+    inset: 0;
+    color: var(--wsde-tone-accent-strong);
+  }
+
+  .seg[data-warn] .segValue {
+    color: var(--wsde-tone-danger-base);
+  }
+}

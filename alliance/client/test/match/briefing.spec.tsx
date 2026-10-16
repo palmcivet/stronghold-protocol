@@ -223,7 +223,7 @@ describe('strategy draft view', () => {
         untimed: true,
       },
     });
-    fireEvent.click(screen.getByRole('row', { name: '甲' }));
+    fireEvent.click(screen.getByRole('option', { name: '甲' }));
     expect(screen.getByText(t('core:strategy.takenHint'))).toBeTruthy();
     cleanup();
     show('BAND_DRAFT', {
@@ -235,7 +235,7 @@ describe('strategy draft view', () => {
         untimed: true,
       },
     });
-    fireEvent.click(screen.getByRole('row', { name: '甲' }));
+    fireEvent.click(screen.getByRole('option', { name: '甲' }));
     expect(screen.queryByText(t('core:strategy.takenHint'))).toBeNull();
     expect(
       screen.getByRole('button', { name: t('core:strategy.pick') }),

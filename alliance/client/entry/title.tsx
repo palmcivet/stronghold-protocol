@@ -1,10 +1,10 @@
 import { NAME_MAX_LEN } from '@alliance/contract/match.js';
+import { Button, Panel, Stack, TextField } from '@alliance/ui';
 import { useRouteContext } from '@tanstack/react-router';
 import { type FormEvent, useState } from 'react';
 import { Form } from 'react-aria-components';
 import { settingsStore } from '#infra/store/settings.js';
 import { useText } from '#infra/text/index.js';
-import { Button, Panel, Stack, TextField } from '#ui/index.js';
 
 /** The code name the player enters with. */
 export function NameForm() {

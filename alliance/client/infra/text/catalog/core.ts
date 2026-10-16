@@ -49,6 +49,8 @@ export const CORE = {
   'core:common.cancel': entry('取消'),
   'core:common.back': entry('返回'),
   'core:common.close': entry('关闭'),
+  'core:common.on': entry('开启'),
+  'core:common.off': entry('关闭'),
   'core:common.ready': entry('准备就绪'),
   'core:common.unready': entry('取消就绪'),
   'core:common.loading': entry('载入中…'),
@@ -90,7 +92,6 @@ export const CORE = {
   'core:lobby.spectate.tip': entry(
     '以观战者身份进入：不占博士席位，只能观看（每个同盟最多 {n} 名，模拟进行中也可进入）',
   ),
-  'core:lobby.ping.online': entry('{ms} ms'),
   'core:lobby.ping.offline': entry('离线'),
   'core:difficulty.FUNNY': entry('标准'),
   'core:difficulty.NORMAL': entry('险境'),

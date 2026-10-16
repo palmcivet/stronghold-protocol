@@ -156,6 +156,22 @@ test('the board tiles of a season are a ref of the board theme', () => {
   expect(build.manifest.refs).toEqual({ board: { theme: tiles } });
 });
 
+test('the entry background of a season is its backdrop, and its other entry images are not', () => {
+  const first = formatAssetKey('image', 'season/act2autochess/entry/bkg_01');
+  const second = formatAssetKey('image', 'season/act2autochess/entry/bkg_02');
+  const build = buildPack({
+    type: 'season',
+    id: 'act2autochess',
+    version: '2026.10.09',
+    requires: [{ type: 'base', id: 'base', version: '78.0.0+r1' }],
+    needs: [need(first), need(second)],
+    entries: entries(first, second),
+    charword: null,
+  });
+  expect(build.misplaced).toEqual([]);
+  expect(build.manifest.refs).toEqual({ backdrop: first });
+});
+
 test('fonts are refs by family and weight, and keys of the other pack kind stay out of refs', () => {
   const font = formatAssetKey('font', 'bender/regular');
   const season = formatAssetKey('audio', 'bgm/m_bat');

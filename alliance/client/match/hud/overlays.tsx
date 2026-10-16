@@ -1,9 +1,9 @@
+import { Button, Cluster, Dialog } from '@alliance/ui';
 import { useStore } from 'zustand';
 import { useIntent } from '#infra/intent/context.js';
 import { useMatch, useSession } from '#infra/store/hook.js';
 import { dataName, useText } from '#infra/text/index.js';
 import { equipStore } from '#match/equip.js';
-import { Button, Cluster, Dialog, Modal, Overlay } from '#ui/index.js';
 import { Choices } from './choice.js';
 
 /** The pick-one offers, as a modal while one is open. */
@@ -17,11 +17,9 @@ export function Choice() {
     return null;
   }
   return (
-    <Modal isOpen dismissable={false}>
-      <Dialog title={t('core:choice.heading')}>
-        <Choices canAct={alive} />
-      </Dialog>
-    </Modal>
+    <Dialog isOpen dismissable={false} title={t('core:choice.heading')}>
+      <Choices canAct={alive} />
+    </Dialog>
   );
 }
 
@@ -34,35 +32,34 @@ export function EquipReplace() {
   }
   const close = (): void => equipStore.setState({ request: null });
   return (
-    <Modal isOpen onOpenChange={(open) => !open && close()}>
-      <Dialog
-        title={t('core:equip.heading')}
-        closeLabel={t('core:common.cancel')}
-        onClose={close}
-      >
-        <p>{t('core:equip.hint')}</p>
-        <Cluster gap={2}>
-          {request.items.map((item) => (
-            <Button
-              key={item.uid}
-              onPress={() => {
-                close();
-                void intents.dispatch({
-                  type: 'g.equip',
-                  fields: {
-                    itemUid: request.itemUid,
-                    targetUid: request.targetUid,
-                    replaceUid: item.uid,
-                  },
-                });
-              }}
-            >
-              {dataName('item', item.id)}
-            </Button>
-          ))}
-        </Cluster>
-      </Dialog>
-    </Modal>
+    <Dialog
+      isOpen
+      onOpenChange={(open) => !open && close()}
+      title={t('core:equip.heading')}
+      closeLabel={t('core:common.cancel')}
+    >
+      <p>{t('core:equip.hint')}</p>
+      <Cluster gap={2}>
+        {request.items.map((item) => (
+          <Button
+            key={item.uid}
+            onPress={() => {
+              close();
+              void intents.dispatch({
+                type: 'g.equip',
+                fields: {
+                  itemUid: request.itemUid,
+                  targetUid: request.targetUid,
+                  replaceUid: item.uid,
+                },
+              });
+            }}
+          >
+            {dataName('item', item.id)}
+          </Button>
+        ))}
+      </Cluster>
+    </Dialog>
   );
 }
 
@@ -76,19 +73,26 @@ export function Pause() {
     return null;
   }
   return (
-    <Overlay label={t('core:match.paused')}>
-      <h2>{t('core:match.paused')}</h2>
-      {own ? (
-        <Button
-          variant="primary"
-          onPress={() =>
-            void intents.dispatch({ type: 'g.pause', fields: { on: false } })
-          }
-        >
-          {t('core:match.resume')}
-        </Button>
-      ) : null}
-    </Overlay>
+    <Dialog
+      isOpen
+      dismissable={false}
+      title={t('core:match.paused')}
+      actions={
+        own ? (
+          <Button
+            variant="primary"
+            onPress={() =>
+              void intents.dispatch({
+                type: 'g.pause',
+                fields: { on: false },
+              })
+            }
+          >
+            {t('core:match.resume')}
+          </Button>
+        ) : undefined
+      }
+    />
   );
 }
 
@@ -106,18 +110,26 @@ export function Away() {
     return null;
   }
   return (
-    <Overlay label={t('core:match.away')}>
-      <h2>{t('core:match.away')}</h2>
+    <Dialog
+      isOpen
+      dismissable={false}
+      title={t('core:match.away')}
+      actions={
+        <Button
+          variant="primary"
+          onPress={() =>
+            void intents.dispatch({
+              type: 'g.autoplay',
+              fields: { on: false },
+            })
+          }
+        >
+          {t('core:match.back')}
+        </Button>
+      }
+    >
       <p>{t('core:match.awayHint')}</p>
-      <Button
-        variant="primary"
-        onPress={() =>
-          void intents.dispatch({ type: 'g.autoplay', fields: { on: false } })
-        }
-      >
-        {t('core:match.back')}
-      </Button>
-    </Overlay>
+    </Dialog>
   );
 }
 
@@ -142,40 +154,38 @@ export function Vote() {
       fields: { voteId: vote.id, agree },
     });
   return (
-    <Modal isOpen dismissable={false}>
-      <Dialog title={t('core:vote.heading')}>
-        <p>{t('core:vote.proposed', { name: nameOf(vote.proposerId) })}</p>
-        <p>
-          {t('core:vote.count', {
-            agreed: vote.agreed.length,
-            total: vote.voters.length,
-          })}
-        </p>
-        <Cluster gap={2}>
-          {voter && !agreed ? (
-            <>
-              <Button variant="primary" onPress={() => answer(true)}>
-                {t('core:vote.agree')}
-              </Button>
-              <Button onPress={() => answer(false)}>
-                {t('core:vote.refuse')}
-              </Button>
-            </>
-          ) : null}
-          {vote.proposerId === playerId ? (
-            <Button
-              onPress={() =>
-                void intents.dispatch({
-                  type: 'room.cancelReroll',
-                  fields: { voteId: vote.id },
-                })
-              }
-            >
-              {t('core:vote.cancel')}
+    <Dialog isOpen dismissable={false} title={t('core:vote.heading')}>
+      <p>{t('core:vote.proposed', { name: nameOf(vote.proposerId) })}</p>
+      <p>
+        {t('core:vote.count', {
+          agreed: vote.agreed.length,
+          total: vote.voters.length,
+        })}
+      </p>
+      <Cluster gap={2}>
+        {voter && !agreed ? (
+          <>
+            <Button variant="primary" onPress={() => answer(true)}>
+              {t('core:vote.agree')}
             </Button>
-          ) : null}
-        </Cluster>
-      </Dialog>
-    </Modal>
+            <Button onPress={() => answer(false)}>
+              {t('core:vote.refuse')}
+            </Button>
+          </>
+        ) : null}
+        {vote.proposerId === playerId ? (
+          <Button
+            onPress={() =>
+              void intents.dispatch({
+                type: 'room.cancelReroll',
+                fields: { voteId: vote.id },
+              })
+            }
+          >
+            {t('core:vote.cancel')}
+          </Button>
+        ) : null}
+      </Cluster>
+    </Dialog>
   );
 }

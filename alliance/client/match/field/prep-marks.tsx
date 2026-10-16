@@ -19,7 +19,7 @@ import { useMemo } from 'react';
 /** Stage tile size in canvas px (mission-renderer ground). */
 const TILE_SIZE = 64;
 
-import { cx } from '#infra/theme/class-name.js';
+import { cx } from '@alliance/ui';
 import { PieceThumb } from '#part/art.js';
 import styles from './preparation.module.css';
 

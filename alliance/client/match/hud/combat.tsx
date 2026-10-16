@@ -1,9 +1,8 @@
+import { Button, cx, Icon, Stack, Text } from '@alliance/ui';
 import { useIntent } from '#infra/intent/context.js';
 import { useMatch, useSession, useStream } from '#infra/store/hook.js';
 import { useText } from '#infra/text/index.js';
-import { cx } from '#infra/theme/class-name.js';
 import { usePlayback } from '#match/playback-state.js';
-import { Button, Icon, Num, Stack } from '#ui/index.js';
 import styles from './hud.module.css';
 
 /** Teammates' live progress under the waiting pill, as master's CombatHud. */
@@ -58,7 +57,7 @@ function DpBox({ dp }: { readonly dp: number | null }) {
   return (
     <div className={cx(styles.dpBox)} title={t('core:combat.costTip')}>
       <Icon name="bolt" />
-      <Num>{Math.floor(dp)}</Num>
+      <Text variant="number">{Math.floor(dp)}</Text>
       <span className={cx(styles.microLabel)}>COST</span>
     </div>
   );

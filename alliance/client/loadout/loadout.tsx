@@ -1,6 +1,5 @@
+import { cx, Panel } from '@alliance/ui';
 import { dataName, useText } from '#infra/text/index.js';
-import { cx } from '#infra/theme/class-name.js';
-import { Panel } from '#ui/index.js';
 import { LoadoutChoices } from './choices.js';
 import { useAdjustable } from './roster.js';
 import styles from './screen.module.css';

@@ -5,10 +5,10 @@ import {
   POTENTIAL_MAX,
   POTENTIAL_MIN,
 } from '@alliance/contract/message.js';
+import { Button, Segmented, Stack, Text } from '@alliance/ui';
 import { useStore } from 'zustand';
 import { useCatalog } from '#infra/store/hook.js';
 import { has, lookup, useText } from '#infra/text/index.js';
-import { Button, ChoiceGroup, Muted, Stack } from '#ui/index.js';
 import { effectiveChoice, opsOf } from './model.js';
 import { chooseLoadout, chooseOps, loadoutStore, resetChess } from './state.js';
 
@@ -58,7 +58,7 @@ function SkillPicker({
   return (
     <Stack gap={1}>
       {options.skills.length > 1 ? (
-        <ChoiceGroup
+        <Segmented
           label={t('core:loadout.skills')}
           value={String(skill ?? '')}
           onChange={(value) => chooseLoadout(chess, { skill: Number(value) })}
@@ -83,7 +83,7 @@ function SkillPicker({
         </strong>
       )}
       {spType || info?.spCost != null ? (
-        <Muted>
+        <Text kind="muted">
           {[
             spType,
             info?.spCost != null
@@ -92,12 +92,12 @@ function SkillPicker({
           ]
             .filter(Boolean)
             .join(' · ')}
-        </Muted>
+        </Text>
       ) : null}
       {desc ? <p>{desc}</p> : null}
       {eliteDesc && eliteDesc !== desc ? (
         <p>
-          <Muted>{t('core:loadout.elite')}</Muted> {eliteDesc}
+          <Text kind="muted">{t('core:loadout.elite')}</Text> {eliteDesc}
         </p>
       ) : null}
     </Stack>
@@ -134,7 +134,7 @@ function ModulePicker({
       : null;
   return (
     <Stack gap={1}>
-      <ChoiceGroup
+      <Segmented
         label={t('core:loadout.module')}
         value={module ?? MODULE_NONE}
         onChange={(value) => chooseLoadout(chess, { module: value })}
@@ -161,8 +161,10 @@ function OpsPicker({ chess }: { readonly chess: CatalogChess }) {
   return (
     <Stack gap={1}>
       <strong>{t('core:loadout.opsHeading')}</strong>
-      {current.changed ? null : <Muted>{t('core:loadout.opsDefault')}</Muted>}
-      <ChoiceGroup
+      {current.changed ? null : (
+        <Text kind="muted">{t('core:loadout.opsDefault')}</Text>
+      )}
+      <Segmented
         label={t('core:loadout.potential')}
         value={String(current.potential)}
         onChange={(value) => chooseOps(charId, { potential: Number(value) })}
@@ -171,7 +173,7 @@ function OpsPicker({ chess }: { readonly chess: CatalogChess }) {
           label: String(n),
         }))}
       />
-      <ChoiceGroup
+      <Segmented
         label={t('core:loadout.cultivate')}
         value={String(current.cultivate)}
         onChange={(value) => chooseOps(charId, { cultivate: Number(value) })}
@@ -180,9 +182,9 @@ function OpsPicker({ chess }: { readonly chess: CatalogChess }) {
           label: lookup(`core:loadout.cultivate.${n}`),
         }))}
       />
-      <Muted>
+      <Text kind="muted">
         {standIn ? t('core:loadout.opsStandIn') : t('core:loadout.opsHint')}
-      </Muted>
+      </Text>
     </Stack>
   );
 }

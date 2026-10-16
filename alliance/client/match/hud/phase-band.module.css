@@ -1,0 +1,184 @@
+@layer components {
+  .banner {
+    width: 100%;
+    pointer-events: none;
+  }
+
+  .band {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: calc(var(--wsde-dp) * 48);
+    padding: var(--wsde-space-6) 0 calc(var(--wsde-dp) * 26);
+    overflow: hidden;
+    background:
+      repeating-linear-gradient(
+        0deg,
+        var(--wsde-color-surface-scan) 0 1px,
+        transparent 1px calc(var(--wsde-dp) * 3)
+      ),
+      linear-gradient(
+        90deg,
+        transparent,
+        var(--wsde-color-surface-sunken) 16%,
+        var(--wsde-color-surface-sunken) 84%,
+        transparent
+      );
+    font-size: calc(var(--wsde-dp) * 42);
+    animation: open var(--wsde-duration-medium) var(--wsde-ease-out) backwards;
+  }
+
+  .band::before,
+  .band::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    height: var(--wsde-stroke-thin);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--wsde-tone-base) 18%,
+      var(--wsde-tone-base) 82%,
+      transparent
+    );
+    box-shadow: 0 0 calc(var(--wsde-dp) * 8) var(--wsde-tone-glow);
+    animation: line 380ms var(--wsde-ease-out) backwards;
+  }
+
+  .band::before {
+    top: 0;
+  }
+
+  .band::after {
+    bottom: 0;
+  }
+
+  .banner[data-leaving] .band {
+    animation: close 240ms var(--wsde-ease-in-out) forwards;
+  }
+
+  .arrows {
+    display: inline-flex;
+    align-items: center;
+    gap: calc(var(--wsde-dp) * 3);
+    height: 1em;
+    color: var(--wsde-tone-base);
+  }
+
+  .arrows span {
+    width: 0.6em;
+    height: 100%;
+    background: currentColor;
+    clip-path: polygon(0 0, 42% 0, 100% 50%, 42% 100%, 0 100%, 58% 50%);
+    opacity: 0.15;
+    animation: flow 1.2s linear infinite;
+    animation-delay: calc(var(--step) * 140ms);
+  }
+
+  .arrows[data-direction="left"] span {
+    transform: scaleX(-1);
+  }
+
+  .text {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--wsde-space-1);
+    animation: wipe 380ms 90ms var(--wsde-ease-out) backwards;
+  }
+
+  .text::after {
+    content: "";
+    position: absolute;
+    top: -20%;
+    bottom: -20%;
+    left: -30%;
+    width: 20%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(255 255 255 / 0.22),
+      transparent
+    );
+    opacity: 0;
+    transform: skewX(-20deg);
+    animation: sweep 700ms 250ms var(--wsde-ease-out) forwards;
+  }
+
+  .title {
+    padding-left: 0.16em;
+    color: var(--wsde-color-text-primary);
+    font-size: var(--wsde-font-size-display);
+    font-weight: 900;
+    letter-spacing: 0.16em;
+    line-height: 1.1;
+    text-shadow:
+      0 0 calc(var(--wsde-dp) * 22) var(--wsde-tone-glow),
+      0 2px 0 rgb(0 0 0 / 0.5);
+  }
+
+  .sub {
+    color: var(--wsde-color-text-muted);
+    font-size: var(--wsde-font-size-label);
+    letter-spacing: 0.12em;
+  }
+}
+
+@keyframes open {
+  from {
+    opacity: 0;
+    transform: scaleY(0);
+  }
+}
+
+@keyframes close {
+  to {
+    opacity: 0;
+    transform: scaleY(0);
+  }
+}
+
+@keyframes line {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes wipe {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes sweep {
+  0% {
+    left: -30%;
+    opacity: 1;
+  }
+
+  100% {
+    left: 120%;
+    opacity: 0;
+  }
+}
+
+@keyframes flow {
+  0% {
+    opacity: 0.15;
+  }
+
+  25% {
+    opacity: 1;
+  }
+
+  55%,
+  100% {
+    opacity: 0.15;
+  }
+}

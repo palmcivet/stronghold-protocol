@@ -1,0 +1,26 @@
+@layer components {
+  .rich {
+    white-space: pre-line;
+  }
+
+  .richRun[data-kind="keyword"] {
+    color: var(--wsde-color-rich-keyword);
+  }
+
+  .richRun[data-kind="positive"] {
+    color: var(--wsde-color-rich-positive);
+  }
+
+  .richRun[data-kind="negative"] {
+    color: var(--wsde-color-rich-negative);
+  }
+
+  .richRun[data-kind="value"] {
+    color: var(--wsde-color-rich-value);
+  }
+
+  .richRun[data-kind="term"] {
+    color: var(--wsde-color-rich-keyword);
+    text-decoration: underline dotted;
+  }
+}

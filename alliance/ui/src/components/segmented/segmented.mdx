@@ -1,0 +1,47 @@
+import { SegmentedDemo } from './segmented.demo.js';
+
+# Segmented
+
+一组互斥的选项，全部可见，读作单选组。`variant="strip"` 是连成一排的分段按钮，选项可带图标；`variant="cards"` 是带角标与勾选标的卡片，选项可用 `content` 放入自己的内容。
+
+方向键或手柄十字键只移动焦点，按下才改变选择，经过某个选项不会改变选中项。
+
+:::code-group
+
+<div data-title="Preview">
+
+<div className="wsde-doc-preview">
+
+<SegmentedDemo />
+
+</div>
+
+</div>
+
+```tsx [Code]
+<Segmented
+  label="难度"
+  value={difficulty}
+  onChange={setDifficulty}
+  options={[
+    { value: 'funny', label: '简单' },
+    { value: 'normal', label: '普通' },
+  ]}
+/>
+```
+
+:::
+
+| 属性 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `label` | `string` | — | 组的名称，作为无障碍名称 |
+| `options` | `readonly SegmentedOption[]` | — | 选项，`SegmentedOption` 为 `{ value; label; icon?; disabled?; content? }`；`content` 只用于 `cards`，替代文字 |
+| `value` / `onChange` | `string` / `(value: string) => void` | — | 受控选中项 |
+| `variant` | `'strip' \| 'cards'` | `'strip'` | 分段按钮或卡片 |
+| `size` | `'sm' \| 'md' \| 'lg' \| 'xl'` | `'md'` | `strip` 的控件高度 |
+| `labelHidden` | `boolean` | `false` | 隐藏可见标签，只留给读屏 |
+| `orientation` | `'horizontal' \| 'vertical'` | `'horizontal'` | `cards` 的排列方向 |
+| `columns` | `number` | — | 横排 `cards` 每行的列数，默认等分一行 |
+| `isDisabled` | `boolean` | `false` | 禁用整组 |
+
+颜色与角标的规则见 [主题与令牌](/theme)。

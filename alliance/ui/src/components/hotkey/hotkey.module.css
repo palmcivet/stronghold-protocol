@@ -1,0 +1,10 @@
+@layer components {
+  .hotkey {
+    padding: 0 var(--wsde-space-1);
+    border: var(--wsde-stroke-thin) solid var(--wsde-color-border-strong);
+    border-radius: var(--wsde-radius-1);
+    color: var(--wsde-color-text-muted);
+    font-family: var(--wsde-font-number);
+    font-size: var(--wsde-font-size-caption);
+  }
+}

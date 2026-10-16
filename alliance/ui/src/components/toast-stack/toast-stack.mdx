@@ -1,0 +1,34 @@
+import { ToastStackDemo } from './toast-stack.demo.js';
+
+# ToastStack
+
+提示栈居中显示在画布顶部，显示短暂的消息。队列由宿主维护，组件只渲染传入的 `toasts`。
+
+:::code-group
+
+<div data-title="Preview">
+
+<div className="wsde-doc-preview">
+
+<ToastStackDemo />
+
+</div>
+
+</div>
+
+```tsx [Code]
+import { ToastStack } from '@alliance/ui';
+
+<ToastStack toasts={[{ id: '1', message: '已复制密钥' }]} />
+```
+
+:::
+
+`ToastItem` 为 `{ id: string | number; text: string; tone?: ToneName; count?: number }`。`tone` 决定条与图标的颜色，默认是中性色；`count` 大于 1 时显示「×N」，表示同一条消息连续出现了 N 次。
+
+| 属性 | 类型 | 说明 |
+| --- | --- | --- |
+| `toasts` | `readonly ToastItem[]` | 当前显示的消息 |
+| `label` | `string` | 提示栈的无障碍名称 |
+
+提示栈是 `aria-live="assertive"` 的日志区域。

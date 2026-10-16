@@ -1,3 +1,4 @@
+import { installTheme } from '@alliance/ui/theme';
 import { RouterProvider } from '@tanstack/react-router';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -6,7 +7,6 @@ import { getWsde } from '#infra/debug/index.js';
 import { Overlays } from '#infra/debug/overlays.js';
 import { probe } from '#infra/platform/index.js';
 import { createAppRouter } from '#infra/router/router.js';
-import { installTheme } from '#infra/theme/install.js';
 import { boot } from './boot.js';
 import { createIdentity } from './identity.js';
 import { seatStore } from './seat.js';

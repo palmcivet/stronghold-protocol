@@ -1,0 +1,33 @@
+import { TextDemo } from './text.demo.js';
+
+# Text
+
+行内文字：字体与强调。`micro` 是显示字体的英文小标签，`number` 是数字字体，`kind` 表示次要、成功或失败，`tone` 按色调着色。
+
+:::code-group
+
+<div data-title="Preview">
+
+<div className="wsde-doc-preview">
+
+<TextDemo />
+
+</div>
+
+</div>
+
+```tsx [Code]
+import { Text } from '@alliance/ui';
+
+<Text variant="display">WSDE</Text>
+<Text variant="number">1280</Text>
+```
+
+:::
+
+| 属性 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `children` | `ReactNode` | — | 文字 |
+| `variant` | `'body' \| 'micro' \| 'number'` | `'body'` | 字体：正文、英文小标签、数字 |
+| `kind` | `'muted' \| 'good' \| 'bad'` | — | 强调：次要、成功、失败 |
+| `tone` | `ToneName` | — | 色调；`micro` 不带色调时偏暗，`neutral` 提亮 |

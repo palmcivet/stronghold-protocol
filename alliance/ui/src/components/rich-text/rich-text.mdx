@@ -1,0 +1,34 @@
+import { RichTextDemo } from './rich-text.demo.js';
+
+# RichText
+
+`RichText` 显示官方描述的标记文字。标记写成 `<@样式>文字</>` 时是带样式的文字，`<$术语>文字</>` 是术语。样式的种类由样式名推断：以 `up` 结尾为正向，`down` 或含 `rem` 为负向，含 `value` 或 `num` 为数值，其余为关键词。
+
+:::code-group
+
+<div data-title="Preview">
+
+<div className="wsde-doc-preview">
+
+<RichTextDemo />
+
+</div>
+
+</div>
+
+```tsx [Code]
+import { RichText } from '@alliance/ui';
+
+<RichText>支持 **粗体** 与换行。</RichText>
+```
+
+:::
+
+| 属性 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `source` | `string` | — | 带标记的描述文字 |
+| `renderTerm` | `(term: string, text: ReactNode) => ReactNode` | — | 包装术语，例如放进带解释的提示里 |
+
+`parseRichText(source)` 把标记切成 `RichRun` 数组，`RichRun` 为 `{ text; style; term? }`，可用于自定义渲染。描述里的占位（如 `{name}`）由调用方替换，组件不替换。
+
+颜色规则见 [主题与令牌](/theme)。

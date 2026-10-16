@@ -109,8 +109,8 @@ pnpm extract:media
 
 - 官方资源版本取自 gamedata 仓库的 `zh_CN/gamedata/excel/data_version.txt` 中的 `VersionControl`。修订号写在 `compiler/input/base/pack.json`，由人手动改动。
 - `contentHash` 覆盖清单内容，不含 `pack.contentHash` 与 `fileRoot`。`fileRoot` 只描述部署位置，不属于内容。
-- `refs` 从本包命名空间的键的路径推导：`char/avatar/<id>` 进入 `chars[id].avatar`，`spine:char/<id>/front` 进入 `chars[id].spine.front`，`spine:skin/<皮肤>/front` 进入 `skins[皮肤].spine.front`，`font:<family>/<weight>` 进入 `fonts[family][weight]`，`audio:voice/<lang>/<charId>/<voiceId>` 按 `charword_table.json` 的语音槽位归入 `voice[charId][slot]`，`json:board/<theme>/tiles` 进入 `board.theme`。叶子一律是键。
-- `refs` 的形状是 `schema/pack-refs.ts` 的 `BaseRefs` 与 `SeasonRefs`，从 `@alliance/data/refs` 导出，打包与客户端共用。打包后用 `isBaseRefs`、`isSeasonRefs` 校验：基础包只含 `chars`、`skins`、`enemies`、`tokens`、`skills`、`prof`、`camp`、`voice`、`sfx`、`fonts`，赛季包只含 `bgm`、`sfx`、`bands`、`bonds`、`items`、`animRoles`、`board`。
+- `refs` 从本包命名空间的键的路径推导：`char/avatar/<id>` 进入 `chars[id].avatar`，`spine:char/<id>/front` 进入 `chars[id].spine.front`，`spine:skin/<皮肤>/front` 进入 `skins[皮肤].spine.front`，`font:<family>/<weight>` 进入 `fonts[family][weight]`，`audio:voice/<lang>/<charId>/<voiceId>` 按 `charword_table.json` 的语音槽位归入 `voice[charId][slot]`，`json:board/<theme>/tiles` 进入 `board.theme`，`image:season/<赛季>/entry/bkg_01` 进入 `backdrop`。叶子一律是键。
+- `refs` 的形状是 `schema/pack-refs.ts` 的 `BaseRefs` 与 `SeasonRefs`，从 `@alliance/data/refs` 导出，打包与客户端共用。打包后用 `isBaseRefs`、`isSeasonRefs` 校验：基础包只含 `chars`、`skins`、`enemies`、`tokens`、`skills`、`prof`、`camp`、`voice`、`sfx`、`fonts`，赛季包只含 `bgm`、`sfx`、`bands`、`bonds`、`items`、`animRoles`、`backdrop`、`board`。
 - `fallbackId` 只在目标键同在一个包时写入：`char/avatar/<id>_2` 回退到 `char/avatar/<id>`，`spine:enemy/enemy_1305_mhslim` 回退到别名模型。
 
 守卫在写出前检查，任一项失败都不写出清单，并以退出码 1 结束：

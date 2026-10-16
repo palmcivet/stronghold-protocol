@@ -1,9 +1,9 @@
+import { Button, ToggleButton } from '@alliance/ui';
 import { useStore } from 'zustand';
 import { createStore } from 'zustand/vanilla';
 import { useText } from '#infra/text/index.js';
 import { DIALOG, openDialog } from '#part/dialog.js';
 import { insertPart } from '#part/slot.js';
-import { Button, ToggleButton } from '#ui/index.js';
 import { LoadoutPanel } from './loadout.js';
 
 /** Whether the loadout panel under the room is open. Local to this domain. */

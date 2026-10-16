@@ -1,8 +1,8 @@
 import type { StreamUnit } from '@alliance/compat-upstream';
+import { cx } from '@alliance/ui';
 import { useStream } from '#infra/store/hook.js';
 import type { StreamLine } from '#infra/store/stream.js';
 import { useText } from '#infra/text/index.js';
-import { cx } from '#infra/theme/class-name.js';
 import styles from './field.module.css';
 
 /** Extra room around the units, in field units, so none sits on the edge. */

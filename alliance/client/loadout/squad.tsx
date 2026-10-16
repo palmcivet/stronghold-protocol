@@ -1,5 +1,14 @@
 import type { CatalogDiySlot } from '@alliance/contract/catalog.js';
 import type { DiyPick } from '@alliance/contract/message.js';
+import {
+  Button,
+  Cluster,
+  ListBox,
+  Notice,
+  Select,
+  Stack,
+  Text,
+} from '@alliance/ui';
 import { useMemo } from 'react';
 import { useStore } from 'zustand';
 import { useCatalog } from '#infra/store/hook.js';
@@ -11,15 +20,6 @@ import {
   useText,
 } from '#infra/text/index.js';
 import { ChessThumb } from '#part/art.js';
-import {
-  Button,
-  Cluster,
-  EmptyState,
-  ListBox,
-  Muted,
-  Select,
-  Stack,
-} from '#ui/index.js';
 import { loadoutStore } from './state.js';
 import { SyncStatus, TakesEffect } from './sync-status.js';
 
@@ -66,7 +66,7 @@ function PickChoices({
     return null;
   }
   if (choice.locked) {
-    return <Muted>{t('core:diy.locked')}</Muted>;
+    return <Text kind="muted">{t('core:diy.locked')}</Text>;
   }
   return (
     <Cluster gap={2}>
@@ -123,7 +123,7 @@ export function Ownership() {
     return [...byTier.entries()].sort((left, right) => left[0] - right[0]);
   }, [catalog]);
   if (tiers.length === 0) {
-    return <EmptyState title={t('core:ownership.empty')} />;
+    return <Notice title={t('core:ownership.empty')} />;
   }
   const all = tiers.flatMap(([, ids]) => ids);
   const owned = all.filter((id) => !notOwned.includes(id));
@@ -137,7 +137,7 @@ export function Ownership() {
   };
   return (
     <Stack gap={3}>
-      <Muted>{t('core:ownership.hint')}</Muted>
+      <Text kind="muted">{t('core:ownership.hint')}</Text>
       {tiers.map(([tier, ids]) => (
         <Stack key={tier} gap={1}>
           <strong>{t('core:ownership.tier', { tier })}</strong>
@@ -180,11 +180,11 @@ export function CustomSquad() {
   const slots = useCatalog((state) => state.catalog.diySlots ?? []);
   const diy = useStore(loadoutStore, (state) => state.diy);
   if (slots.length === 0) {
-    return <EmptyState title={t('core:diy.empty')} />;
+    return <Notice title={t('core:diy.empty')} />;
   }
   return (
     <Stack gap={3}>
-      <Muted>{t('core:diy.hint')}</Muted>
+      <Text kind="muted">{t('core:diy.hint')}</Text>
       {slots.map((slot, index) => (
         <Stack key={slot.id} gap={1}>
           <Select

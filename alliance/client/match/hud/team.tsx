@@ -1,21 +1,22 @@
 import { EMOTE_BUBBLE_MS } from '@alliance/contract/match.js';
 import type { PlayerView } from '@alliance/contract/server-message.js';
+import {
+  Badge,
+  Button,
+  cx,
+  Icon,
+  Text,
+  type ToneName,
+  Tooltip,
+} from '@alliance/ui';
 import { useIntent } from '#infra/intent/context.js';
 import { useArt } from '#infra/resource/art.js';
 import { useMatch, useMatchCatalog, useSession } from '#infra/store/hook.js';
 import { dataName, useText } from '#infra/text/index.js';
-import { cx } from '#infra/theme/class-name.js';
 import { usePlayback } from '#match/playback-state.js';
+import { PlayerAvatar } from '#part/art.js';
+import { LpTower } from '#part/lp-tower.js';
 import { Part } from '#part/registry.js';
-import {
-  Avatar,
-  Badge,
-  Button,
-  Icon,
-  LpTower,
-  Num,
-  Tooltip,
-} from '#ui/index.js';
 import { emoteName } from './emote.js';
 import styles from './hud.module.css';
 
@@ -33,23 +34,23 @@ function statusMeta(
       | 'core:combat.heading'
       | 'core:match.acting',
   ) => string,
-): { readonly tip: string; readonly tone: string } {
+): { readonly tip: string; readonly tone: ToneName } {
   if (offline) {
-    return { tip: t('core:room.offline'), tone: 'offline' };
+    return { tip: t('core:room.offline'), tone: 'danger' };
   }
   switch (status) {
     case 'ready':
-      return { tip: t('core:room.ready'), tone: 'mint' };
+      return { tip: t('core:room.ready'), tone: 'accent' };
     case 'deciding':
       return { tip: t('core:match.deciding'), tone: 'gold' };
     case 'done':
-      return { tip: t('core:playback.ended'), tone: 'mint' };
+      return { tip: t('core:playback.ended'), tone: 'accent' };
     case 'dead':
-      return { tip: t('core:match.eliminated'), tone: 'red' };
+      return { tip: t('core:match.eliminated'), tone: 'danger' };
     case 'combat':
       return { tip: t('core:combat.heading'), tone: 'orange' };
     default:
-      return { tip: t('core:match.acting'), tone: 'lo' };
+      return { tip: t('core:match.acting'), tone: 'neutral' };
   }
 }
 
@@ -135,11 +136,11 @@ export function TeamRow({ player }: { readonly player: PlayerView }) {
         disabled={!canWatch}
       >
         <span className={cx(styles.teamArt)}>
-          <Avatar
+          <PlayerAvatar
             name={player.name}
             src={art}
-            framed={self}
-            off={!player.alive}
+            active={self}
+            offline={!player.alive}
           />
           <span className={cx(styles.seatTag)}>P{player.seat + 1}</span>
           {player.isBot ? <span className={cx(styles.teamAi)}>AI</span> : null}
@@ -173,7 +174,7 @@ export function TeamRow({ player }: { readonly player: PlayerView }) {
                 pending,
               })}
             >
-              −<Num>{pending}</Num>
+              −<Text variant="number">{pending}</Text>
             </span>
           ) : null}
           <Tooltip tip={meta.tip}>
@@ -203,7 +204,7 @@ export function TeamRow({ player }: { readonly player: PlayerView }) {
             </span>
           ) : null}
           {player.autoplay ? (
-            <Badge tone="warn">{t('core:match.autoplay')}</Badge>
+            <Badge tone="amber">{t('core:match.autoplay')}</Badge>
           ) : null}
         </div>
         {canWatch && !watched && !self ? (

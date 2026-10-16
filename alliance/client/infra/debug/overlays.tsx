@@ -301,9 +301,8 @@ export function Overlays() {
             layout.design.height,
           );
           const stageSize = `${Math.round(stage.width)}×${Math.round(stage.height)}`;
-          const { density, densityFactor } = viewportStore.getState();
           aspect = {
-            label: `viewport ${viewport.size} (${viewport.ratio}) · stage ${stageSize} (${design.ratio}) · scale ${layout.scale.toFixed(3)} · ${density}×${densityFactor}`,
+            label: `viewport ${viewport.size} (${viewport.ratio}) · stage ${stageSize} (${design.ratio}) · scale ${layout.scale.toFixed(3)}`,
             frame: {
               left: stage.left,
               top: stage.top,

@@ -1,0 +1,49 @@
+import { DialogDemo } from './dialog.demo.js';
+
+# Dialog
+
+居中的遮罩对话框：渐变斜纹条、可选的英文微标签、标题、可滚动的正文与底部操作区，外围是四角角标。打开状态由调用方持有。暂停页、离开页等需要拦住整个界面的内容，用 `dismissable={false}` 且没有 `closeLabel` 的对话框。
+
+:::code-group
+
+<div data-title="Preview">
+
+<div className="wsde-doc-preview">
+
+<DialogDemo />
+
+</div>
+
+</div>
+
+```tsx [Code]
+<Dialog
+  isOpen={open}
+  onOpenChange={setOpen}
+  title="离开房间"
+  micro="CONFIRM"
+  tone="danger"
+  role="alertdialog"
+  actions={<Button variant="danger" onPress={leave}>离开</Button>}
+>
+  离开后无法回到本局。
+</Dialog>
+```
+
+:::
+
+| 属性 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `isOpen` | `boolean` | — | 是否打开 |
+| `onOpenChange` | `(open: boolean) => void` | — | 按 Esc、点击遮罩或点击关闭按钮时以 `false` 调用 |
+| `dismissable` | `boolean` | `true` | 按 Esc 或点击遮罩时关闭；为 `false` 时两者都无效 |
+| `size` | `'panel' \| 'wide' \| 'full'` | `'panel'` | 框体：居中的窄栏、大卡片或整个画布 |
+| `title` | `string` | — | 标题，作为对话框的标题 |
+| `children` | `ReactNode` | — | 正文；不给时没有正文区 |
+| `micro` | `string` | — | 标题上方的英文微标签 |
+| `tone` | `ToneName` | `'accent'` | 斜纹条与角标的色调 |
+| `actions` | `ReactNode` | — | 底部操作区 |
+| `closeLabel` | `string` | — | 关闭按钮的无障碍名称；与 `onOpenChange` 同时给出时才显示关闭按钮 |
+| `role` | `'dialog' \| 'alertdialog'` | `'dialog'` | 需要玩家回应的确认用 `alertdialog` |
+
+行为与无障碍：对话框打开时焦点留在对话框内，关闭后焦点回到触发它的元素。

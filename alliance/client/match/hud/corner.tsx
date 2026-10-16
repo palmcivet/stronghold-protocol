@@ -1,13 +1,13 @@
+import { Button, Cluster, cx, Icon } from '@alliance/ui';
 import { useEffect, useState } from 'react';
 import { getPlatform } from '#infra/platform/index.js';
 import { useMatch } from '#infra/store/hook.js';
 import { has, lookup, useText } from '#infra/text/index.js';
-import { cx } from '#infra/theme/class-name.js';
 import { DIALOG, openDialog } from '#part/dialog.js';
 import { openSettings } from '#part/overlay.js';
 import { Part } from '#part/registry.js';
-import { Button, Cluster, Icon } from '#ui/index.js';
 import styles from './hud.module.css';
+import { PhaseBand } from './phase-band.js';
 
 /** How long the phase banner stays, as master's. */
 const BANNER_MS = 1800;
@@ -51,7 +51,7 @@ export function Corner() {
   );
 }
 
-/** The banner shown for a moment when the phase changes: its name over "ROUND nn // PHASE". */
+/** The banner shown for a moment when the phase changes: its name under "ROUND nn // PHASE". */
 export function PhaseBanner() {
   const view = useMatch((state) =>
     state.public
@@ -64,23 +64,23 @@ export function PhaseBanner() {
   // the banner shows again at every new round, even with the same phase name
   // biome-ignore lint/correctness/useExhaustiveDependencies: round restarts the banner
   useEffect(() => {
-    if (!phase) {
-      return;
+    if (phase) {
+      setShown(phase);
     }
-    setShown(phase);
-    const timer = setTimeout(() => setShown(null), BANNER_MS);
-    return () => clearTimeout(timer);
   }, [phase, round]);
   const key = `core:phase.${shown}`;
   if (!shown || !has(key)) {
     return null;
   }
   return (
-    <div className={cx(styles.phaseBanner)} role="status">
-      <strong>{lookup(key)}</strong>
-      <span className={cx(styles.microLabel)}>
-        {`ROUND ${String(round).padStart(2, '0')} // ${shown.toUpperCase()}`}
-      </span>
+    <div className={cx(styles.phaseBanner)}>
+      <PhaseBand
+        key={`${shown}:${round}`}
+        title={lookup(key)}
+        micro={`ROUND ${String(round).padStart(2, '0')} // ${shown.toUpperCase()}`}
+        duration={BANNER_MS}
+        onDone={() => setShown(null)}
+      />
     </div>
   );
 }

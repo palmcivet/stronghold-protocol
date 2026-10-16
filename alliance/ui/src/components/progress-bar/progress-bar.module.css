@@ -1,0 +1,24 @@
+@layer components {
+  .progress {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--wsde-space-1);
+    font-size: var(--wsde-font-size-label);
+  }
+
+  .progressValue {
+    font-family: var(--wsde-font-number);
+  }
+
+  .progressTrack {
+    grid-column: 1 / -1;
+    height: calc(var(--wsde-dp) * 6);
+    background: var(--wsde-color-control-hover);
+  }
+
+  .progressFill {
+    display: block;
+    height: 100%;
+    background: var(--wsde-tone-base);
+  }
+}

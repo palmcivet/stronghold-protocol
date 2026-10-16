@@ -1,0 +1,35 @@
+import { Region } from './region.js';
+
+# Region
+
+布局中的一块命名区域。布局样式按 `data-region` 放置它。
+
+:::code-group
+
+<div data-title="Preview">
+
+<div className="wsde-doc-preview">
+
+<Region name="body" label="正文">
+  正文区域
+</Region>
+
+</div>
+
+</div>
+
+```tsx [Code]
+import { Region } from '@alliance/ui';
+
+<Region name="body" label="正文">
+  正文区域
+</Region>
+```
+
+:::
+
+| 属性 | 类型 | 说明 |
+| --- | --- | --- |
+| `name` | `string` | 区域名，写入 `data-region` |
+| `label` | `string` | 给出后渲染为带名称的 `section` |
+| `className` | `string` | 附加的类名 |

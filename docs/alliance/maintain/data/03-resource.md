@@ -128,6 +128,7 @@ pnpm compile:packs --season act2autochess
 
 - 数据包只写领域 id，不写资源地址或键。客户端经清单的 `refs` 把 id 换成键，例如 `chars.char_002_amiya.avatar` → `image:char/avatar/char_002_amiya`。敌人的 Spine 按敌人记录的 `spine` 查 `enemies[spine].spine`。
 - `ResourceStore.refs` 是各层合并后的 `refs`，类型为 `@alliance/data/refs` 的 `ResourceRefs`；某层给已知名字换了形状时，加载失败。
+- `backdrop` 是页面背景图，来自赛季包的 `image:season/<赛季>/entry/bkg_01`；连接 master 后端时来自 `ui.entry/bkg_01`。没有这个引用时，背景只有绘制的装饰。
 - 精英二头像缺失时回退到精英零头像，由清单条目的 `fallbackId` 表示，解析器沿回退链加载。
 - 敌人的 `attackAnim` 是必填字段，缺省为 `null`（`DEFAULT_ATTACK_ANIM`）。`mission-core` 在没有动画片段时停顿 0.35 秒，演算结果与此一致。Spine 元数据只供画面使用，不进入数据包。
 

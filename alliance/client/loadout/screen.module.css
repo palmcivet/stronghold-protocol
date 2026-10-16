@@ -18,35 +18,25 @@
     justify-content: space-between;
     gap: var(--wsde-space-3);
     padding: var(--wsde-space-2) var(--wsde-space-3);
-    border: 1px solid var(--wsde-color-line-1);
-    background: var(--wsde-color-bg-2);
-  }
-
-  .dialog {
-    container: loadout / inline-size;
+    border: 1px solid var(--wsde-color-border-subtle);
+    background: var(--wsde-palette-gray-800);
   }
 
   /* Master's loadout: the roster list beside the selected operator, each scrolling on its own. */
   .rosterTab {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1.5fr) minmax(
+        calc(var(--wsde-dp) * 288),
+        1fr
+      );
+    align-items: start;
     gap: var(--wsde-space-4);
-  }
-
-  @container loadout (width >= 48rem) {
-    .rosterTab {
-      grid-template-columns: minmax(0, 1.5fr) minmax(18rem, 1fr);
-      align-items: start;
-    }
-
-    .pane {
-      max-height: calc(100dvh - 12rem);
-      overflow: auto;
-      overscroll-behavior: contain;
-    }
   }
 
   .pane {
     min-width: 0;
+    max-height: calc(var(--wsde-dp) * 888);
+    overflow: auto;
+    overscroll-behavior: contain;
   }
 }

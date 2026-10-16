@@ -1,7 +1,10 @@
 @layer components {
   .slots {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+    grid-template-columns: repeat(
+        auto-fill,
+        minmax(calc(var(--wsde-dp) * 128), 1fr)
+      );
     gap: var(--wsde-space-2);
   }
 
@@ -10,10 +13,10 @@
     flex-direction: column;
     align-items: flex-start;
     gap: var(--wsde-space-1);
-    min-height: 4rem;
+    min-height: calc(var(--wsde-dp) * 64);
     padding: var(--wsde-space-2);
-    border: 1px solid var(--wsde-color-line-2);
-    background: var(--wsde-color-bg-2);
+    border: 1px solid var(--wsde-color-border-default);
+    background: var(--wsde-palette-gray-800);
     text-align: start;
   }
 

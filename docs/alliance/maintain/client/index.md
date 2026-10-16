@@ -59,3 +59,4 @@ description: 盟约的浏览器客户端：技术栈、目录分层，以及各�
 - [平台探测](./16-platform.md)：`configurePlatform` / `probe` / `getPlatform`，不做 UA 嗅探
 - [客户端目录与分层](./17-directory.md)：完整目录树、导入别名与 dependency-cruiser 检查
 - [调试叠层](./18-debug.md)：DEV 下的部件高亮、出血线与 `window.wsde`
+- 基础组件：由 `@alliance/ui`（`alliance/ui`）提供，组件文档与组件同目录，构建为独立的站点

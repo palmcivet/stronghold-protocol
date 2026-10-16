@@ -1,9 +1,9 @@
+import { Button, Icon, ToggleButton, Tooltip } from '@alliance/ui';
 import { useIntent } from '#infra/intent/context.js';
 import { useRoom, useSession } from '#infra/store/hook.js';
 import { isHost } from '#infra/store/room.js';
 import { useText } from '#infra/text/index.js';
 import { LeaveRoom } from '#shell/leave.js';
-import { Button, Icon, ToggleButton, Tooltip } from '#ui/index.js';
 import { roomFacts } from './facts.js';
 
 /** Ready toggle of a seated co-op player who is not the host. */

@@ -1,0 +1,28 @@
+@layer components {
+  .notice {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wsde-space-2);
+  }
+
+  .notice[data-variant="empty"] {
+    align-items: center;
+    padding: var(--wsde-space-6);
+    color: var(--wsde-color-text-muted);
+    text-align: center;
+  }
+
+  .notice[data-variant="error"] {
+    padding: var(--wsde-space-4);
+    border: var(--wsde-stroke-thin) solid var(--wsde-tone-danger-base);
+    border-radius: var(--wsde-radius-2);
+    background: var(--wsde-color-surface-raised);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--wsde-space-2);
+  }
+}

@@ -1,7 +1,6 @@
+import { cx, ProgressBar } from '@alliance/ui';
 import { useText } from '#infra/text/index.js';
-import { cx } from '#infra/theme/class-name.js';
 import { usePlayback } from '#match/playback-state.js';
-import { Meter } from '#ui/index.js';
 import styles from './field.module.css';
 
 /** What the field shows of a battle it does not draw. */
@@ -21,11 +20,11 @@ export function BattleStatus() {
             : t('core:playback.running')}
       </p>
       {battle.total > 0 ? (
-        <Meter
+        <ProgressBar
           label={t('core:playback.running')}
           value={battle.killed}
           max={battle.total}
-          valueLabel={t('core:playback.progress', {
+          valueText={t('core:playback.progress', {
             killed: battle.killed,
             total: battle.total,
           })}

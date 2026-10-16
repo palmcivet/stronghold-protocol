@@ -1,0 +1,37 @@
+import { PopoverDemo } from './popover.demo.js';
+
+# Popover
+
+贴着触发器显示的浮动面板，带箭头。`PopoverTrigger` 包住触发按钮与 `Popover`，按下按钮即打开。面板里放一个 `ListBox` 并用 `onAction` 响应，就是一个操作菜单。
+
+:::code-group
+
+<div data-title="Preview">
+
+<div className="wsde-doc-preview">
+
+<PopoverDemo />
+
+</div>
+
+</div>
+
+```tsx [Code]
+<PopoverTrigger>
+  <Button>查看</Button>
+  <Popover label="本回合">
+    <p>内容</p>
+  </Popover>
+</PopoverTrigger>
+```
+
+:::
+
+`PopoverTrigger` 接受 `isOpen`、`onOpenChange`，需要自己持有打开状态时使用。
+
+| 属性 | 类型 | 说明 |
+| --- | --- | --- |
+| `label` | `string` | 弹层的无障碍名称 |
+| `children` | `ReactNode \| (close: () => void) => ReactNode` | 弹层内容；用函数时可拿到关闭它的 `close` |
+
+其余属性是 React Aria 的 `PopoverProps`，如 `placement`、`offset`。

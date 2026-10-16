@@ -153,6 +153,13 @@ describe('asset rules', () => {
       null,
     ],
     [
+      'ui.backdrop',
+      '/assets/ui/entry/bkg_01.png',
+      [],
+      'image:ui/entry/bkg_01',
+      ['backdrop'],
+    ],
+    [
       'prof.icon',
       '/assets/prof/icon_caster.png',
       ['caster'],

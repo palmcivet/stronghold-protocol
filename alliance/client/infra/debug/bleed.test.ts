@@ -3,7 +3,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   applyViewport,
-  fitLayout,
   resetViewportStore,
   viewportStore,
 } from '#infra/theme/viewport.js';
@@ -19,14 +18,11 @@ afterEach(() => {
   resetWsde();
   resetViewportStore();
   const root = document.documentElement;
-  delete root.dataset['breakpoint'];
   delete root.dataset['orientation'];
   delete root.dataset['safeArea'];
-  root.style.removeProperty('--wsde-layout-scale');
-  root.style.removeProperty('--wsde-design-width');
-  root.style.removeProperty('--wsde-design-height');
-  root.style.removeProperty('--wsde-layout-offset-x');
-  root.style.removeProperty('--wsde-layout-offset-y');
+  root.style.removeProperty('--wsde-scale');
+  root.style.removeProperty('--wsde-offset-x');
+  root.style.removeProperty('--wsde-offset-y');
 });
 
 describe('bleed', () => {
@@ -40,8 +36,7 @@ describe('bleed', () => {
   });
 
   it('reads live safeInsets from viewportStore (zeros when safe area off)', () => {
-    const layout = fitLayout({ width: 800, height: 400 });
-    applyViewport(layout, 'off');
+    applyViewport({ width: 800, height: 400 }, 'off');
     showBleed();
     expect(isBleedVisible()).toBe(true);
     expect(resolveBleedInsets()).toEqual({

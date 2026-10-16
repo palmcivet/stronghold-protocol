@@ -1,3 +1,4 @@
+import { Button } from '@alliance/ui';
 import { useNavigate } from '@tanstack/react-router';
 import {
   type ComponentType,
@@ -8,7 +9,6 @@ import {
 import { useStore } from 'zustand';
 import { presenceStore } from '#infra/store/presence.js';
 import { useText } from '#infra/text/index.js';
-import { Button } from '#ui/index.js';
 
 /** A leave control that takes the label the caller wants on the open button. */
 export type LeaveControl = ComponentType<{ readonly label?: string }>;

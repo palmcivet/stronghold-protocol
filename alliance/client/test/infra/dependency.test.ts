@@ -9,7 +9,10 @@ const TESTS = '(^test/|\\.(test|spec)\\.tsx?$)';
 const COMPOSITION = '^infra/(boot|router)/';
 const SETTINGS = '^infra/settings/';
 
-/** The dependency direction of the client: domains → shell, part, ui → infra. */
+/**
+ * The dependency direction of the client: domains → shell → part → infra.
+ * `@alliance/ui` is a package outside the client; its own boundary is checked in `alliance/ui/test`.
+ */
 const RULES: IForbiddenRuleType[] = [
   {
     name: 'infra-stays-below',
@@ -17,25 +20,15 @@ const RULES: IForbiddenRuleType[] = [
       'infra depends on no layer above it; boot and router assemble the client; settings may use part',
     severity: 'error',
     from: { path: '^infra/', pathNot: [TESTS, COMPOSITION, SETTINGS] },
-    to: { path: `^(ui|part|shell|${DOMAIN})/` },
+    to: { path: `^(part|shell|${DOMAIN})/` },
   },
   {
     name: 'settings-may-use-part',
     comment:
-      'settings registers profile tabs via part; it must not reach ui, shell, or domains',
+      'settings registers profile tabs via part; it must not reach shell or domains',
     severity: 'error',
     from: { path: SETTINGS, pathNot: TESTS },
-    to: { path: `^(ui|shell|${DOMAIN})/` },
-  },
-  {
-    name: 'ui-reads-theme-and-text',
-    comment: 'ui depends only on infra/theme and infra/text',
-    severity: 'error',
-    from: { path: '^ui/', pathNot: TESTS },
-    to: {
-      path: `^(infra|part|shell|${DOMAIN})/`,
-      pathNot: '^infra/(theme|text)/',
-    },
+    to: { path: `^(shell|${DOMAIN})/` },
   },
   {
     name: 'part-below-shell',
@@ -140,8 +133,8 @@ describe('dependency direction', () => {
       {
         name: 'probe',
         severity: 'error',
-        from: { path: '^ui/' },
-        to: { path: '^infra/theme/' },
+        from: { path: '^part/' },
+        to: { path: '^infra/' },
       },
     ]);
     expect(output.summary.violations.length).toBeGreaterThan(0);

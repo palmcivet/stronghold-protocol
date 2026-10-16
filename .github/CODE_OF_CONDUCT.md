@@ -15,6 +15,7 @@
   - [alliance 开发](#alliance-开发)
     - [设置](#设置)
     - [平台](#平台)
+    - [界面](#界面)
 
 ## 代码风格
 
@@ -264,3 +265,49 @@ mission-renderer/test/effect/lifecycle.spec.ts
 - 与 `infra/connection` 的后端 `Capabilities` 分开，不要混用或合并
 - 业务代码禁止临时 `typeof` / UA 嗅探判能力；宿主（Tauri / Capacitor 等）用 `configurePlatform` 覆盖
 - `resetPlatform` / `resetSettingSections` 仅测试，产品代码不得调用
+
+### 界面
+
+尺寸与单位：
+
+- 所有盒子尺寸以设计像素（dp，1920×1080 画布上的 1 像素）书写：模块 CSS 用令牌，没有对应令牌时写 `calc(var(--wsde-dp) * N)`；字号用字号令牌或 `calc(var(--wsde-text-dp) * N)`
+- 允许的单位：`%`、`fr`、`em`、时间与角度；线宽保留真实像素 `1px` / `2px`
+- 禁止 `rem`、其他 `px` 与视口单位（`vw`、`vh`、`dvh` 等）；CSS 由 stylelint 检查，TSX 与 TS 里拼出的长度由 `test/infra/units.test.ts` 检查
+- 内联样式里的长度也写成 dp；组件的尺寸参数用 dp 数值，不带单位
+
+```tsx
+// good
+<Grid min={192}>...</Grid>
+style={{ '--min': `calc(var(--wsde-dp) * ${min})` }}
+
+// bad
+<Grid min={12}>...</Grid>          // 12 指 rem
+style={{ '--min': `${min}rem` }}
+```
+
+令牌与色调：
+
+- 组件只读语义令牌（`color`、`tone`、`font`、`size` 等），不读 `palette`；页面样式同理
+- `data-tone` 只取色调名：`accent`、`gold`、`amber`、`orange`、`danger`、`ice`、`neutral`
+- 状态词与类别不占用 `data-tone`：富文本的类别用 `data-kind`，阶段用 `data-phase`；状态词在组件内部映射成色调名
+- 读 `--wsde-tone-*` 的组件在自己的根节点上写 `data-tone`，不依赖祖先
+- 色调要么由 `tone` 属性给出，要么由 `variant` 或状态派生；两者不并存
+- `size` 属性取 `ControlSize`（`sm`、`md`、`lg`、`xl`），不另造档位
+
+```tsx
+// good — 状态词映射成色调名，类别用 data-kind
+<Badge tone="amber">Auto</Badge>
+<span data-kind="positive">+10%</span>
+
+// bad — 状态词和类别混进 data-tone
+<Badge tone="warn">Auto</Badge>
+<span data-tone="positive">+10%</span>
+```
+
+`ui/` 组件：
+
+- 按领域分同级文件夹（`action/`、`form/`、`surface/`、`status/` 等）；不要把不同领域的文件平铺在 `ui/` 下
+- 只有一个实现文件的领域用 `index.tsx` 与 `index.module.css`；多文件的领域，样式与组件同名
+- 组件是纯 props，不读状态仓库、不发意图；音效经 `useFeedback`
+- `ui/` 内跨文件夹用 `#ui/<文件夹>/…`，同文件夹内用相对路径；`ui/` 之外只从 `#ui/index.js` 导入
+- 新组件的用例按语义查询，放在 `test/ui/`；规格写进 `docs/alliance/maintain/client/19-component.md`

@@ -1,0 +1,35 @@
+@layer components {
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wsde-space-2);
+    padding: var(--wsde-space-3);
+    border: var(--wsde-stroke-thin) solid var(--wsde-color-border-default);
+    border-radius: var(--wsde-radius-1);
+    background: var(--wsde-color-surface-overlay);
+  }
+
+  .card[data-selected] {
+    border-color: var(--wsde-tone-accent-base);
+    box-shadow: var(--wsde-shadow-glow);
+  }
+
+  .card[data-muted] {
+    opacity: 0.5;
+  }
+
+  .card[data-tone] {
+    border-top: var(--wsde-stroke-accent) solid var(--wsde-tone-base);
+  }
+
+  .card[data-layout="row"] {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--wsde-space-3);
+  }
+
+  .cardTitle {
+    font-family: var(--wsde-font-display);
+  }
+}

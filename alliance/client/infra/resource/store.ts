@@ -30,6 +30,7 @@ import {
   isPackManifest,
   type ResolvedAsset,
 } from 'arknights-assets-catalog';
+import { fontStylesheetHrefs } from './fonts.js';
 
 /** Where a master backend keeps its data and its art. Its `data/assets.json` is read; its art is served from `/assets/`. */
 export interface CompatSourceOptions {
@@ -76,6 +77,8 @@ export interface ResourceStore {
   readonly refs: ResourceRefs;
   /** Cue tables of the `app` sections of the layers, merged in layer order. */
   readonly cues: CueTable;
+  /** `fonts.css` of layers that publish `font:*`. Empty when none do. */
+  readonly fontStylesheets: readonly string[];
   ref(path: string | readonly string[]): AssetKey | null;
   /** Takes one reference to the image of the key and resolves it, or null when the whole fallback chain failed. */
   image(key: AssetKey): Promise<unknown>;
@@ -344,9 +347,14 @@ export async function loadResourceStore(
       retryDelays,
     ),
   ]);
-  const resolver = createAssetResolver([...layers, local]);
+  const stacked = [...layers, local];
+  const resolver = createAssetResolver(stacked);
   const refs = resourceRefs(resolver);
-  const cues = layerCues([...layers, local]);
+  const cues = layerCues(stacked);
+  const fontStylesheets = fontStylesheetHrefs(
+    stacked,
+    options.compat ? backendRoot(options.compat.backend) : undefined,
+  );
 
   // MARK: image cache
 
@@ -438,6 +446,7 @@ export async function loadResourceStore(
     compatIssues,
     refs,
     cues,
+    fontStylesheets,
     ref: (path) => resolver.ref(path),
     image: acquire,
     preload,

@@ -47,7 +47,7 @@ export interface IdentitySettings {
 export interface DisplaySettings {
   readonly quality: Quality;
   readonly textSize: TextSize;
-  /** When on, HUD insets into env(safe-area-inset-*); the map stays full-bleed. */
+  /** When on, the design canvas sits inside the safe area; the map stays full-bleed. */
   readonly safeAreaUi: boolean;
 }
 

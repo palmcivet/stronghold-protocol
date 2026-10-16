@@ -1,0 +1,35 @@
+@layer components {
+  .text[data-variant="number"] {
+    font-family: var(--wsde-font-number);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .text[data-variant="micro"] {
+    color: var(--wsde-color-text-disabled);
+    font-family: var(--wsde-font-display);
+    font-size: var(--wsde-font-size-caption);
+    font-stretch: 125%;
+    letter-spacing: 0.18em;
+    line-height: 1.2;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .text[data-tone]:not([data-variant="micro"]),
+  .text[data-variant="micro"][data-tone]:not([data-tone="neutral"]) {
+    color: var(--wsde-tone-base);
+  }
+
+  .text[data-variant="micro"][data-tone="neutral"],
+  .text[data-kind="muted"] {
+    color: var(--wsde-color-text-muted);
+  }
+
+  .text[data-kind="good"] {
+    color: var(--wsde-color-status-success);
+  }
+
+  .text[data-kind="bad"] {
+    color: var(--wsde-color-status-error);
+  }
+}

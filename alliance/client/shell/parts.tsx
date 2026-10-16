@@ -1,13 +1,14 @@
+import { Button, cx, Dialog } from '@alliance/ui';
 import { type ReactNode, useEffect } from 'react';
 import { useStore } from 'zustand';
+import { useArt } from '#infra/resource/art.js';
+import { assetsStore } from '#infra/store/assets.js';
 import { lookup, useText } from '#infra/text/index.js';
-import { cx } from '#infra/theme/class-name.js';
 import { DefaultError } from '#part/boundary.js';
 import { BACK_KEYS, closeDialog, dialogStore } from '#part/dialog.js';
 import { answerConfirm, overlayStore } from '#part/overlay.js';
 import { definePart, Part } from '#part/registry.js';
 import { type PartInsert, Slot } from '#part/slot.js';
-import { Button, Dialog, Modal } from '#ui/index.js';
 import { ConnectionBanner } from './banner.js';
 import { MENU_ENTRY, MenuEntry } from './menu.js';
 import styles from './shell.module.css';
@@ -25,9 +26,17 @@ export const SHELL = {
   error: 'core:shell.error',
 } as const;
 
-/** The season backdrop under every page. */
+/** Full-viewport plate: decoration, and the season image when the pack declares `refs.backdrop`. */
 function Backdrop() {
-  return <div className={cx(styles.backdropArt)} aria-hidden="true" />;
+  const resources = useStore(assetsStore, (state) => state.resources);
+  const url = useArt(resources?.ref('backdrop') ?? null);
+  return (
+    <div className={cx(styles.backdropArt)} aria-hidden="true">
+      {url ? (
+        <img className={cx(styles.backdropImage)} alt="" src={url} />
+      ) : null}
+    </div>
+  );
 }
 
 /** The shell's confirm and notice dialog, one request at a time. */
@@ -37,33 +46,31 @@ function Confirm() {
     return null;
   }
   return (
-    <Modal
+    <Dialog
       isOpen
       dismissable={request.cancel !== null}
       onOpenChange={(open) => !open && answerConfirm(request.id, false)}
-    >
-      <Dialog
-        role="alertdialog"
-        title={request.title}
-        actions={
-          <>
-            {request.cancel === null ? null : (
-              <Button onPress={() => answerConfirm(request.id, false)}>
-                {request.cancel}
-              </Button>
-            )}
-            <Button
-              variant="primary"
-              onPress={() => answerConfirm(request.id, true)}
-            >
-              {request.confirm}
+      role="alertdialog"
+      title={request.title}
+      tone={request.tone ?? 'accent'}
+      actions={
+        <>
+          {request.cancel === null ? null : (
+            <Button onPress={() => answerConfirm(request.id, false)}>
+              {request.cancel}
             </Button>
-          </>
-        }
-      >
-        {request.body ? <p>{request.body}</p> : null}
-      </Dialog>
-    </Modal>
+          )}
+          <Button
+            variant={request.tone === 'danger' ? 'danger' : 'primary'}
+            onPress={() => answerConfirm(request.id, true)}
+          >
+            {request.confirm}
+          </Button>
+        </>
+      }
+    >
+      {request.body ? <p>{request.body}</p> : null}
+    </Dialog>
   );
 }
 
@@ -106,19 +113,15 @@ function DialogHost() {
     return null;
   }
   return (
-    <Modal
+    <Dialog
       isOpen
       size={open.size ?? 'panel'}
       onOpenChange={(next) => !next && closeDialog()}
+      title={lookup(open.title)}
+      closeLabel={t('core:common.close')}
     >
-      <Dialog
-        title={lookup(open.title)}
-        closeLabel={t('core:common.close')}
-        onClose={closeDialog}
-      >
-        <Part id={open.id} boundary="page" />
-      </Dialog>
-    </Modal>
+      <Part id={open.id} boundary="page" />
+    </Dialog>
   );
 }
 
@@ -132,25 +135,10 @@ function TooltipLayer() {
   return null;
 }
 
-/** Banner + page body shared by the design stage and the bare match shell. */
-function ShellBody({ children }: { readonly children: ReactNode }) {
-  return (
-    <>
-      <div className={cx(styles.barLayer)} data-layer="bar">
-        <div className={cx(styles.bannerSlot)}>
-          <Part id={SHELL.banner} />
-        </div>
-      </div>
-      <main className={cx(styles.main)} data-layer="main">
-        {children}
-      </main>
-    </>
-  );
-}
-
 /**
- * Shell layers bottom to top: backdrop, banner, page, overlay, toast.
- * Non-match pages sit in the contain stage; match (`bare`) fills the viewport.
+ * Shell layers bottom to top: backdrop, page, banner, overlay, toast.
+ * Pages sit on the contain stage. The match field is viewport-fixed so the
+ * map fills the bands; `bare` only parks the banner and the toasts under the HUD.
  * Backdrop paints full-bleed under surplus bands outside the stage.
  */
 export function ShellFrame({
@@ -158,11 +146,10 @@ export function ShellFrame({
   bare = false,
 }: {
   readonly children: ReactNode;
-  /** The match page moves the banner under its top bar. */
+  /** The match page moves the banner and the toasts under its top bar. */
   readonly bare?: boolean;
 }) {
   const t = useText();
-  const body = <ShellBody>{children}</ShellBody>;
   return (
     <>
       <div className="wsde-rotate" role="status">
@@ -171,15 +158,17 @@ export function ShellFrame({
       <div className={cx(styles.app, 'wsde-app')} data-bare={bare || undefined}>
         <div className={cx(styles.backdrop)} data-layer="backdrop">
           <Part id={SHELL.backdrop} />
-          <div className={cx(styles.backdropVignette)} aria-hidden="true" />
         </div>
-        {bare ? (
-          body
-        ) : (
-          <div className="wsde-layout-host">
-            <div className="wsde-layout-stage">{body}</div>
+        <div className="wsde-layout-host">
+          <div className="wsde-layout-stage">
+            <main className={cx(styles.main)} data-layer="main">
+              {children}
+            </main>
           </div>
-        )}
+        </div>
+        <div data-layer="banner">
+          <Part id={SHELL.banner} />
+        </div>
         <div data-layer="overlay">
           <Slot id={SHELL.overlay} defaults={OVERLAY_DEFAULTS} />
         </div>

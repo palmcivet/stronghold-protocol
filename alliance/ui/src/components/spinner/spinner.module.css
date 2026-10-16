@@ -1,0 +1,23 @@
+@layer components {
+  .spinner {
+    display: inline-block;
+    width: calc(var(--wsde-dp) * 20);
+    height: calc(var(--wsde-dp) * 20);
+  }
+
+  .spinnerRing {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: var(--wsde-stroke-thick) solid var(--wsde-color-border-default);
+    border-top-color: var(--wsde-tone-accent-base);
+    border-radius: 50%;
+    animation: spin calc(800ms / max(var(--wsde-motion), 0.01)) linear infinite;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

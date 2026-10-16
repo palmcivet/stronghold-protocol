@@ -59,7 +59,7 @@ if (wsde) {
 | `hideBleed()` | 关闭 |
 | `isBleedVisible()` | 是否显示 |
 
-叠层绑定 `viewportStore.safeInsets`（由 `applyViewport` / `applySafeArea` 写入）：`core:display.safeAreaUi` 开时为当前 `--wsde-safe-*` / `env(safe-area-inset-*)`，关时四边为 0。不接受自定义 inset，也不用视口百分比回退。设置项见 [设置段](./15-settings.md)；令牌见 [样式与令牌](./11-style.md)。
+叠层绑定 `viewportStore.safeInsets`（由 `applyViewport` / `applySafeArea` 写入）：`core:display.safeAreaUi` 开时为 `env(safe-area-inset-*)`，关时四边为 0。画布已放进这个矩形，部件不再读 `--wsde-safe-*`。不接受自定义 inset，也不用视口百分比回退。设置项见 [设置段](./15-settings.md)；令牌见 [样式与令牌](./11-style.md)。
 
 ```js
 window.wsde?.showBleed()
@@ -73,7 +73,7 @@ window.wsde?.showBleed()
 | `hideAspect()` | 关闭 |
 | `isAspectVisible()` | 是否显示 |
 
-叠层绑定 `viewportStore.layout`（contain + 出血的舞台几何，与 `.wsde-layout-stage` / `--wsde-layout-offset-*` / `--wsde-layout-scale` 一致）：画出当前舞台框与 letterbox / pillarbox，标签为视口与设计比例。不接受自定义 `W:H` 目标框。
+叠层绑定 `viewportStore.layout`（contain 后的画布几何，与 `.wsde-layout-stage` / `--wsde-offset-*` / `--wsde-scale` 一致）：画出当前画布框与边带，标签为视口与设计比例。不接受自定义 `W:H` 目标框。
 
 ```js
 window.wsde?.showAspect()

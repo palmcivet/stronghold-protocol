@@ -1,0 +1,33 @@
+import { TooltipDemo } from './tooltip.demo.js';
+
+# Tooltip
+
+悬停或聚焦于它唯一的子元素时显示提示。子元素是控件（如 `Button`）时直接使用；子元素只是展示内容时传 `label`，它会被包成一张可聚焦的图，读屏读出 `label`。
+
+:::code-group
+
+<div data-title="Preview">
+
+<div className="wsde-doc-preview">
+
+<TooltipDemo />
+
+</div>
+
+</div>
+
+```tsx [Code]
+import { Tooltip, Button } from '@alliance/ui';
+
+<Tooltip content="说明">
+  <Button>悬停</Button>
+</Tooltip>
+```
+
+:::
+
+| 属性 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `tip` | `ReactNode` | — | 提示内容 |
+| `delay` | `number` | `400` | 悬停到显示的毫秒数 |
+| `label` | `string` | — | 子元素不是控件时，读屏读出的名称 |

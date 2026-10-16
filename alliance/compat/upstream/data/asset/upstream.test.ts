@@ -91,6 +91,23 @@ describe('upstream manifest', () => {
     ]);
   });
 
+  it('points the backdrop at the entry background and leaves the other ui images without a ref', async () => {
+    const { manifest, issues } = await buildUpstreamManifest(
+      masterInput({
+        ui: {
+          'entry/bkg_01': '/assets/ui/entry/bkg_01.png',
+          'entry/bkg_02': '/assets/ui/entry/bkg_02.png',
+        },
+      }),
+    );
+    expect(issues).toEqual([]);
+    expect(Object.keys(manifest.assets)).toEqual([
+      'image:ui/entry/bkg_01',
+      'image:ui/entry/bkg_02',
+    ]);
+    expect(manifest.refs).toEqual({ backdrop: 'image:ui/entry/bkg_01' });
+  });
+
   it('reports a ui path that is not a valid key path, and maps nothing for it', async () => {
     const { manifest, issues } = await buildUpstreamManifest(
       masterInput({

@@ -1,0 +1,32 @@
+import { CapsuleDemo } from './capsule.demo.js';
+
+# Capsule
+
+胶囊：一个名称，以及可选的数字与进度条。用 `tone` 区分状态。
+
+:::code-group
+
+<div data-title="Preview">
+
+<div className="wsde-doc-preview">
+
+<CapsuleDemo />
+
+</div>
+
+</div>
+
+```tsx [Code]
+import { Capsule } from '@alliance/ui';
+
+<Capsule tone="accent">准备就绪</Capsule>
+```
+
+:::
+
+| 属性 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `label` | `string` | — | 名称 |
+| `detail` | `ReactNode` | — | 名称旁的数字，如剩余时间或计数 |
+| `progress` | `number` | — | 0 到 1 之间的进度，显示为底部细条 |
+| `tone` | `ToneName` | `'accent'` | 色调 |

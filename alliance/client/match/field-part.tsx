@@ -1,7 +1,7 @@
 import { PHASE } from '@alliance/contract/match.js';
+import { cx } from '@alliance/ui';
 import { useMatch } from '#infra/store/hook.js';
 import { useText } from '#infra/text/index.js';
-import { cx } from '#infra/theme/class-name.js';
 import { Bench } from '#match/field/bench.js';
 import { DomField } from '#match/field/dom-field.js';
 import styles from '#match/field/field.module.css';

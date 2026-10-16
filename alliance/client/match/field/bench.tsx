@@ -1,12 +1,11 @@
 import type { PieceView } from '@alliance/contract/server-message.js';
+import { cx, Panel, ToggleButton } from '@alliance/ui';
 import { useStore } from 'zustand';
 import { useMatch } from '#infra/store/hook.js';
 import { useText } from '#infra/text/index.js';
-import { cx } from '#infra/theme/class-name.js';
 import { useBoardActions } from '#match/field/board-actions.js';
 import { pieceLabel } from '#match/piece-label.js';
 import { selectionStore } from '#match/selection.js';
-import { Panel, ToggleButton } from '#ui/index.js';
 import styles from './preparation.module.css';
 
 function Slots({

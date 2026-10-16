@@ -35,7 +35,6 @@ describe('aspect', () => {
     const layout = fitLayout(
       { width: 1600, height: 1000 },
       { width: 16, height: 9 },
-      'large',
     );
     viewportStore.setState({ layout });
     showAspect();
@@ -52,7 +51,6 @@ describe('aspect', () => {
     const layout = fitLayout(
       { width: 1600, height: 900 },
       { width: 1440, height: 900 },
-      'large',
     );
     const frame = activeAspectFrame(layout);
     expect(frame.width).toBeCloseTo(1440, 5);

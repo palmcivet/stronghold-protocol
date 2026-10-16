@@ -1,0 +1,33 @@
+import { ThumbDemo } from './thumb.demo.js';
+
+# Thumb
+
+小方块图片，外围是带颜色的框。没有图片时，显示名字的前两个字。
+
+:::code-group
+
+<div data-title="Preview">
+
+<div className="wsde-doc-preview">
+
+<ThumbDemo />
+
+</div>
+
+</div>
+
+```tsx [Code]
+import { Thumb } from '@alliance/ui';
+
+<Thumb name="阿米娅" color="var(--wsde-color-tier-4)" size="lg" />
+```
+
+:::
+
+| 属性 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `name` | `string` | — | 名称，读屏读出；无图时显示前两个字 |
+| `src` | `string \| null` | — | 图片地址 |
+| `color` | `string` | — | 框的颜色，任意 CSS 颜色 |
+| `glow` | `boolean` | `false` | 外发光 |
+| `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | 大小 |

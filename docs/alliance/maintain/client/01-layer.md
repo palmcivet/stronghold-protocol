@@ -13,14 +13,14 @@ description: 客户端四层划分与依赖规则，说明扩展应落在哪一�
 | --- | --- |
 | 领域 | `entry`、`profile`、`loadout`、`guide`、`room`、`match` |
 | 外壳 | `shell` |
-| 部件与基础组件 | `part`、`ui` |
+| 部件 | `part` |
 | 基础设施 | `infra` |
 
 ## 依赖规则
 
-- `infra` 不依赖上面任何一层；例外：`infra/settings` 可依赖 `part`（注册个人配置分页），不得依赖 `ui`、`shell` 或领域。`infra/debug` 同类会用到部件信息，但挂载登记只在 `part/boundary`（`part` → `infra`），不构成 `infra` → `part`；见 [调试叠层](./18-debug.md)。
+- `infra` 不依赖上面任何一层；例外：`infra/settings` 可依赖 `part`（注册个人配置分页），不得依赖 `shell` 或领域。`infra/debug` 同类会用到部件信息，但挂载登记只在 `part/boundary`（`part` → `infra`），不构成 `infra` → `part`；见 [调试叠层](./18-debug.md)。
 - `infra/boot` 与 `infra/router` 是装配点，可以依赖领域：前者组装运行时并注册各领域的部件，后者收集页面。
-- `ui` 只依赖 `infra/theme` 与 `infra/text`。
+- `@alliance/ui` 是独立的库（`alliance/ui`）。客户端只从它的包入口导入，它不依赖客户端的任何目录。
 - `part` 不依赖 `shell` 与领域。
 - `shell` 不依赖领域。
 - 领域之间不互相导入。领域只共享 `@alliance/contract` 的类型与 `infra/store` 的状态。

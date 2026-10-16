@@ -1,9 +1,8 @@
 import type { CatalogBond } from '@alliance/contract/catalog.js';
+import { Badge, Cluster, cx, Icon, Stack, Text, Tooltip } from '@alliance/ui';
 import { useMatch, useMatchCatalog } from '#infra/store/hook.js';
 import { dataName, shownName, useText } from '#infra/text/index.js';
-import { cx } from '#infra/theme/class-name.js';
 import { BondIcon, ChessThumb } from '#part/art.js';
-import { Chip, Cluster, Icon, InfoTip, Muted, Num, Stack } from '#ui/index.js';
 import { type MatchInfoModel, matchInfoModel } from './info-model.js';
 import styles from './match.module.css';
 
@@ -29,7 +28,7 @@ function BannedMembers({
           <ChessThumb chessId={id} size="sm" />
           <Stack gap={1}>
             <span>{shownName('chess', id)}</span>
-            <Muted>
+            <Text kind="muted">
               {(catalog.chess[id]?.bondIds ?? [])
                 .filter((other) => catalog.bonds[other])
                 .map((other, index) => (
@@ -42,7 +41,7 @@ function BannedMembers({
                     )}
                   </span>
                 ))}
-            </Muted>
+            </Text>
           </Stack>
         </Cluster>
       ))}
@@ -86,7 +85,7 @@ function BondRow({
               className={cx(styles.bondCell)}
               data-state={state ?? (banned > 0 ? 'partial' : undefined)}
             >
-              <InfoTip
+              <Tooltip
                 label={tip}
                 tip={
                   <Stack gap={2}>
@@ -104,7 +103,7 @@ function BondRow({
                     {banned}
                   </span>
                 ) : null}
-              </InfoTip>
+              </Tooltip>
             </li>
           );
         })}
@@ -145,13 +144,13 @@ export function MatchInfo({
           {factions.length ? (
             <Cluster gap={2}>
               {factions.map((id) => (
-                <Chip key={id} icon="shield">
+                <Badge shape="pill" key={id} icon="shield">
                   {shownName('faction', id)}
-                </Chip>
+                </Badge>
               ))}
             </Cluster>
           ) : (
-            <Muted>{t('core:info.none')}</Muted>
+            <Text kind="muted">{t('core:info.none')}</Text>
           )}
         </Stack>
       ) : null}
@@ -165,15 +164,15 @@ export function MatchInfo({
         bonds={model.addon}
         model={model}
       />
-      <Muted>
+      <Text kind="muted">
         {t('core:briefing.legend')}
         {model.modeOff ? t('core:briefing.legendOff') : ''} ·{' '}
         <Icon name="user" /> {t('core:briefing.legendBan')}
-      </Muted>
+      </Text>
       <Stack gap={2}>
         <Cluster gap={2}>
           <strong>{t('core:briefing.bannedOps')}</strong>
-          <Num>{model.banned.length}</Num>
+          <Text variant="number">{model.banned.length}</Text>
         </Cluster>
         {model.banned.length ? (
           <Cluster gap={2}>
@@ -190,11 +189,11 @@ export function MatchInfo({
             })}
           </Cluster>
         ) : (
-          <Muted>{t('core:briefing.noBanned')}</Muted>
+          <Text kind="muted">{t('core:briefing.noBanned')}</Text>
         )}
         {diyOut.length ? (
           <p data-part="core:match.info.diy">
-            <Chip>{t('core:briefing.diyTag')}</Chip>{' '}
+            <Badge shape="pill">{t('core:briefing.diyTag')}</Badge>{' '}
             {t('core:briefing.diyBanned', {
               names: diyOut
                 .map((charId) => dataName('operator', charId))

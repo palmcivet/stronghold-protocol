@@ -1,0 +1,27 @@
+import { ToggleButtonDemo } from './toggle-button.demo.js';
+
+# ToggleButton
+
+保持按下状态的按钮。外观与 `Button` 相同，`isSelected` 决定是否按下；切换时播放 `ui.tab` 音效。
+
+:::code-group
+
+<div data-title="Preview">
+
+<div className="wsde-doc-preview">
+
+<ToggleButtonDemo />
+
+</div>
+
+</div>
+
+```tsx [Code]
+<ToggleButton variant="amber" isSelected={on} onChange={setOn}>
+  {on ? '已开启' : '未开启'}
+</ToggleButton>
+```
+
+:::
+
+`ToggleButton` 接受 `Button` 的外观属性（`variant`、`size`、`icon`、`iconEnd`、`square`、`block`），以及 React Aria 的 `isSelected`、`defaultSelected`、`onChange`、`isDisabled`。`busy` 不适用。

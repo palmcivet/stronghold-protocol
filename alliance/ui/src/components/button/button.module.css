@@ -1,0 +1,225 @@
+@layer components {
+  .button {
+    --bg: var(--wsde-color-control-base);
+    --bgHover: var(--wsde-color-control-hover);
+    --bgPressed: var(--wsde-color-control-pressed);
+    --fg: var(--wsde-color-text-primary);
+    --bd: var(--wsde-color-border-default);
+    --bdHover: var(--wsde-tone-base);
+    --wsde-bracket-size: calc(var(--wsde-dp) * 10);
+    --wsde-bracket-inset: calc(var(--wsde-dp) * -4);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--wsde-space-2);
+    min-height: var(--wsde-size-md);
+    min-width: var(--wsde-size-md);
+    padding: 0 var(--wsde-space-6);
+    border: var(--wsde-stroke-thin) solid var(--bd);
+    background-color: var(--bg);
+    color: var(--fg);
+    font-size: var(--wsde-font-size-body);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    line-height: 1;
+    cursor: pointer;
+    outline: none;
+    transition:
+      background-color var(--wsde-duration-fast) var(--wsde-ease-out),
+      border-color var(--wsde-duration-fast) var(--wsde-ease-out),
+      color var(--wsde-duration-fast) var(--wsde-ease-out),
+      box-shadow var(--wsde-duration-medium) var(--wsde-ease-out),
+      transform var(--wsde-duration-fast) var(--wsde-ease-out);
+  }
+
+  /* Corner marks that close in on hover and keyboard focus. */
+  .button::after {
+    opacity: 0;
+    transform: scale(1.04);
+    transition:
+      opacity var(--wsde-duration-fast) var(--wsde-ease-out),
+      transform var(--wsde-duration-medium) var(--wsde-ease-out);
+  }
+
+  .button[data-hovered]::after,
+  .button[data-focus-visible]::after {
+    opacity: 1;
+    transform: none;
+  }
+
+  .button[data-hovered] {
+    border-color: var(--bdHover);
+    background-color: var(--bgHover);
+    box-shadow: 0 0 calc(var(--wsde-dp) * 16) var(--wsde-tone-glow);
+  }
+
+  .button[data-focus-visible] {
+    box-shadow: 0 0 calc(var(--wsde-dp) * 16) var(--wsde-tone-glow);
+  }
+
+  .button[data-pressed] {
+    background-color: var(--bgPressed);
+    transform: translateY(1px);
+    filter: brightness(0.94);
+  }
+
+  /* Fills: a hatch strip on the right end and a sheen from the top. */
+  .button:is(
+    [data-variant="primary"],
+    [data-variant="amber"],
+    [data-variant="ice"],
+    [data-variant="danger"]
+  ) {
+    --bg: var(--wsde-tone-base);
+    --bgHover: var(--wsde-tone-strong);
+    --bgPressed: var(--wsde-tone-base);
+    --fg: var(--wsde-tone-contrast);
+    --bd: var(--wsde-tone-strong);
+    --bdHover: var(--wsde-tone-strong);
+    background-image:
+      repeating-linear-gradient(
+        -55deg,
+        var(--wsde-color-surface-hatch) 0 2px,
+        transparent 2px calc(var(--wsde-dp) * 6)
+      ),
+      linear-gradient(180deg, rgb(255 255 255 / 0.18), rgb(255 255 255 / 0) 45%);
+    background-size:
+      calc(var(--wsde-dp) * 34) 100%,
+      100% 100%;
+    background-position:
+      right center,
+      0 0;
+    background-repeat: no-repeat;
+  }
+
+  .button[data-variant="ghost"] {
+    --bg: transparent;
+    --bgHover: var(--wsde-tone-soft);
+    --fg: var(--wsde-color-text-muted);
+    --bd: transparent;
+    --bdHover: transparent;
+  }
+
+  .button[data-variant="ghost"][data-hovered] {
+    color: var(--wsde-color-text-primary);
+    box-shadow: none;
+  }
+
+  /* A toggle that is on. */
+  .button[data-selected] {
+    --bg: var(--wsde-tone-soft);
+    --bgHover: var(--wsde-tone-soft);
+    --bd: var(--wsde-tone-base);
+    --fg: var(--wsde-tone-strong);
+    box-shadow: inset 0 0 0 var(--wsde-stroke-thin) var(--wsde-tone-glow);
+  }
+
+  .button[data-pending] {
+    --fg: var(--wsde-color-text-muted);
+    cursor: default;
+  }
+
+  .button[data-disabled] {
+    --bg: var(--wsde-color-control-disabled);
+    --fg: var(--wsde-color-text-disabled);
+    --bd: var(--wsde-color-border-subtle);
+    background-image: none;
+    box-shadow: none;
+    cursor: not-allowed;
+    filter: none;
+    transform: none;
+  }
+
+  .button[data-disabled]::after {
+    opacity: 0;
+  }
+
+  .button[data-size="sm"] {
+    min-height: var(--wsde-size-sm);
+    min-width: var(--wsde-size-sm);
+    padding: 0 var(--wsde-space-4);
+    font-size: var(--wsde-font-size-label);
+  }
+
+  .button[data-size="lg"] {
+    min-height: var(--wsde-size-lg);
+    min-width: var(--wsde-size-lg);
+    padding: 0 var(--wsde-space-8);
+    gap: var(--wsde-space-3);
+    font-size: var(--wsde-font-size-title);
+  }
+
+  .button[data-size="xl"] {
+    --wsde-bracket-size: calc(var(--wsde-dp) * 16);
+    min-height: var(--wsde-size-xl);
+    min-width: var(--wsde-size-xl);
+    padding: 0 var(--wsde-space-12);
+    gap: var(--wsde-space-4);
+    font-size: var(--wsde-font-size-heading);
+    letter-spacing: 0.24em;
+  }
+
+  .button[data-square] {
+    aspect-ratio: 1;
+    padding: 0;
+  }
+
+  .button[data-block] {
+    display: flex;
+    width: 100%;
+  }
+
+  .button svg {
+    width: 1.15em;
+    height: 1.15em;
+  }
+
+  .button[data-square] svg {
+    width: 1.4em;
+    height: 1.4em;
+  }
+
+  /* On a touch screen the hit area grows past the box without moving the layout. */
+  @media (pointer: coarse) {
+    .button[data-size="sm"]::before {
+      content: "";
+      position: absolute;
+      inset: calc(var(--wsde-dp) * -4);
+    }
+  }
+
+  .busy {
+    position: absolute;
+    inset: auto 0 0;
+    height: var(--wsde-stroke-thick);
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0;
+    animation: busyIn 1ms linear 250ms forwards;
+  }
+
+  .busy::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 40%;
+    background: var(--wsde-tone-strong);
+    animation: busySweep 1.1s var(--wsde-ease-in-out) infinite;
+  }
+}
+
+@keyframes busyIn {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes busySweep {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(250%);
+  }
+}

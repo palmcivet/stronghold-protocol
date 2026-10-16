@@ -1,12 +1,11 @@
 import { DIRS } from '@alliance/contract/match.js';
+import { Button, cx, Panel, Segmented } from '@alliance/ui';
 import { useStore } from 'zustand';
 import { useIntent } from '#infra/intent/context.js';
 import { useMatch } from '#infra/store/hook.js';
 import { lookup, useText } from '#infra/text/index.js';
-import { cx } from '#infra/theme/class-name.js';
 import { pieceLabel } from '#match/piece-label.js';
 import { findPiece, freeHandSlot, selectionStore } from '#match/selection.js';
-import { Button, ChoiceGroup, Panel } from '#ui/index.js';
 import styles from './preparation.module.css';
 
 /** Actions on the selected piece. */
@@ -71,7 +70,7 @@ export function UnitActions({ canAct }: { readonly canAct: boolean }) {
       piece.kind !== 'item' &&
       piece.row !== undefined &&
       piece.col !== undefined ? (
-        <ChoiceGroup
+        <Segmented
           label={t('core:unit.facing')}
           value={piece.dir ?? 'RIGHT'}
           isDisabled={!canAct}

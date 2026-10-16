@@ -1,0 +1,26 @@
+@layer components {
+  .arrow {
+    pointer-events: none;
+  }
+
+  .arrow svg {
+    display: block;
+    width: calc(var(--wsde-dp) * 12);
+    height: calc(var(--wsde-dp) * 6);
+    fill: var(--wsde-arrow-fill);
+    stroke: var(--wsde-arrow-stroke);
+    stroke-width: 1px;
+  }
+
+  .arrow[data-placement="bottom"] svg {
+    transform: rotate(180deg);
+  }
+
+  .arrow[data-placement="left"] svg {
+    transform: rotate(-90deg);
+  }
+
+  .arrow[data-placement="right"] svg {
+    transform: rotate(90deg);
+  }
+}

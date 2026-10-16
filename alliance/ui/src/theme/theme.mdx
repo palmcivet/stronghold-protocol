@@ -1,0 +1,138 @@
+import { TokenList } from './theme.demo.js';
+
+# 主题与令牌
+
+组件只读设计令牌，不写死颜色、字体与间距。主题就是一组令牌覆盖：覆盖语义层即可整体换色，不需要改组件。
+
+## 令牌名与 CSS 变量
+
+令牌采用 W3C Design Tokens 格式（2025.10）。令牌树中的路径用 `-` 连接，加上 `--wsde-` 前缀，成为 CSS 自定义属性：
+
+```text
+color.surface.base  →  --wsde-color-surface-base
+palette.mint.500    →  --wsde-palette-mint-500
+layer.tooltip       →  --wsde-layer-tooltip
+```
+
+`installTheme()` 把令牌写成 `tokens` 层里 `:root` 上的自定义属性。
+
+## 令牌组
+
+| 类别 | 令牌组 |
+| --- | --- |
+| 色板 | `palette`：`mint`、`gold`、`amber`、`orange`、`red`、`ice`、`gray` 等原始色 |
+| 语义色 | `color`：`surface`、`control`、`border`、`text`、`focus`，以及阶色、难度色、盟约色、富文本色 |
+| 色调 | `tone.<name>.{base,strong,soft,glow,contrast}`，色调为 `accent`、`gold`、`amber`、`orange`、`danger`、`ice`、`neutral` |
+| 字体 | `font`（`body`、`formal`、`number`、`display`）、`font-size`（`caption` 到 `hero`） |
+| 动效 | `ease`、`duration`、`motion` |
+| 间距与形状 | `space`（4 dp 阶梯）、`radius`、`stroke`（`thin` 1px、`thick` 2px、`accent` 3px）、`shadow` |
+| 尺寸 | `size`：控件高度 `sm`、`md`、`lg`、`xl`，HUD 条高，卡片宽，头像（`avatar-sm` 到 `avatar-xl`） |
+| 层叠 | `layer` |
+
+- 组件只读语义令牌与色调，不读 `palette`。色板留给主题覆盖语义层之前的原始色。
+- `radius` 的档位是 `1`、`2`、`3` 与 `round`，没有尺寸档的别名。
+- `motion` 是所有时长的系数。系统要求减弱动效时，基础层把它设为 0，并取消过渡与动画。
+
+## 色调与角标
+
+色调由 `data-tone` 指定。根节点上的 `data-tone="<色调>"` 由基础层展开成 `--wsde-tone-base`、`--wsde-tone-strong`、`--wsde-tone-soft`、`--wsde-tone-glow`、`--wsde-tone-contrast`，后代直接读这组变量。读这组变量的组件在自己的根节点上写 `data-tone`，不依赖祖先。
+
+`data-tone` 只取色调名。状态词或类别不用它：富文本的类别与文字的强调写在 `data-kind`。
+
+`.wsde-brackets` 在元素的 `::after` 上画四角 L 形角标：
+
+- 颜色取 `--wsde-bracket-color`，默认是当前色调的 `base`。
+- 臂长是 `--wsde-bracket-size`，向外的偏移是 `--wsde-bracket-inset`。
+- 模组可以给自己的元素加同一个类；只要一个带角标的容器时，给元素写 `data-tone` 并加这个类即可。
+
+填充变体的按钮右端有斜纹条；悬停与键盘焦点时四角角标合拢。
+
+## 尺寸单位
+
+所有尺寸以设计像素（dp）书写。画布是 1920×1080，运行时只有一个缩放系数 `--wsde-scale`，它由宿主的视口代码写入。
+
+| 变量 | 值 | 用途 |
+| --- | --- | --- |
+| `--wsde-scale` | 等比缩放系数 | 换算 |
+| `--wsde-dp` | `calc(var(--wsde-scale) * 1px)` | 盒子尺寸、间距、圆角、阴影偏移 |
+| `--wsde-text-dp` | `calc(var(--wsde-dp) * var(--wsde-text-factor))` | 字号 |
+
+- 令牌里的尺寸都是 dp，写成 `calc(var(--wsde-dp) * N)`；字号令牌写成 `calc(var(--wsde-text-dp) * N)`。
+- 允许的单位：`%`、`fr`、`em`（相对当前字号，如图标的 `1em`）、时间与角度。线宽保留真实像素 `1px` 与 `2px`。
+- 禁止 `rem`、视口单位与其他 `px`。
+
+## 文字大小
+
+文字大小有四档：`sm`、`md`、`lg`、`xl`。所选档位写在根元素的 `data-text` 上，基础层据此把 `--wsde-text-factor` 设为 1、1.125、1.25 或 1.375。字号令牌乘 `--wsde-text-dp`，不改浏览器根字号。
+
+没有单独写字号的文字（包括按钮，以及传送到 `body` 的浮层）跟随 `font-size.body`。
+
+## 层级
+
+`layer` 令牌给出界面各层的 `z-index`：
+
+| 令牌 | 值 |
+| --- | --- |
+| `backdrop` | 0 |
+| `screen` | 1 |
+| `hud` | 10 |
+| `banner` | 40 |
+| `overlay` | 60 |
+| `connection` | 75 |
+| `modal` | 80 |
+| `toast` | 90 |
+| `tooltip` | 95 |
+
+## 基础层工具类
+
+- `wsde-num`：数字字体与等宽数字，用于计分、计时等会变动的数。
+- `wsde-display`：显示字体、加宽、大写加字距，用于英文标题与微标签。
+- `wsde-brackets`：四角角标。
+- `wsde-visually-hidden`：只给读屏的文字。
+- `svg[data-icon]`：图标跟随所在文字的大小。
+
+## 层叠顺序
+
+```text
+@layer reset, tokens, base, components, mods, overrides;
+```
+
+| 层 | 内容 |
+| --- | --- |
+| `reset` | 盒模型与元素默认样式的重置 |
+| `tokens` | 设计令牌 |
+| `base` | 根元素的颜色与字体、焦点样式、文字大小、减弱动效 |
+| `components` | 组件样式 |
+| `mods` | 模组样式 |
+| `overrides` | 最终覆盖 |
+
+## 命名
+
+| 对象 | 规则 | 例 |
+| --- | --- | --- |
+| 对模组公开的类名 | `wsde-` 前缀的 kebab-case | `wsde-visually-hidden` |
+| 对模组公开的自定义属性 | `wsde-` 前缀的 kebab-case | `--wsde-color-accent-400` |
+| CSS Modules 内部类名 | camelCase | `.slotList` |
+| CSS Modules 局部自定义属性 | camelCase | `--gap` |
+
+CSS Modules 文件可以读取公开令牌。命名由 stylelint 检查。
+
+## 覆盖主题
+
+主题覆盖语义层。下面的例子把焦点色和强调色换成蓝色，组件不需要改动：
+
+```css
+:root {
+  --wsde-color-focus: #4aa3ff;
+  --wsde-tone-accent-base: #4aa3ff;
+  --wsde-tone-accent-strong: #7cbaff;
+}
+```
+
+色板（`palette`）是原始色，主题不直接覆盖它；语义层指向色板，覆盖语义层即可。
+
+## 令牌一览
+
+下表由 `TOKENS` 生成，与代码中的令牌定义一致。
+
+<TokenList />

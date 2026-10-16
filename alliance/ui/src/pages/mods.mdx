@@ -1,0 +1,40 @@
+---
+showAskAi: false
+showFeedback: false
+outline: 2
+---
+
+# 模组
+
+`@alliance/ui` 的组件与令牌是模组可用的界面基础。模组拿到的是包入口的导出，而不是包内的文件，因此模组与包的内部结构相互独立。
+
+## 导入范围
+
+- 只从包入口导入：`@alliance/ui`，以及主题入口 `@alliance/ui/theme`。
+- 不导入包内的文件路径（如 `@alliance/ui/components/button`），这些路径不是公开 API。
+- 组件的 props 与导出名是公开 API。改动方式见 [概览](/)。
+
+## React 实例
+
+组件使用宿主的 React。`react` 与 `react-dom` 是对等依赖，不应被打进模组包；多个 React 实例同时存在会导致 Hooks 报错。
+
+## 主题覆盖
+
+组件只读语义令牌。主题模组通过覆盖语义层的自定义属性换色，不需要复制组件，也不需要改组件的样式。
+
+```css
+:root {
+  --wsde-color-focus: #4aa3ff;
+  --wsde-tone-amber-base: #6fd1ff;
+}
+```
+
+覆盖哪些变量见 [主题与令牌](/theme)。
+
+## 音效
+
+按钮、切换等组件的音效由宿主注入。模组在自己的界面外层放置 `FeedbackProvider`，即可决定这些角色播放什么声音；不放置时组件静默。见 [基础 · 反馈](/components/feedback)。
+
+## 当前状态
+
+本包在仓库内由客户端与文档站直接引用。模组的分发方式（SDK 与模组包的加载）尚未定稿，届时本页会补充安装与构建的步骤。

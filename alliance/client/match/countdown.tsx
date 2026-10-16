@@ -1,8 +1,8 @@
+import { Countdown as CountdownView, SevenSeg } from '@alliance/ui';
 import { useEffect, useState } from 'react';
 import { useMatch } from '#infra/store/hook.js';
 import { secondsLeft } from '#infra/store/match.js';
 import { useText } from '#infra/text/index.js';
-import { Countdown as CountdownView, SevenSeg } from '#ui/index.js';
 
 /** Seconds left of the phase, ticking twice a second; null while the phase is untimed. */
 export function usePhaseSeconds(deadline?: number): number | null {

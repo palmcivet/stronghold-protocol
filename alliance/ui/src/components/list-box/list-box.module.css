@@ -1,0 +1,73 @@
+@layer components {
+  .listBox {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wsde-space-1);
+    outline: none;
+  }
+
+  .listBox[data-variant="cards"] {
+    display: grid;
+    grid-template-columns: repeat(
+        auto-fill,
+        minmax(min(var(--wsde-size-card), 100%), 1fr)
+      );
+    gap: var(--wsde-space-2);
+  }
+
+  .listBox[data-variant="ladder"] {
+    gap: var(--wsde-space-2);
+  }
+
+  .option {
+    padding: var(--wsde-space-1) var(--wsde-space-2);
+    border-radius: var(--wsde-radius-1);
+    cursor: pointer;
+    outline: none;
+  }
+
+  .option[data-focused],
+  .option[data-hovered] {
+    background: var(--wsde-color-control-hover);
+  }
+
+  .option[data-selected] {
+    background: var(--wsde-tone-accent-soft);
+    color: var(--wsde-tone-accent-strong);
+  }
+
+  .option[data-disabled] {
+    color: var(--wsde-color-text-disabled);
+  }
+
+  .listBox:is([data-variant="cards"], [data-variant="ladder"]) .option {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wsde-space-1);
+    padding: var(--wsde-space-2);
+    border: var(--wsde-stroke-thin) solid var(--wsde-color-border-default);
+    background: var(--wsde-color-surface-overlay);
+    color: inherit;
+  }
+
+  .listBox:is([data-variant="cards"], [data-variant="ladder"])
+    .option[data-hovered] {
+    border-color: var(--wsde-tone-accent-base);
+  }
+
+  .listBox:is([data-variant="cards"], [data-variant="ladder"])
+    .option[data-selected] {
+    border-color: var(--wsde-tone-accent-base);
+    background: var(--wsde-tone-accent-soft);
+  }
+
+  .listBox:is([data-variant="cards"], [data-variant="ladder"])
+    .option[data-disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .option[data-focus-visible] {
+    outline: var(--wsde-stroke-thick) solid var(--wsde-color-focus);
+  }
+}

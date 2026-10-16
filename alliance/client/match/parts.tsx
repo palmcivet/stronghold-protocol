@@ -1,10 +1,10 @@
+import { cx } from '@alliance/ui';
 import { useRouteContext } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { runKey } from '#infra/intent/keymap.js';
 import { matchViewOf } from '#infra/router/match-view.js';
 import { PAGE } from '#infra/router/page.js';
 import { useMatch } from '#infra/store/hook.js';
-import { cx } from '#infra/theme/class-name.js';
 import { registerBriefingParts } from '#match/briefing/parts.js';
 import { Combat } from '#match/hud/combat.js';
 import { Corner, PhaseBanner } from '#match/hud/corner.js';

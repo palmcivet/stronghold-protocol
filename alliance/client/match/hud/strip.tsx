@@ -1,23 +1,21 @@
 import type { BondView } from '@alliance/contract/server-message.js';
+import {
+  Button,
+  Cluster,
+  cx,
+  Dialog,
+  Icon,
+  RichText,
+  Stack,
+  Text,
+  Tooltip,
+} from '@alliance/ui';
 import { useStore } from 'zustand';
 import { useMatch, useMatchCatalog, useSession } from '#infra/store/hook.js';
 import { dataName, has, lookup, useText } from '#infra/text/index.js';
-import { cx } from '#infra/theme/class-name.js';
 import { usePlayback } from '#match/playback-state.js';
 import { ChessThumb } from '#part/art.js';
-import {
-  BondDisc,
-  Button,
-  Cluster,
-  Dialog,
-  Icon,
-  Modal,
-  Muted,
-  Num,
-  RichText,
-  Stack,
-  Tooltip,
-} from '#ui/index.js';
+import { BondBadge } from '#part/badge.js';
 import styles from './hud.module.css';
 import { hudStore } from './state.js';
 
@@ -126,7 +124,7 @@ export function Bonds() {
                   key={bond.bondId}
                   onPress={() => hudStore.setState({ bond: bond.bondId })}
                 >
-                  <BondDisc
+                  <BondBadge
                     label={dataName('bond', bond.bondId)}
                     count={bond.count}
                     next={nextThreshold(bond)}
@@ -161,55 +159,54 @@ export function BondDetail() {
   );
   const descKey = `data:bond.${bond.bondId}.desc`;
   return (
-    <Modal isOpen onOpenChange={(open) => !open && close()}>
-      <Dialog
-        title={dataName('bond', bond.bondId)}
-        closeLabel={t('core:common.close')}
-        onClose={close}
-      >
-        <Cluster gap={3}>
-          <span>
-            {t('core:bonds.count')} <Num>{bond.count}</Num>
-          </span>
-          <span>
-            {t('core:bonds.layers')} <Num>{bond.layers}</Num>
-          </span>
-          {bond.off ? <Muted>{t('core:bonds.off')}</Muted> : null}
+    <Dialog
+      isOpen
+      onOpenChange={(open) => !open && close()}
+      title={dataName('bond', bond.bondId)}
+      closeLabel={t('core:common.close')}
+    >
+      <Cluster gap={3}>
+        <span>
+          {t('core:bonds.count')} <Text variant="number">{bond.count}</Text>
+        </span>
+        <span>
+          {t('core:bonds.layers')} <Text variant="number">{bond.layers}</Text>
+        </span>
+        {bond.off ? <Text kind="muted">{t('core:bonds.off')}</Text> : null}
+      </Cluster>
+      <Cluster gap={1} label={t('core:bonds.levels')}>
+        {(bond.thresholds ?? []).map((threshold) => (
+          <BondBadge
+            key={threshold}
+            label={String(threshold)}
+            count={threshold}
+            state={bond.count >= threshold ? 'on' : 'off'}
+          />
+        ))}
+      </Cluster>
+      {has(descKey) ? <RichText source={lookup(descKey)} /> : null}
+      <Stack gap={2}>
+        <strong>{t('core:bonds.members')}</strong>
+        <Cluster gap={1}>
+          {members.length ? (
+            members.map((piece) => {
+              const tier = catalog.chess[piece.id]?.tier;
+              return (
+                <ChessThumb
+                  key={piece.uid}
+                  chessId={piece.id}
+                  size="sm"
+                  elite={piece.golden === true}
+                  {...(tier === undefined ? {} : { tier })}
+                />
+              );
+            })
+          ) : (
+            <Text kind="muted">{t('core:info.none')}</Text>
+          )}
         </Cluster>
-        <Cluster gap={1} label={t('core:bonds.levels')}>
-          {(bond.thresholds ?? []).map((threshold) => (
-            <BondDisc
-              key={threshold}
-              label={String(threshold)}
-              count={threshold}
-              state={bond.count >= threshold ? 'on' : 'off'}
-            />
-          ))}
-        </Cluster>
-        {has(descKey) ? <RichText source={lookup(descKey)} /> : null}
-        <Stack gap={2}>
-          <strong>{t('core:bonds.members')}</strong>
-          <Cluster gap={1}>
-            {members.length ? (
-              members.map((piece) => {
-                const tier = catalog.chess[piece.id]?.tier;
-                return (
-                  <ChessThumb
-                    key={piece.uid}
-                    chessId={piece.id}
-                    size="sm"
-                    elite={piece.golden === true}
-                    {...(tier === undefined ? {} : { tier })}
-                  />
-                );
-              })
-            ) : (
-              <Muted>{t('core:info.none')}</Muted>
-            )}
-          </Cluster>
-        </Stack>
-      </Dialog>
-    </Modal>
+      </Stack>
+    </Dialog>
   );
 }
 

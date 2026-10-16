@@ -1,0 +1,33 @@
+import { HexBadgeDemo } from './hex-badge.demo.js';
+
+# HexBadge
+
+六边形徽标，宽度随内容增长，用于金额、数量等数值。传 `label` 时整体作为一张图读出，不读文字内容。
+
+:::code-group
+
+<div data-title="Preview">
+
+<div className="wsde-doc-preview">
+
+<HexBadgeDemo />
+
+</div>
+
+</div>
+
+```tsx [Code]
+import { HexBadge } from '@alliance/ui';
+
+<HexBadge tone="gold">128</HexBadge>
+```
+
+:::
+
+| 属性 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `children` | `ReactNode` | — | 显示的数值 |
+| `tone` | `ToneName` | `'gold'` | 颜色 |
+| `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | 大小 |
+| `icon` | `IconName` | — | 数值前的图标 |
+| `label` | `string` | — | 作为图的名称读出 |

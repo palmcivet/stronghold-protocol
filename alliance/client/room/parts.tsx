@@ -1,5 +1,19 @@
 import { DIFFICULTIES, MAX_SPECTATORS } from '@alliance/contract/match.js';
 import type { SeatView } from '@alliance/contract/server-message.js';
+import {
+  Badge,
+  Button,
+  Cluster,
+  cx,
+  Icon,
+  Panel,
+  Region,
+  Segmented,
+  Stack,
+  Switch,
+  Text,
+  Tooltip,
+} from '@alliance/ui';
 import { useState } from 'react';
 import { useIntent } from '#infra/intent/context.js';
 import { getPlatform } from '#infra/platform/index.js';
@@ -11,27 +25,13 @@ import {
   useSettings,
 } from '#infra/store/hook.js';
 import { lookup, useText } from '#infra/text/index.js';
-import { cx } from '#infra/theme/class-name.js';
 import { PlayerAvatar } from '#part/art.js';
+import { DifficultyBadge } from '#part/badge.js';
 import { difficultyInfo } from '#part/difficulty.js';
 import { requestConfirm } from '#part/overlay.js';
 import { definePart, Part } from '#part/registry.js';
 import { insertPart, type PartInsert, Slot } from '#part/slot.js';
 import { MENU_ENTRY } from '#shell/menu.js';
-import {
-  Badge,
-  Button,
-  ChoiceGroup,
-  Cluster,
-  DifficultyTag,
-  Icon,
-  Muted,
-  Panel,
-  Region,
-  Stack,
-  Switch,
-  Tooltip,
-} from '#ui/index.js';
 import { ROOM_ACTIONS } from './actions.js';
 import { roomFacts, type SeatState, seatState } from './facts.js';
 import styles from './room.module.css';
@@ -102,18 +102,20 @@ function Header() {
       <Stack gap={1}>
         <h1 className={cx(styles.title)}>
           {lookup(`core:room.title.${room.mode}`)}
-          <DifficultyTag
-            id={room.difficulty.toLowerCase()}
+          <DifficultyBadge
+            difficulty={room.difficulty}
             label={lookup(`core:difficulty.${room.difficulty}`)}
           />
         </h1>
         {ping === null ? null : (
-          <Muted>{t('core:entry.ping', { ms: Math.round(ping) })}</Muted>
+          <Text kind="muted">
+            {t('core:entry.ping', { ms: Math.round(ping) })}
+          </Text>
         )}
       </Stack>
       {room.mode === 'coop' ? (
         <div className={cx(styles.invite)}>
-          <Muted>{t('core:lobby.code')}</Muted>
+          <Text kind="muted">{t('core:lobby.code')}</Text>
           <span className={cx(styles.code)}>{room.code}</span>
           <Cluster gap={2}>
             <Button onPress={() => void copy('code')}>
@@ -139,7 +141,7 @@ function Header() {
           </Cluster>
         </div>
       ) : (
-        <Muted>{t('core:room.soloNote')}</Muted>
+        <Text kind="muted">{t('core:room.soloNote')}</Text>
       )}
     </header>
   );
@@ -186,7 +188,7 @@ function Seat({
       <li className={cx(styles.seat)} data-empty>
         <span className={cx(styles.seatNo)}>{number}</span>
         <span className={cx(styles.seatArt)}>
-          <Muted>{t('core:room.waitingDoctor')}</Muted>
+          <Text kind="muted">{t('core:room.waitingDoctor')}</Text>
         </span>
         {room.mode === 'coop' && facts.host ? (
           <Button
@@ -196,7 +198,7 @@ function Seat({
             {t('core:room.addBot')}
           </Button>
         ) : (
-          <Muted>{t('core:room.empty')}</Muted>
+          <Text kind="muted">{t('core:room.empty')}</Text>
         )}
       </li>
     );
@@ -238,11 +240,11 @@ function Seat({
           avatar={me ? avatar : null}
           name={seat.name}
           size="lg"
-          framed={me}
-          off={state === 'offline'}
+          active={me}
+          offline={state === 'offline'}
         />
         {seat.isBot ? (
-          <Badge tone="info">
+          <Badge tone="ice">
             <Icon name="bot" /> {t('core:room.bot')}
           </Badge>
         ) : null}
@@ -350,7 +352,7 @@ function HostControls() {
   const { room, facts } = known;
   return (
     <Stack gap={2}>
-      <ChoiceGroup
+      <Segmented
         label={t('core:lobby.difficulty')}
         value={room.difficulty}
         isDisabled={!facts.host}
@@ -368,6 +370,8 @@ function HostControls() {
       {room.mode === 'coop' ? (
         <Tooltip tip={t('core:room.aiPicksLastHint')}>
           <Switch
+            onText={t('core:common.on')}
+            offText={t('core:common.off')}
             isSelected={room.aiPicksLast === true}
             isDisabled={!facts.host}
             onChange={(on) =>
@@ -381,7 +385,7 @@ function HostControls() {
           </Switch>
         </Tooltip>
       ) : null}
-      {facts.host ? null : <Muted>{t('core:room.hostOnly')}</Muted>}
+      {facts.host ? null : <Text kind="muted">{t('core:room.hostOnly')}</Text>}
     </Stack>
   );
 }
@@ -422,12 +426,12 @@ function Spectators() {
   const { room, playerId, facts } = known;
   return (
     <Panel title={t('core:room.spectators')} level={3}>
-      <Muted>
+      <Text kind="muted">
         {t('core:room.spectatorCount', {
           count: room.spectators.length,
           max: MAX_SPECTATORS,
         })}
-      </Muted>
+      </Text>
       <Stack as="ul" gap={2}>
         {room.spectators.map((spectator) => (
           <li key={spectator.playerId} className={cx(styles.spectator)}>

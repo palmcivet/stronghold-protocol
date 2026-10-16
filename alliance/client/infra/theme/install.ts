@@ -1,5 +1,9 @@
-import { tokenSheet } from './token.js';
-import { TOKENS } from './tokens.js';
+import '@fontsource-variable/noto-sans-sc';
+import '@fontsource-variable/noto-serif-sc';
+import '@fontsource-variable/saira/wdth.css';
+import '@fontsource/rajdhani/500.css';
+import '@fontsource/rajdhani/600.css';
+import '@fontsource/rajdhani/700.css';
 import {
   applySafeArea,
   applyViewport,
@@ -9,20 +13,7 @@ import {
 } from './viewport.js';
 import './layer.css';
 
-const TOKEN_STYLE_ID = 'alliance-tokens';
-
-/** Puts the default tokens on the page. */
-export function installTheme(target: Document = document): void {
-  if (target.getElementById(TOKEN_STYLE_ID)) {
-    return;
-  }
-  const style = target.createElement('style');
-  style.id = TOKEN_STYLE_ID;
-  style.textContent = tokenSheet(TOKENS, 'tokens');
-  target.head.append(style);
-}
-
-/** Puts a text size step on the root; the base layer turns it into the root font size. */
+/** Puts a text size step on the root. The base layer turns it into `--wsde-text-factor`. */
 export function applyTextSize(size: string, target: Document = document): void {
   target.documentElement.dataset['text'] = size;
 }

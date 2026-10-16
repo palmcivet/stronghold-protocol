@@ -1,0 +1,43 @@
+/* Docs page: components are drawn for a 1920×1080 canvas, so scale them to reading size.
+   Unlayered, so these rules win over the theme's base layer. */
+:root {
+  --wsde-scale: 0.6667;
+}
+
+body {
+  font-size: calc(var(--wsde-dp) * 24);
+}
+
+/* Live examples: dark game canvas inside the (possibly light) docs chrome. */
+.wsde-doc-preview {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--wsde-dp) * 16);
+  min-height: calc(var(--wsde-dp) * 160);
+  margin: 0;
+  padding: calc(var(--wsde-dp) * 32);
+  overflow: hidden;
+  contain: layout paint;
+  isolation: isolate;
+  color-scheme: dark;
+  border: 1px solid var(--wsde-color-border-default);
+  border-radius: calc(var(--wsde-dp) * 12);
+  background-color: var(--wsde-color-surface-sunken);
+  background-image: radial-gradient(
+    var(--wsde-color-border-subtle) 1px,
+    transparent 1px
+  );
+  background-size: calc(var(--wsde-dp) * 16) calc(var(--wsde-dp) * 16);
+}
+
+[data-v-code-group] {
+  margin: calc(var(--wsde-dp) * 24) 0;
+}
+
+[data-v-code-group-panel] .wsde-doc-preview {
+  border: none;
+  border-radius: 0;
+}

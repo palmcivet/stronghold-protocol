@@ -1,9 +1,9 @@
 import { EMOTE_CATALOG, EMOTE_COOLDOWN_MS } from '@alliance/contract/match.js';
+import { Button, ListBox, Popover, PopoverTrigger } from '@alliance/ui';
 import { useEffect, useState } from 'react';
 import { useIntent } from '#infra/intent/context.js';
 import { useMatch } from '#infra/store/hook.js';
 import { lookup, useText } from '#infra/text/index.js';
-import { ActionMenu } from '#ui/index.js';
 
 /** Name of an official emote: its data text, or the official label. */
 export function emoteName(id: string): string {
@@ -35,17 +35,26 @@ export function EmoteWheel() {
     return null;
   }
   return (
-    <ActionMenu
-      label={t('core:emote.open')}
-      items={EMOTE_CATALOG.map((entry) => ({
-        id: entry.id,
-        label: emoteName(entry.id),
-      }))}
-      onAction={(id) => {
-        setCoolUntil(Date.now() + EMOTE_COOLDOWN_MS);
-        void intents.dispatch({ type: 'g.emote', fields: { id } });
-      }}
-      isDisabled={Date.now() < coolUntil}
-    />
+    <PopoverTrigger>
+      <Button isDisabled={Date.now() < coolUntil}>
+        {t('core:emote.open')}
+      </Button>
+      <Popover label={t('core:emote.open')}>
+        {(close) => (
+          <ListBox
+            label={t('core:emote.open')}
+            items={EMOTE_CATALOG.map((entry) => ({
+              id: entry.id,
+              label: emoteName(entry.id),
+            }))}
+            onAction={(id) => {
+              close();
+              setCoolUntil(Date.now() + EMOTE_COOLDOWN_MS);
+              void intents.dispatch({ type: 'g.emote', fields: { id } });
+            }}
+          />
+        )}
+      </Popover>
+    </PopoverTrigger>
   );
 }

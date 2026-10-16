@@ -1,0 +1,100 @@
+@layer components {
+  .slider {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--wsde-space-2);
+    min-width: 0;
+  }
+
+  .label {
+    color: var(--wsde-color-text-secondary);
+    font-size: var(--wsde-font-size-label);
+  }
+
+  .output {
+    color: var(--wsde-tone-strong);
+    font-family: var(--wsde-font-number);
+    font-size: var(--wsde-font-size-label);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .track {
+    --thumb: calc(var(--wsde-dp) * 28);
+    grid-column: 1 / -1;
+    position: relative;
+    height: var(--thumb);
+    cursor: pointer;
+  }
+
+  .rail,
+  .fill {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    height: calc(var(--wsde-dp) * 6);
+    transform: translateY(-50%);
+  }
+
+  .rail {
+    right: 0;
+    background: var(--wsde-color-control-pressed);
+  }
+
+  .fill {
+    background: var(--wsde-tone-base);
+  }
+
+  .thumb {
+    top: 0;
+    width: var(--thumb);
+    height: var(--thumb);
+    cursor: grab;
+    outline: none;
+  }
+
+  .thumb::before,
+  .thumb::after {
+    content: "";
+    position: absolute;
+    clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%);
+  }
+
+  .thumb::before {
+    inset: 0;
+    background: var(--wsde-tone-base);
+    transition: background-color var(--wsde-duration-fast) var(--wsde-ease-out);
+  }
+
+  /* The focus ring is a larger hexagon behind the thumb. */
+  .thumb::after {
+    inset: calc(var(--wsde-dp) * -5);
+    z-index: -1;
+    background: var(--wsde-color-focus);
+    opacity: 0;
+  }
+
+  .thumb[data-hovered]::before,
+  .thumb[data-dragging]::before {
+    background: var(--wsde-tone-strong);
+  }
+
+  .thumb[data-focus-visible]::after {
+    opacity: 1;
+  }
+
+  .thumb[data-dragging] {
+    cursor: grabbing;
+  }
+
+  .slider[data-disabled] {
+    opacity: 0.5;
+  }
+
+  .slider[data-disabled] .thumb {
+    cursor: not-allowed;
+  }
+
+  .slider[data-disabled] .thumb::before {
+    background: var(--wsde-color-border-strong);
+  }
+}

@@ -1,0 +1,39 @@
+import { TextFieldDemo } from './text-field.demo.js';
+
+# TextField
+
+单行文本框，带英文微标签、图标、提示文字与错误信息。聚焦时四角角标合拢，无效时转为危险色。`type="search"` 是用来过滤列表的搜索框：带放大镜与清空按钮，通常配合 `labelHidden` 与 `placeholder` 使用。
+
+:::code-group
+
+<div data-title="Preview">
+
+<div className="wsde-doc-preview">
+
+<TextFieldDemo />
+
+</div>
+
+</div>
+
+```tsx [Code]
+<TextField label="同盟密钥" micro="KEY" icon="link" value={code} onChange={setCode} />
+```
+
+:::
+
+| 属性 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `label` | `string` | — | 字段名称，作为无障碍名称 |
+| `type` | `'text' \| 'search'` | `'text'` | 普通文本框，或带清空按钮的搜索框 |
+| `micro` | `string` | — | 标签上方的英文微标签 |
+| `labelHidden` | `boolean` | `false` | 无障碍名称保留，不在屏幕上显示 |
+| `icon` | `IconName` | — | 输入框前的图标 |
+| `hint` | `string` | — | 无错误时显示在下方的提示 |
+| `errorMessage` | `string` | — | 有值时视为无效，显示在下方并转危险色 |
+| `clearLabel` | `string` | — | 搜索框清空按钮的无障碍名称；有值且给出时才显示按钮 |
+| `placeholder` | `string` | — | 占位文字 |
+| `size` | `'sm' \| 'md' \| 'lg' \| 'xl'` | `'md'` | 控件高度 |
+| `value` / `onChange` | `string` / `(value: string) => void` | — | 受控值 |
+
+其余属性透传给 React Aria 的 `TextField`（如 `isDisabled`、`isRequired`、`autoFocus`）。

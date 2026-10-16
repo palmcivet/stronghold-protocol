@@ -1,7 +1,7 @@
+import { Button, Dialog, Icon } from '@alliance/ui';
 import { useState } from 'react';
 import { useIntent } from '#infra/intent/context.js';
 import { useText } from '#infra/text/index.js';
-import { Button, Dialog, Icon, Modal } from '#ui/index.js';
 
 /**
  * A shared room link never seats the player by itself: join, spectate or go back. The route skips it when the server
@@ -26,31 +26,30 @@ export function InviteConfirm({
     setFailed(outcome.ok ? null : outcome.error.message);
   };
   return (
-    <Modal isOpen onOpenChange={(open) => !open && onBack()}>
-      <Dialog
-        title={t('core:invite.title', { code })}
-        closeLabel={t('core:invite.back')}
-        onClose={onBack}
-        actions={
-          <>
-            <Button onPress={onBack}>{t('core:invite.back')}</Button>
-            <Button isDisabled={busy} onPress={() => void go('room.spectate')}>
-              <Icon name="eye" />
-              {t('core:invite.spectate')}
-            </Button>
-            <Button
-              variant="primary"
-              isDisabled={busy}
-              onPress={() => void go('room.join')}
-            >
-              {t('core:invite.join')}
-            </Button>
-          </>
-        }
-      >
-        <p>{t('core:invite.body')}</p>
-        {failed ? <p role="status">{failed}</p> : null}
-      </Dialog>
-    </Modal>
+    <Dialog
+      isOpen
+      onOpenChange={(open) => !open && onBack()}
+      title={t('core:invite.title', { code })}
+      closeLabel={t('core:invite.back')}
+      actions={
+        <>
+          <Button onPress={onBack}>{t('core:invite.back')}</Button>
+          <Button isDisabled={busy} onPress={() => void go('room.spectate')}>
+            <Icon name="eye" />
+            {t('core:invite.spectate')}
+          </Button>
+          <Button
+            variant="primary"
+            isDisabled={busy}
+            onPress={() => void go('room.join')}
+          >
+            {t('core:invite.join')}
+          </Button>
+        </>
+      }
+    >
+      <p>{t('core:invite.body')}</p>
+      {failed ? <p role="status">{failed}</p> : null}
+    </Dialog>
   );
 }

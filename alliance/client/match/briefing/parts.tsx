@@ -1,3 +1,14 @@
+import {
+  Badge,
+  Button,
+  Cluster,
+  cx,
+  Icon,
+  Panel,
+  RichText,
+  Stack,
+  Text,
+} from '@alliance/ui';
 import { useIntent } from '#infra/intent/context.js';
 import {
   useMatch,
@@ -6,22 +17,10 @@ import {
   useSession,
 } from '#infra/store/hook.js';
 import { has, lookup, shownName, useText } from '#infra/text/index.js';
-import { cx } from '#infra/theme/class-name.js';
 import styles from '#match/match.module.css';
 import { EnemyThumb, FactionIcon } from '#part/art.js';
 import { definePart, Part } from '#part/registry.js';
 import { type PartInsert, Slot } from '#part/slot.js';
-import {
-  Badge,
-  Button,
-  Cluster,
-  Icon,
-  Muted,
-  Num,
-  Panel,
-  RichText,
-  Stack,
-} from '#ui/index.js';
 
 export const BRIEFING = {
   layout: 'core:briefing.layout',
@@ -104,7 +103,7 @@ function Stage() {
           <Badge>{t('core:briefing.poolFixed')}</Badge>
         ) : null}
       </Cluster>
-      <Muted>{shownName('mode', view.modeId)}</Muted>
+      <Text kind="muted">{shownName('mode', view.modeId)}</Text>
       {has(`data:mode.${view.modeId}.desc`) ? (
         <span>{lookup(`data:mode.${view.modeId}.desc`)}</span>
       ) : null}
@@ -128,7 +127,9 @@ function Factions() {
                 <Stack gap={1}>
                   <strong>{shownName('faction', id)}</strong>
                   {has(`data:faction.${id}.desc`) ? (
-                    <Muted>{lookup(`data:faction.${id}.desc`)}</Muted>
+                    <Text kind="muted">
+                      {lookup(`data:faction.${id}.desc`)}
+                    </Text>
                   ) : null}
                 </Stack>
               </Cluster>
@@ -136,7 +137,7 @@ function Factions() {
           ))}
         </Stack>
       ) : (
-        <Muted>{t('core:briefing.noFactions')}</Muted>
+        <Text kind="muted">{t('core:briefing.noFactions')}</Text>
       )}
     </Panel>
   );
@@ -194,8 +195,8 @@ function Ready() {
   return (
     <Cluster gap={3}>
       <span className={cx(styles.readyCount)}>
-        {t('core:briefing.readyCount')} <Num>{ready}</Num>/
-        <Num>{players.length}</Num>
+        {t('core:briefing.readyCount')} <Text variant="number">{ready}</Text>/
+        <Text variant="number">{players.length}</Text>
       </span>
       <span className={cx(styles.pips)} aria-hidden="true">
         {players.map((player) => (

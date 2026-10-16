@@ -1,8 +1,8 @@
+import { Button, Dialog, Stack } from '@alliance/ui';
 import { useEffect, useState } from 'react';
 import type { Recoverable } from '#infra/boot/identity.js';
 import { resumeSeat, seatStore } from '#infra/boot/seat.js';
 import { useText } from '#infra/text/index.js';
-import { Button, Dialog, Modal, Stack } from '#ui/index.js';
 
 const list = (): readonly Recoverable[] =>
   seatStore.getState().identity?.recoverable() ?? [];
@@ -39,30 +39,29 @@ export function ResumeSeat() {
   return (
     <>
       <Button onPress={() => setOpen(true)}>{t('core:resume.open')}</Button>
-      <Modal isOpen={open} onOpenChange={(next) => !busy && setOpen(next)}>
-        <Dialog
-          title={t('core:resume.open')}
-          closeLabel={t('core:common.cancel')}
-          onClose={() => !busy && setOpen(false)}
-        >
-          <Stack gap={2}>
-            <p>{t('core:resume.hint')}</p>
-            {items.map((item) => (
-              <Button
-                key={item.id}
-                isDisabled={busy}
-                onPress={() => void resume(item)}
-              >
-                {t('core:resume.item', {
-                  name: item.name || t('core:resume.noName'),
-                  code: item.code || '—',
-                })}
-              </Button>
-            ))}
-            {failed ? <p role="status">{t('core:resume.failed')}</p> : null}
-          </Stack>
-        </Dialog>
-      </Modal>
+      <Dialog
+        isOpen={open}
+        onOpenChange={(next) => !busy && setOpen(next)}
+        title={t('core:resume.open')}
+        closeLabel={t('core:common.cancel')}
+      >
+        <Stack gap={2}>
+          <p>{t('core:resume.hint')}</p>
+          {items.map((item) => (
+            <Button
+              key={item.id}
+              isDisabled={busy}
+              onPress={() => void resume(item)}
+            >
+              {t('core:resume.item', {
+                name: item.name || t('core:resume.noName'),
+                code: item.code || '—',
+              })}
+            </Button>
+          ))}
+          {failed ? <p role="status">{t('core:resume.failed')}</p> : null}
+        </Stack>
+      </Dialog>
     </>
   );
 }

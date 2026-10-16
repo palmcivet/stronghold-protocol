@@ -7,6 +7,8 @@ export const EN: Readonly<Partial<Record<CoreKey, string>>> = {
   'core:common.cancel': 'Cancel',
   'core:common.back': 'Back',
   'core:common.close': 'Close',
+  'core:common.on': 'On',
+  'core:common.off': 'Off',
   'core:common.ready': 'Ready',
   'core:common.unready': 'Not ready',
   'core:common.loading': 'Loading…',
@@ -43,7 +45,6 @@ export const EN: Readonly<Partial<Record<CoreKey, string>>> = {
   'core:lobby.doctor': 'DOCTOR',
   'core:lobby.spectate.tip':
     'Enter as a spectator: no Doctor seat, watch only (up to {n} per alliance; allowed while a match runs)',
-  'core:lobby.ping.online': '{ms} ms',
   'core:lobby.ping.offline': 'Offline',
   'core:room.leaveConfirm': 'Leave this room?',
   'core:room.leaveMatchConfirm':

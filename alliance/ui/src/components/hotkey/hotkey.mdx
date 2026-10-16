@@ -1,0 +1,29 @@
+import { HotkeyDemo } from './hotkey.demo.js';
+
+# Hotkey
+
+按键提示，显示在控件旁。接受 `KeyQ` 或 `Digit1` 这类键码，显示时去掉前缀。
+
+:::code-group
+
+<div data-title="Preview">
+
+<div className="wsde-doc-preview">
+
+<HotkeyDemo />
+
+</div>
+
+</div>
+
+```tsx [Code]
+import { Hotkey } from '@alliance/ui';
+
+<Hotkey code="KeyQ" />
+```
+
+:::
+
+| 属性 | 类型 | 说明 |
+| --- | --- | --- |
+| `code` | `string` | 键码，如 `KeyQ` |

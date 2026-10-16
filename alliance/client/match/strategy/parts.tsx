@@ -1,4 +1,17 @@
 import { bandsForMode } from '@alliance/contract/catalog.js';
+import {
+  Badge,
+  Button,
+  Cluster,
+  cx,
+  Dialog,
+  Icon,
+  ListBox,
+  Panel,
+  RichText,
+  Stack,
+  Text,
+} from '@alliance/ui';
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from 'zustand';
 import { createStore } from 'zustand/vanilla';
@@ -6,7 +19,6 @@ import { useIntent } from '#infra/intent/context.js';
 import { onMatchReset } from '#infra/store/frame.js';
 import { useMatch, useMatchCatalog, useSession } from '#infra/store/hook.js';
 import { dataName, has, lookup, useText } from '#infra/text/index.js';
-import { cx } from '#infra/theme/class-name.js';
 import { usePhaseSeconds } from '#match/countdown.js';
 import styles from '#match/match.module.css';
 import {
@@ -16,23 +28,8 @@ import {
   draftSelection,
   teammateBands,
 } from '#match/strategy/draft.js';
-import { BandIcon } from '#part/art.js';
+import { BandIcon, PlayerAvatar } from '#part/art.js';
 import { definePart, Part } from '#part/registry.js';
-import {
-  Avatar,
-  Badge,
-  Button,
-  Cluster,
-  Dialog,
-  GridList,
-  Icon,
-  Modal,
-  Muted,
-  Num,
-  Panel,
-  RichText,
-  Stack,
-} from '#ui/index.js';
 
 export const STRATEGY = {
   layout: 'core:strategy.layout',
@@ -136,22 +133,22 @@ function DraftTip() {
     return null;
   }
   if (!timed) {
-    return <Muted>{t('core:strategy.tipUntimed')}</Muted>;
+    return <Text kind="muted">{t('core:strategy.tipUntimed')}</Text>;
   }
   const clock = draft.turnSeconds
     ? t('core:strategy.clock', { seconds: Math.round(draft.turnSeconds) })
     : t('core:strategy.clockAny');
   const auto = autoPickBand(selected, { bands, taken, myPick, defaultId });
   if (!auto) {
-    return <Muted>{t('core:strategy.tipTimed', { clock })}</Muted>;
+    return <Text kind="muted">{t('core:strategy.tipTimed', { clock })}</Text>;
   }
   const name = dataName('band', auto);
   return (
-    <Muted>
+    <Text kind="muted">
       {auto === selected
         ? t('core:strategy.tipAuto', { clock, name })
         : t('core:strategy.tipAutoDefault', { clock, name })}
-    </Muted>
+    </Text>
   );
 }
 
@@ -175,16 +172,15 @@ function InfoDialog() {
         <Icon name="search" />
         {t('core:strategy.info')}
       </Button>
-      <Modal isOpen={open} onOpenChange={setOpen}>
-        <Dialog
-          title={t('core:briefing.heading')}
-          closeLabel={t('core:common.close')}
-          onClose={() => setOpen(false)}
-          actions={line ? <span role="status">{line}</span> : null}
-        >
-          <Part id="core:match.info" factions={false} />
-        </Dialog>
-      </Modal>
+      <Dialog
+        isOpen={open}
+        onOpenChange={setOpen}
+        title={t('core:briefing.heading')}
+        closeLabel={t('core:common.close')}
+        actions={line ? <span role="status">{line}</span> : null}
+      >
+        <Part id="core:match.info" factions={false} />
+      </Dialog>
     </>
   );
 }
@@ -217,8 +213,12 @@ function Order() {
               data-done={pick ? true : undefined}
               data-me={id === playerId || undefined}
             >
-              {solo ? null : <Num>{index + 1}</Num>}
-              <Avatar name={player?.name ?? id} size="sm" framed={current} />
+              {solo ? null : <Text variant="number">{index + 1}</Text>}
+              <PlayerAvatar
+                name={player?.name ?? id}
+                size="sm"
+                active={current}
+              />
               <Stack gap={1}>
                 <Cluster gap={1}>
                   <strong>{player?.name || t('core:room.doctor')}</strong>
@@ -227,14 +227,14 @@ function Order() {
                 {pick ? (
                   <Badge tone="accent">{dataName('band', pick)}</Badge>
                 ) : current ? (
-                  <Badge tone="warn">
+                  <Badge tone="amber">
                     {t('core:strategy.choosing')}
                     {seconds !== null && !solo
                       ? ` ${t('core:strategy.seconds', { seconds })}`
                       : ''}
                   </Badge>
                 ) : (
-                  <Muted>{t('core:strategy.pending')}</Muted>
+                  <Text kind="muted">{t('core:strategy.pending')}</Text>
                 )}
               </Stack>
               {pick ? <BandIcon bandId={pick} size="sm" /> : null}
@@ -290,7 +290,8 @@ function StrategyGrid() {
   }
   return (
     <Panel title={t('core:strategy.heading')}>
-      <GridList
+      <ListBox
+        variant="cards"
         label={t('core:strategy.heading')}
         selected={selected}
         onSelect={(bandId) => focusStore.setState({ bandId })}
@@ -307,14 +308,16 @@ function StrategyGrid() {
               >
                 <BandIcon bandId={band.id} size="md" />
                 <strong>{dataName('band', band.id)}</strong>
-                <Num>{t('core:strategy.lp', { lp: band.totalHp })}</Num>
+                <Text variant="number">
+                  {t('core:strategy.lp', { lp: band.totalHp })}
+                </Text>
                 {offBonds.length ? (
                   <Badge tone="danger">{t('core:strategy.off')}</Badge>
                 ) : null}
                 {(pickers.get(band.id) ?? []).length ? (
                   <Cluster gap={1}>
                     {(pickers.get(band.id) ?? []).slice(0, 4).map((id) => (
-                      <Avatar key={id} name={nameOf(id)} size="sm" />
+                      <PlayerAvatar key={id} name={nameOf(id)} size="sm" />
                     ))}
                   </Cluster>
                 ) : null}
@@ -363,8 +366,8 @@ function Detail() {
         <Stack gap={2}>
           <BandIcon bandId={band.id} size="lg" />
           <Cluster gap={2}>
-            <Muted>{t('core:strategy.hp')}</Muted>
-            <Num>{band.totalHp}</Num>
+            <Text kind="muted">{t('core:strategy.hp')}</Text>
+            <Text variant="number">{band.totalHp}</Text>
           </Cluster>
           <strong>{dataName('band', band.id)}</strong>
           {offNames.length ? (
@@ -377,21 +380,21 @@ function Detail() {
               })}
             </p>
           ) : null}
-          <Muted>{t('core:strategy.effect')}</Muted>
+          <Text kind="muted">{t('core:strategy.effect')}</Text>
           {has(effectKey) ? <strong>{lookup(effectKey)}</strong> : null}
           {has(descKey) ? <RichText source={lookup(descKey)} /> : null}
         </Stack>
       ) : (
-        <Muted>{t('core:strategy.pickHint')}</Muted>
+        <Text kind="muted">{t('core:strategy.pickHint')}</Text>
       )}
       <span role="status">
-        <Muted>
+        <Text kind="muted">
           {!myPick && isTaken
             ? t('core:strategy.takenHint')
             : solo && !myPick
               ? null
               : line}
-        </Muted>
+        </Text>
       </span>
       <Cluster justify="end">
         {solo ? null : (

@@ -1,4 +1,5 @@
 import { GEO, PHASE } from '@alliance/contract/match.js';
+import { cx } from '@alliance/ui';
 import type { AssetKey } from 'arknights-assets-catalog';
 import type { BattleSnapshot, TileCoord } from 'arknights-mission-core';
 import {
@@ -28,12 +29,6 @@ import {
 import { assetsStore } from '#infra/store/assets.js';
 import { useMatch, useMatchCatalog, useStream } from '#infra/store/hook.js';
 import { stageMapStore } from '#infra/store/stage-map.js';
-import { cx } from '#infra/theme/class-name.js';
-import {
-  clientToDesign,
-  type FitLayout,
-  fitLayout,
-} from '#infra/theme/viewport.js';
 import { equipItem } from '#match/equip.js';
 import { createActorModels, modelScaleOf } from '#match/field/actors.js';
 import { useBoardActions } from '#match/field/board-actions.js';
@@ -80,6 +75,8 @@ const NO_SUBSCRIBE = () => () => {};
 /**
  * CSS px of HUD along the top and bottom edges that the framed rows keep clear of. Side chrome (team / effects)
  * floats over the map — left/right stay 0 so the ground fills under them as master's does.
+ * The host fills the viewport and the HUD sits on the design canvas, so the top and bottom
+ * amounts include the canvas offset.
  */
 function hudInsets(host: HTMLElement): HudInsets {
   const layout = host.closest('[data-layout="match"]');
@@ -99,18 +96,6 @@ function hudInsets(host: HTMLElement): HudInsets {
     bottom: bottom ? Math.max(0, box.bottom - bottom.top) : 0,
     left: 0,
     right: 0,
-  };
-}
-
-/** HUD insets in design CSS px (viewport insets ÷ fit scale). */
-function designInsets(host: HTMLElement, scale: number): HudInsets {
-  const view = hudInsets(host);
-  const s = Math.max(scale, 1e-6);
-  return {
-    top: view.top / s,
-    bottom: view.bottom / s,
-    left: view.left / s,
-    right: view.right / s,
   };
 }
 
@@ -253,7 +238,6 @@ export function StageField({
   const stage = useRef<MissionBoard | null>(null);
   const [hostSize, setHostSize] = useState({ width: 0, height: 0 });
   const coverRef = useRef<HTMLDivElement | null>(null);
-  const layoutRef = useRef<FitLayout | null>(null);
   useEffect(() => {
     if (!showsPrep && penStore.getState().pen) {
       setPen(false);
@@ -298,22 +282,21 @@ export function StageField({
       return;
     }
     const box = element.getBoundingClientRect();
-    const layout = fitLayout({ width: box.width, height: box.height });
-    layoutRef.current = layout;
-    setHostSize({ width: layout.design.width, height: layout.design.height });
-    // Design×scale CSS box (no transform); canvas CSS fills the cover.
-    cover.style.left = `${layout.offsetX}px`;
-    cover.style.top = `${layout.offsetY}px`;
-    cover.style.width = `${layout.design.width * layout.scale}px`;
-    cover.style.height = `${layout.design.height * layout.scale}px`;
+    const width = Math.max(1, box.width);
+    const height = Math.max(1, box.height);
+    setHostSize({ width, height });
+    cover.style.left = '0px';
+    cover.style.top = '0px';
+    cover.style.width = `${width}px`;
+    cover.style.height = `${height}px`;
     cover.style.removeProperty('transform');
-    board.resize(layout.design.width, layout.design.height);
+    board.resize(width, height);
     board.dispatch({
       type: 'set-camera',
       camera: cameraFor(
         live.current.rect,
-        layout.design,
-        designInsets(element, layout.scale),
+        { width, height },
+        hudInsets(element),
       ),
     });
   }, []);
@@ -754,19 +737,11 @@ export function StageField({
       },
       pickTile: (clientX, clientY) => {
         const board = stage.current;
-        const layout = layoutRef.current;
-        if (!board || !showsPrep || !layout) {
+        if (!board || !showsPrep) {
           return null;
         }
         const box = element.getBoundingClientRect();
-        const design = clientToDesign(
-          clientX,
-          clientY,
-          layout,
-          box.left,
-          box.top,
-        );
-        const hit = board.pick(design.x, design.y);
+        const hit = board.pick(clientX - box.left, clientY - box.top);
         if (hit.type === 'tile') {
           return { row: hit.y, col: hit.x };
         }
@@ -794,24 +769,16 @@ export function StageField({
     clientY: number;
   } | null => {
     const element = host.current;
-    const layout = layoutRef.current;
-    if (!element || !layout) {
+    if (!element) {
       return null;
     }
     const box = element.getBoundingClientRect();
-    const design = clientToDesign(
-      event.clientX,
-      event.clientY,
-      layout,
-      box.left,
-      box.top,
-    );
     return {
       pointerId: event.pointerId,
       pointerType: event.pointerType,
       button: event.button,
-      x: design.x,
-      y: design.y,
+      x: event.clientX - box.left,
+      y: event.clientY - box.top,
       clientX: event.clientX,
       clientY: event.clientY,
     };
@@ -892,9 +859,7 @@ export function StageField({
       ? cameraFor(
           rect,
           hostSize,
-          host.current && layoutRef.current
-            ? designInsets(host.current, layoutRef.current.scale)
-            : NO_INSETS,
+          host.current ? hudInsets(host.current) : NO_INSETS,
         )
       : null;
 

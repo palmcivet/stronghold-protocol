@@ -1,0 +1,35 @@
+import { StackDemo } from './stack.demo.js';
+
+# Stack
+
+子项纵向排列。`gap` 取间距令牌的档位（`Space`：1、2、3、4、5、6、8）。
+
+:::code-group
+
+<div data-title="Preview">
+
+<div className="wsde-doc-preview">
+
+<StackDemo />
+
+</div>
+
+</div>
+
+```tsx [Code]
+import { Stack } from '@alliance/ui';
+
+<Stack gap="md">
+  <Button>上</Button>
+  <Button>下</Button>
+</Stack>
+```
+
+:::
+
+| 属性 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `gap` | `Space` | — | 子项之间的间距 |
+| `as` | `ElementType` | `'div'` | 渲染的元素 |
+| `label` | `string` | — | 无障碍名称 |
+| `role` | `string` | — | 角色 |

@@ -1,4 +1,18 @@
 import { PHASE } from '@alliance/contract/match.js';
+import {
+  Badge,
+  Button,
+  Capsule,
+  Cluster,
+  cx,
+  Dialog,
+  Icon,
+  Notice,
+  Stack,
+  Tabs,
+  Text,
+  ToggleButton,
+} from '@alliance/ui';
 import { useState } from 'react';
 import { useStore } from 'zustand';
 import { useIntent } from '#infra/intent/context.js';
@@ -10,33 +24,17 @@ import {
 } from '#infra/store/hook.js';
 import { matchRulesStore } from '#infra/store/match-rules.js';
 import { dataName, lookup, useText } from '#infra/text/index.js';
-import { cx } from '#infra/theme/class-name.js';
 import { ClockFace, usePhaseSeconds } from '#match/countdown.js';
 import { overtimeState } from '#match/overtime.js';
 import { penStore, setPen } from '#match/pen-state.js';
 import { usePlayback } from '#match/playback-state.js';
 import { selectionStore } from '#match/selection.js';
 import { EnemyThumb } from '#part/art.js';
+import { DifficultyBadge } from '#part/badge.js';
 import { BoundHotkey } from '#part/hotkey.js';
+import { LpTower } from '#part/lp-tower.js';
 import { Part } from '#part/registry.js';
 import { type PartInsert, Slot } from '#part/slot.js';
-import {
-  Badge,
-  Button,
-  Cluster,
-  Dialog,
-  DifficultyTag,
-  EmptyState,
-  Icon,
-  LpTower,
-  Modal,
-  Muted,
-  Num,
-  PhaseCapsule,
-  Stack,
-  Tabs,
-  ToggleButton,
-} from '#ui/index.js';
 import styles from './hud.module.css';
 import { hudStore } from './state.js';
 
@@ -71,46 +69,45 @@ function ExitDialog({
     void intents.dispatch({ type: 'g.leave' });
   };
   return (
-    <Modal isOpen={open} onOpenChange={(next) => !next && onClose()}>
-      <Dialog
-        title={
-          seated ? t('core:match.leaveTitle') : t('core:match.leaveSpectate')
-        }
-        closeLabel={t('core:common.cancel')}
-        onClose={onClose}
-        actions={
-          <>
-            {seated && !solo ? (
-              <Button
-                onPress={() => {
-                  onClose();
-                  void intents.dispatch({
-                    type: 'g.autoplay',
-                    fields: { on: true },
-                  });
-                }}
-              >
-                <Icon name="bot" />
-                {t('core:match.awayAction')}
-              </Button>
-            ) : null}
-            <Button variant="primary" onPress={leave}>
-              <Icon name="exit" />
-              {seated ? t('core:match.leave') : t('core:match.leaveSpectate')}
+    <Dialog
+      isOpen={open}
+      onOpenChange={(next) => !next && onClose()}
+      title={
+        seated ? t('core:match.leaveTitle') : t('core:match.leaveSpectate')
+      }
+      closeLabel={t('core:common.cancel')}
+      actions={
+        <>
+          {seated && !solo ? (
+            <Button
+              onPress={() => {
+                onClose();
+                void intents.dispatch({
+                  type: 'g.autoplay',
+                  fields: { on: true },
+                });
+              }}
+            >
+              <Icon name="bot" />
+              {t('core:match.awayAction')}
             </Button>
-          </>
-        }
-      >
-        {seated ? (
-          <Stack gap={2}>
-            {solo ? null : <p>{t('core:match.awayNote')}</p>}
-            <p>{t('core:match.quitNote')}</p>
-          </Stack>
-        ) : (
-          <p>{t('core:match.leaveSpectateNote')}</p>
-        )}
-      </Dialog>
-    </Modal>
+          ) : null}
+          <Button variant="primary" onPress={leave}>
+            <Icon name="exit" />
+            {seated ? t('core:match.leave') : t('core:match.leaveSpectate')}
+          </Button>
+        </>
+      }
+    >
+      {seated ? (
+        <Stack gap={2}>
+          {solo ? null : <p>{t('core:match.awayNote')}</p>}
+          <p>{t('core:match.quitNote')}</p>
+        </Stack>
+      ) : (
+        <p>{t('core:match.leaveSpectateNote')}</p>
+      )}
+    </Dialog>
   );
 }
 
@@ -129,7 +126,7 @@ function Spectators() {
     <details className={cx(styles.specPill)}>
       <summary>
         <Icon name="eye" />
-        <Num>{spectators.length}</Num>
+        <Text variant="number">{spectators.length}</Text>
         <span className={cx(styles.microLabel)}>
           {t('core:match.spectators')}
         </span>
@@ -178,18 +175,20 @@ export function Exit() {
       <Stack gap={1}>
         <Cluster gap={1}>
           {ping === null ? null : (
-            <Muted>{t('core:entry.ping', { ms: Math.round(ping) })}</Muted>
+            <Text kind="muted">
+              {t('core:entry.ping', { ms: Math.round(ping) })}
+            </Text>
           )}
           <Spectators />
         </Cluster>
         {difficulty ? (
-          <DifficultyTag
-            id={difficulty.toLowerCase()}
+          <DifficultyBadge
+            difficulty={difficulty}
             label={lookup(`core:difficulty.${difficulty}`)}
           />
         ) : null}
       </Stack>
-      {seated ? null : <Badge tone="info">{t('core:spectating')}</Badge>}
+      {seated ? null : <Badge tone="ice">{t('core:spectating')}</Badge>}
       <ExitDialog open={open} onClose={() => setOpen(false)} />
     </Cluster>
   );
@@ -207,21 +206,21 @@ export function Round() {
   const boss = view.bossHp;
   return (
     <Cluster gap={2}>
-      <Muted>{t('core:match.roundLabel')}</Muted>
+      <Text kind="muted">{t('core:match.roundLabel')}</Text>
       <span className={cx(styles.round)}>
-        <Num>{view.round}</Num>
-        <Muted>/{view.lastRound}</Muted>
+        <Text variant="number">{view.round}</Text>
+        <Text kind="muted">/{view.lastRound}</Text>
       </span>
       {boss && combat ? (
-        <PhaseCapsule
-          tone="boss"
+        <Capsule
+          tone="danger"
           label={lookup(`core:phase.${view.phase}`)}
           detail={`${boss.hp}/${boss.max}`}
           progress={boss.max > 0 ? boss.hp / boss.max : 0}
         />
       ) : combat && battle && battle.total > 0 ? (
-        <PhaseCapsule
-          tone="combat"
+        <Capsule
+          tone="orange"
           label={lookup(`core:phase.${view.phase}`)}
           detail={t('core:playback.progress', {
             killed: battle.killed,
@@ -230,8 +229,8 @@ export function Round() {
           progress={battle.killed / battle.total}
         />
       ) : (
-        <PhaseCapsule
-          tone={combat ? 'combat' : 'prep'}
+        <Capsule
+          tone={combat ? 'orange' : 'accent'}
           label={lookup(`core:phase.${view.phase}`)}
         />
       )}
@@ -326,7 +325,7 @@ export function Clock() {
         <Badge tone="danger">{t('core:match.overtime')}</Badge>
       ) : null}
       {own && prep && !own.canReady && !own.ready && own.temp.some(Boolean) ? (
-        <Muted>{t('core:match.tempBlocks')}</Muted>
+        <Text kind="muted">{t('core:match.tempBlocks')}</Text>
       ) : null}
       {own && solo ? (
         <Button
@@ -408,7 +407,7 @@ export function Lens() {
         onPress={onLeft}
       >
         <Icon name="search" />
-        {pen ? <Muted>◀◀</Muted> : null}
+        {pen ? <Text kind="muted">◀◀</Text> : null}
       </Button>
       <Button
         aria-label={
@@ -422,7 +421,7 @@ export function Lens() {
         onPress={onRight}
       >
         <Icon name="search" />
-        {penAvail && !pen ? <Muted>▶▶</Muted> : null}
+        {penAvail && !pen ? <Text kind="muted">▶▶</Text> : null}
       </Button>
     </Cluster>
   );
@@ -443,15 +442,15 @@ function Enemies() {
     hudStore.setState({ intel: null });
   };
   if (!enemies.length) {
-    return <EmptyState title={t('core:match.noEnemies')} />;
+    return <Notice title={t('core:match.noEnemies')} />;
   }
   return (
     <Stack gap={2}>
-      <Muted>
+      <Text kind="muted">
         {round !== null
           ? t('core:match.enemyWave', { round, count: total })
           : t('core:match.nextEnemies')}
-      </Muted>
+      </Text>
       <ul className={cx(styles.enemyList)}>
         {enemies.map((enemy, index) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: a preview line is its index
@@ -480,12 +479,12 @@ function Enemies() {
                     <Badge tone="gold">{t('core:match.enemy.elite')}</Badge>
                   ) : null}
                   {enemy.fly ? (
-                    <Badge tone="info">{t('core:match.enemy.fly')}</Badge>
+                    <Badge tone="ice">{t('core:match.enemy.fly')}</Badge>
                   ) : null}
                 </Cluster>
               </span>
               <b className={cx(styles.enemyRowCount)}>
-                <Num>×{enemy.count}</Num>
+                <Text variant="number">×{enemy.count}</Text>
               </b>
             </button>
           </li>

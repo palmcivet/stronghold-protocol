@@ -28,7 +28,8 @@ test('each font key becomes a family with WOFF2 first and the original after it'
     },
   } as unknown as PackManifest;
   const css = fontsCss(manifest);
-  expect(css).toContain('font-family: "bender-regular";');
+  expect(css).toContain('font-family: "Bender";');
+  expect(css).toContain('font-weight: 400;');
   expect(css).toContain(
     'url("../../../files/font/bender/regular.woff2?v=abcdef012345") format("woff2")',
   );

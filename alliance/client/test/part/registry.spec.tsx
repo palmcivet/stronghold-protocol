@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { parseRichText } from '@alliance/ui';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { registerAllParts } from '#infra/boot/parts.js';
@@ -10,7 +11,6 @@ import {
   replacePart,
   wrapPart,
 } from '#part/registry.js';
-import { parseRichText } from '#ui/rich-text.js';
 
 afterEach(cleanup);
 

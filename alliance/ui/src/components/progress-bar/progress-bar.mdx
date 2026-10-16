@@ -1,0 +1,57 @@
+import { CountdownDemo } from '../countdown/countdown.demo.js';
+import { ProgressDemo } from './progress-bar.demo.js';
+
+# ProgressBar
+
+- `ProgressBar`：任务进度，或一个值占最大值的比例，如击杀数占总数，用 `valueText` 给出 `3/10` 一类的读法。不给 `value` 时为不确定进度，条会来回扫动。
+- `Spinner`：加载中的标识，`label` 作为状态的名称被读屏读出。
+- `Countdown`：剩余秒数。读屏每十秒读一次；剩余秒数不超过 `warnAt` 时变为警示色。`seconds` 为 `null` 时不显示。
+
+:::code-group
+
+<div data-title="Preview">
+
+<div className="wsde-doc-preview">
+
+<ProgressDemo />
+
+</div>
+
+</div>
+
+```tsx [Code]
+import { ProgressBar, Spinner } from '@alliance/ui';
+
+<ProgressBar label="占领进度" value={60} />
+<Spinner label="加载中" />
+```
+
+:::
+
+:::code-group
+
+<div data-title="Preview">
+
+<div className="wsde-doc-preview">
+
+<CountdownDemo />
+
+</div>
+
+</div>
+
+```tsx [Code]
+import { Countdown } from '@alliance/ui';
+
+<Countdown seconds={12} text={(s) => s + ' 秒'} />
+```
+
+:::
+
+| 属性 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `label` | `string` | — | 名称，作为无障碍名称 |
+| `value` | `number` | — | 当前值；不传时为不确定进度 |
+| `max` | `number` | `100` | 最大值 |
+| `valueText` | `string` | 百分比 | 显示与读屏的文字 |
+| `tone` | `ToneName` | `'accent'` | 颜色 |

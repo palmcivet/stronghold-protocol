@@ -17,7 +17,7 @@
     left: 50%;
     bottom: 40%;
     z-index: 1;
-    width: min(32rem, 60%);
+    width: min(calc(var(--wsde-dp) * 512), 60%);
     transform: translateX(-50%);
     opacity: 0;
     pointer-events: none;
@@ -33,7 +33,7 @@
     position: absolute;
     top: calc(
       var(--wsde-size-hud-bar) +
-      var(--wsde-size-touch) +
+      calc(var(--wsde-dp) * 44) +
       var(--wsde-space-4)
     );
     left: 50%;
@@ -42,7 +42,7 @@
     flex-direction: column;
     align-items: center;
     gap: var(--wsde-space-2);
-    max-width: min(28rem, 60%);
+    max-width: min(calc(var(--wsde-dp) * 448), 60%);
     transform: translateX(-50%);
   }
 
@@ -58,21 +58,21 @@
     aspect-ratio: 1;
     min-width: 0;
     padding: var(--wsde-space-1);
-    border: 1px solid var(--wsde-color-line-1);
-    background: var(--wsde-color-bg-2);
-    font-size: 0.75rem;
+    border: 1px solid var(--wsde-color-border-subtle);
+    background: var(--wsde-palette-gray-800);
+    font-size: calc(var(--wsde-text-dp) * 12);
     overflow: hidden;
     text-overflow: ellipsis;
     cursor: pointer;
   }
 
   .tile[aria-selected="true"] {
-    border-color: var(--wsde-color-accent-400);
-    background: var(--wsde-color-accent-a20);
+    border-color: var(--wsde-palette-mint-400);
+    background: var(--wsde-palette-mint-a20);
   }
 
   .occupied {
-    background: var(--wsde-color-bg-4);
+    background: var(--wsde-palette-gray-600);
   }
 
   .stage {
@@ -84,9 +84,10 @@
     touch-action: none;
   }
 
-  /* Design×scale contain box; left/top/width/height set from fitLayout (no transform). */
+  /* Fills the viewport so the map's edge decoration shows in the bands. */
   .coverFrame {
     position: absolute;
+    inset: 0;
     overflow: hidden;
     pointer-events: none;
   }
@@ -100,7 +101,7 @@
   .status {
     padding: var(--wsde-space-1) var(--wsde-space-3);
     background: var(--wsde-color-surface-hud);
-    color: var(--wsde-color-text-md);
+    color: var(--wsde-color-text-secondary);
   }
 
   .stream {
@@ -110,7 +111,7 @@
     margin: 0;
     padding: 0;
     list-style: none;
-    background: var(--wsde-color-bg-1);
+    background: var(--wsde-color-surface-raised);
   }
 
   .unit {
@@ -119,18 +120,18 @@
     flex-direction: column;
     align-items: center;
     transform: translate(-50%, -50%);
-    font-size: 0.7rem;
+    font-size: calc(var(--wsde-text-dp) * 11.2);
     transition:
       left 0.2s linear,
       top 0.2s linear;
   }
 
   .ally {
-    color: var(--wsde-color-accent-400);
+    color: var(--wsde-palette-mint-400);
   }
 
   .enemy {
-    color: var(--wsde-color-text-md);
+    color: var(--wsde-color-text-secondary);
   }
 
   .fallen {
@@ -143,14 +144,14 @@
   }
 
   .hp {
-    width: 3rem;
-    height: 0.4rem;
+    width: calc(var(--wsde-dp) * 48);
+    height: calc(var(--wsde-dp) * 6.4);
   }
 
   .log {
     margin: 0;
     padding-inline-start: var(--wsde-space-3);
-    font-size: 0.75rem;
-    color: var(--wsde-color-text-md);
+    font-size: calc(var(--wsde-text-dp) * 12);
+    color: var(--wsde-color-text-secondary);
   }
 }

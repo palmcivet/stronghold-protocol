@@ -1,0 +1,12 @@
+@layer components {
+  .placeholder {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wsde-space-1);
+    padding: var(--wsde-space-2) var(--wsde-space-3);
+    border: var(--wsde-stroke-thin) dashed var(--wsde-color-border-strong);
+    border-radius: var(--wsde-radius-2);
+    color: var(--wsde-color-text-muted);
+    font-size: var(--wsde-font-size-label);
+  }
+}

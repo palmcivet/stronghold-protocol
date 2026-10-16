@@ -1,0 +1,44 @@
+@layer components {
+  .popover {
+    --wsde-arrow-fill: var(--wsde-color-surface-overlay);
+    --wsde-arrow-stroke: var(--wsde-color-border-default);
+    min-width: calc(var(--wsde-dp) * 160);
+    max-width: calc(var(--wsde-dp) * 384);
+    padding: var(--wsde-space-2);
+    border: var(--wsde-stroke-thin) solid var(--wsde-color-border-default);
+    border-radius: var(--wsde-radius-1);
+    background: var(--wsde-color-surface-overlay);
+    box-shadow: var(--wsde-shadow-float);
+  }
+
+  .popover[data-entering] {
+    animation: pop var(--wsde-duration-fast) var(--wsde-ease-out);
+  }
+
+  .popover[data-placement="top"] {
+    --origin: translateY(calc(var(--wsde-dp) * 4));
+  }
+
+  .popover[data-placement="bottom"] {
+    --origin: translateY(calc(var(--wsde-dp) * -4));
+  }
+
+  .popover[data-placement="left"] {
+    --origin: translateX(calc(var(--wsde-dp) * 4));
+  }
+
+  .popover[data-placement="right"] {
+    --origin: translateX(calc(var(--wsde-dp) * -4));
+  }
+
+  .body {
+    outline: none;
+  }
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: var(--origin);
+  }
+}

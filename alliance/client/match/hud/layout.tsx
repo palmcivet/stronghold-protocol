@@ -1,10 +1,9 @@
 import { PHASE } from '@alliance/contract/match.js';
+import { cx, Stack, Text } from '@alliance/ui';
 import { useMatch } from '#infra/store/hook.js';
 import { useText } from '#infra/text/index.js';
-import { cx } from '#infra/theme/class-name.js';
 import { Part } from '#part/registry.js';
 import { type PartInsert, Slot } from '#part/slot.js';
-import { Muted, Stack } from '#ui/index.js';
 import styles from './hud.module.css';
 import { COMBAT_PHASES } from './topbar.js';
 
@@ -73,7 +72,7 @@ export function MatchLayout() {
   const t = useText();
   const loaded = useMatch((state) => state.public !== null);
   if (!loaded) {
-    return <Muted>{t('core:common.loading')}</Muted>;
+    return <Text kind="muted">{t('core:common.loading')}</Text>;
   }
   return (
     <div className={cx(styles.layout)} data-layout="match">

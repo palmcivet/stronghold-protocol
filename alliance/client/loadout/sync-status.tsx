@@ -1,7 +1,7 @@
+import { Text } from '@alliance/ui';
 import { useStore } from 'zustand';
 import { useMatch } from '#infra/store/hook.js';
 import { useText } from '#infra/text/index.js';
-import { Muted } from '#ui/index.js';
 import { type SyncKind, syncStore, takesEffect } from './sync.js';
 
 /** When a change of this setting takes effect, by the phase of the match on screen. */
@@ -9,11 +9,11 @@ export function TakesEffect({ kind }: { readonly kind: SyncKind }) {
   const t = useText();
   const phase = useMatch((state) => state.public?.phase ?? null);
   return (
-    <Muted>
+    <Text kind="muted">
       {takesEffect(kind, phase) === 'thisMatch'
         ? t('core:loadout.effect.thisMatch')
         : t('core:loadout.effect.nextMatch')}
-    </Muted>
+    </Text>
   );
 }
 

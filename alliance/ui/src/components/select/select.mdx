@@ -1,0 +1,38 @@
+import { SelectDemo } from './select.demo.js';
+
+# Select
+
+下拉选择，在一行里选一个值。
+
+:::code-group
+
+<div data-title="Preview">
+
+<div className="wsde-doc-preview">
+
+<SelectDemo />
+
+</div>
+
+</div>
+
+```tsx [Code]
+import { Select } from '@alliance/ui';
+
+<Select
+  label="语言"
+  items={[{ id: 'zh', label: '中文' }]}
+  selected="zh"
+  onSelect={() => {}}
+/>
+```
+
+:::
+
+| 属性 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `label` | `string` | — | 无障碍名称 |
+| `options` | `readonly { value: string; label: string }[]` | — | 可选项 |
+| `value` | `string` | — | 当前值 |
+| `onChange` | `(value: string) => void` | — | 选择变化时调用 |
+| `isDisabled` | `boolean` | — | 禁用 |

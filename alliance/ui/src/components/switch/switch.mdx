@@ -1,0 +1,33 @@
+import { SwitchDemo } from './switch.demo.js';
+
+# Switch
+
+开关。`onText` 与 `offText` 在开关旁显示当前状态的字，children 是开关的名称。
+
+:::code-group
+
+<div data-title="Preview">
+
+<div className="wsde-doc-preview">
+
+<SwitchDemo />
+
+</div>
+
+</div>
+
+```tsx [Code]
+import { Switch } from '@alliance/ui';
+
+<Switch isSelected={on} onChange={setOn}>音效</Switch>
+```
+
+:::
+
+| 属性 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `children` | `ReactNode` | — | 开关的名称 |
+| `isSelected` | `boolean` | — | 是否开启 |
+| `onChange` | `(on: boolean) => void` | — | 切换时调用 |
+| `isDisabled` | `boolean` | — | 禁用 |
+| `onText` / `offText` | `string` | — | 开启与关闭时旁边显示的字 |

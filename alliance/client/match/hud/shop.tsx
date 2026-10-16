@@ -1,27 +1,27 @@
 import type { ShopSlot } from '@alliance/contract/server-message.js';
+import {
+  Badge,
+  Button,
+  Cluster,
+  cx,
+  HexBadge,
+  Icon,
+  Stack,
+  Text,
+  ToggleButton,
+  Tooltip,
+} from '@alliance/ui';
 import { useMemo, useRef } from 'react';
 import { useStore } from 'zustand';
 import { useIntent } from '#infra/intent/context.js';
 import { useMatch, useMatchCatalog } from '#infra/store/hook.js';
 import { dataName, has, lookup, useText } from '#infra/text/index.js';
-import { cx } from '#infra/theme/class-name.js';
 import { createShopCardDrag } from '#match/hud/shop-drag.js';
 import { cardName } from '#match/piece-label.js';
 import { PieceThumb } from '#part/art.js';
+import { TierBadge } from '#part/badge.js';
 import { BoundHotkey } from '#part/hotkey.js';
 import { Part } from '#part/registry.js';
-import {
-  Badge,
-  Button,
-  Cluster,
-  Icon,
-  Num,
-  PriceHex,
-  Stack,
-  TierChip,
-  ToggleButton,
-  Tooltip,
-} from '#ui/index.js';
 import styles from './hud.module.css';
 import { hudStore } from './state.js';
 
@@ -122,8 +122,10 @@ export function ShopCard({
         >
           <span className={cx(styles.shopFace)}>
             <span className={cx(styles.shopHead)}>
-              {tier === undefined ? <span /> : <TierChip tier={tier} />}
-              <PriceHex price={slot.price} affordable={affordable} />
+              {tier === undefined ? <span /> : <TierBadge tier={tier} />}
+              <HexBadge tone={affordable ? 'gold' : 'neutral'}>
+                {slot.price}
+              </HexBadge>
             </span>
             <PieceThumb
               kind={slot.kind}
@@ -187,14 +189,13 @@ function LevelCard() {
           <span className={cx(styles.shopHead)}>
             <span />
             {max ? null : (
-              <PriceHex
-                price={shop.upgradePrice}
-                affordable={funds >= shop.upgradePrice}
-              />
+              <HexBadge tone={funds >= shop.upgradePrice ? 'gold' : 'neutral'}>
+                {shop.upgradePrice}
+              </HexBadge>
             )}
           </span>
           <span className={cx(styles.levelMicro)}>LEVEL</span>
-          <Num>{shop.level}</Num>
+          <Text variant="number">{shop.level}</Text>
           <strong>
             {max ? t('core:shop.maxLevel') : t('core:shop.upgrade')}
           </strong>
@@ -212,7 +213,7 @@ function FundsCard() {
   return (
     <li className={cx(styles.shopCard, styles.fundsCard)}>
       <span className={cx(styles.fundsValue)}>
-        <Num>{funds}</Num>
+        <Text variant="number">{funds}</Text>
       </span>
       <span>{t('core:shop.funds')}</span>
       <Button onPress={() => hudStore.setState({ shopCollapsed: true })}>
@@ -242,7 +243,7 @@ export function ShopTools() {
         data-none={remaining === 0 || undefined}
       >
         {t('core:shop.remaining')}
-        <Num>{remaining}</Num>
+        <Text variant="number">{remaining}</Text>
       </span>
       <ToggleButton
         isDisabled={!canAct}
@@ -278,7 +279,7 @@ export function Shop() {
     return (
       <div className={cx(styles.shopTab)}>
         <span className={cx(styles.shopTabFunds)}>
-          <Num>{funds}</Num>
+          <Text variant="number">{funds}</Text>
           <span>{t('core:shop.funds')}</span>
         </span>
         <Button onPress={() => hudStore.setState({ shopCollapsed: false })}>

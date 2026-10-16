@@ -1,4 +1,5 @@
 import { GEO } from '@alliance/contract/match.js';
+import { cx } from '@alliance/ui';
 import {
   type CSSProperties,
   type KeyboardEvent,
@@ -8,7 +9,6 @@ import {
 import { useStore } from 'zustand';
 import { useMatch } from '#infra/store/hook.js';
 import { useText } from '#infra/text/index.js';
-import { cx } from '#infra/theme/class-name.js';
 import { useBoardActions } from '#match/field/board-actions.js';
 import { pieceLabel } from '#match/piece-label.js';
 import { pieceAt, selectionStore } from '#match/selection.js';

@@ -1,140 +1,14 @@
 @layer reset, tokens, base, components, mods, overrides;
 
-@layer reset {
-  *,
-  *::before,
-  *::after {
-    box-sizing: border-box;
-  }
-
-  html,
-  body {
-    margin: 0;
-    padding: 0;
-  }
-
-  button,
-  input,
-  select,
-  textarea {
-    font: inherit;
-    color: inherit;
-  }
-
-  h1,
-  h2,
-  h3,
-  p,
-  ul,
-  ol {
-    margin: 0;
-  }
-
-  ul,
-  ol {
-    padding: 0;
-    list-style: none;
-  }
-}
+/* Canvas host, letterbox bands and the safe-area probe. Base tokens and components come from @alliance/ui. */
 
 @layer base {
   :root {
-    color-scheme: dark;
-    background: var(--wsde-color-bg-0);
-    color: var(--wsde-color-text-hi);
-    font-family: var(--wsde-font-body);
-    font-size: calc(var(--wsde-font-base) * var(--wsde-text-factor));
-    line-height: 1.5;
-  }
-
-  :root[data-text="sm"] {
-    --wsde-text-factor: 1;
-  }
-
-  :root[data-text="md"] {
-    --wsde-text-factor: 1.125;
-  }
-
-  :root[data-text="lg"] {
-    --wsde-text-factor: 1.25;
-  }
-
-  :root[data-text="xl"] {
-    --wsde-text-factor: 1.375;
-  }
-
-  :root,
-  body {
-    height: 100%;
-    overflow: hidden;
-  }
-
-  body {
-    margin: 0;
-  }
-
-  :focus-visible {
-    outline: 2px solid var(--wsde-color-accent-400);
-    outline-offset: 2px;
-  }
-
-  .wsde-visually-hidden {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    :root {
-      --wsde-motion: 0;
-    }
-
-    *,
-    *::before,
-    *::after {
-      /* biome-ignore lint/complexity/noImportantStyles: an important declaration in the reset layer outranks every later layer */
-      transition-duration: 0s !important;
-      /* biome-ignore lint/complexity/noImportantStyles: as above */
-      animation-duration: 0s !important;
-    }
-  }
-}
-
-@layer base {
-  :root {
-    --wsde-layout-scale: 1;
+    --wsde-offset-x: 0px;
+    --wsde-offset-y: 0px;
     --wsde-design-width: 1920;
     --wsde-design-height: 1080;
-    --wsde-layout-offset-x: 0px;
-    --wsde-layout-offset-y: 0px;
-    /* Root rem stays 16px; role type/space come from layout.scale projection. */
-    --wsde-font-base: 16px;
-    --wsde-density-factor: 1;
-    --wsde-text-factor: 1;
-    --wsde-font-size-caption: 11px;
-    --wsde-font-size-label: 12px;
-    --wsde-font-size-body: 14px;
-    --wsde-font-size-title: 18px;
-    --wsde-font-size-display: 24px;
-    --wsde-font-size-xs: var(--wsde-font-size-caption);
-    --wsde-font-size-sm: var(--wsde-font-size-label);
-    --wsde-font-size-md: var(--wsde-font-size-body);
-    --wsde-font-size-lg: var(--wsde-font-size-title);
-    --wsde-font-size-xl: var(--wsde-font-size-display);
-    --wsde-font-size-2xl: var(--wsde-font-size-display);
-    --wsde-space-1: 4px;
-    --wsde-space-2: 8px;
-    --wsde-space-3: 12px;
-    --wsde-space-4: 16px;
-    --wsde-space-5: 24px;
-    --wsde-space-6: 24px;
-    --wsde-space-8: 32px;
-    --wsde-size-touch: 44px;
-    --wsde-padding-max: 48px;
-    /* Safe-area env() only when the setting is on; otherwise UI may reach the edges. */
+    /* Probe for env(safe-area-inset-*). Components do not read these. */
     --wsde-safe-top: 0px;
     --wsde-safe-right: 0px;
     --wsde-safe-bottom: 0px;
@@ -148,7 +22,27 @@
     --wsde-safe-left: env(safe-area-inset-left, 0px);
   }
 
+  :root,
+  body {
+    overflow: hidden;
+  }
+
   /* Landscape-only game: portrait shows a rotate gate over a hidden app body. */
+  .wsde-rotate {
+    position: fixed;
+    inset: 0;
+    z-index: calc(var(--wsde-layer-toast) + 1);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5em;
+    background: var(--wsde-color-surface-base);
+    color: var(--wsde-color-text-primary);
+    font-family: var(--wsde-font-display);
+    font-size: 24px;
+    text-align: center;
+  }
+
   :root[data-orientation="portrait"] .wsde-rotate {
     display: flex;
   }
@@ -158,42 +52,24 @@
     pointer-events: none;
   }
 
-  .wsde-rotate {
-    position: fixed;
-    inset: 0;
-    z-index: calc(var(--wsde-layer-toast) + 1);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: var(--wsde-space-4);
-    background: var(--wsde-color-bg-0);
-    color: var(--wsde-color-text-hi);
-    font-family: var(--wsde-font-display);
-    font-size: var(--wsde-font-size-lg);
-    text-align: center;
-  }
-
   /**
-   * Contain stage: sized as design×scale in CSS px (no transform), offset into the host.
-   * Surplus bands show the full-bleed backdrop sibling (map / decor / vignette).
+   * Contain stage: design canvas × scale, offset into the host.
+   * Surplus bands show the full-bleed backdrop (gradient, grid, scan, vignette).
    */
   .wsde-layout-host {
-    position: relative;
-    flex: 1;
-    min-height: 0;
-    width: 100%;
-    height: 100%;
+    position: absolute;
+    inset: 0;
     overflow: hidden;
   }
 
   .wsde-layout-stage {
     position: absolute;
-    left: var(--wsde-layout-offset-x);
-    top: var(--wsde-layout-offset-y);
+    left: var(--wsde-offset-x);
+    top: var(--wsde-offset-y);
     display: flex;
     flex-direction: column;
-    width: calc(var(--wsde-design-width) * var(--wsde-layout-scale) * 1px);
-    height: calc(var(--wsde-design-height) * var(--wsde-layout-scale) * 1px);
+    width: calc(var(--wsde-design-width) * var(--wsde-dp));
+    height: calc(var(--wsde-design-height) * var(--wsde-dp));
     overflow: hidden;
   }
 
@@ -203,7 +79,7 @@
     min-height: 0;
   }
 
-  /* Page body grows; banner/bar stay intrinsic. */
+  /* The page body fills the stage. */
   .wsde-layout-stage > [data-layer="main"] {
     flex: 1 1 auto;
   }

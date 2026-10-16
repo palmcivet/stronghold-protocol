@@ -13,6 +13,7 @@ description: alliance/ 下各包的职责，以及数据从构建期到对局、
 | `alliance/data` | `@alliance/data` | 赛季数据包与资源包的构建器，以及读取 |
 | `alliance/server` | `@alliance/server` | 对局进程的连接层：HTTP 与 WebSocket |
 | `alliance/client` | `@alliance/client` | 浏览器客户端与开发服务器 |
+| `alliance/ui` | `@alliance/ui` | 设计令牌、基础样式与基础组件（React Aria），模组可用的界面 API；组件文档与组件同目录 |
 | `alliance/compat/upstream` | `@alliance/compat-upstream` | 连接 master 后端的兼容层 |
 
 - 库不依赖应用。`assets-extractor` 只被 `@alliance/data` 的构建脚本使用，不进入客户端与服务端的产物

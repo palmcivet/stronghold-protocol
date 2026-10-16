@@ -1,0 +1,75 @@
+---
+showAskAi: false
+showFeedback: false
+outline: 2
+---
+
+# @alliance/ui
+
+`@alliance/ui` 是联盟客户端的界面包：设计令牌、基础样式与基于 React Aria 的组件。组件是纯 props：不读状态仓库，不发出意图，可以在客户端、模组与本文档站中直接使用。
+
+## 包结构
+
+| 目录 | 内容 |
+| --- | --- |
+| `components/` | 组件。每个组件的源码、样式、文档与示例同名放在一起，如 `button.tsx`、`button.module.css`、`button.mdx`、`button.demo.tsx`；文档示例用 Vocs 的 `:::code-group`（Preview / Code） |
+| `base/` | 组件共用的基础件：图标、反馈上下文、色调与尺寸类型、`cx` |
+| `theme/` | 设计令牌与基础层样式，入口是 `installTheme()` |
+| `pages/` | Vocs 文档站（MDX 与全局样式） |
+
+包入口：
+
+| 入口 | 内容 |
+| --- | --- |
+| `@alliance/ui` | 组件、类型、`cx`，即 `index.ts` 的全部导出 |
+| `@alliance/ui/theme` | `installTheme()`，注入令牌并加载基础层样式；令牌常量 `TOKENS` |
+
+## 导入
+
+```tsx
+import { Button, Panel, Segmented, TextField } from '@alliance/ui';
+import { installTheme } from '@alliance/ui/theme';
+
+installTheme();
+```
+
+页面启动时调用一次 `installTheme()`，之后组件才有颜色、字体与间距。组件只使用令牌，不写死颜色；规则见 [主题与令牌](/theme)。
+
+## 组件
+
+| 领域 | 组件 |
+| --- | --- |
+| 动作 | `Button`、`ToggleButton` |
+| 输入 | `TextField`、`Segmented`、`Switch`、`Slider` |
+| 集合 | `Tabs`、`ListBox`、`Select` |
+| 浮层 | `Dialog`、`Popover`、`Tooltip`、`ToastStack` |
+| 表面 | `Panel`、`Card` |
+| 文字 | `Text`、`SectionHeading`、`RichText` |
+| 布局 | `Stack`、`Cluster`、`Grid`、`Region` |
+| 状态 | `ProgressBar`、`Spinner`、`Countdown`、`Badge`、`Capsule`、`Hotkey`、`HexBadge`、`Notice` |
+| 图片 | `Thumb`、`AvatarFrame` |
+| 数字 | `SevenSeg` |
+| 基础 | `Icon`、`FeedbackProvider`、`useFeedback`、`cx` |
+
+## 约定
+
+- 组件是纯 props：不读全局状态，不发出意图；按下与切换的音效经 `FeedbackProvider` 由宿主注入。
+- 变体、尺寸与色调用 props 表达（`variant`、`size`、`tone`），在组件根节点写成 `data-variant`、`data-size`、`data-tone`。
+- 样式用 CSS Modules，不引入运行时样式库。
+- 尺寸以设计像素（dp）书写，画布等比缩放；不使用 `rem` 与视口单位。
+
+## 版本
+
+`@alliance/ui` 的导出属于模组 API 的一部分。改名或删除导出、删除 props 字段属于破坏性变更，按项目的版本策略处理；新增可选的 props 与组件属于兼容的新增。
+
+## 本地运行
+
+```bash
+pnpm --filter @alliance/ui docs:dev
+```
+
+构建为静态站点，输出到 `alliance/ui/dist-site/`：
+
+```bash
+pnpm --filter @alliance/ui docs:build
+```

@@ -1,0 +1,57 @@
+@layer components {
+  .tooltip {
+    --wsde-arrow-fill: var(--wsde-color-surface-glass);
+    --wsde-arrow-stroke: var(--wsde-color-border-default);
+    z-index: var(--wsde-layer-tooltip);
+    max-width: calc(var(--wsde-dp) * 384);
+    padding: var(--wsde-space-2) var(--wsde-space-3);
+    border: var(--wsde-stroke-thin) solid var(--wsde-color-border-default);
+    border-left: var(--wsde-stroke-thick) solid var(--wsde-tone-accent-base);
+    background: var(--wsde-color-surface-glass);
+    box-shadow: var(--wsde-shadow-panel);
+    color: var(--wsde-color-text-secondary);
+    font-size: var(--wsde-font-size-label);
+    line-height: 1.55;
+    white-space: pre-line;
+  }
+
+  .tooltip[data-entering] {
+    animation: tip var(--wsde-duration-fast) var(--wsde-ease-out);
+  }
+
+  .tooltip[data-placement="top"] {
+    --origin: translateY(calc(var(--wsde-dp) * 4));
+    margin-bottom: calc(var(--wsde-dp) * 8);
+  }
+
+  .tooltip[data-placement="bottom"] {
+    --origin: translateY(calc(var(--wsde-dp) * -4));
+    margin-top: calc(var(--wsde-dp) * 8);
+  }
+
+  .tooltip[data-placement="left"] {
+    --origin: translateX(calc(var(--wsde-dp) * 4));
+    margin-right: calc(var(--wsde-dp) * 8);
+  }
+
+  .tooltip[data-placement="right"] {
+    --origin: translateX(calc(var(--wsde-dp) * -4));
+    margin-left: calc(var(--wsde-dp) * 8);
+  }
+
+  .display {
+    display: inline-flex;
+    border-radius: var(--wsde-radius-2);
+  }
+
+  .display:focus-visible {
+    outline: var(--wsde-stroke-thick) solid var(--wsde-color-focus);
+  }
+}
+
+@keyframes tip {
+  from {
+    opacity: 0;
+    transform: var(--origin);
+  }
+}

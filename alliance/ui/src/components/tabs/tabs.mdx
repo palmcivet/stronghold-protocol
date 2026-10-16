@@ -1,0 +1,43 @@
+import { TabsDemo } from './tabs.demo.js';
+
+# Tabs
+
+集合组件把一组项目呈现为可选择的结构。`Tabs` 切换同一区域的几页内容，`ListBox` 列出可选项，`Select` 在一行里选一个值，`TextField` 的搜索形态过滤列表。
+
+标签页。每个标签对应一块内容，同一时间只显示选中的那块。方向键或手柄十字键只移动焦点，按下才切换页面。
+
+:::code-group
+
+<div data-title="Preview">
+
+<div className="wsde-doc-preview">
+
+<TabsDemo />
+
+</div>
+
+</div>
+
+```tsx [Code]
+<Tabs
+  label="房间设置"
+  selected={tab}
+  onSelect={setTab}
+  items={[
+    { id: 'lobby', label: '大厅', content: <Lobby /> },
+    { id: 'rules', label: '规则', content: <Rules /> },
+  ]}
+/>
+```
+
+:::
+
+| 属性 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `label` | `string` | — | 标签列表的无障碍名称 |
+| `items` | `readonly TabItem[]` | — | `TabItem` 为 `{ id: string; label: string; content: ReactNode }` |
+| `selected` | `string` | — | 选中标签的 `id`；不传时由组件自己记住选择 |
+| `onSelect` | `(id: string) => void` | — | 切换标签时调用，播放 `ui.tab` 音效 |
+| `orientation` | `'horizontal' \| 'vertical'` | `'horizontal'` | 标签排列方向 |
+
+行为与无障碍：方向键在标签间移动，焦点落到标签时自动显示对应内容。

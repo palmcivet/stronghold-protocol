@@ -1,0 +1,34 @@
+import { NoticeDemo } from './notice.demo.js';
+
+# Notice
+
+页面里不是内容的状态：`empty` 是列表为空时的占位，显示图标、标题与说明；`error` 说明问题并给出操作，默认作为 `alert` 通知读屏，若所在容器已经是 alert，传 `announce={false}`。
+
+:::code-group
+
+<div data-title="Preview">
+
+<div className="wsde-doc-preview">
+
+<NoticeDemo />
+
+</div>
+
+</div>
+
+```tsx [Code]
+import { Notice } from '@alliance/ui';
+
+<Notice tone="amber">作战提示</Notice>
+```
+
+:::
+
+| 属性 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `title` | `string` | — | 标题 |
+| `children` | `ReactNode` | — | 说明 |
+| `variant` | `'empty' \| 'error'` | `'empty'` | 占位或错误 |
+| `icon` | `IconName` | `'info'` | `empty` 的图标 |
+| `actions` | `ReactNode` | — | `error` 的按钮 |
+| `announce` | `boolean` | `true` | `error` 是否作为 `alert` 通知 |

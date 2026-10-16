@@ -42,10 +42,16 @@ jobs:
         env:
           VITEPRESS_BASE: /${{ github.event.repository.name }}/docs/
 
+      - name: Build component docs
+        run: pnpm --filter @alliance/ui docs:build
+        env:
+          UI_DOCS_BASE: /${{ github.event.repository.name }}/ui
+
       - name: Assemble site
         run: |
-          mkdir -p _site/docs
+          mkdir -p _site/docs _site/ui
           cp -R docs/.vitepress/dist/. _site/docs/
+          cp -R alliance/ui/dist-docs/public/. _site/ui/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5

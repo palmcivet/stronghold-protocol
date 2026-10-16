@@ -36,7 +36,7 @@ description: 客户端怎样探测本机能力：configurePlatform、probe 与 g
 
 - 只探测「能不能用」，不根据 UA 字符串分支。
 - `probe` 可重复调用；每次以新的探测结果为底，再叠宿主覆盖与本次参数。
-- 视口断点与 cover 缩放在 `infra/theme/viewport`；平台层不写 `data-breakpoint`。
+- 画布的 contain 缩放在 `infra/theme/viewport`；平台层不写视口尺寸类。
 
 ## 与其它层
 

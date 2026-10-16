@@ -1,0 +1,10 @@
+@layer components {
+  .countdown {
+    font-family: var(--wsde-font-number);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .countdown[data-warn] {
+    color: var(--wsde-tone-danger-base);
+  }
+}

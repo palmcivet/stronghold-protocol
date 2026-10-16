@@ -1,0 +1,34 @@
+import { ClusterDemo } from './cluster.demo.js';
+
+# Cluster
+
+子项在一行内排列，放不下时换行。
+
+:::code-group
+
+<div data-title="Preview">
+
+<div className="wsde-doc-preview">
+
+<ClusterDemo />
+
+</div>
+
+</div>
+
+```tsx [Code]
+import { Cluster } from '@alliance/ui';
+
+<Cluster gap="md">
+  <Badge>甲</Badge>
+  <Badge>乙</Badge>
+</Cluster>
+```
+
+:::
+
+| 属性 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `gap` | `Space` | — | 子项之间的间距 |
+| `align` | `'start' \| 'center' \| 'end' \| 'baseline'` | — | 交叉轴对齐 |
+| `justify` | `'start' \| 'center' \| 'end' \| 'between'` | — | 主轴对齐 |

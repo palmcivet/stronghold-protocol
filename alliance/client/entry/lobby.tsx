@@ -4,6 +4,15 @@ import {
   MAX_SPECTATORS,
   ROOM_CODE_LEN,
 } from '@alliance/contract/match.js';
+import {
+  Button,
+  cx,
+  Icon,
+  ListBox,
+  Text,
+  TextField,
+  Tooltip,
+} from '@alliance/ui';
 import { type CSSProperties, type FormEvent, useState } from 'react';
 import { Form } from 'react-aria-components';
 import { useStore } from 'zustand';
@@ -11,16 +20,7 @@ import { useIntent } from '#infra/intent/context.js';
 import { useArt } from '#infra/resource/art.js';
 import { useCatalog, useSession } from '#infra/store/hook.js';
 import { lookup, useText } from '#infra/text/index.js';
-import { cx } from '#infra/theme/class-name.js';
 import { difficultyIconKey, difficultyInfo } from '#part/difficulty.js';
-import {
-  Button,
-  GridList,
-  Icon,
-  Muted,
-  TextField,
-  Tooltip,
-} from '#ui/index.js';
 import styles from './entry.module.css';
 import { recentStore, rememberRoom } from './recent.js';
 
@@ -75,7 +75,7 @@ function ModeCard({ mode }: { readonly mode: RoomMode }) {
         </span>
       </span>
       <span className={cx(styles.modeCheck)} aria-hidden="true">
-        <Icon name="check" size="0.75rem" />
+        <Icon name="check" size="calc(var(--wsde-dp) * 12)" />
         {t('core:lobby.selected')}
       </span>
     </span>
@@ -98,7 +98,7 @@ function DifficultyCard({
       className={cx(styles.difficultyCard)}
       style={
         {
-          '--difficulty': `var(--wsde-color-difficulty-${difficulty.toLowerCase()}, var(--wsde-color-amber))`,
+          '--difficulty': `var(--wsde-color-difficulty-${difficulty.toLowerCase()}, var(--wsde-tone-amber-base))`,
         } as CSSProperties
       }
     >
@@ -108,7 +108,7 @@ function DifficultyCard({
           <img className={cx(styles.difficultyGlyph)} src={icon} alt="" />
         ) : (
           <span className={cx(styles.difficultyGlyphFallback)}>
-            <Icon name="rook" size="0.85rem" />
+            <Icon name="rook" />
           </span>
         )}
         <span className={cx(styles.difficultyName)}>
@@ -135,13 +135,13 @@ function DifficultyCard({
         ))}
         {info.stageNote ? (
           <span className={cx(styles.stageNote)}>
-            <Icon name="rook" size="0.7rem" />
+            <Icon name="rook" />
             {info.stageNote}
           </span>
         ) : null}
       </span>
       <span className={cx(styles.difficultyCheck)} aria-hidden="true">
-        <Icon name="check" size="0.85rem" />
+        <Icon name="check" />
         <span>{t('core:lobby.selected')}</span>
       </span>
     </span>
@@ -158,7 +158,8 @@ export function CreateRoom() {
     <section className={cx(styles.create)} aria-label={t('core:lobby.create')}>
       <div className={cx(styles.createMode)}>
         <SectionLabel index="01" label={t('core:lobby.mode')} micro="MODE" />
-        <GridList
+        <ListBox
+          variant="cards"
           label={t('core:lobby.mode')}
           selected={mode}
           onSelect={(id) => setMode(id === 'coop' ? 'coop' : 'solo')}
@@ -175,9 +176,9 @@ export function CreateRoom() {
           label={t('core:lobby.difficulty')}
           micro="DIFFICULTY"
         />
-        <GridList
+        <ListBox
+          variant="ladder"
           label={t('core:lobby.difficulty')}
-          layout="stack"
           selected={difficulty}
           onSelect={setDifficulty}
           items={DIFFICULTIES.map((id) => ({
@@ -204,13 +205,13 @@ export function CreateRoom() {
             ››
           </span>
         </Button>
-        <Muted>
+        <Text kind="muted">
           {t(
             mode === 'solo'
               ? 'core:lobby.start.solo.hint'
               : 'core:lobby.start.coop.hint',
           )}
-        </Muted>
+        </Text>
       </div>
     </section>
   );
@@ -258,8 +259,12 @@ export function JoinRoom() {
               onChange={setCode}
               maxLength={64}
             />
-            <Button type="submit" variant="amber" isDisabled={!codeValid}>
-              <Icon name="users" size="0.9rem" />
+            <Button
+              type="submit"
+              variant="amber"
+              icon="users"
+              isDisabled={!codeValid}
+            >
               {t('core:lobby.join')}
             </Button>
             {spectatorSeats ? (
@@ -267,10 +272,10 @@ export function JoinRoom() {
                 tip={t('core:lobby.spectate.tip', { n: MAX_SPECTATORS })}
               >
                 <Button
+                  icon="eye"
                   isDisabled={!codeValid}
                   onPress={() => void go('room.spectate', normalized)}
                 >
-                  <Icon name="eye" size="0.9rem" />
                   {t('core:lobby.spectate')}
                 </Button>
               </Tooltip>
@@ -280,7 +285,7 @@ export function JoinRoom() {
         <div className={cx(styles.joinFoot)}>
           {recent.length ? (
             <>
-              <Muted>{t('core:lobby.recent')}</Muted>
+              <Text kind="muted">{t('core:lobby.recent')}</Text>
               {recent.map((entry) => (
                 <button
                   key={entry}
@@ -293,7 +298,9 @@ export function JoinRoom() {
               ))}
             </>
           ) : (
-            <Muted>{t('core:lobby.recent.empty', { n: ROOM_CODE_LEN })}</Muted>
+            <Text kind="muted">
+              {t('core:lobby.recent.empty', { n: ROOM_CODE_LEN })}
+            </Text>
           )}
         </div>
       </div>

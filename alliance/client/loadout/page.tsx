@@ -1,5 +1,5 @@
+import { cx } from '@alliance/ui';
 import { useText } from '#infra/text/index.js';
-import { cx } from '#infra/theme/class-name.js';
 import { DIALOG } from '#part/dialog.js';
 import { definePart, Part } from '#part/registry.js';
 import { insertPart } from '#part/slot.js';

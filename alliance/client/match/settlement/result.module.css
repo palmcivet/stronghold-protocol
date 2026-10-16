@@ -7,12 +7,12 @@
     grid-template-columns: minmax(0, 1fr);
     gap: var(--wsde-space-3);
     width: 100%;
-    height: 100dvh;
+    height: 100%;
     max-width: none;
     margin: 0;
     padding: var(--wsde-space-3) var(--wsde-space-4) var(--wsde-space-2);
     overflow: hidden;
-    background: var(--wsde-color-bg-0);
+    background: var(--wsde-color-surface-base);
   }
 
   .layout::before {
@@ -23,36 +23,17 @@
     pointer-events: none;
     background:
       linear-gradient(
-        color-mix(in srgb, var(--wsde-color-accent-500) 4%, transparent) 1px,
+        color-mix(in srgb, var(--wsde-palette-mint-500) 4%, transparent) 1px,
         transparent 1px
       )
-      0 0 / 0.6rem 0.6rem,
+      0 0 / calc(var(--wsde-dp) * 9.6) calc(var(--wsde-dp) * 9.6),
       linear-gradient(
         90deg,
-        color-mix(in srgb, var(--wsde-color-accent-500) 4%, transparent) 1px,
+        color-mix(in srgb, var(--wsde-palette-mint-500) 4%, transparent) 1px,
         transparent 1px
       )
-      0 0 / 0.6rem 0.6rem;
+      0 0 / calc(var(--wsde-dp) * 9.6) calc(var(--wsde-dp) * 9.6);
     mask-image: radial-gradient(70% 70% at 25% 50%, #000, transparent);
-  }
-
-  @media (width >= 56rem) {
-    .layout {
-      grid-template-columns: minmax(14rem, 0.85fr) minmax(0, 2.4fr);
-    }
-
-    .report {
-      overflow: auto;
-      overscroll-behavior: contain;
-    }
-
-    .actions {
-      margin-block-start: auto;
-    }
-
-    .actions > * {
-      justify-content: flex-start;
-    }
   }
 
   .summary,
@@ -72,8 +53,8 @@
   }
 
   .brand {
-    color: var(--wsde-color-accent-400);
-    font-size: var(--wsde-font-size-xs);
+    color: var(--wsde-palette-mint-400);
+    font-size: var(--wsde-font-size-caption);
     letter-spacing: 0.14em;
   }
 
@@ -89,7 +70,7 @@
 
   .reportHead strong {
     font-family: var(--wsde-font-display);
-    font-size: var(--wsde-font-size-md);
+    font-size: var(--wsde-font-size-body);
     letter-spacing: 0.08em;
   }
 
@@ -104,25 +85,25 @@
   .verdict {
     margin: 0;
     font-family: var(--wsde-font-display);
-    font-size: var(--wsde-font-size-2xl);
+    font-size: var(--wsde-font-size-display);
     font-weight: 900;
     letter-spacing: 0.12em;
     line-height: 1.05;
-    color: var(--wsde-color-accent-400);
-    text-shadow: 0 0 0.4rem
-      color-mix(in srgb, var(--wsde-color-accent-400) 45%, transparent);
+    color: var(--wsde-palette-mint-400);
+    text-shadow: 0 0 calc(var(--wsde-dp) * 6.4)
+      color-mix(in srgb, var(--wsde-palette-mint-400) 45%, transparent);
   }
 
   .hero:not([data-victory]) .verdict {
-    color: var(--wsde-color-danger);
-    text-shadow: 0 0 0.4rem
-      color-mix(in srgb, var(--wsde-color-danger) 40%, transparent);
+    color: var(--wsde-tone-danger-base);
+    text-shadow: 0 0 calc(var(--wsde-dp) * 6.4)
+      color-mix(in srgb, var(--wsde-tone-danger-base) 40%, transparent);
   }
 
   .sub {
     margin: 0;
-    color: var(--wsde-color-text-lo);
-    font-size: var(--wsde-font-size-sm);
+    color: var(--wsde-color-text-muted);
+    font-size: var(--wsde-font-size-label);
     letter-spacing: 0.1em;
   }
 
@@ -134,8 +115,8 @@
   }
 
   .roundsLabel {
-    color: var(--wsde-color-text-md);
-    font-size: var(--wsde-font-size-sm);
+    color: var(--wsde-color-text-secondary);
+    font-size: var(--wsde-font-size-label);
     letter-spacing: 0.14em;
   }
 
@@ -149,8 +130,8 @@
 
   .roundsOf {
     font-family: var(--wsde-font-number);
-    font-size: var(--wsde-font-size-xl);
-    color: var(--wsde-color-text-dim);
+    font-size: var(--wsde-font-size-heading);
+    color: var(--wsde-color-text-disabled);
   }
 
   .medals {
@@ -165,7 +146,7 @@
     flex-direction: column;
     align-items: center;
     gap: var(--wsde-space-1);
-    width: 3.2rem;
+    width: calc(var(--wsde-dp) * 51.2);
     opacity: 0.65;
   }
 
@@ -175,42 +156,42 @@
 
   .medalMark {
     position: absolute;
-    right: 0.1rem;
-    top: 2rem;
+    right: calc(var(--wsde-dp) * 1.6);
+    top: calc(var(--wsde-dp) * 32);
     display: grid;
     place-items: center;
-    width: 0.9rem;
-    height: 0.9rem;
+    width: calc(var(--wsde-dp) * 14.4);
+    height: calc(var(--wsde-dp) * 14.4);
     border-radius: var(--wsde-radius-round);
-    background: var(--wsde-color-text-dim);
+    background: var(--wsde-color-text-disabled);
     color: #fff;
   }
 
   .medal[data-done] .medalMark {
-    background: var(--wsde-color-gold);
+    background: var(--wsde-tone-gold-base);
     color: #1d1400;
   }
 
   .medal[data-hidden][data-done] .medalMark {
-    background: var(--wsde-color-danger);
+    background: var(--wsde-tone-danger-base);
     color: #fff;
   }
 
   .medalLabel {
-    color: var(--wsde-color-text-lo);
-    font-size: var(--wsde-font-size-xs);
+    color: var(--wsde-color-text-muted);
+    font-size: var(--wsde-font-size-caption);
   }
 
   .time {
-    color: var(--wsde-color-text-lo);
-    font-size: var(--wsde-font-size-sm);
+    color: var(--wsde-color-text-muted);
+    font-size: var(--wsde-font-size-label);
   }
 
   /* one report card per player — horizontal head + 4-col stats (master .rcard) */
   .cards {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: calc(var(--wsde-dp) * 4);
     margin: 0;
     padding: 0;
     list-style: none;
@@ -219,18 +200,19 @@
   .card {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
-    padding: 0.3rem 0.45rem 0.35rem;
-    border: var(--wsde-stroke-thin) solid var(--wsde-color-line-1);
-    border-left: 3px solid var(--wsde-color-line-3);
+    gap: calc(var(--wsde-dp) * 4);
+    padding: calc(var(--wsde-dp) * 4.8) calc(var(--wsde-dp) * 7.2)
+      calc(var(--wsde-dp) * 5.6);
+    border: var(--wsde-stroke-thin) solid var(--wsde-color-border-subtle);
+    border-left: calc(var(--wsde-dp) * 3) solid var(--wsde-color-border-strong);
     background: color-mix(in srgb, #0b0f0d 90%, transparent);
   }
 
   .card[data-self] {
-    border-left-color: var(--wsde-color-accent-500);
+    border-left-color: var(--wsde-palette-mint-500);
     background: linear-gradient(
       90deg,
-      color-mix(in srgb, var(--wsde-color-accent-500) 8%, transparent),
+      color-mix(in srgb, var(--wsde-palette-mint-500) 8%, transparent),
       color-mix(in srgb, #0b0f0d 90%, transparent) 40%
     );
   }
@@ -241,30 +223,21 @@
 
   .cardHead {
     display: grid;
-    grid-template-columns: auto minmax(4rem, 6rem) minmax(0, 1fr) auto minmax(
-        5rem,
-        7rem
+    grid-template-columns: auto minmax(
+        calc(var(--wsde-dp) * 64),
+        calc(var(--wsde-dp) * 96)
+      ) minmax(0, 1fr) auto minmax(
+        calc(var(--wsde-dp) * 80),
+        calc(var(--wsde-dp) * 112)
       );
     gap: var(--wsde-space-2);
     align-items: center;
   }
 
-  @media (width < 48rem) {
-    .cardHead {
-      grid-template-columns: auto minmax(0, 1fr);
-    }
-
-    .cardMid,
-    .cardRound,
-    .cardTitle {
-      grid-column: 1 / -1;
-    }
-  }
-
   .cardWho {
     display: flex;
     flex-direction: column;
-    gap: 0.05rem;
+    gap: calc(var(--wsde-dp) * 0.8);
     min-width: 0;
   }
 
@@ -272,60 +245,61 @@
     display: flex;
     align-items: center;
     gap: var(--wsde-space-1);
-    font-size: var(--wsde-font-size-sm);
+    font-size: var(--wsde-font-size-label);
   }
 
   .cardBand {
     display: inline-flex;
     align-items: center;
-    gap: 0.15rem;
-    color: var(--wsde-color-text-lo);
-    font-size: var(--wsde-font-size-xs);
+    gap: calc(var(--wsde-dp) * 2.4);
+    color: var(--wsde-color-text-muted);
+    font-size: var(--wsde-font-size-caption);
   }
 
   .cardMid {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: 0.15rem;
+    gap: calc(var(--wsde-dp) * 2.4);
     min-width: 0;
   }
 
   .cardLineup {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.12rem;
+    gap: calc(var(--wsde-dp) * 1.92);
   }
 
   .cardNoinfo {
-    padding: 0.2rem 0.35rem;
-    border: var(--wsde-stroke-thin) dashed var(--wsde-color-line-2);
-    color: var(--wsde-color-text-dim);
+    padding: calc(var(--wsde-dp) * 3.2) calc(var(--wsde-dp) * 5.6);
+    border: var(--wsde-stroke-thin) dashed var(--wsde-color-border-default);
+    color: var(--wsde-color-text-disabled);
     font-family: var(--wsde-font-display);
-    font-size: var(--wsde-font-size-xs);
+    font-size: var(--wsde-font-size-caption);
     letter-spacing: 0.2em;
   }
 
   .cardBonds {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.12rem;
+    gap: calc(var(--wsde-dp) * 1.92);
   }
 
   .bond {
     display: inline-flex;
     align-items: center;
-    gap: 0.1rem;
-    padding: 0.02rem 0.2rem 0.02rem 0.08rem;
-    border: var(--wsde-stroke-thin) solid var(--wsde-color-line-2);
-    color: var(--wsde-color-text-lo);
-    font-size: var(--wsde-font-size-xs);
+    gap: calc(var(--wsde-dp) * 1.6);
+    padding: calc(var(--wsde-dp) * 0.32) calc(var(--wsde-dp) * 3.2)
+      calc(var(--wsde-dp) * 0.32) calc(var(--wsde-dp) * 1.28);
+    border: var(--wsde-stroke-thin) solid var(--wsde-color-border-default);
+    color: var(--wsde-color-text-muted);
+    font-size: var(--wsde-font-size-caption);
     opacity: 0.75;
   }
 
   .bond[data-on] {
-    border-color: var(--wsde-color-accent-800);
-    color: var(--wsde-color-accent-400);
+    border-color: var(--wsde-palette-mint-800);
+    color: var(--wsde-palette-mint-400);
     opacity: 1;
   }
 
@@ -337,7 +311,7 @@
 
   .cardRound b {
     font-family: var(--wsde-font-number);
-    font-size: var(--wsde-font-size-xl);
+    font-size: var(--wsde-font-size-heading);
     line-height: 1;
     color: #fff;
   }
@@ -345,9 +319,9 @@
   .cardGain {
     display: flex;
     gap: var(--wsde-space-1);
-    margin-top: 0.05rem;
-    color: var(--wsde-color-gold);
-    font-size: var(--wsde-font-size-xs);
+    margin-top: calc(var(--wsde-dp) * 0.8);
+    color: var(--wsde-tone-gold-base);
+    font-size: var(--wsde-font-size-caption);
   }
 
   .cardTitle {
@@ -355,22 +329,23 @@
     align-items: center;
     gap: var(--wsde-space-1);
     min-width: 0;
-    padding: 0.15rem 0.35rem 0.15rem 0.15rem;
+    padding: calc(var(--wsde-dp) * 2.4) calc(var(--wsde-dp) * 5.6)
+      calc(var(--wsde-dp) * 2.4) calc(var(--wsde-dp) * 2.4);
     border: var(--wsde-stroke-thin) solid
-      color-mix(in srgb, var(--wsde-color-gold) 40%, transparent);
-    background: color-mix(in srgb, var(--wsde-color-gold) 6%, transparent);
+      color-mix(in srgb, var(--wsde-tone-gold-base) 40%, transparent);
+    background: color-mix(in srgb, var(--wsde-tone-gold-base) 6%, transparent);
   }
 
   .cardTitle[data-none] {
-    height: 1.6rem;
+    height: calc(var(--wsde-dp) * 25.6);
     border-style: dashed;
-    border-color: var(--wsde-color-line-1);
+    border-color: var(--wsde-color-border-subtle);
     background: none;
   }
 
   .cardTitle b {
-    color: var(--wsde-color-gold);
-    font-size: var(--wsde-font-size-sm);
+    color: var(--wsde-tone-gold-base);
+    font-size: var(--wsde-font-size-label);
   }
 
   .stats {
@@ -380,23 +355,17 @@
     margin: 0;
   }
 
-  @media (width < 40rem) {
-    .stats {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
   .stat {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    gap: 0.15rem;
+    gap: calc(var(--wsde-dp) * 2.4);
     min-width: 0;
-    padding: 0.15rem 0.25rem;
+    padding: calc(var(--wsde-dp) * 2.4) calc(var(--wsde-dp) * 4);
     background: #0e1210;
-    box-shadow: 0 0 0 1px var(--wsde-color-line-1);
-    color: var(--wsde-color-text-lo);
-    font-size: var(--wsde-font-size-xs);
+    box-shadow: 0 0 0 1px var(--wsde-color-border-subtle);
+    color: var(--wsde-color-text-muted);
+    font-size: var(--wsde-font-size-caption);
     white-space: nowrap;
   }
 
@@ -409,11 +378,11 @@
     margin: 0;
     color: #fff;
     font-family: var(--wsde-font-number);
-    font-size: var(--wsde-font-size-sm);
+    font-size: var(--wsde-font-size-label);
   }
 
   .stat[data-best] dd {
-    color: var(--wsde-color-gold);
+    color: var(--wsde-tone-gold-base);
   }
 
   .actions {

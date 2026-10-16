@@ -113,6 +113,13 @@ function placeKey(
       set(refs, ['bonds', second], key);
     } else if (namespace === 'season' && second && third === 'trap' && fourth) {
       set(refs, ['items', fourth], key);
+    } else if (
+      namespace === 'season' &&
+      second &&
+      third === 'entry' &&
+      fourth === 'bkg_01'
+    ) {
+      set(refs, ['backdrop'], key);
     }
   } else if (kind === 'spine') {
     if (

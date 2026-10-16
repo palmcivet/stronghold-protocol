@@ -5,15 +5,15 @@ description: 客户端的 CSS 命名规则、设计令牌怎样成为 CSS 自定
 
 # 样式与令牌
 
-客户端用普通 CSS 与 CSS Modules，不用运行时 CSS-in-JS。颜色、字体、间距等取值来自设计令牌。基础组件只用令牌，主题就是一组令牌覆盖。
+客户端用普通 CSS 与 CSS Modules，不用运行时 CSS-in-JS。颜色、字体、间距等取值来自设计令牌。组件只用令牌，主题就是一组令牌覆盖。令牌与组件的说明见 `@alliance/ui`。
 
 ## 示例
 
 令牌树中的路径用 `-` 连接，加上 `--wsde-` 前缀，成为 CSS 自定义属性：
 
 ```text
-color.bg.0          →  --wsde-color-bg-0
-color.accent.400    →  --wsde-color-accent-400
+color.surface.base  →  --wsde-color-surface-base
+palette.mint.500    →  --wsde-palette-mint-500
 layer.tooltip       →  --wsde-layer-tooltip
 ```
 
@@ -32,22 +32,7 @@ layer.tooltip       →  --wsde-layer-tooltip
 
 ## 设计令牌
 
-令牌采用 W3C Design Tokens 格式（2025.10）。启动时 `installTheme` 把令牌写成 `tokens` 层里 `:root` 上的自定义属性。源文件位置见 [客户端目录与分层](./17-directory.md#样式检查)。
-
-| 类别 | 令牌组 |
-| --- | --- |
-| 颜色 | `color`：底、线、强调、状态、阶色、难度色、盟约色、富文本色等 |
-| 字体 | `font`、`font-size` |
-| 动效 | `ease`、`duration`、`motion` |
-| 间距与形状 | `space`、`radius`、`stroke`、`shadow` |
-| 尺寸 | `size`：HUD 条高、卡片宽、头像、触控最小尺寸等 |
-| 断点 | `breakpoint`：Material 3 窗口类 `compact` / `medium` / `expanded` / `large` / `xlarge`（CSS px 下限） |
-| 层叠 | `layer` |
-
-- `motion` 是所有时长的系数。系统要求减弱动效时，基础层把它设为 0，并取消过渡与动画。
-- 媒体查询读不到自定义属性；活动断点与 contain 缩放由 `infra/theme/viewport` 的 `viewportStore` 持有，并投影到根元素的 `data-breakpoint` / `--wsde-layout-scale` / `--wsde-layout-offset-*` 等。
-- 本游戏仅横屏。`index.html` 的 viewport 含 `viewport-fit=cover`。
-- 个人配置「异形屏 UI 适配」为开时，根元素 `data-safe-area="on"`，`--wsde-safe-*` 取 `env(safe-area-inset-*)`；HUD 用这些变量内缩，背景与地图仍铺满。
+令牌的定义、色调、尺寸单位与层级见 `@alliance/ui` 的主题文档（`alliance/ui/src/theme/theme.mdx`）。客户端启动时调用 `@alliance/ui/theme` 的 `installTheme()` 把令牌写入页面。
 
 ## 层叠顺序
 
@@ -66,49 +51,48 @@ layer.tooltip       →  --wsde-layer-tooltip
 
 ## 图层次序
 
-`layer` 令牌给出界面各层的 `z-index`：
+各层的 `z-index` 令牌见 `@alliance/ui` 的主题文档。
 
-| 令牌 | 值 |
-| --- | --- |
-| `backdrop` | 0 |
-| `screen` | 1 |
-| `hud` | 10 |
-| `banner` | 40 |
-| `overlay` | 60 |
-| `connection` | 75 |
-| `modal` | 80 |
-| `toast` | 90 |
-| `tooltip` | 95 |
+## 字体
+
+| 令牌 | 用途 | 来源 |
+| --- | --- | --- |
+| `font.body` | 中文正文与界面 | `@fontsource-variable/noto-sans-sc` |
+| `font.formal` | 标题与评语 | `@fontsource-variable/noto-serif-sc` |
+| `font.number` | 数字 | Bender，其次 `@fontsource/rajdhani` |
+| `font.display` | 英文标题与微标签 | Novecento Wide，其次 `@fontsource-variable/saira`（宽度轴 125%） |
+
+开源字体随客户端打包。资源包有 `font:*` 时，`fonts.css` 把官方字体族（如 `Bender`、`Novecento Wide`）按字重声明出来，字体栈把它们排在开源替代之前。这份样式表要等连上服务器、资源仓库加载之后才插入，在那之前界面用开源替代。开发服务器把 `/fonts` 代理到 master。
+
+`body` 的字号是 `font.body` 的阶梯档，没单独写字号的文字（含按钮，以及传送到 `body` 的浮层）都跟着画布缩放，并跟随个人配置的文字大小。
+
+## 基础层工具类
+
+数字字体、展示字体、角标与读屏专用类等工具类，见 `@alliance/ui` 的主题文档。
 
 ## 文字大小
 
-个人配置的文字大小有四档：`sm`、`md`、`lg`、`xl`。所选档位写在根元素的 `data-text` 上，基础层据此把根字号设为 100%、112.5%、125% 或 137.5%。
+个人配置的文字大小有四档：`sm`、`md`、`lg`、`xl`。所选档位写在根元素的 `data-text` 上，基础层据此把 `--wsde-text-factor` 设为 1、1.125、1.25 或 1.375。字号令牌乘 `--wsde-text-dp`，不改浏览器根字号。
 
 ## 视口与安全区
 
-根元素还可带：
+设计画布 1920×1080，等比 contain 放进视口。根元素带：
 
 | 属性 / 变量 | 含义 |
 | --- | --- |
-| `data-breakpoint` | 当前窗口尺寸类 |
 | `data-orientation` | `landscape` 或 `portrait` |
 | `data-safe-area` | `on` / `off`（异形屏 UI 适配） |
-| `--wsde-layout-scale` | 设计尺寸到视口的 contain 缩放 |
-| `--wsde-design-width` / `--wsde-design-height` | 当前设计逻辑尺寸（CSS px） |
-| `--wsde-layout-offset-*` | 舞台在视口中的偏移（留白铺背景） |
-| `data-density` | `compact` / `comfortable` / `spacious`（短边密度） |
-| `--wsde-density-factor` | 密度系数（字号与间距） |
-| `--wsde-safe-*` | 安全区内边距；关闭适配时为 `0` |
+| `data-text` | 文字大小档位 |
+| `--wsde-scale` | 设计尺寸到可用矩形的 contain 缩放 |
+| `--wsde-offset-x` / `--wsde-offset-y` | 画布在视口中的偏移（边带铺背景） |
+| `--wsde-design-width` / `--wsde-design-height` | 设计画布尺寸，由 `DESIGN_SIZE` 写入 |
+| `--wsde-dp` | `calc(var(--wsde-scale) * 1px)`，盒子尺寸的 1 设计像素 |
+| `--wsde-text-dp` | `--wsde-dp` 乘文字大小系数 |
+| `--wsde-safe-*` | 安全区探针；关闭适配时为 `0`。部件不读 |
+
+竖屏仍显示旋转提示。模块 CSS 用 `%`、`fr`、`em`、时间和角度；盒子用 dp，字号用 text dp。线宽保留 `1px` / `2px`。`rem`、视口单位和其他 `px` 由 stylelint 禁止。例外是 `infra/theme/layer.css` 里的画布宿主、边带和旋转提示。代码里拼出的长度也一样：内联样式写 `calc(var(--wsde-dp) * N)`，`test/infra/units.test.ts` 检查源码里没有 `rem` 与视口单位。
 
 ## 构建
 
 CSS 由 Lightning CSS 转换与压缩，目标浏览器取自 browserslist。
-
-## 基础组件
-
-`ui/` 用 React Aria 实现，只读令牌，经包入口导出给模组。
-
-通用：按钮、开关、面板、计量条、滑块、输入框、选项组、动作菜单、对话框与模态、全屏覆盖页、弹层、工具提示、提示栈、分页、列表与卡片网格、卡片、下拉选择、搜索框、折叠、进度条、加载圈、倒计时、头像框、徽标与标签、图标、富文本（官方描述标记）、按键提示、空状态与错误面板、布局件。
-
-游戏专用（仍在 `ui/`，不注册部件 id）：`TierChip`、`PriceHex`、`BondDisc`、`LpTower`、`SevenSeg`、`PhaseCapsule`、`DifficultyTag`、`UnitThumb`、`EmoteArt`。
 

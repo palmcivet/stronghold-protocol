@@ -1,9 +1,8 @@
+import { Button, cx, Icon } from '@alliance/ui';
 import { useEffect, useState } from 'react';
 import { useConnection } from '#infra/connection/context.js';
 import { useSession } from '#infra/store/hook.js';
 import { useText } from '#infra/text/index.js';
-import { cx } from '#infra/theme/class-name.js';
-import { Button } from '#ui/index.js';
 import styles from './shell.module.css';
 
 /** Shows the connection state while the session is not online. */
@@ -32,6 +31,8 @@ export function ConnectionBanner() {
     return null;
   }
   let text: string;
+  // a connection that is still being made only shows if it takes a while
+  let soft = false;
   if (status === 'closed') {
     text =
       error?.code === 'REPLACED'
@@ -49,17 +50,28 @@ export function ConnectionBanner() {
     status === 'handshaking'
   ) {
     text = t('core:connection.connecting');
+    soft = true;
   } else {
     text = t('core:connection.offline');
   }
   return (
-    <div role="status" className={cx(styles.banner)}>
-      <span>{text}</span>
-      {connection && (status === 'reconnecting' || status === 'closed') ? (
-        <Button onPress={() => connection.retryNow()}>
-          {t('core:connection.retry')}
-        </Button>
-      ) : null}
+    <div
+      role="status"
+      className={cx(styles.banner)}
+      data-tone="orange"
+      data-soft={soft || undefined}
+    >
+      <div className={cx(styles.bannerFrame, 'wsde-brackets')}>
+        <div className={cx(styles.bannerRow)}>
+          <Icon name="signal" />
+          <span>{text}</span>
+          {connection && (status === 'reconnecting' || status === 'closed') ? (
+            <Button size="sm" onPress={() => connection.retryNow()}>
+              {t('core:connection.retry')}
+            </Button>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }

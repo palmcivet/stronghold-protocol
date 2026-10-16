@@ -1,0 +1,35 @@
+@layer components {
+  .badge {
+    --borderColor: var(--badge, var(--wsde-tone-base));
+    --textColor: var(--badge, var(--wsde-tone-strong));
+    display: inline-flex;
+    align-items: center;
+    gap: var(--wsde-space-1);
+    padding: 0 var(--wsde-space-2);
+    border: var(--wsde-stroke-thin) solid var(--borderColor);
+    border-radius: var(--wsde-radius-1);
+    color: var(--textColor);
+    font-size: var(--wsde-font-size-caption);
+    white-space: nowrap;
+  }
+
+  .badge[data-shape="pill"] {
+    padding: var(--wsde-space-1) var(--wsde-space-2);
+    border-radius: var(--wsde-radius-round);
+    font-size: var(--wsde-font-size-label);
+  }
+
+  .badge[data-shape="square"] {
+    display: inline-grid;
+    place-items: center;
+    min-width: calc(var(--wsde-dp) * 20);
+    height: calc(var(--wsde-dp) * 20);
+    padding: 0 var(--wsde-space-1);
+    border-radius: 0;
+    font-family: var(--wsde-font-number);
+  }
+
+  .badge[data-glow] {
+    box-shadow: var(--wsde-shadow-glow);
+  }
+}

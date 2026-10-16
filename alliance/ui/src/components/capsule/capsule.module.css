@@ -1,0 +1,28 @@
+@layer components {
+  .capsule {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--wsde-space-2);
+    padding: var(--wsde-space-1) var(--wsde-space-3);
+    border-radius: var(--wsde-radius-round);
+    background: var(--wsde-tone-soft);
+    color: var(--wsde-tone-strong);
+    font-size: var(--wsde-font-size-label);
+  }
+
+  .detail {
+    font-family: var(--wsde-font-number);
+  }
+
+  .track {
+    width: calc(var(--wsde-dp) * 80);
+    height: calc(var(--wsde-dp) * 4);
+    background: var(--wsde-color-control-hover);
+  }
+
+  .fill {
+    display: block;
+    height: 100%;
+    background: currentColor;
+  }
+}

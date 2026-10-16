@@ -11,11 +11,11 @@
   }
 
   .diag {
-    min-height: 8rem;
+    min-height: calc(var(--wsde-dp) * 128);
     padding: var(--wsde-space-2);
-    border: var(--wsde-stroke-thin) solid var(--wsde-color-line-2);
-    background: var(--wsde-color-bg-1);
+    border: var(--wsde-stroke-thin) solid var(--wsde-color-border-default);
+    background: var(--wsde-color-surface-raised);
     font-family: monospace;
-    font-size: var(--wsde-font-size-xs);
+    font-size: var(--wsde-font-size-caption);
   }
 }

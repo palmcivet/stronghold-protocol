@@ -1,3 +1,4 @@
+import { Button, Notice } from '@alliance/ui';
 import {
   Component,
   type ErrorInfo,
@@ -7,7 +8,6 @@ import {
 } from 'react';
 import { registerPartMount } from '#infra/debug/mount.js';
 import { useText } from '#infra/text/index.js';
-import { Button, ErrorPanel } from '#ui/index.js';
 import { BackToLobby } from './leave.js';
 import { hasPart, Part } from './registry.js';
 
@@ -119,7 +119,8 @@ export function DefaultError({
 function PageError({ retry }: { readonly retry: () => void }) {
   const t = useText();
   return (
-    <ErrorPanel
+    <Notice
+      variant="error"
       announce={false}
       title={t('core:error.page')}
       actions={
@@ -132,14 +133,15 @@ function PageError({ retry }: { readonly retry: () => void }) {
       }
     >
       <p>{t('core:error.pageHint')}</p>
-    </ErrorPanel>
+    </Notice>
   );
 }
 
 function PartError({ retry }: { readonly retry: () => void }) {
   const t = useText();
   return (
-    <ErrorPanel
+    <Notice
+      variant="error"
       announce={false}
       title={t('core:error.part')}
       actions={<Button onPress={retry}>{t('core:error.retry')}</Button>}
