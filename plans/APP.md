@@ -67,7 +67,7 @@ alliance/client/
 - 连接横幅的「服务器已更新」提示（master `ui/buildGuard.js`）未实现。
 - 干员调配：列表的职业、盟约筛选；详情的属性预览、语音试听、导入导出未做。
 - 个人配置：官方段为 `core:identity` / `core:display` / `core:audio` / `core:keys`（`infra/settings`）；原单体 `wsde:device:core:settings` v2 启动时拆进四段（含 `safeAreaUi`）。master 的语音语言、伤害数字、特效数量等不再扩充。模组自有设置段随扩展系统用 `defineSettingSection` 挂上。平台能力在 `infra/platform`（`probe` / `getPlatform`），与 welcome `Capabilities` 分开。
-- 视觉布局：用户逐页重新设计；结算主布局已按 master 移植骨架，细节皮与资源图标仍待审阅。仍不如 master 的全视觉皮、844×390 商店高度与密度、联防 ×N / pending 红塔动效、官方立绘/评语图标等，随布局审阅一并定。
+- 视觉布局：美化计划、组件规格与任务拆分见 UI.md。用户逐页重新设计；结算主布局已按 master 移植骨架，细节皮与资源图标仍待审阅。仍不如 master 的全视觉皮、844×390 商店高度与密度、联防 ×N / pending 红塔动效、官方立绘/评语图标等，随布局审阅一并定。
 - 视觉布局：844×390（手机横屏）下对局 HUD 的商店栏占去大半高度，战场偏小；等用户审阅布局后再定。
 - 对局层叠：match HUD 已改为绝对叠在全屏 `mission-renderer` 舞台上（对齐 master `.gm__field` / `.gm__hud`）；机位内边距按真实 HUD 占位量。目录风味标签（如 `infection`）已注册；`battleSpecOf` 按 master 数组路线 + `routeIndex` / `start:[row,col]` 映射刷怪，本机演算快照进舞台、appearances 绑定，作战单位可见。装饰性边缘模型完整度与全视觉皮仍待审阅。
 - 对照 master：同一流程状态下用无头浏览器分别截图 master 与 next，并排交给用户人工审阅（不做像素比对），记录缺失的信息与操作。
